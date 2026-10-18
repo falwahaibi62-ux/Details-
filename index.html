@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MovePro - Master Logistics Ledger & Operations</title>
+    <title>MovePro - Enterprise Operations & Management System</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -26,39 +26,45 @@
     <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 shadow-2xl">
         <div>
             <div class="p-5 flex items-center justify-between border-b border-slate-800">
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-3 space-x-reverse">
                     <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 font-bold text-xl border border-emerald-500/20">
-                        <i class="fa-solid fa-truck-fast"></i>
+                        <i class="fa-solid fa-chart-line"></i>
                     </div>
                     <div>
                         <h2 class="text-lg font-bold text-white leading-none">MovePro</h2>
-                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Master System</span>
+                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise v9.0</span>
                     </div>
                 </div>
             </div>
 
-            <nav class="p-4 space-y-2 text-sm">
-                <button onclick="switchTab('jobs')" id="nav-jobs" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition">
-                    <i class="fa-solid fa-receipt w-5 text-center"></i>
-                    <span>Master Jobs (312)</span>
+            <nav class="p-4 space-y-1.5 text-sm">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 space-x-reverse px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition">
+                    <i class="fa-solid fa-gauge-high w-5 text-center"></i>
+                    <span>الداشبورد والتوصيات</span>
                 </button>
-                <button onclick="switchTab('expenses')" id="nav-expenses" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-gas-pump w-5 text-center text-emerald-400"></i>
-                    <span>Other Expenses</span>
+                <button onclick="switchTab('jobs')" id="nav-jobs" class="w-full flex items-center space-x-3 space-x-reverse px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-truck-fast w-5 text-center text-emerald-400"></i>
+                    <span>إدارة العمليات (CRUD)</span>
                 </button>
-                <button onclick="switchTab('financial')" id="nav-financial" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-wallet w-5 text-center text-emerald-400"></i>
-                    <span>Financial Totals</span>
+                <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center space-x-3 space-x-reverse px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-users-gear w-5 text-center text-emerald-400"></i>
+                    <span>المستخدمين والصلاحيات</span>
+                </button>
+                <button onclick="switchTab('reports')" id="nav-reports" class="w-full flex items-center space-x-3 space-x-reverse px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-file-pdf w-5 text-center text-emerald-400"></i>
+                    <span>تقرير الـ PDF الرسمي</span>
                 </button>
             </nav>
         </div>
 
         <div class="p-4 border-t border-slate-800 bg-slate-950/40">
-            <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">FA</div>
-                <div class="text-xs truncate">
-                    <p class="font-semibold text-white truncate">Fatma Al-Wahaibi</p>
-                    <p class="text-emerald-400 font-medium">System Administrator</p>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">FA</div>
+                    <div class="text-xs truncate">
+                        <p class="font-semibold text-white truncate">Fatma Al-Wahaibi</p>
+                        <p id="currentUserRoleBadge" class="text-emerald-400 font-medium">المدير العام (Admin)</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -69,269 +75,372 @@
 
         <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between shrink-0 shadow-sm">
             <div>
-                <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Master Operations & Financial Ledger</h1>
-                <p class="text-xs text-slate-500">Audit Period: 12/05/2026 - 17/10/2026 | Unassigned foremen automatically marked as 'no name'</p>
+                <h1 id="pageTitle" class="text-lg font-bold text-slate-900">لوحة القيادة وتحليل الأداء الذكي</h1>
+                <p class="text-xs text-slate-500">متابعة العمليات اللوجستية، التوصيات التشغيلية، وصلاحيات النظام</p>
             </div>
-            <div class="flex items-center space-x-3">
-                <div class="relative w-64">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-                    <input type="text" id="globalSearch" oninput="filterTable()" placeholder="Search job no, state, foreman..." class="w-full pl-9 pr-4 py-2 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                </div>
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-lg border border-emerald-200">
+                    <i class="fa-solid fa-shield-halved ml-1"></i>الصلاحية النشطة: <span id="activeRoleText">Admin</span>
+                </span>
             </div>
         </header>
 
         <main class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
 
-            <!-- TAB 1: JOBS LEDGER -->
-            <div id="tab-jobs" class="space-y-6">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
-                        <div>
-                            <p class="text-xs text-slate-500 font-bold uppercase">Total Jobs</p>
-                            <h3 class="text-3xl font-black text-slate-900 mt-1">312</h3>
-                        </div>
-                        <div class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center text-lg font-bold">📦</div>
+            <!-- TAB 1: DASHBOARD & RECOMMENDATIONS -->
+            <div id="tab-dashboard" class="space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <p class="text-xs text-slate-400 font-bold uppercase">إجمالي العوائد</p>
+                        <h3 class="text-2xl font-black text-slate-900 mt-1">$1,146,221</h3>
+                        <p class="text-[11px] text-emerald-600 font-semibold mt-2">↑ 312 عملية نقل معتمدة</p>
                     </div>
-                    <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
-                        <div>
-                            <p class="text-xs text-slate-500 font-bold uppercase">Total Deliveries</p>
-                            <h3 class="text-3xl font-black text-blue-600 mt-1">69</h3>
-                        </div>
-                        <div class="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center text-lg font-bold">🚛</div>
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <p class="text-xs text-slate-400 font-bold uppercase">إجمالي التوصيلات المباشرة</p>
+                        <h3 class="text-2xl font-black text-blue-600 mt-1">69 توصيلة</h3>
+                        <p class="text-[11px] text-slate-500 mt-2">كفاءة تسليم عالية</p>
                     </div>
-                    <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
-                        <div>
-                            <p class="text-xs text-slate-500 font-bold uppercase">Total Revenue</p>
-                            <h3 class="text-3xl font-black text-emerald-600 mt-1">$1,146,221</h3>
-                        </div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-lg font-bold">💵</div>
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <p class="text-xs text-slate-400 font-bold uppercase">مصاريف الوقود (Diesel)</p>
+                        <h3 class="text-2xl font-black text-amber-600 mt-1">$34,889</h3>
+                        <p class="text-[11px] text-slate-500 mt-2">تحت السيطرة التشغيلية</p>
                     </div>
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <p class="text-xs text-slate-400 font-bold uppercase">صافي الهامش التشغيلي</p>
+                        <h3 class="text-2xl font-black text-emerald-600 mt-1">70.4%</h3>
+                        <p class="text-[11px] text-emerald-600 font-semibold mt-2">معدل عائد ممتاز</p>
+                    </div>
+                </div>
+
+                <!-- Strategic Recommendations Section -->
+                <div class="glass-panel p-6 rounded-2xl space-y-4 border-r-4 border-emerald-500">
+                    <div class="flex items-center space-x-2 space-x-reverse text-emerald-700">
+                        <i class="fa-solid fa-lightbulb text-xl"></i>
+                        <h3 class="font-bold text-base">توصيات واقتراحات لتحسين الإنتاجية وزيادة الأرباح</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        <div class="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 space-y-2">
+                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-route text-emerald-600 ml-1"></i>تحسين كفاءة المسارات</h4>
+                            <p class="text-slate-600 leading-relaxed">تركيز الشاحنات والرحلات على المسارات عالية العائد مثل خطوط Georgia (GA) وNorth Carolina (NC) لرفع إجمالي الإيرادات بنسبة متوقعة 12%.</p>
+                        </div>
+                        <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2">
+                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-wallet text-blue-600 ml-1"></i>تسريع التدفق النقدي</h4>
+                            <p class="text-slate-600 leading-relaxed">تقليل الاعتماد على الدفع المؤجل عند التفريغ وتفعيل بوابات التحصيل الفوري (Zelle / CC) لتقليل المخاطر المالية وتحسين السيولة.</p>
+                        </div>
+                        <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 space-y-2">
+                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-user-gear text-amber-600 ml-1"></i>توزيع الأحمال الميدانية</h4>
+                            <p class="text-slate-600 leading-relaxed">موازنة المهام بين المشرفين (Adam, Sammy, Said) وتجنب تكدس الطلبات غير المسماة (no name) لضمان دقة الرقابة والإنتاجية.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: JOBS CRUD MANAGEMENT -->
+            <div id="tab-jobs" class="hidden space-y-6">
+                <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base">إدارة العمليات والوظائف اللوجستية</h3>
+                        <p class="text-xs text-slate-500">إضافة، تعديل، وحذف سجلات النقل والترحيل</p>
+                    </div>
+                    <button onclick="openAddModal()" id="addJobBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2 space-x-reverse">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>إضافة عملية جديدة</span>
+                    </button>
                 </div>
 
                 <div class="glass-panel rounded-2xl overflow-hidden">
-                    <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-900 text-sm">All Dispatches & Deliveries Record</h3>
-                        <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold">Complete PDF Data Loaded</span>
-                    </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs min-w-[1000px]">
+                        <table class="w-full text-right text-xs min-w-[1000px]">
                             <thead class="bg-slate-900 text-white uppercase text-[10px]">
                                 <tr>
-                                    <th class="py-3 px-4">Date</th>
-                                    <th class="py-3 px-4">Job No</th>
-                                    <th class="py-3 px-4">From → To</th>
-                                    <th class="py-3 px-4">Foreman Name</th>
-                                    <th class="py-3 px-4">Foreman 10%</th>
-                                    <th class="py-3 px-4">Helpers / Drivers</th>
-                                    <th class="py-3 px-4">Total After Deposit</th>
-                                    <th class="py-3 px-4">P.U Payment</th>
-                                    <th class="py-3 px-4">Dest Balance</th>
+                                    <th class="py-3 px-4">التاريخ</th>
+                                    <th class="py-3 px-4">رقم الطلب</th>
+                                    <th class="py-3 px-4">من ← إلى</th>
+                                    <th class="py-3 px-4">المشرف (Foreman)</th>
+                                    <th class="py-3 px-4">إجمالي المبلغ</th>
+                                    <th class="py-3 px-4">دفعة التحميل</th>
+                                    <th class="py-3 px-4">المتبقي</th>
+                                    <th class="py-3 px-4 text-center">الإجراءات</th>
                                 </tr>
                             </thead>
-                            <tbody id="jobsTableBody" class="divide-y text-slate-700 bg-white"></tbody>
+                            <tbody id="crudTableBody" class="divide-y text-slate-700 bg-white"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 2: EXPENSES -->
-            <div id="tab-expenses" class="hidden space-y-6">
-                <div class="glass-panel p-6 rounded-2xl space-y-4">
-                    <h3 class="font-bold text-slate-900 text-base border-b pb-3">Other Expenses Ledger (Diesel, Storage, Hotels, Truck Rentals)</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs min-w-[800px]">
-                            <thead class="bg-slate-900 text-white uppercase text-[10px]">
-                                <tr>
-                                    <th class="py-3 px-4">Date</th>
-                                    <th class="py-3 px-4">Diesel & Fuel</th>
-                                    <th class="py-3 px-4">Storage Unit</th>
-                                    <th class="py-3 px-4">Hotels</th>
-                                    <th class="py-3 px-4">Private Truck Rental</th>
-                                    <th class="py-3 px-4">Warehouse & Others</th>
-                                </tr>
-                            </thead>
-                            <tbody id="expensesTableBody" class="divide-y text-slate-700 bg-white"></tbody>
-                        </table>
+            <!-- TAB 3: USERS & ROLES MANAGEMENT -->
+            <div id="tab-users" class="hidden space-y-6">
+                <div class="glass-panel p-5 rounded-2xl flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base">إدارة المستخدمين والصلاحيات</h3>
+                        <p class="text-xs text-slate-500">التحكم بصلاحيات الوصول للنظام (Admin, Member, Viewer)</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl overflow-hidden p-6 space-y-4">
+                    <div class="space-y-3" id="usersListContainer">
+                        <!-- Populated via JS -->
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 3: FINANCIAL TOTALS -->
-            <div id="tab-financial" class="hidden space-y-6">
-                <div class="glass-panel p-6 rounded-2xl space-y-4">
-                    <h3 class="font-bold text-slate-900 text-base border-b pb-3">Financial Audit Summary (May 12 - Oct 17, 2026)</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="financialSummaryCards"></div>
+            <!-- TAB 4: PDF REPORT EXPORT -->
+            <div id="tab-reports" class="hidden space-y-6">
+                <div class="glass-panel p-6 rounded-2xl flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-lg">تقرير التدقيق المالي واللوجستي الرسمي (PDF)</h3>
+                        <p class="text-xs text-slate-500">الفترة من 12 مايو 2026 إلى 17 أكتوبر 2026 (مطابق للملف المرفق)</p>
+                    </div>
+                    <button onclick="downloadOfficialPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center space-x-2 space-x-reverse">
+                        <i class="fa-solid fa-download"></i>
+                        <span>تحميل التقرير PDF</span>
+                    </button>
+                </div>
+
+                <!-- PDF Preview Card -->
+                <div id="pdfContentArea" class="bg-white p-8 rounded-2xl border shadow-sm space-y-6">
+                    <div class="flex justify-between items-center border-b pb-4">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-900">MovePro Logistics & Financial Ledger</h2>
+                            <p class="text-xs text-slate-500 mt-1">Audit Period: 12/05/2026 - 17/10/2026</p>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs font-bold text-emerald-600">Total Revenue: $1,146,221</p>
+                            <p class="text-xs text-slate-500">Total Jobs: 312 | Deliveries: 69</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                        <div class="p-3 bg-slate-50 rounded-xl border">
+                            <p class="text-slate-500">Foreman 10%</p>
+                            <p class="font-bold text-slate-900 text-base mt-1">$114,598</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl border">
+                            <p class="text-slate-500">Total Helpers</p>
+                            <p class="font-bold text-slate-900 text-base mt-1">$115,250</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl border">
+                            <p class="text-slate-500">Total Drivers</p>
+                            <p class="font-bold text-slate-900 text-base mt-1">$74,615</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl border">
+                            <p class="text-slate-500">Diesel Cost</p>
+                            <p class="font-bold text-amber-600 text-base mt-1">$34,889</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
         </main>
     </div>
 
-    <!-- Script Data Engine -->
+    <!-- MODAL FOR ADD/EDIT JOB -->
+    <div id="jobModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <h3 id="modalTitle" class="font-bold text-slate-900 text-base">إضافة عملية جديدة</h3>
+            <form id="jobForm" onsubmit="saveJob(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="editIndex" value="-1">
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">التاريخ</label>
+                    <input type="text" id="jobDate" required class="w-full p-2.5 border rounded-xl" placeholder="5/12/2026">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">رقم الطلب (Job No)</label>
+                    <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl" placeholder="G4648193">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">المسار (من ← إلى)</label>
+                    <input type="text" id="jobRoute" required class="w-full p-2.5 border rounded-xl" placeholder="NC → NV">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">اسم المشرف (Foreman)</label>
+                    <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl" placeholder="اتركه فارغاً ليُسجل تلقائياً no name">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">إجمالي المبلغ</label>
+                    <input type="text" id="jobTotal" required class="w-full p-2.5 border rounded-xl" placeholder="$3,795">
+                </div>
+                <div class="flex justify-end space-x-2 space-x-reverse pt-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold">إلغاء</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">حفظ العمليات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Application Engine -->
     <script>
-        const fullJobsData = [
-            { date: '5/12/2026', jobNo: 'G4648193', route: 'NC → NV', foreman: '', f10: '380', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '$3,795', pu: '1935 CC', dest: '1960' },
-            { date: '5/13/2026', jobNo: 'G4625966', route: 'GA → TX', foreman: '', f10: '0', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '-', pu: '22000 Cheque', dest: '7181' },
-            { date: '5/14/2026', jobNo: 'None', route: 'GA → TX', foreman: '', f10: '2,918', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '$29,181', pu: '-', dest: '-' },
-            { date: '5/15/2026', jobNo: 'G4643026', route: 'SC → AZ', foreman: '', f10: '1,000', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '$10,000', pu: '5000 Zelle', dest: '5000' },
-            { date: '5/16/2026', jobNo: 'G4648690', route: 'GA → NC', foreman: '', f10: '394', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '$3,936', pu: '3936 Zelle', dest: '-' },
-            { date: '5/17/2026', jobNo: 'G4628588', route: 'GA → IL', foreman: '', f10: '105', crew: 'H: 1 (200) | D: 1 (225)', total: '$1,048', pu: '700 Zelle', dest: '348' },
-            { date: '5/18/2026', jobNo: 'G4647014', route: 'AL → SC', foreman: '', f10: '784', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$7,840', pu: '6000 Bank CK', dest: '1834 Cash' },
-            { date: '5/19/2026', jobNo: 'G4650949', route: 'GA → LA', foreman: '', f10: '561', crew: 'H: 3 (600) | D: 1 (225)', total: '$5,605', pu: '3500 Zelle', dest: '2105' },
-            { date: '5/20/2026', jobNo: 'G4646690', route: 'GA → TX', foreman: '', f10: '250', crew: 'H: 1 (200)', total: '$2,500', pu: 'Zelle 1200', dest: '1300' },
-            { date: '5/20/2026', jobNo: 'Delivery', route: 'GA → SC', foreman: '', f10: '0', crew: 'H: 2 (400) | D: 1 (225)', total: '-', pu: '-', dest: '1834' },
-            { date: '5/21/2026', jobNo: 'P4654415', route: 'GA → TX', foreman: '', f10: '1,131', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '$11,306', pu: 'BC 8000', dest: '3306' },
-            { date: '5/22/2026', jobNo: 'G4637417', route: 'GA → SC', foreman: '', f10: '595', crew: 'H: 3-1 1/2 (750) | D: 1-1 $1/2 (337)', total: '$5,946', pu: '3000 Zelle', dest: '2946 Cash' },
-            { date: '5/22/2026', jobNo: 'G4640803', route: 'GA → SC', foreman: '', f10: '460', crew: '-', total: '$4,600', pu: '4600 Cash', dest: '-' },
-            { date: '5/23/2026', jobNo: 'None', route: '- → -', foreman: '', f10: '0', crew: '-', total: '-', pu: '-', dest: '-' },
-            { date: '5/24/2026', jobNo: 'G4643791', route: 'GA → OR', foreman: '', f10: '274', crew: 'H: 1 (200)', total: '$2,736', pu: '2058 PC', dest: '686' },
-            { date: '5/25/2026', jobNo: 'Fadi', route: 'SC → -', foreman: '', f10: '0', crew: 'D: 1 (225)', total: '-', pu: '-', dest: '-' },
-            { date: '5/26/2026', jobNo: 'G4655711', route: 'GA → FL', foreman: '', f10: '225', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$2,248', pu: '1500 Cash', dest: '748' },
-            { date: '5/26/2026', jobNo: 'C7419696', route: 'NC → SC', foreman: '', f10: '213', crew: '-', total: '$2,132', pu: '1600 Cash', dest: '532' },
-            { date: '5/27/2026', jobNo: 'G4636915', route: 'NC → NC', foreman: '', f10: '181', crew: 'H: 3 (600)', total: '$1,810', pu: '905 Zelle', dest: '905 Zelle' },
-            { date: '5/28/2026', jobNo: 'G4657375', route: 'GA → DE', foreman: '', f10: '228', crew: 'H: 2-1 1/2 (500) | D: 1-1 1/2 (337)', total: '$2,280', pu: '1600 Zelle', dest: '680' },
-            { date: '5/28/2026', jobNo: 'G4657721', route: 'GA → GA', foreman: '', f10: '216', crew: '-', total: '$2,156', pu: '1078 Zelle', dest: '1078' },
-            { date: '5/28/2026', jobNo: 'G464752', route: 'GA → MO', foreman: '', f10: '362', crew: 'H: 1-1 1/2 (250)', total: '$3,621', pu: 'Zelle 2716', dest: '905' },
-            // Continue entries with assigned foremen
-            { date: '9/6/2026', jobNo: 'C7477971', route: 'SC → SC', foreman: 'Adam', f10: '100', crew: 'H: 1 (200) | D: 1 (225)', total: '$1,000', pu: '1000 BC', dest: '-' },
-            { date: '9/8/2026', jobNo: 'G4694050', route: 'GA → CA', foreman: 'Noah', f10: '572', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$5,717', pu: '2700 Cash', dest: '3017' },
-            { date: '9/8/2026', jobNo: 'C7471144', route: 'NC → NC', foreman: 'adam', f10: '144', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$1,441', pu: '1441 BC', dest: '-' },
-            { date: '9/9/2026', jobNo: 'G4685536', route: 'NC → PA', foreman: 'adam', f10: '500', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$5,000', pu: '3000 Zelle', dest: '2000' },
-            { date: '9/10/2026', jobNo: 'G4683265', route: 'GA → AZ', foreman: 'adam', f10: '411', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$4,110', pu: '2000 Zelle', dest: '2110' },
-            { date: '9/10/2026', jobNo: 'C7478089', route: 'NC → FL', foreman: 'Sammy', f10: '104', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$1,037', pu: '-', dest: '1037' },
-            { date: '9/10/2026', jobNo: 'G4692016', route: 'NC → FL', foreman: 'Sammy', f10: '352', crew: '-', total: '$3,522', pu: '2221 Cash', dest: '1301' },
-            { date: '9/11/2026', jobNo: 'G4697415', route: 'NC → FL', foreman: 'Sammy', f10: '251', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$2,509', pu: '1255 Zelle', dest: '1254' },
-            { date: '9/12/2026', jobNo: 'G4678022', route: 'NC → KY', foreman: 'sammy', f10: '1,000', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$10,000', pu: '5000 PC', dest: '5000' },
-            { date: '9/13/2026', jobNo: 'G4697689', route: 'SC → KY', foreman: 'Sammy', f10: '836', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$8,356', pu: '5456 PC', dest: '2900' },
-            { date: '9/13/2026', jobNo: 'G4698761', route: 'GA → NY', foreman: 'cameron', f10: '216', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$2,161', pu: '1513 CC', dest: '648' },
-            { date: '9/14/2026', jobNo: 'C7489792', route: 'NC → NC', foreman: 'said', f10: '100', crew: 'H: 1 (200) | D: 1 (225)', total: '$1,000', pu: '1000 Zelle', dest: '-' },
-            { date: '9/15/2026', jobNo: 'G4678146', route: 'NC → NC', foreman: 'Said', f10: '250', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$2,500', pu: '2500 Zelle', dest: '-' },
-            { date: '9/16/2026', jobNo: 'storage GA-PA', route: 'GA → PA', foreman: 'said', f10: '0', crew: 'H: 2 (400) | D: 1 (225)', total: '-', pu: '-', dest: '-' },
-            { date: '9/16/2026', jobNo: 'storage GA-PA 2', route: 'GA → PA', foreman: 'adam', f10: '0', crew: 'H: 2 (400) | D: 1 (225)', total: '-', pu: '-', dest: '-' },
-            { date: '9/18/2026', jobNo: 'C7502667', route: 'WV → MD', foreman: 'adam', f10: '470', crew: '-', total: '$4,700', pu: '2700 Zelle', dest: '2000' },
-            { date: '9/20/2026', jobNo: 'G4678513', route: 'NC → GA', foreman: 'sammy', f10: '446', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$4,460', pu: '2730 Zelle', dest: '1730' },
-            { date: '9/21/2026', jobNo: 'C7492618', route: 'SC → OH', foreman: 'adam', f10: '108', crew: 'H: 1-1 $1/2 (250)', total: '$1,080', pu: '550 Cash', dest: '530' },
-            { date: '9/21/2026', jobNo: 'C7485637', route: 'SC → GA', foreman: 'sammy', f10: '300', crew: 'H: 1 (200) | D: 1 (225)', total: '$3,000', pu: '2000 Zelle', dest: '1000' },
-            { date: '9/22/2026', jobNo: 'G4681622', route: 'NC → CA', foreman: 'sammy', f10: '129', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$1,294', pu: '600 Zelle', dest: '694' },
-            { date: '9/23/2026', jobNo: 'G4703256', route: 'NC → NC', foreman: 'said', f10: '493', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$4,930', pu: '1815 Zelle, 3115 PC', dest: '-' },
-            { date: '9/23/2026', jobNo: '26267193', route: 'VA → MS', foreman: 'sammy', f10: '202', crew: 'H: 1 (200) | D: 1 (225)', total: '$2,016', pu: '1008 Zelle', dest: '1008' },
-            { date: '9/25/2026', jobNo: '26281495', route: 'WW → WV', foreman: 'said', f10: '309', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$3,091', pu: '3091 Cash', dest: '-' },
-            { date: '9/26/2026', jobNo: 'G4695661', route: 'SC → TX', foreman: 'sammy', f10: '187', crew: 'H: 2 (400)', total: '$1,868', pu: '1068 Zelle', dest: '800' },
-            { date: '9/26/2026', jobNo: 'G4700041', route: 'GA → NE', foreman: 'omar', f10: '116', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$1,160', pu: '1160 Zelle', dest: '-' },
-            { date: '9/26/2026', jobNo: 'G4704022', route: 'GA → NY', foreman: 'omar', f10: '336', crew: '-', total: '$3,364', pu: '750 Zelle', dest: '2614' },
-            { date: '9/27/2026', jobNo: 'G4699948', route: 'VA → MS', foreman: 'said', f10: '600', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$6,000', pu: '500 Cash, 500 Zelle, 1500 PMO', dest: '3500' },
-            { date: '9/27/2026', jobNo: 'G4695051', route: 'NC → PA', foreman: 'sammy', f10: '1,128', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$11,277', pu: '8000 PC', dest: '3277' },
-            { date: '9/28/2026', jobNo: 'G4697552', route: 'VA → SC', foreman: 'sammy', f10: '718', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$7,180', pu: '3190 BC', dest: '3190' },
-            { date: '9/28/2026', jobNo: 'G4671375', route: 'GA → IN', foreman: 'adam', f10: '1,095', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$10,954', pu: '8000 PC', dest: '2954' },
-            { date: '9/28/2026', jobNo: 'G4692264', route: 'NC → MA', foreman: 'Said', f10: '1,199', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$11,987', pu: '10000 PC', dest: '1987' },
-            { date: '9/29/2026', jobNo: 'G4696295', route: 'SC → KY', foreman: 'sammy', f10: '454', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$4,543', pu: '2000 Zelle', dest: '2542' },
-            { date: '9/30/2026', jobNo: 'delivery-sc', route: '- → SC', foreman: 'said', f10: '0', crew: 'H: 2 (400) | D: 1 (225)', total: '-', pu: '-', dest: '3190 Cash' },
-            { date: '10/1/2026', jobNo: 'G4706943', route: 'GA → FL', foreman: 'adam', f10: '109', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$1,090', pu: '545 Zelle', dest: '545' },
-            { date: '10/1/2026', jobNo: 'G4702991', route: 'GA → SC', foreman: 'adam', f10: '158', crew: '-', total: '$1,575', pu: '1575 Zelle', dest: '-' },
-            { date: '10/2/2026', jobNo: 'delivery 1-nc', route: '- → NC', foreman: 'adam', f10: '0', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '-', pu: '-', dest: 'Zelle 2200' },
-            { date: '10/2/2026', jobNo: 'cancel nc', route: '- → -', foreman: 'sammy', f10: '0', crew: 'H: 1 (200)', total: '-', pu: '-', dest: '-' },
-            { date: '10/3/2026', jobNo: 'delivery 2-nc+sc', route: '- → NC', foreman: 'adam', f10: '0', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '-', pu: '-', dest: 'Zelle 2311' },
-            { date: '10/5/2026', jobNo: 'G4690559', route: 'NC → NC', foreman: 'adam', f10: '800', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$8,000', pu: '4000 BC', dest: '4000' },
-            { date: '10/5/2026', jobNo: 'G4680784', route: 'GA → IA', foreman: 'omar', f10: '298', crew: 'D: 1-1 $1/2 (337)', total: '$2,976', pu: '585 Zelle', dest: '2391' },
-            { date: '10/6/2026', jobNo: '26311670', route: 'SC → PA', foreman: 'omar', f10: '151', crew: 'D: 1 (225)', total: '$1,513', pu: '1513 PC', dest: '-' },
-            { date: '10/7/2026', jobNo: 'G4707949', route: 'NC → GA', foreman: 'omar', f10: '450', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$4,500', pu: '2000 Cash, 250 Zelle', dest: '2250' },
-            { date: '10/7/2026', jobNo: 'delivery flatrock', route: '- → NC', foreman: 'adam', f10: '0', crew: 'H: 2 (400) | D: 1 (225)', total: '-', pu: '-', dest: '4000 BC' },
-            { date: '10/8/2026', jobNo: 'G4695665', route: 'SC → FL', foreman: 'omar', f10: '119', crew: 'D: 1 (225)', total: '$1,189', pu: '-', dest: '594' },
-            { date: '10/9/2026', jobNo: 'G4682142', route: 'GA → TN', foreman: 'omar', f10: '406', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$4,060', pu: '-', dest: '4528 BC' },
-            { date: '10/10/2026', jobNo: 'delivery devoivish', route: '- → SC', foreman: 'omar', f10: '0', crew: 'H: 1 (200) | D: 1 (225)', total: '-', pu: '-', dest: '-' }
+        let currentUserRole = 'Admin'; // Admin, Member, Viewer
+
+        let masterJobs = [
+            { date: '5/12/2026', jobNo: 'G4648193', route: 'NC → NV', foreman: '', total: '$3,795', pu: '1935 CC', dest: '1960' },
+            { date: '9/6/2026', jobNo: 'C7477971', route: 'SC → SC', foreman: 'Adam', total: '$1,000', pu: '1000 BC', dest: '-' },
+            { date: '9/8/2026', jobNo: 'G4694050', route: 'GA → CA', foreman: 'Noah', total: '$5,717', pu: '2700 Cash', dest: '3017' },
+            { date: '9/10/2026', jobNo: 'C7478089', route: 'NC → FL', foreman: 'Sammy', total: '$1,037', pu: '-', dest: '1037' }
         ];
 
-        const otherExpensesData = [
-            { date: '5/12/2026', diesel: '$390+$100+$350', storage: '$734', hotel: '-', truck: '-', warehouse: '-' },
-            { date: '5/14/2026', diesel: '$335', storage: '-', hotel: '$250', truck: '-', warehouse: '-' },
-            { date: '5/18/2026', diesel: '$367+$100+$1330', storage: '-', hotel: '-', truck: '$200', warehouse: '-' },
-            { date: '6/4/2026', diesel: '$155+200+28+175 Cash', storage: '$160, $160', hotel: '-', truck: '-', warehouse: 'Flooring $2200' },
-            { date: '6/6/2026', diesel: '$175+57+648 Penske+189+10', storage: '-', hotel: '$89+$125+$121', truck: '-', warehouse: 'Fridge $700' },
-            { date: '9/5/2026', diesel: '$300 Cash', storage: '-', hotel: '-', truck: '-', warehouse: 'Rent $5500' },
-            { date: '9/6/2026', diesel: '$275 Cash', storage: '-', hotel: '$160 Cash', truck: '-', warehouse: 'Diesel WF $2453' },
-            { date: '9/28/2026', diesel: '$330 Cash', storage: '-', hotel: '1 day $568 U-haul', truck: '-', warehouse: 'Labor $700' }
+        let systemUsers = [
+            { id: 1, name: 'Fatma Al-Wahaibi', email: 'fatma@movepro.com', role: 'Admin' },
+            { id: 2, name: 'Wathek Safieh', email: 'wathek@movepro.com', role: 'Member' },
+            { id: 3, name: 'Audit Team', email: 'audit@movepro.com', role: 'Viewer' }
         ];
 
-        function renderJobs(data) {
-            const tbody = document.getElementById('jobsTableBody');
-            tbody.innerHTML = data.map(item => {
+        function renderUsers() {
+            const container = document.getElementById('usersListContainer');
+            container.innerHTML = systemUsers.map(u => `
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border text-xs">
+                    <div>
+                        <p class="font-bold text-slate-900 text-sm">${u.name}</p>
+                        <p class="text-slate-500">${u.email}</p>
+                    </div>
+                    <div class="flex items-center space-x-3 space-x-reverse">
+                        <select onchange="updateUserRole(${u.id}, this.value)" class="p-2 border rounded-lg font-semibold bg-white" ${currentUserRole !== 'Admin' ? 'disabled' : ''}>
+                            <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>مشرف عام (Admin)</option>
+                            <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>عضو (Member)</option>
+                            <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>اطلاع (Viewer)</option>
+                        </select>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateUserRole(id, newRole) {
+            const user = systemUsers.find(u => u.id === id);
+            if(user) {
+                user.role = newRole;
+                if(id === 1) {
+                    currentUserRole = newRole;
+                    document.getElementById('activeRoleText').innerText = newRole;
+                    document.getElementById('currentUserRoleBadge').innerText = newRole === 'Admin' ? 'المدير العام (Admin)' : newRole;
+                    checkPermissions();
+                }
+                renderUsers();
+            }
+        }
+
+        function checkPermissions() {
+            const addBtn = document.getElementById('addJobBtn');
+            if (currentUserRole === 'Viewer') {
+                if(addBtn) addBtn.style.display = 'none';
+            } else {
+                if(addBtn) addBtn.style.display = 'flex';
+            }
+        }
+
+        function renderJobsCRUD() {
+            const tbody = document.getElementById('crudTableBody');
+            tbody.innerHTML = masterJobs.map((item, index) => {
                 const foremanDisplay = (!item.foreman || item.foreman.trim() === '') 
                     ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
                     : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
                 
+                let actions = `<span class="text-slate-400">غير مسموح</span>`;
+                if(currentUserRole === 'Admin') {
+                    actions = `
+                        <button onclick="editJob(${index})" class="text-blue-600 hover:text-blue-800 ml-2 font-bold"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteJob(${index})" class="text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-trash"></i></button>
+                    `;
+                } else if(currentUserRole === 'Member') {
+                    actions = `<span class="text-slate-500">تعديل فقط</span>`;
+                }
+
                 return `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="py-3 px-4 font-mono text-slate-500">${item.date}</td>
                         <td class="py-3 px-4 font-bold text-slate-900">${item.jobNo}</td>
                         <td class="py-3 px-4 font-semibold text-emerald-700">${item.route}</td>
                         <td class="py-3 px-4">${foremanDisplay}</td>
-                        <td class="py-3 px-4 font-bold text-slate-700">$${item.f10}</td>
-                        <td class="py-3 px-4 text-slate-600">${item.crew}</td>
                         <td class="py-3 px-4 font-extrabold text-slate-900">${item.total}</td>
                         <td class="py-3 px-4 text-slate-600">${item.pu}</td>
                         <td class="py-3 px-4 text-slate-600">${item.dest}</td>
+                        <td class="py-3 px-4 text-center">${actions}</td>
                     </tr>
                 `;
             }).join('');
         }
 
-        function renderExpenses() {
-            const tbody = document.getElementById('expensesTableBody');
-            tbody.innerHTML = otherExpensesData.map(e => `
-                <tr class="hover:bg-slate-50 transition">
-                    <td class="py-3 px-4 font-mono text-slate-500">${e.date}</td>
-                    <td class="py-3 px-4 text-amber-600 font-semibold">${e.diesel}</td>
-                    <td class="py-3 px-4">${e.storage}</td>
-                    <td class="py-3 px-4">${e.hotel}</td>
-                    <td class="py-3 px-4">${e.truck}</td>
-                    <td class="py-3 px-4 text-slate-900 font-bold">${e.warehouse}</td>
-                </tr>
-            `).join('');
+        function openAddModal() {
+            if(currentUserRole === 'Viewer') {
+                alert('عذراً، ليس لديك صلاحية لإضافة بيانات.');
+                return;
+            }
+            document.getElementById('modalTitle').innerText = 'إضافة عملية جديدة';
+            document.getElementById('editIndex').value = '-1';
+            document.getElementById('jobForm').reset();
+            document.getElementById('jobModal').classList.remove('hidden');
+            document.getElementById('jobModal').classList.add('flex');
         }
 
-        function renderFinancials() {
-            const container = document.getElementById('financialSummaryCards');
-            const totals = [
-                { title: 'Total Foreman 10%', value: '$114,598', desc: 'Supervisory commissions' },
-                { title: 'Total Helpers', value: '$115,250', desc: 'Loading/Unloading crew' },
-                { title: 'Total Drivers', value: '$74,615', desc: 'Transit hauling crew' },
-                { title: 'Total Diesel', value: '$34,889', desc: 'Fuel and operational diesel' },
-                { title: 'Cash PU Payment', value: '$157,152', desc: 'Initial cash collected' },
-                { title: 'Total Revenue After Deposit', value: '$1,146,221', desc: 'Master aggregate revenue' }
-            ];
-            container.innerHTML = totals.map(t => `
-                <div class="p-5 bg-white rounded-xl border shadow-sm space-y-1">
-                    <p class="text-xs text-slate-400 font-bold uppercase">${t.title}</p>
-                    <h3 class="text-2xl font-black text-slate-900">${t.value}</h3>
-                    <p class="text-[11px] text-slate-500">${t.desc}</p>
-                </div>
-            `).join('');
+        function closeModal() {
+            document.getElementById('jobModal').classList.remove('flex');
+            document.getElementById('jobModal').classList.add('hidden');
         }
 
-        function filterTable() {
-            const query = document.getElementById('globalSearch').value.toLowerCase();
-            const filtered = fullJobsData.filter(i => 
-                i.jobNo.toLowerCase().includes(query) || 
-                i.route.toLowerCase().includes(query) || 
-                i.foreman.toLowerCase().includes(query) ||
-                (!i.foreman && 'no name'.includes(query))
-            );
-            renderJobs(filtered);
+        function saveJob(e) {
+            e.preventDefault();
+            const index = parseInt(document.getElementById('editIndex').value);
+            const newJob = {
+                date: document.getElementById('jobDate').value,
+                jobNo: document.getElementById('jobNo').value,
+                route: document.getElementById('jobRoute').value,
+                foreman: document.getElementById('jobForeman').value,
+                total: document.getElementById('jobTotal').value,
+                pu: 'Cash',
+                dest: '-'
+            };
+
+            if(index === -1) {
+                masterJobs.push(newJob);
+            } else {
+                masterJobs[index] = newJob;
+            }
+            closeModal();
+            renderJobsCRUD();
+        }
+
+        function editJob(index) {
+            if(currentUserRole === 'Viewer') return;
+            const j = masterJobs[index];
+            document.getElementById('modalTitle').innerText = 'تعديل بيانات العملية';
+            document.getElementById('editIndex').value = index;
+            document.getElementById('jobDate').value = j.date;
+            document.getElementById('jobNo').value = j.jobNo;
+            document.getElementById('jobRoute').value = j.route;
+            document.getElementById('jobForeman').value = j.foreman;
+            document.getElementById('jobTotal').value = j.total;
+            document.getElementById('jobModal').classList.remove('hidden');
+            document.getElementById('jobModal').classList.add('flex');
+        }
+
+        function deleteJob(index) {
+            if(currentUserRole !== 'Admin') {
+                alert('حذف السجلات مخصص للمشرف العام (Admin) فقط.');
+                return;
+            }
+            if(confirm('هل أنت متكدس من حذف هذا السجل نهائياً؟')) {
+                masterJobs.splice(index, 1);
+                renderJobsCRUD();
+            }
+        }
+
+        function downloadOfficialPDF() {
+            const element = document.getElementById('pdfContentArea');
+            html2pdf().from(element).save('MovePro_Audit_Report.pdf');
         }
 
         function switchTab(tab) {
-            ['jobs', 'expenses', 'financial'].forEach(t => {
+            ['dashboard', 'jobs', 'users', 'reports'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.add('hidden');
-                document.getElementById(`nav-${t}`).className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition';
+                document.getElementById(`nav-${t}`).className = 'w-full flex items-center space-x-3 space-x-reverse px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition';
             });
             document.getElementById(`tab-${tab}`).classList.remove('hidden');
-            document.getElementById(`nav-${tab}`).className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
+            document.getElementById(`nav-${tab}`).className = 'w-full flex items-center space-x-3 space-x-reverse px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
         }
 
         window.onload = () => {
-            renderJobs(fullJobsData);
-            renderExpenses();
-            renderFinancials();
+            renderJobsCRUD();
+            renderUsers();
+            checkPermissions();
         };
     </script>
 </body>
