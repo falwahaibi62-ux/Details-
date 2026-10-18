@@ -279,39 +279,76 @@
         </main>
     </div>
 
-    <!-- MODAL -->
-    <div id="jobModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-            <h3 id="modalTitle" class="font-bold text-slate-900 text-base">Add New Dispatch</h3>
-            <form id="jobForm" onsubmit="saveJob(event)" class="space-y-3 text-xs">
-                <input type="hidden" id="editIndex" value="-1">
+   <!-- MODAL -->
+<div id="jobModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <h3 id="modalTitle" class="font-bold text-slate-900 text-base">Add New Dispatch</h3>
+        <form id="jobForm" onsubmit="saveJob(event)" class="space-y-3 text-xs">
+            <input type="hidden" id="editIndex" value="-1">
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Date</label>
+                <input type="text" id="jobDate" required class="w-full p-2.5 border rounded-xl" placeholder="5/12/2026">
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Job No</label>
+                <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl" placeholder="G4648193">
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Route (From → To)</label>
+                <input type="text" id="jobRoute" required class="w-full p-2.5 border rounded-xl" placeholder="NC → NV">
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Foreman Name</label>
+                <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl" placeholder="no name">
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Total Amount</label>
+                <input type="text" id="jobTotal" required class="w-full p-2.5 border rounded-xl" placeholder="$3,795">
+            </div>
+
+            <!-- P.U Payment Fields -->
+            <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Date</label>
-                    <input type="text" id="jobDate" required class="w-full p-2.5 border rounded-xl" placeholder="5/12/2026">
+                    <label class="block font-semibold text-slate-600 mb-1">P.U Payment Amount</label>
+                    <input type="text" id="jobPuAmount" class="w-full p-2.5 border rounded-xl" placeholder="1935">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Job No</label>
-                    <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl" placeholder="G4648193">
+                    <label class="block font-semibold text-slate-600 mb-1">P.U Payment Method</label>
+                    <select id="jobPuMethod" class="w-full p-2.5 border rounded-xl font-semibold bg-white">
+                        <option value="Cash">Cash</option>
+                        <option value="Zelle">Zelle</option>
+                        <option value="PS">PS</option>
+                        <option value="BS">BS</option>
+                        <option value="others">others</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Destination Payment Fields (New) -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Destination Payment Amount</label>
+                    <input type="text" id="jobDestAmount" class="w-full p-2.5 border rounded-xl" placeholder="1960">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Route (From → To)</label>
-                    <input type="text" id="jobRoute" required class="w-full p-2.5 border rounded-xl" placeholder="NC → NV">
+                    <label class="block font-semibold text-slate-600 mb-1">Destination Payment Method</label>
+                    <select id="jobDestMethod" class="w-full p-2.5 border rounded-xl font-semibold bg-white">
+                        <option value="Cash">Cash</option>
+                        <option value="Zelle">Zelle</option>
+                        <option value="PS">PS</option>
+                        <option value="BS">BS</option>
+                        <option value="others">others</option>
+                    </select>
                 </div>
-                <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Foreman Name</label>
-                    <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl" placeholder="no name">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Total Amount</label>
-                    <input type="text" id="jobTotal" required class="w-full p-2.5 border rounded-xl" placeholder="$3,795">
-                </div>
-                <div class="flex justify-end space-x-2 pt-3">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Save Record</button>
-                </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-3">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Save Record</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <!-- External Script Files -->
     <script src="data.js"></script>
