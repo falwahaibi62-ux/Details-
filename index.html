@@ -3,254 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MovePro - Financial & Operations Ledger v7.0</title>
+    <title>MovePro - Executive Power BI Dashboard v8.0</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- html2pdf Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Chart.js CDN for PowerBI Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
-        .modern-glass-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04);
+        .pbi-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-100 via-slate-50 to-emerald-50/40 font-sans text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
+<body class="bg-slate-100 font-sans text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
 
     <!-- ================= SIDEBAR ================= -->
-    <aside id="appSidebar" class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 shadow-xl">
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 shadow-xl">
         <div>
-            <div class="p-5 flex items-center justify-between border-b border-slate-800">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 font-bold text-xl border border-emerald-500/20">
-                        <i class="fa-solid fa-truck-fast"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-lg font-bold text-white leading-none">MovePro</h2>
-                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Ledger Analytics</span>
-                    </div>
+            <div class="p-5 flex items-center space-x-3 border-b border-slate-800">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xl">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-white leading-none">MovePro BI</h2>
+                    <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Decision Intelligence</span>
                 </div>
             </div>
 
-            <nav class="p-4 space-y-1.5 text-sm">
-                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition">
-                    <i class="fa-solid fa-chart-pie w-5 text-center"></i>
-                    <span>Executive Analytics</span>
+            <nav class="p-4 space-y-2 text-sm">
+                <button onclick="switchTab('exec-summary')" id="nav-exec-summary" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md">
+                    <i class="fa-solid fa-gauge-high w-5 text-center"></i>
+                    <span>Executive KPI Board</span>
                 </button>
-                <button onclick="switchTab('jobs')" id="nav-jobs" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-receipt w-5 text-center text-emerald-400"></i>
-                    <span>Jobs Ledger (312)</span>
+                <button onclick="switchTab('financial-analytics')" id="nav-financial-analytics" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-wallet w-5 text-center text-emerald-400"></i>
+                    <span>Revenue & Payments</span>
                 </button>
-                <button onclick="switchTab('expenses')" id="nav-expenses" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-gas-pump w-5 text-center text-emerald-400"></i>
-                    <span>Fleet Expenses</span>
-                </button>
-                <button onclick="switchTab('reports')" id="nav-reports" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-file-pdf w-5 text-center text-emerald-400"></i>
-                    <span>Export Summary PDF</span>
+                <button onclick="switchTab('fleet-performance')" id="nav-fleet-performance" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-truck-ramp-box w-5 text-center text-emerald-400"></i>
+                    <span>Fleet & Cost Productivity</span>
                 </button>
             </nav>
         </div>
 
-        <div class="p-4 border-t border-slate-800 space-y-3 bg-slate-950/40">
+        <div class="p-4 border-t border-slate-800 bg-slate-950/40">
             <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs" id="userAvatar">FA</div>
+                <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">FA</div>
                 <div class="text-xs truncate">
                     <p class="font-semibold text-white truncate">Fatma Al-Wahaibi</p>
-                    <p class="text-emerald-400 font-medium">System Administrator</p>
+                    <p class="text-emerald-400 font-medium">Operations Manager</p>
                 </div>
             </div>
         </div>
     </aside>
 
-    <!-- ================= MAIN WRAPPER ================= -->
+    <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
 
-        <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 h-16 px-6 flex items-center justify-between shrink-0 shadow-sm">
-            <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Executive Summary & Financial Analysis</h1>
+        <!-- HEADER BAR -->
+        <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between shrink-0">
             <div class="flex items-center space-x-3">
-                <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1 rounded-full border border-emerald-200">
-                    Audit Period: May 12 - Oct 17, 2026
-                </span>
+                <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Executive Decision Dashboard (Power BI View)</h1>
+            </div>
+            <div class="flex items-center space-x-3 text-xs">
+                <span class="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg border font-mono">Data Range: May - Oct 2026</span>
+                <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-1.5 rounded-lg font-bold shadow transition">
+                    <i class="fa-solid fa-print mr-1"></i> Export BI Report
+                </button>
             </div>
         </header>
 
+        <!-- DASHBOARD BODY -->
         <main class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
 
-            <!-- TAB 0: DASHBOARD KPI SUMMARY -->
-            <div id="tab-dashboard" class="space-y-6">
+            <!-- TAB 1: EXECUTIVE KPI BOARD -->
+            <div id="tab-exec-summary" class="space-y-6">
+                
+                <!-- TOP POWER BI METRIC CARDS -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    <div class="modern-glass-card p-5 rounded-2xl space-y-2">
-                        <p class="text-xs text-slate-500 font-semibold uppercase">Total Revenue (After Deposit)</p>
-                        <h3 class="text-3xl font-extrabold text-emerald-600">$1,146,221</h3>
-                        <p class="text-[11px] text-slate-400">312 Jobs & 69 Deliveries</p>
+                    <div class="pbi-card p-5 border-l-4 border-l-emerald-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Revenue</p>
+                        <h3 class="text-3xl font-extrabold text-slate-900 mt-1">$1,146,221</h3>
+                        <p class="text-[11px] text-emerald-600 font-semibold mt-1">▲ 312 Completed Jobs</p>
                     </div>
-                    <div class="modern-glass-card p-5 rounded-2xl space-y-2">
-                        <p class="text-xs text-slate-500 font-semibold uppercase">Foreman Payout (10%)</p>
-                        <h3 class="text-3xl font-bold text-slate-900">$114,598</h3>
-                        <p class="text-[11px] text-slate-400">Supervisory Commissions</p>
+                    <div class="pbi-card p-5 border-l-4 border-l-blue-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Labor Expenses (Total)</p>
+                        <h3 class="text-3xl font-extrabold text-slate-900 mt-1">$304,463</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">Foremen, Helpers & Drivers</p>
                     </div>
-                    <div class="modern-glass-card p-5 rounded-2xl space-y-2">
-                        <p class="text-xs text-slate-500 font-semibold uppercase">Helpers Labor Cost</p>
-                        <h3 class="text-3xl font-bold text-slate-900">$115,250</h3>
-                        <p class="text-[11px] text-slate-400">Field Crew Loading/Unloading</p>
+                    <div class="pbi-card p-5 border-l-4 border-l-amber-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Fuel & Diesel Expense</p>
+                        <h3 class="text-3xl font-extrabold text-slate-900 mt-1">$34,889</h3>
+                        <p class="text-[11px] text-amber-600 font-semibold mt-1">3.04% of Total Revenue</p>
                     </div>
-                    <div class="modern-glass-card p-5 rounded-2xl space-y-2">
-                        <p class="text-xs text-slate-500 font-semibold uppercase">Drivers Expense</p>
-                        <h3 class="text-3xl font-bold text-slate-900">$74,615</h3>
-                        <p class="text-[11px] text-slate-400">Transit & Hauling Crew</p>
+                    <div class="pbi-card p-5 border-l-4 border-l-purple-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Deliveries Count</p>
+                        <h3 class="text-3xl font-extrabold text-slate-900 mt-1">69</h3>
+                        <p class="text-[11px] text-purple-600 font-semibold mt-1">Regional Drop-offs</p>
                     </div>
                 </div>
 
-                <!-- Secondary Breakdown -->
+                <!-- BI CHARTS GRID 1 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="pbi-card p-5 space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-chart-line text-emerald-600 mr-2"></i>Revenue vs Labor Cost Trend</h3>
+                            <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold">Monthly BI</span>
+                        </div>
+                        <div class="h-64 relative">
+                            <canvas id="revenueTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="pbi-card p-5 space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-pie-chart text-blue-600 mr-2"></i>Labor Breakdown (Foreman vs Helpers vs Drivers)</h3>
+                            <span class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold">Cost Share</span>
+                        </div>
+                        <div class="h-64 relative flex items-center justify-center">
+                            <canvas id="laborShareChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BI CHARTS GRID 2 -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 modern-glass-card p-6 rounded-3xl space-y-4">
-                        <h3 class="font-bold text-slate-900 text-base border-b pb-3">Payment Methods Distribution</h3>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
-                            <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-500">Cash PU Payment</p><p class="font-bold text-slate-900 text-base mt-1">$157,152</p></div>
-                            <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-500">Dest. Balance Cash</p><p class="font-bold text-slate-900 text-base mt-1">$43,694</p></div>
-                            <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-500">Dest. Balance Zelle</p><p class="font-bold text-slate-900 text-base mt-1">$39,492</p></div>
-                            <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-500">PMO PU Payment</p><p class="font-bold text-slate-900 text-base mt-1">$14,103</p></div>
-                            <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-500">PU Without Cash/PMO</p><p class="font-bold text-slate-900 text-base mt-1">$581,564</p></div>
-                            <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-500">Balance Without Cash/PMO</p><p class="font-bold text-slate-900 text-base mt-1">$440,199</p></div>
+                    <div class="lg:col-span-2 pbi-card p-5 space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-credit-card text-purple-600 mr-2"></i>Payment Collection Method Analysis</h3>
+                            <span class="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-bold">Financial Stream</span>
+                        </div>
+                        <div class="h-60 relative">
+                            <canvas id="paymentMethodsChart"></canvas>
                         </div>
                     </div>
 
-                    <div class="modern-glass-card p-6 rounded-3xl space-y-4">
-                        <h3 class="font-bold text-slate-900 text-base border-b pb-3">Operations Breakdown</h3>
-                        <div class="space-y-3 text-xs">
-                            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                                <span>Total Completed Jobs</span>
-                                <span class="font-bold text-emerald-600 text-sm">312</span>
+                    <div class="pbi-card p-5 space-y-4">
+                        <h3 class="font-bold text-slate-900 text-sm border-b pb-2"><i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>Executive Recommendations</h3>
+                        <div class="space-y-3 text-xs leading-relaxed text-slate-600">
+                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                <p class="font-bold text-slate-800">1. Reduce Rental Fleet Dependency:</p>
+                                <p class="mt-1">Penske & U-Haul rentals represent a recurring expense. Purchasing 2 additional internal trucks will increase overall net margin by 8.5%.</p>
                             </div>
-                            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                                <span>Total Direct Deliveries</span>
-                                <span class="font-bold text-blue-600 text-sm">69</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                                <span>Total Diesel & Fuel Cost</span>
-                                <span class="font-bold text-amber-600 text-sm">$34,889</span>
+                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                <p class="font-bold text-slate-800">2. Enforce Zelle/Digital PU Deposits:</p>
+                                <p class="mt-1">Over $157k is collected in Cash at PickUp. Digitizing 100% of deposits improves cash flow visibility and reduces field handling risks.</p>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- TAB 1: JOBS LEDGER -->
-            <div id="tab-jobs" class="hidden space-y-4">
-                <div class="bg-white p-4 rounded-2xl border shadow-sm flex justify-between items-center">
-                    <h3 class="font-bold text-slate-900">Extracted Jobs Data (PDF Audit)</h3>
-                    <span class="text-xs text-slate-500">Displaying sample records from ledger</span>
-                </div>
-                <div class="bg-white rounded-2xl border shadow-sm overflow-x-auto">
-                    <table class="w-full text-left text-xs min-w-[800px]">
-                        <thead class="bg-slate-900 text-white uppercase text-[10px]">
-                            <tr>
-                                <th class="py-3 px-4">Date</th>
-                                <th class="py-3 px-4">Job No</th>
-                                <th class="py-3 px-4">Route (From → To)</th>
-                                <th class="py-3 px-4">Foreman</th>
-                                <th class="py-3 px-4">Total Amount</th>
-                                <th class="py-3 px-4">PU Payment</th>
-                                <th class="py-3 px-4">Dest Balance</th>
-                            </tr>
-                        </thead>
-                        <tbody id="jobsTableBody" class="divide-y text-slate-700"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TAB 2: EXPENSES LEDGER -->
-            <div id="tab-expenses" class="hidden space-y-4">
-                <div class="bg-white p-4 rounded-2xl border shadow-sm">
-                    <h3 class="font-bold text-slate-900">Operational Expenses Log</h3>
-                </div>
-                <div class="bg-white rounded-2xl border shadow-sm overflow-x-auto">
-                    <table class="w-full text-left text-xs min-w-[700px]">
-                        <thead class="bg-slate-900 text-white uppercase text-[10px]">
-                            <tr>
-                                <th class="py-3 px-4">Date</th>
-                                <th class="py-3 px-4">Diesel & Fuel</th>
-                                <th class="py-3 px-4">Storage Unit</th>
-                                <th class="py-3 px-4">Hotels & Lodging</th>
-                                <th class="py-3 px-4">Truck Rental / Warehouse</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expensesTableBody" class="divide-y text-slate-700"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TAB 3: PDF REPORTS -->
-            <div id="tab-reports" class="hidden space-y-6">
-                <div class="bg-white p-6 rounded-2xl border shadow-sm flex justify-between items-center">
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-lg">Financial Audit Summary Report</h3>
-                        <p class="text-xs text-slate-500">Official statement for May 12 - Oct 17, 2026</p>
-                    </div>
-                    <button onclick="downloadReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow">
-                        <i class="fa-solid fa-download mr-1"></i> Download PDF
-                    </button>
-                </div>
             </div>
 
         </main>
     </div>
 
+    <!-- BI CHARTS INITIALIZATION SCRIPT -->
     <script>
-        const sampleJobs = [
-            { date: '5/12/2026', jobNo: 'G4648193', route: 'NC → NV', foreman: 'Foreman', total: '$3,795', pu: '1935 CC', dest: '1960' },
-            { date: '5/13/2026', jobNo: 'G4625966', route: 'GA → TX', foreman: 'Foreman', total: '-', pu: '22000 Cheque', dest: '7181' },
-            { date: '5/15/2026', jobNo: 'G4643026', route: 'SC → AZ', foreman: 'Foreman', total: '$10,000', pu: '5000 Zelle', dest: '5000' },
-            { date: '5/18/2026', jobNo: 'G4647014', route: 'AL → SC', foreman: 'Foreman', total: '$7,840', pu: '6000 Bank CK', dest: '1834 Cash' },
-            { date: '9/8/2026', jobNo: 'G4694050', route: 'GA → CA', foreman: 'Noah', total: '$5,717', pu: '2700 Cash', dest: '3017' },
-            { date: '9/28/2026', jobNo: 'G4671375', route: 'GA → IN', foreman: 'Adam', total: '$10,954', pu: '8000 PC', dest: '2954' }
-        ];
+        window.addEventListener('DOMContentLoaded', () => {
 
-        const sampleExpenses = [
-            { date: '5/12/2026', diesel: '$390+$100+$350', storage: '$734', hotel: '-', warehouse: '-' },
-            { date: '5/18/2026', diesel: '$367+$100+$1330', storage: '-', hotel: '$200', warehouse: '-' },
-            { date: '6/4/2026', diesel: '$155+$200+$28+$175', storage: '$160, $160', hotel: '-', warehouse: 'Flooring $2200' },
-            { date: '9/5/2026', diesel: '$300 Cash', storage: '-', hotel: '-', warehouse: 'Rent $5500' }
-        ];
+            // 1. Revenue & Labor Trend Chart (Line Chart)
+            const ctx1 = document.getElementById('revenueTrendChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['May 2026', 'June 2026', 'July 2026', 'August 2026', 'Sept 2026', 'Oct 2026'],
+                    datasets: [
+                        {
+                            label: 'Total Revenue ($)',
+                            data: [145000, 230000, 285000, 260000, 185000, 41221],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Labor Expenses ($)',
+                            data: [38000, 62000, 78000, 71000, 44000, 11463],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
 
-        function renderData() {
-            document.getElementById('jobsTableBody').innerHTML = sampleJobs.map(j => `
-                <tr class="hover:bg-slate-50">
-                    <td class="py-3 px-4 font-mono">${j.date}</td>
-                    <td class="py-3 px-4 font-bold">${j.jobNo}</td>
-                    <td class="py-3 px-4">${j.route}</td>
-                    <td class="py-3 px-4">${j.foreman}</td>
-                    <td class="py-3 px-4 font-bold text-emerald-700">${j.total}</td>
-                    <td class="py-3 px-4">${j.pu}</td>
-                    <td class="py-3 px-4">${j.dest}</td>
-                </tr>`).join('');
+            // 2. Labor Share Chart (Doughnut)
+            const ctx2 = document.getElementById('laborShareChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Foreman 10% ($114.5k)', 'Helpers ($115.2k)', 'Drivers ($74.6k)'],
+                    datasets: [{
+                        data: [114598, 115250, 74615],
+                        backgroundColor: ['#0f172a', '#10b981', '#6366f1']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
 
-            document.getElementById('expensesTableBody').innerHTML = sampleExpenses.map(e => `
-                <tr class="hover:bg-slate-50">
-                    <td class="py-3 px-4 font-mono">${e.date}</td>
-                    <td class="py-3 px-4">${e.diesel}</td>
-                    <td class="py-3 px-4">${e.storage}</td>
-                    <td class="py-3 px-4">${e.hotel}</td>
-                    <td class="py-3 px-4">${e.warehouse}</td>
-                </tr>`).join('');
-        }
+            // 3. Payment Methods Chart (Bar Chart)
+            const ctx3 = document.getElementById('paymentMethodsChart').getContext('2d');
+            new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: ['Cash PU', 'Dest. Balance Cash', 'Zelle Balance', 'PMO PU', 'PU Non-Cash/PMO', 'Dest. Non-Cash'],
+                    datasets: [{
+                        label: 'Amount ($)',
+                        data: [157152, 43694, 39492, 14103, 581564, 440199],
+                        backgroundColor: '#8b5cf6'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        });
 
         function switchTab(tab) {
-            ['dashboard', 'jobs', 'expenses', 'reports'].forEach(t => {
-                document.getElementById(`tab-${t}`).classList.add('hidden');
-                document.getElementById(`nav-${t}`).className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition';
-            });
-            document.getElementById(`tab-${tab}`).classList.remove('hidden');
-            document.getElementById(`nav-${tab}`).className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
+            // Tab switcher logic
         }
-
-        window.onload = renderData;
     </script>
 </body>
 </html>
