@@ -1,199 +1,41 @@
-<main class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
-
-            <!-- TAB 1: ADVANCED DASHBOARD & CHARTS -->
-            <div id="tab-dashboard" class="space-y-6">
-                <!-- Dynamic Executive KPI Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-600 bg-white shadow-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Lifetime Revenue</p>
-                                <h3 id="dashTotalRevenue" class="text-2xl font-black text-slate-900 mt-1">$0</h3>
-                            </div>
-                            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><i class="fa-solid fa-wallet text-base"></i></div>
-                        </div>
-                        <p id="dashCompletedJobsText" class="text-[11px] text-emerald-600 font-semibold mt-2"><i class="fa-solid fa-truck-check mr-1"></i>0 Active Dispatches</p>
-                    </div>
-
-                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-blue-600 bg-white shadow-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Avg. Job Value</p>
-                                <h3 id="dashAvgJobValue" class="text-2xl font-black text-blue-600 mt-1">$0</h3>
-                            </div>
-                            <div class="p-2 bg-blue-50 text-blue-600 rounded-xl"><i class="fa-solid fa-chart-line text-base"></i></div>
-                        </div>
-                        <p class="text-[11px] text-slate-500 mt-2">Optimal Freight Yield Ratio</p>
-                    </div>
-
-                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-purple-600 bg-white shadow-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">P.U Collection Rate</p>
-                                <h3 id="dashPuRate" class="text-2xl font-black text-purple-600 mt-1">100%</h3>
-                            </div>
-                            <div class="p-2 bg-purple-50 text-purple-600 rounded-xl"><i class="fa-solid fa-hand-holding-dollar text-base"></i></div>
-                        </div>
-                        <p class="text-[11px] text-slate-500 mt-2">Upfront Liquidity Performance</p>
-                    </div>
-
-                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-amber-500 bg-white shadow-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Destination Receivables</p>
-                                <h3 id="dashDestReceivables" class="text-2xl font-black text-amber-600 mt-1">Active</h3>
-                            </div>
-                            <div class="p-2 bg-amber-50 text-amber-600 rounded-xl"><i class="fa-solid fa-clock-rotate-left text-base"></i></div>
-                        </div>
-                        <p class="text-[11px] text-amber-700 font-semibold mt-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Settlement Tracking</p>
-                    </div>
-                </div>
-
-                <!-- Charts & Advanced Telemetry -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm lg:col-span-2 space-y-4">
-                        <div class="flex justify-between items-center border-b pb-3">
-                            <div>
-                                <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-chart-column text-emerald-600 mr-2"></i>Monthly Revenue & Volume Trend</h3>
-                                <p class="text-[11px] text-slate-400">Real-time performance distribution derived from active ledger</p>
-                            </div>
-                            <span class="text-[11px] bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg">Real-Time Data</span>
-                        </div>
-                        <div class="h-64 relative">
-                            <canvas id="revenueChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm space-y-4">
-                        <div class="border-b pb-3">
-                            <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-pie-chart text-emerald-600 mr-2"></i>Payment Channels Mix</h3>
-                            <p class="text-[11px] text-slate-400">Distribution of Cash, Zelle, PS, BS</p>
-                        </div>
-                        <div class="h-64 relative flex items-center justify-center">
-                            <canvas id="paymentMixChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Business Intelligence & Decision Recommendations -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm space-y-4">
-                        <h3 class="font-bold text-slate-900 text-sm border-b pb-3"><i class="fa-solid fa-route text-emerald-600 mr-2"></i>Top Revenue Corridors</h3>
-                        <div id="topCorridorsContainer" class="space-y-3 text-xs"></div>
-                    </div>
-
-                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm lg:col-span-2 space-y-4">
-                        <h3 class="font-bold text-slate-900 text-sm border-b pb-3"><i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>Strategic Business Recommendations & Optimizations</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                            <div class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl space-y-1.5">
-                                <div class="flex items-center gap-2 font-bold text-emerald-800"><i class="fa-solid fa-circle-arrow-up"></i> High Yield Lane Focus</div>
-                                <p class="text-slate-600 leading-relaxed">Prioritize dispatch allocations on top-performing corridors to maximize revenue yield and minimize deadhead miles.</p>
-                            </div>
-                            <div class="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-1.5">
-                                <div class="flex items-center gap-2 font-bold text-blue-800"><i class="fa-solid fa-shield-halved"></i> Liquidity Optimization</div>
-                                <p class="text-slate-600 leading-relaxed">Monitor operational cash flows closely and balance upfront pick-up collections to maintain robust financial stability.</p>
-                            </div>
-                            <div class="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl space-y-1.5">
-                                <div class="flex items-center gap-2 font-bold text-purple-800"><i class="fa-solid fa-chart-line"></i> Payment Method Balancing</div>
-                                <p class="text-slate-600 leading-relaxed">Track digital payment channels (Zelle & PS) alongside cash transactions to accelerate bank reconciliations and auditing.</p>
-                            </div>
-                            <div class="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl space-y-1.5">
-                                <div class="flex items-center gap-2 font-bold text-amber-800"><i class="fa-solid fa-user-gear"></i> Dispatch Allocation</div>
-                                <p class="text-slate-600 leading-relaxed">Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence and mitigate risks.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<!-- Actionable Decision Insights Panel -->
+<div class="glass-panel p-6 rounded-2xl bg-white shadow-sm lg:col-span-2 space-y-4">
+    <h3 class="font-bold text-slate-900 text-sm border-b pb-3"><i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>Strategic Business Recommendations & Optimizations</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl space-y-1.5">
+            <div class="flex items-center gap-2 font-bold text-emerald-800">
+                <i class="fa-solid fa-circle-arrow-up"></i> High Yield Lane Focus
             </div>
+            <p class="text-slate-600 leading-relaxed">
+                Prioritize dispatch allocations on top-performing corridors to maximize revenue yield and minimize deadhead miles.
+            </p>
+        </div>
 
-            <!-- TAB 2: JOBS CRUD & FILTER -->
-            <div id="tab-jobs" class="hidden space-y-6">
-                <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
-                        <p class="text-xs text-slate-500">Filter records by Month and Year</p>
-                    </div>
-                    <button onclick="openAddModal()" id="addJobBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Add New Job</span>
-                    </button>
-                </div>
-
-                <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4">
-                    <div class="flex items-center space-x-2">
-                        <label class="text-xs font-bold text-slate-600">Filter Month:</label>
-                        <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
-                            <option value="ALL">All Months</option>
-                            <option value="1">January</option>
-                            <option value="2">February</option>
-                            <option value="3">March</option>
-                            <option value="4">April</option>
-                            <option value="5">May</option>
-                            <option value="6">June</option>
-                            <option value="7">July</option>
-                            <option value="8">August</option>
-                            <option value="9">September</option>
-                            <option value="10">October</option>
-                            <option value="11">November</option>
-                            <option value="12">December</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <label class="text-xs font-bold text-slate-600">Filter Year:</label>
-                        <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white"></select>
-                    </div>
-                    <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
-                </div>
-
-                <div class="glass-panel rounded-2xl overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs min-w-[1000px]">
-                            <thead class="bg-slate-900 text-white uppercase text-[10px]">
-                                <tr>
-                                    <th class="py-3 px-4">Date</th>
-                                    <th class="py-3 px-4">Job No</th>
-                                    <th class="py-3 px-4">From → To</th>
-                                    <th class="py-3 px-4">Foreman Name</th>
-                                    <th class="py-3 px-4">Total Amount</th>
-                                    <th class="py-3 px-4">P.U Payment</th>
-                                    <th class="py-3 px-4">Dest Balance</th>
-                                    <th class="py-3 px-4 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="crudTableBody" class="divide-y text-slate-700 bg-white"></tbody>
-                        </table>
-                    </div>
-                </div>
+        <div class="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-1.5">
+            <div class="flex items-center gap-2 font-bold text-blue-800">
+                <i class="fa-solid fa-shield-halved"></i> Liquidity Optimization
             </div>
+            <p class="text-slate-600 leading-relaxed">
+                Monitor operational cash flows closely and balance upfront pick-up collections to maintain robust financial stability.
+            </p>
+        </div>
 
-            <!-- TAB 3: USERS -->
-            <div id="tab-users" class="hidden space-y-6">
-                <div class="glass-panel p-5 rounded-2xl flex justify-between items-center">
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-base">Users & Roles Control Panel</h3>
-                        <p class="text-xs text-slate-500">Manage access privileges</p>
-                    </div>
-                </div>
-                <div class="glass-panel rounded-2xl overflow-hidden p-6 space-y-4">
-                    <div class="space-y-3" id="usersListContainer"></div>
-                </div>
+        <div class="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl space-y-1.5">
+            <div class="flex items-center gap-2 font-bold text-purple-800">
+                <i class="fa-solid fa-chart-line"></i> Payment Method Balancing
             </div>
+            <p class="text-slate-600 leading-relaxed">
+                Track digital payment channels (Zelle & PS) alongside cash transactions to accelerate bank reconciliations and auditing.
+            </p>
+        </div>
 
-            <!-- TAB 4: REPORTS -->
-            <div id="tab-reports" class="hidden space-y-6">
-                <div class="glass-panel p-6 rounded-2xl flex justify-between items-center">
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-lg">Official Financial & Audit Report (PDF)</h3>
-                    </div>
-                    <button onclick="downloadOfficialPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center space-x-2">
-                        <i class="fa-solid fa-download"></i>
-                        <span>Download PDF Report</span>
-                    </button>
-                </div>
-                <div id="pdfContentArea" class="bg-white p-8 rounded-2xl border shadow-sm space-y-6">
-                    <h2 class="text-xl font-black text-slate-900">MovePro Logistics & Financial Ledger</h2>
-                    <p class="text-xs text-slate-500">Enterprise Audit Report & Telemetry Data</p>
-                </div>
+        <div class="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl space-y-1.5">
+            <div class="flex items-center gap-2 font-bold text-amber-800">
+                <i class="fa-solid fa-user-gear"></i> Dispatch Allocation
             </div>
-
-        </main>
+            <p class="text-slate-600 leading-relaxed">
+                Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence and mitigate risks.
+            </p>
+        </div>
+    </div>
+</div>
