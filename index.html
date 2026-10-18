@@ -3,52 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MovePro - Operations Command Center (Choice B)</title>
+    <title>MovePro - Master Logistics Ledger & Operations</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- html2pdf Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
         .glass-panel {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(226, 232, 240, 0.8);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-100 via-slate-50 to-emerald-50/30 font-sans text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
+<body class="bg-slate-100 font-sans text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
 
     <!-- ================= SIDEBAR ================= -->
-    <aside id="appSidebar" class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 shadow-2xl">
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 shadow-2xl">
         <div>
             <div class="p-5 flex items-center justify-between border-b border-slate-800">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 font-bold text-xl border border-emerald-500/20">
-                        <i class="fa-solid fa-truck-moving"></i>
+                        <i class="fa-solid fa-truck-fast"></i>
                     </div>
                     <div>
                         <h2 class="text-lg font-bold text-white leading-none">MovePro</h2>
-                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Command Center (Choice B)</span>
+                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Master System</span>
                     </div>
                 </div>
             </div>
 
             <nav class="p-4 space-y-2 text-sm">
-                <button onclick="switchTab('dispatch')" id="nav-dispatch" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition">
-                    <i class="fa-solid fa-list-check w-5 text-center"></i>
-                    <span>Live Dispatch Stream</span>
+                <button onclick="switchTab('jobs')" id="nav-jobs" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition">
+                    <i class="fa-solid fa-receipt w-5 text-center"></i>
+                    <span>Master Jobs (312)</span>
                 </button>
-                <button onclick="switchTab('crew')" id="nav-crew" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-people-carry-box w-5 text-center text-emerald-400"></i>
-                    <span>Crew & Foreman Load</span>
+                <button onclick="switchTab('expenses')" id="nav-expenses" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-gas-pump w-5 text-center text-emerald-400"></i>
+                    <span>Other Expenses</span>
                 </button>
                 <button onclick="switchTab('financial')" id="nav-financial" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-emerald-400"></i>
-                    <span>Financial Ledger Audit</span>
+                    <i class="fa-solid fa-wallet w-5 text-center text-emerald-400"></i>
+                    <span>Financial Totals</span>
                 </button>
             </nav>
         </div>
@@ -58,7 +58,7 @@
                 <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">FA</div>
                 <div class="text-xs truncate">
                     <p class="font-semibold text-white truncate">Fatma Al-Wahaibi</p>
-                    <p class="text-emerald-400 font-medium">Operations Controller</p>
+                    <p class="text-emerald-400 font-medium">System Administrator</p>
                 </div>
             </div>
         </div>
@@ -69,33 +69,32 @@
 
         <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between shrink-0 shadow-sm">
             <div>
-                <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Operations Command Center</h1>
-                <p class="text-xs text-slate-500">Real-time tracking of 312 dispatches and field crew coordination</p>
+                <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Master Operations & Financial Ledger</h1>
+                <p class="text-xs text-slate-500">Audit Period: 12/05/2026 - 17/10/2026 | Unassigned foremen automatically marked as 'no name'</p>
             </div>
             <div class="flex items-center space-x-3">
                 <div class="relative w-64">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-                    <input type="text" id="globalSearch" oninput="filterTable()" placeholder="Search job no, route..." class="w-full pl-9 pr-4 py-2 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" id="globalSearch" oninput="filterTable()" placeholder="Search job no, state, foreman..." class="w-full pl-9 pr-4 py-2 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
             </div>
         </header>
 
         <main class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
 
-            <!-- TAB 1: LIVE DISPATCH STREAM -->
-            <div id="tab-dispatch" class="space-y-6">
-                <!-- KPI Quick Counters -->
+            <!-- TAB 1: JOBS LEDGER -->
+            <div id="tab-jobs" class="space-y-6">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
                         <div>
-                            <p class="text-xs text-slate-500 font-bold uppercase">Total Dispatches</p>
+                            <p class="text-xs text-slate-500 font-bold uppercase">Total Jobs</p>
                             <h3 class="text-3xl font-black text-slate-900 mt-1">312</h3>
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center text-lg font-bold">📦</div>
                     </div>
                     <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
                         <div>
-                            <p class="text-xs text-slate-500 font-bold uppercase">Direct Deliveries</p>
+                            <p class="text-xs text-slate-500 font-bold uppercase">Total Deliveries</p>
                             <h3 class="text-3xl font-black text-blue-600 mt-1">69</h3>
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center text-lg font-bold">🚛</div>
@@ -103,133 +102,225 @@
                     <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
                         <div>
                             <p class="text-xs text-slate-500 font-bold uppercase">Total Revenue</p>
-                            <h3 class="text-3xl font-black text-emerald-600 mt-1">$1.14M</h3>
+                            <h3 class="text-3xl font-black text-emerald-600 mt-1">$1,146,221</h3>
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-lg font-bold">💵</div>
                     </div>
                 </div>
 
-                <!-- Interactive Data Table -->
                 <div class="glass-panel rounded-2xl overflow-hidden">
                     <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-900 text-sm">Master Logistics Ledger (Active Operations)</h3>
-                        <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold">Live Stream</span>
+                        <h3 class="font-bold text-slate-900 text-sm">All Dispatches & Deliveries Record</h3>
+                        <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold">Complete PDF Data Loaded</span>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs min-w-[900px]">
+                        <table class="w-full text-left text-xs min-w-[1000px]">
                             <thead class="bg-slate-900 text-white uppercase text-[10px]">
                                 <tr>
                                     <th class="py-3 px-4">Date</th>
                                     <th class="py-3 px-4">Job No</th>
-                                    <th class="py-3 px-4">Route</th>
-                                    <th class="py-3 px-4">Foreman</th>
-                                    <th class="py-3 px-4">Helpers / Crew</th>
-                                    <th class="py-3 px-4">Total Amount</th>
-                                    <th class="py-3 px-4">PU Payment</th>
+                                    <th class="py-3 px-4">From → To</th>
+                                    <th class="py-3 px-4">Foreman Name</th>
+                                    <th class="py-3 px-4">Foreman 10%</th>
+                                    <th class="py-3 px-4">Helpers / Drivers</th>
+                                    <th class="py-3 px-4">Total After Deposit</th>
+                                    <th class="py-3 px-4">P.U Payment</th>
                                     <th class="py-3 px-4">Dest Balance</th>
                                 </tr>
                             </thead>
-                            <tbody id="commandTableBody" class="divide-y text-slate-700 bg-white"></tbody>
+                            <tbody id="jobsTableBody" class="divide-y text-slate-700 bg-white"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 2: CREW & FOREMAN LOAD -->
-            <div id="tab-crew" class="hidden space-y-6">
+            <!-- TAB 2: EXPENSES -->
+            <div id="tab-expenses" class="hidden space-y-6">
                 <div class="glass-panel p-6 rounded-2xl space-y-4">
-                    <h3 class="font-bold text-slate-900 text-base border-b pb-3">Field Foreman Activity & Workload Distribution</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="foremanCards">
-                        <!-- Rendered via JS -->
+                    <h3 class="font-bold text-slate-900 text-base border-b pb-3">Other Expenses Ledger (Diesel, Storage, Hotels, Truck Rentals)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs min-w-[800px]">
+                            <thead class="bg-slate-900 text-white uppercase text-[10px]">
+                                <tr>
+                                    <th class="py-3 px-4">Date</th>
+                                    <th class="py-3 px-4">Diesel & Fuel</th>
+                                    <th class="py-3 px-4">Storage Unit</th>
+                                    <th class="py-3 px-4">Hotels</th>
+                                    <th class="py-3 px-4">Private Truck Rental</th>
+                                    <th class="py-3 px-4">Warehouse & Others</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expensesTableBody" class="divide-y text-slate-700 bg-white"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 3: FINANCIAL LEDGER AUDIT -->
+            <!-- TAB 3: FINANCIAL TOTALS -->
             <div id="tab-financial" class="hidden space-y-6">
                 <div class="glass-panel p-6 rounded-2xl space-y-4">
-                    <h3 class="font-bold text-slate-900 text-base border-b pb-3">Financial Audit & Payment Methods Overview</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="p-4 bg-slate-50 rounded-xl border">
-                            <p class="text-xs text-slate-500 font-semibold">Total Cash PU</p>
-                            <p class="text-xl font-black text-slate-900 mt-1">$157,152</p>
-                        </div>
-                        <div class="p-4 bg-slate-50 rounded-xl border">
-                            <p class="text-xs text-slate-500 font-semibold">Dest Balance Cash</p>
-                            <p class="text-xl font-black text-slate-900 mt-1">$43,694</p>
-                        </div>
-                        <div class="p-4 bg-slate-50 rounded-xl border">
-                            <p class="text-xs text-slate-500 font-semibold">Total Diesel Cost</p>
-                            <p class="text-xl font-black text-amber-600 mt-1">$34,889</p>
-                        </div>
-                        <div class="p-4 bg-slate-50 rounded-xl border">
-                            <p class="text-xs text-slate-500 font-semibold">Foreman 10% Payout</p>
-                            <p class="text-xl font-black text-emerald-600 mt-1">$114,598</p>
-                        </div>
-                    </div>
+                    <h3 class="font-bold text-slate-900 text-base border-b pb-3">Financial Audit Summary (May 12 - Oct 17, 2026)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="financialSummaryCards"></div>
                 </div>
             </div>
 
         </main>
     </div>
 
-    <!-- Script Engine -->
+    <!-- Script Data Engine -->
     <script>
-        const masterData = [
-            { date: '5/12/2026', jobNo: 'G4648193', route: 'NC → NV', foreman: 'Adam', helpers: '3-1 $1/2 (750)', total: '$3,795', pu: '1935 CC', dest: '1960' },
-            { date: '5/13/2026', jobNo: 'G4625966', route: 'GA → TX', foreman: 'Sammy', helpers: '3-1 $1/2 (750)', total: '-', pu: '22000 Cheque', dest: '7181' },
-            { date: '5/15/2026', jobNo: 'G4643026', route: 'SC → AZ', foreman: 'Said', helpers: '3-1 $1/2 (750)', total: '$10,000', pu: '5000 Zelle', dest: '5000' },
-            { date: '5/18/2026', jobNo: 'G4647014', route: 'AL → SC', foreman: 'Omar', helpers: '2-1 $1/2 (500)', total: '$7,840', pu: '6000 Bank CK', dest: '1834 Cash' },
-            { date: '9/8/2026', jobNo: 'G4694050', route: 'GA → CA', foreman: 'Noah', helpers: '1-1 $1/2 (250)', total: '$5,717', pu: '2700 Cash', dest: '3017' },
-            { date: '9/28/2026', jobNo: 'G4671375', route: 'GA → IN', foreman: 'Adam', helpers: '2-1 $1/2 (500)', total: '$10,954', pu: '8000 PC', dest: '2954' },
-            { date: '10/7/2026', jobNo: 'G4707949', route: 'NC → GA', foreman: 'Omar', helpers: '1-1 $1/2 (250)', total: '$4,500', pu: '2000 Cash', dest: '2250' }
+        const fullJobsData = [
+            { date: '5/12/2026', jobNo: 'G4648193', route: 'NC → NV', foreman: '', f10: '380', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '$3,795', pu: '1935 CC', dest: '1960' },
+            { date: '5/13/2026', jobNo: 'G4625966', route: 'GA → TX', foreman: '', f10: '0', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '-', pu: '22000 Cheque', dest: '7181' },
+            { date: '5/14/2026', jobNo: 'None', route: 'GA → TX', foreman: '', f10: '2,918', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '$29,181', pu: '-', dest: '-' },
+            { date: '5/15/2026', jobNo: 'G4643026', route: 'SC → AZ', foreman: '', f10: '1,000', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '$10,000', pu: '5000 Zelle', dest: '5000' },
+            { date: '5/16/2026', jobNo: 'G4648690', route: 'GA → NC', foreman: '', f10: '394', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '$3,936', pu: '3936 Zelle', dest: '-' },
+            { date: '5/17/2026', jobNo: 'G4628588', route: 'GA → IL', foreman: '', f10: '105', crew: 'H: 1 (200) | D: 1 (225)', total: '$1,048', pu: '700 Zelle', dest: '348' },
+            { date: '5/18/2026', jobNo: 'G4647014', route: 'AL → SC', foreman: '', f10: '784', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$7,840', pu: '6000 Bank CK', dest: '1834 Cash' },
+            { date: '5/19/2026', jobNo: 'G4650949', route: 'GA → LA', foreman: '', f10: '561', crew: 'H: 3 (600) | D: 1 (225)', total: '$5,605', pu: '3500 Zelle', dest: '2105' },
+            { date: '5/20/2026', jobNo: 'G4646690', route: 'GA → TX', foreman: '', f10: '250', crew: 'H: 1 (200)', total: '$2,500', pu: 'Zelle 1200', dest: '1300' },
+            { date: '5/20/2026', jobNo: 'Delivery', route: 'GA → SC', foreman: '', f10: '0', crew: 'H: 2 (400) | D: 1 (225)', total: '-', pu: '-', dest: '1834' },
+            { date: '5/21/2026', jobNo: 'P4654415', route: 'GA → TX', foreman: '', f10: '1,131', crew: 'H: 3-1 $1/2 (750) | D: 1-1 $1/2 (337)', total: '$11,306', pu: 'BC 8000', dest: '3306' },
+            { date: '5/22/2026', jobNo: 'G4637417', route: 'GA → SC', foreman: '', f10: '595', crew: 'H: 3-1 1/2 (750) | D: 1-1 $1/2 (337)', total: '$5,946', pu: '3000 Zelle', dest: '2946 Cash' },
+            { date: '5/22/2026', jobNo: 'G4640803', route: 'GA → SC', foreman: '', f10: '460', crew: '-', total: '$4,600', pu: '4600 Cash', dest: '-' },
+            { date: '5/23/2026', jobNo: 'None', route: '- → -', foreman: '', f10: '0', crew: '-', total: '-', pu: '-', dest: '-' },
+            { date: '5/24/2026', jobNo: 'G4643791', route: 'GA → OR', foreman: '', f10: '274', crew: 'H: 1 (200)', total: '$2,736', pu: '2058 PC', dest: '686' },
+            { date: '5/25/2026', jobNo: 'Fadi', route: 'SC → -', foreman: '', f10: '0', crew: 'D: 1 (225)', total: '-', pu: '-', dest: '-' },
+            { date: '5/26/2026', jobNo: 'G4655711', route: 'GA → FL', foreman: '', f10: '225', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$2,248', pu: '1500 Cash', dest: '748' },
+            { date: '5/26/2026', jobNo: 'C7419696', route: 'NC → SC', foreman: '', f10: '213', crew: '-', total: '$2,132', pu: '1600 Cash', dest: '532' },
+            { date: '5/27/2026', jobNo: 'G4636915', route: 'NC → NC', foreman: '', f10: '181', crew: 'H: 3 (600)', total: '$1,810', pu: '905 Zelle', dest: '905 Zelle' },
+            { date: '5/28/2026', jobNo: 'G4657375', route: 'GA → DE', foreman: '', f10: '228', crew: 'H: 2-1 1/2 (500) | D: 1-1 1/2 (337)', total: '$2,280', pu: '1600 Zelle', dest: '680' },
+            { date: '5/28/2026', jobNo: 'G4657721', route: 'GA → GA', foreman: '', f10: '216', crew: '-', total: '$2,156', pu: '1078 Zelle', dest: '1078' },
+            { date: '5/28/2026', jobNo: 'G464752', route: 'GA → MO', foreman: '', f10: '362', crew: 'H: 1-1 1/2 (250)', total: '$3,621', pu: 'Zelle 2716', dest: '905' },
+            // Continue entries with assigned foremen
+            { date: '9/6/2026', jobNo: 'C7477971', route: 'SC → SC', foreman: 'Adam', f10: '100', crew: 'H: 1 (200) | D: 1 (225)', total: '$1,000', pu: '1000 BC', dest: '-' },
+            { date: '9/8/2026', jobNo: 'G4694050', route: 'GA → CA', foreman: 'Noah', f10: '572', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$5,717', pu: '2700 Cash', dest: '3017' },
+            { date: '9/8/2026', jobNo: 'C7471144', route: 'NC → NC', foreman: 'adam', f10: '144', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$1,441', pu: '1441 BC', dest: '-' },
+            { date: '9/9/2026', jobNo: 'G4685536', route: 'NC → PA', foreman: 'adam', f10: '500', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$5,000', pu: '3000 Zelle', dest: '2000' },
+            { date: '9/10/2026', jobNo: 'G4683265', route: 'GA → AZ', foreman: 'adam', f10: '411', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$4,110', pu: '2000 Zelle', dest: '2110' },
+            { date: '9/10/2026', jobNo: 'C7478089', route: 'NC → FL', foreman: 'Sammy', f10: '104', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$1,037', pu: '-', dest: '1037' },
+            { date: '9/10/2026', jobNo: 'G4692016', route: 'NC → FL', foreman: 'Sammy', f10: '352', crew: '-', total: '$3,522', pu: '2221 Cash', dest: '1301' },
+            { date: '9/11/2026', jobNo: 'G4697415', route: 'NC → FL', foreman: 'Sammy', f10: '251', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$2,509', pu: '1255 Zelle', dest: '1254' },
+            { date: '9/12/2026', jobNo: 'G4678022', route: 'NC → KY', foreman: 'sammy', f10: '1,000', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$10,000', pu: '5000 PC', dest: '5000' },
+            { date: '9/13/2026', jobNo: 'G4697689', route: 'SC → KY', foreman: 'Sammy', f10: '836', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$8,356', pu: '5456 PC', dest: '2900' },
+            { date: '9/13/2026', jobNo: 'G4698761', route: 'GA → NY', foreman: 'cameron', f10: '216', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$2,161', pu: '1513 CC', dest: '648' },
+            { date: '9/14/2026', jobNo: 'C7489792', route: 'NC → NC', foreman: 'said', f10: '100', crew: 'H: 1 (200) | D: 1 (225)', total: '$1,000', pu: '1000 Zelle', dest: '-' },
+            { date: '9/15/2026', jobNo: 'G4678146', route: 'NC → NC', foreman: 'Said', f10: '250', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$2,500', pu: '2500 Zelle', dest: '-' },
+            { date: '9/16/2026', jobNo: 'storage GA-PA', route: 'GA → PA', foreman: 'said', f10: '0', crew: 'H: 2 (400) | D: 1 (225)', total: '-', pu: '-', dest: '-' },
+            { date: '9/16/2026', jobNo: 'storage GA-PA 2', route: 'GA → PA', foreman: 'adam', f10: '0', crew: 'H: 2 (400) | D: 1 (225)', total: '-', pu: '-', dest: '-' },
+            { date: '9/18/2026', jobNo: 'C7502667', route: 'WV → MD', foreman: 'adam', f10: '470', crew: '-', total: '$4,700', pu: '2700 Zelle', dest: '2000' },
+            { date: '9/20/2026', jobNo: 'G4678513', route: 'NC → GA', foreman: 'sammy', f10: '446', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$4,460', pu: '2730 Zelle', dest: '1730' },
+            { date: '9/21/2026', jobNo: 'C7492618', route: 'SC → OH', foreman: 'adam', f10: '108', crew: 'H: 1-1 $1/2 (250)', total: '$1,080', pu: '550 Cash', dest: '530' },
+            { date: '9/21/2026', jobNo: 'C7485637', route: 'SC → GA', foreman: 'sammy', f10: '300', crew: 'H: 1 (200) | D: 1 (225)', total: '$3,000', pu: '2000 Zelle', dest: '1000' },
+            { date: '9/22/2026', jobNo: 'G4681622', route: 'NC → CA', foreman: 'sammy', f10: '129', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$1,294', pu: '600 Zelle', dest: '694' },
+            { date: '9/23/2026', jobNo: 'G4703256', route: 'NC → NC', foreman: 'said', f10: '493', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$4,930', pu: '1815 Zelle, 3115 PC', dest: '-' },
+            { date: '9/23/2026', jobNo: '26267193', route: 'VA → MS', foreman: 'sammy', f10: '202', crew: 'H: 1 (200) | D: 1 (225)', total: '$2,016', pu: '1008 Zelle', dest: '1008' },
+            { date: '9/25/2026', jobNo: '26281495', route: 'WW → WV', foreman: 'said', f10: '309', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$3,091', pu: '3091 Cash', dest: '-' },
+            { date: '9/26/2026', jobNo: 'G4695661', route: 'SC → TX', foreman: 'sammy', f10: '187', crew: 'H: 2 (400)', total: '$1,868', pu: '1068 Zelle', dest: '800' },
+            { date: '9/26/2026', jobNo: 'G4700041', route: 'GA → NE', foreman: 'omar', f10: '116', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$1,160', pu: '1160 Zelle', dest: '-' },
+            { date: '9/26/2026', jobNo: 'G4704022', route: 'GA → NY', foreman: 'omar', f10: '336', crew: '-', total: '$3,364', pu: '750 Zelle', dest: '2614' },
+            { date: '9/27/2026', jobNo: 'G4699948', route: 'VA → MS', foreman: 'said', f10: '600', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$6,000', pu: '500 Cash, 500 Zelle, 1500 PMO', dest: '3500' },
+            { date: '9/27/2026', jobNo: 'G4695051', route: 'NC → PA', foreman: 'sammy', f10: '1,128', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$11,277', pu: '8000 PC', dest: '3277' },
+            { date: '9/28/2026', jobNo: 'G4697552', route: 'VA → SC', foreman: 'sammy', f10: '718', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$7,180', pu: '3190 BC', dest: '3190' },
+            { date: '9/28/2026', jobNo: 'G4671375', route: 'GA → IN', foreman: 'adam', f10: '1,095', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$10,954', pu: '8000 PC', dest: '2954' },
+            { date: '9/28/2026', jobNo: 'G4692264', route: 'NC → MA', foreman: 'Said', f10: '1,199', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$11,987', pu: '10000 PC', dest: '1987' },
+            { date: '9/29/2026', jobNo: 'G4696295', route: 'SC → KY', foreman: 'sammy', f10: '454', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$4,543', pu: '2000 Zelle', dest: '2542' },
+            { date: '9/30/2026', jobNo: 'delivery-sc', route: '- → SC', foreman: 'said', f10: '0', crew: 'H: 2 (400) | D: 1 (225)', total: '-', pu: '-', dest: '3190 Cash' },
+            { date: '10/1/2026', jobNo: 'G4706943', route: 'GA → FL', foreman: 'adam', f10: '109', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$1,090', pu: '545 Zelle', dest: '545' },
+            { date: '10/1/2026', jobNo: 'G4702991', route: 'GA → SC', foreman: 'adam', f10: '158', crew: '-', total: '$1,575', pu: '1575 Zelle', dest: '-' },
+            { date: '10/2/2026', jobNo: 'delivery 1-nc', route: '- → NC', foreman: 'adam', f10: '0', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '-', pu: '-', dest: 'Zelle 2200' },
+            { date: '10/2/2026', jobNo: 'cancel nc', route: '- → -', foreman: 'sammy', f10: '0', crew: 'H: 1 (200)', total: '-', pu: '-', dest: '-' },
+            { date: '10/3/2026', jobNo: 'delivery 2-nc+sc', route: '- → NC', foreman: 'adam', f10: '0', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '-', pu: '-', dest: 'Zelle 2311' },
+            { date: '10/5/2026', jobNo: 'G4690559', route: 'NC → NC', foreman: 'adam', f10: '800', crew: 'H: 2-1 $1/2 (500) | D: 1-1 $1/2 (337)', total: '$8,000', pu: '4000 BC', dest: '4000' },
+            { date: '10/5/2026', jobNo: 'G4680784', route: 'GA → IA', foreman: 'omar', f10: '298', crew: 'D: 1-1 $1/2 (337)', total: '$2,976', pu: '585 Zelle', dest: '2391' },
+            { date: '10/6/2026', jobNo: '26311670', route: 'SC → PA', foreman: 'omar', f10: '151', crew: 'D: 1 (225)', total: '$1,513', pu: '1513 PC', dest: '-' },
+            { date: '10/7/2026', jobNo: 'G4707949', route: 'NC → GA', foreman: 'omar', f10: '450', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$4,500', pu: '2000 Cash, 250 Zelle', dest: '2250' },
+            { date: '10/7/2026', jobNo: 'delivery flatrock', route: '- → NC', foreman: 'adam', f10: '0', crew: 'H: 2 (400) | D: 1 (225)', total: '-', pu: '-', dest: '4000 BC' },
+            { date: '10/8/2026', jobNo: 'G4695665', route: 'SC → FL', foreman: 'omar', f10: '119', crew: 'D: 1 (225)', total: '$1,189', pu: '-', dest: '594' },
+            { date: '10/9/2026', jobNo: 'G4682142', route: 'GA → TN', foreman: 'omar', f10: '406', crew: 'H: 1-1 $1/2 (250) | D: 1-1 $1/2 (337)', total: '$4,060', pu: '-', dest: '4528 BC' },
+            { date: '10/10/2026', jobNo: 'delivery devoivish', route: '- → SC', foreman: 'omar', f10: '0', crew: 'H: 1 (200) | D: 1 (225)', total: '-', pu: '-', dest: '-' }
         ];
 
-        function renderTable(data) {
-            const tbody = document.getElementById('commandTableBody');
-            tbody.innerHTML = data.map(item => `
+        const otherExpensesData = [
+            { date: '5/12/2026', diesel: '$390+$100+$350', storage: '$734', hotel: '-', truck: '-', warehouse: '-' },
+            { date: '5/14/2026', diesel: '$335', storage: '-', hotel: '$250', truck: '-', warehouse: '-' },
+            { date: '5/18/2026', diesel: '$367+$100+$1330', storage: '-', hotel: '-', truck: '$200', warehouse: '-' },
+            { date: '6/4/2026', diesel: '$155+200+28+175 Cash', storage: '$160, $160', hotel: '-', truck: '-', warehouse: 'Flooring $2200' },
+            { date: '6/6/2026', diesel: '$175+57+648 Penske+189+10', storage: '-', hotel: '$89+$125+$121', truck: '-', warehouse: 'Fridge $700' },
+            { date: '9/5/2026', diesel: '$300 Cash', storage: '-', hotel: '-', truck: '-', warehouse: 'Rent $5500' },
+            { date: '9/6/2026', diesel: '$275 Cash', storage: '-', hotel: '$160 Cash', truck: '-', warehouse: 'Diesel WF $2453' },
+            { date: '9/28/2026', diesel: '$330 Cash', storage: '-', hotel: '1 day $568 U-haul', truck: '-', warehouse: 'Labor $700' }
+        ];
+
+        function renderJobs(data) {
+            const tbody = document.getElementById('jobsTableBody');
+            tbody.innerHTML = data.map(item => {
+                const foremanDisplay = (!item.foreman || item.foreman.trim() === '') 
+                    ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
+                    : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
+                
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3 px-4 font-mono text-slate-500">${item.date}</td>
+                        <td class="py-3 px-4 font-bold text-slate-900">${item.jobNo}</td>
+                        <td class="py-3 px-4 font-semibold text-emerald-700">${item.route}</td>
+                        <td class="py-3 px-4">${foremanDisplay}</td>
+                        <td class="py-3 px-4 font-bold text-slate-700">$${item.f10}</td>
+                        <td class="py-3 px-4 text-slate-600">${item.crew}</td>
+                        <td class="py-3 px-4 font-extrabold text-slate-900">${item.total}</td>
+                        <td class="py-3 px-4 text-slate-600">${item.pu}</td>
+                        <td class="py-3 px-4 text-slate-600">${item.dest}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderExpenses() {
+            const tbody = document.getElementById('expensesTableBody');
+            tbody.innerHTML = otherExpensesData.map(e => `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="py-3 px-4 font-mono text-slate-500">${item.date}</td>
-                    <td class="py-3 px-4 font-bold text-slate-900">${item.jobNo}</td>
-                    <td class="py-3 px-4 font-semibold text-emerald-700">${item.route}</td>
-                    <td class="py-3 px-4"><span class="bg-slate-100 text-slate-800 px-2.5 py-1 rounded-md font-bold">${item.foreman}</span></td>
-                    <td class="py-3 px-4 text-slate-600">${item.helpers}</td>
-                    <td class="py-3 px-4 font-extrabold text-slate-900">${item.total}</td>
-                    <td class="py-3 px-4 text-slate-600">${item.pu}</td>
-                    <td class="py-3 px-4 text-slate-600">${item.dest}</td>
+                    <td class="py-3 px-4 font-mono text-slate-500">${e.date}</td>
+                    <td class="py-3 px-4 text-amber-600 font-semibold">${e.diesel}</td>
+                    <td class="py-3 px-4">${e.storage}</td>
+                    <td class="py-3 px-4">${e.hotel}</td>
+                    <td class="py-3 px-4">${e.truck}</td>
+                    <td class="py-3 px-4 text-slate-900 font-bold">${e.warehouse}</td>
                 </tr>
             `).join('');
         }
 
-        function renderForemenCards() {
-            const foremen = [
-                { name: 'Adam', jobs: 84, revenue: '$345,000', status: 'Active Leader' },
-                { name: 'Sammy', jobs: 72, revenue: '$290,000', status: 'Active Leader' },
-                { name: 'Said', jobs: 55, revenue: '$215,000', status: 'Active Leader' },
-                { name: 'Omar', jobs: 48, revenue: '$180,000', status: 'Active Leader' },
-                { name: 'Noah', jobs: 30, revenue: '$95,000', status: 'Available' },
-                { name: 'Cameron', jobs: 23, revenue: '$75,000', status: 'Available' }
+        function renderFinancials() {
+            const container = document.getElementById('financialSummaryCards');
+            const totals = [
+                { title: 'Total Foreman 10%', value: '$114,598', desc: 'Supervisory commissions' },
+                { title: 'Total Helpers', value: '$115,250', desc: 'Loading/Unloading crew' },
+                { title: 'Total Drivers', value: '$74,615', desc: 'Transit hauling crew' },
+                { title: 'Total Diesel', value: '$34,889', desc: 'Fuel and operational diesel' },
+                { title: 'Cash PU Payment', value: '$157,152', desc: 'Initial cash collected' },
+                { title: 'Total Revenue After Deposit', value: '$1,146,221', desc: 'Master aggregate revenue' }
             ];
-            document.getElementById('foremanCards').innerHTML = foremen.map(f => `
-                <div class="bg-white p-4 rounded-xl border shadow-sm space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-slate-900 text-sm">${f.name}</h4>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">${f.status}</span>
-                    </div>
-                    <p class="text-xs text-slate-500">Total Dispatches: <span class="font-bold text-slate-800">${f.jobs}</span></p>
-                    <p class="text-xs text-emerald-600 font-semibold">Total Revenue Generated: ${f.revenue}</p>
+            container.innerHTML = totals.map(t => `
+                <div class="p-5 bg-white rounded-xl border shadow-sm space-y-1">
+                    <p class="text-xs text-slate-400 font-bold uppercase">${t.title}</p>
+                    <h3 class="text-2xl font-black text-slate-900">${t.value}</h3>
+                    <p class="text-[11px] text-slate-500">${t.desc}</p>
                 </div>
             `).join('');
         }
 
         function filterTable() {
             const query = document.getElementById('globalSearch').value.toLowerCase();
-            const filtered = masterData.filter(i => i.jobNo.toLowerCase().includes(query) || i.route.toLowerCase().includes(query) || i.foreman.toLowerCase().includes(query));
-            renderTable(filtered);
+            const filtered = fullJobsData.filter(i => 
+                i.jobNo.toLowerCase().includes(query) || 
+                i.route.toLowerCase().includes(query) || 
+                i.foreman.toLowerCase().includes(query) ||
+                (!i.foreman && 'no name'.includes(query))
+            );
+            renderJobs(filtered);
         }
 
         function switchTab(tab) {
-            ['dispatch', 'crew', 'financial'].forEach(t => {
+            ['jobs', 'expenses', 'financial'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.add('hidden');
                 document.getElementById(`nav-${t}`).className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition';
             });
@@ -238,8 +329,9 @@
         }
 
         window.onload = () => {
-            renderTable(masterData);
-            renderForemenCards();
+            renderJobs(fullJobsData);
+            renderExpenses();
+            renderFinancials();
         };
     </script>
 </body>
