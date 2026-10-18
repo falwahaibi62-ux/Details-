@@ -27,7 +27,7 @@ function handleLogin(e) {
         loginScreen.classList.add('hidden');
 
         checkPermissions();
-        populateYearFilter(); // تعبئة السنوات تلقائياً عند تسجيل الدخول
+        populateYearFilter();
         filterJobsTable();
         renderUsers();
     } else {
@@ -42,14 +42,11 @@ function logoutSession() {
     document.getElementById('loginScreen').classList.remove('hidden');
 }
 
-// دالة لاستخراج وتعبئة السنوات تلقائياً من قائمة الأجور والعمليات
 function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
     if (!yearSelect) return;
 
-    // استخراج السنوات الفريدة وترتيبها تنازلياً
     const uniqueYears = [...new Set(masterJobs.map(item => item.year))].sort((a, b) => b - a);
-    
     const currentSelected = yearSelect.value;
 
     yearSelect.innerHTML = uniqueYears.map(year => 
@@ -118,6 +115,9 @@ function renderJobsCRUD(dataToRender) {
             actions = `<button onclick="editJob(${index})" class="text-blue-600 hover:text-blue-800 font-bold">Edit Only</button>`;
         }
 
+        const puDisplay = item.puAmount ? `${item.puAmount} ${item.puMethod || ''}` : (item.pu || '-');
+        const destDisplay = item.destAmount ? `${item.destAmount} ${item.destMethod || ''}` : (item.dest || '-');
+
         return `
             <tr class="hover:bg-slate-50 transition">
                 <td class="py-3 px-4 font-mono text-slate-500">${item.date}</td>
@@ -125,8 +125,8 @@ function renderJobsCRUD(dataToRender) {
                 <td class="py-3 px-4 font-semibold text-emerald-700">${item.route}</td>
                 <td class="py-3 px-4">${foremanDisplay}</td>
                 <td class="py-3 px-4 font-extrabold text-slate-900">${item.total}</td>
-                <td class="py-3 px-4 text-slate-600">${item.pu}</td>
-                <td class="py-3 px-4 text-slate-600">${item.dest}</td>
+                <td class="py-3 px-4 text-slate-600">${puDisplay}</td>
+                <td class="py-3 px-4 text-slate-600">${destDisplay}</td>
                 <td class="py-3 px-4 text-center">${actions}</td>
             </tr>
         `;
@@ -236,8 +236,12 @@ function saveJob(e) {
         route: document.getElementById('jobRoute').value,
         foreman: document.getElementById('jobForeman').value,
         total: document.getElementById('jobTotal').value,
-        pu: 'Cash',
-        dest: '-'
+        puAmount: document.getElementById('jobPuAmount').value,
+        puMethod: document.getElementById('jobPuMethod').value,
+        destAmount: document.getElementById('jobDestAmount').value,
+        destMethod: document.getElementById('jobDestMethod').value,
+        pu: document.getElementById('jobPuAmount').value ? `${document.getElementById('jobPuAmount').value} ${document.getElementById('jobPuMethod').value}` : '-',
+        dest: document.getElementById('jobDestAmount').value ? `${document.getElementById('jobDestAmount').value} ${document.getElementById('jobDestMethod').value}` : '-'
     };
 
     if(index === -1) {
@@ -246,7 +250,7 @@ function saveJob(e) {
         masterJobs[index] = newJob;
     }
     closeModal();
-    populateYearFilter(); // تحديث قائمة السنوات تلقائياً عند إضافة سنة جديدة
+    populateYearFilter();
     filterJobsTable();
 }
 
@@ -260,6 +264,12 @@ function editJob(index) {
     document.getElementById('jobRoute').value = j.route;
     document.getElementById('jobForeman').value = j.foreman;
     document.getElementById('jobTotal').value = j.total;
+    
+    document.getElementById('jobPuAmount').value = j.puAmount || '';
+    document.getElementById('jobPuMethod').value = j.puMethod || 'Cash';
+    document.getElementById('jobDestAmount').value = j.destAmount || '';
+    document.getElementById('jobDestMethod').value = j.destMethod || 'Cash';
+
     const modal = document.getElementById('jobModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
