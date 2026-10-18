@@ -9,16 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- html2pdf Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
-    </style>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
 
@@ -32,7 +24,7 @@
                     </div>
                     <div>
                         <h2 class="text-lg font-bold text-white leading-none">MovePro</h2>
-                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise v13.0</span>
+                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise Modular</span>
                     </div>
                 </div>
             </div>
@@ -76,7 +68,7 @@
         <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between shrink-0 shadow-sm">
             <div>
                 <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Executive Dashboard & Complete Audit Ledger</h1>
-                <p class="text-xs text-slate-500">Showing all 312 official dispatches, filterable by month and year</p>
+                <p class="text-xs text-slate-500">Modular Architecture System</p>
             </div>
             <div class="flex items-center space-x-3">
                 <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-lg border border-emerald-200">
@@ -87,7 +79,7 @@
 
         <main class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
 
-            <!-- TAB 1: DASHBOARD & RECOMMENDATIONS -->
+            <!-- TAB 1: DASHBOARD -->
             <div id="tab-dashboard" class="space-y-6">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="glass-panel p-5 rounded-2xl">
@@ -111,36 +103,14 @@
                         <p class="text-[11px] text-emerald-600 font-semibold mt-2">Excellent benchmark</p>
                     </div>
                 </div>
-
-                <!-- Strategic Recommendations Section -->
-                <div class="glass-panel p-6 rounded-2xl space-y-4 border-l-4 border-emerald-500">
-                    <div class="flex items-center space-x-2 text-emerald-700">
-                        <i class="fa-solid fa-lightbulb text-xl"></i>
-                        <h3 class="font-bold text-base">Strategic Recommendations for Productivity & Profit Growth</h3>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                        <div class="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 space-y-2">
-                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-route text-emerald-600 mr-1"></i>Route Optimization</h4>
-                            <p class="text-slate-600 leading-relaxed">Focus fleet dispatches on high-yield corridors such as Georgia (GA) and North Carolina (NC) to boost aggregate revenues by an estimated 12%.</p>
-                        </div>
-                        <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2">
-                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-wallet text-blue-600 mr-1"></i>Cash Flow Acceleration</h4>
-                            <p class="text-slate-600 leading-relaxed">Minimize reliance on destination balance delays and enforce immediate digital payment options (Zelle, CC) to mitigate credit risks.</p>
-                        </div>
-                        <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 space-y-2">
-                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-user-gear text-amber-600 mr-1"></i>Field Crew Workload Balancing</h4>
-                            <p class="text-slate-600 leading-relaxed">Distribute dispatches evenly across active foremen and reduce unassigned ('no name') logs to ensure tighter supervision.</p>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <!-- TAB 2: JOBS CRUD MANAGEMENT & FILTERS -->
+            <!-- TAB 2: JOBS CRUD & FILTER -->
             <div id="tab-jobs" class="hidden space-y-6">
                 <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
-                        <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management (All 312 Records)</h3>
-                        <p class="text-xs text-slate-500">Filter report records by Month and Year, add, edit, and maintain dispatches</p>
+                        <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
+                        <p class="text-xs text-slate-500">Filter records by Month and Year</p>
                     </div>
                     <button onclick="openAddModal()" id="addJobBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2">
                         <i class="fa-solid fa-plus"></i>
@@ -148,18 +118,17 @@
                     </button>
                 </div>
 
-                <!-- Filter Bar -->
                 <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4">
                     <div class="flex items-center space-x-2">
                         <label class="text-xs font-bold text-slate-600">Filter Month:</label>
                         <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
-                            <option value="ALL">All Months (312 Records)</option>
-                            <option value="5">May (5)</option>
-                            <option value="6">June (6)</option>
-                            <option value="7">July (7)</option>
-                            <option value="8">August (8)</option>
-                            <option value="9">September (9)</option>
-                            <option value="10">October (10)</option>
+                            <option value="ALL">All Months</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
                         </select>
                     </div>
                     <div class="flex items-center space-x-2">
@@ -194,69 +163,40 @@
                 </div>
             </div>
 
-            <!-- TAB 3: USERS & ROLES MANAGEMENT -->
+            <!-- TAB 3: USERS -->
             <div id="tab-users" class="hidden space-y-6">
                 <div class="glass-panel p-5 rounded-2xl flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-slate-900 text-base">Users & Roles Control Panel</h3>
-                        <p class="text-xs text-slate-500">Manage access privileges (Admin, Member, Viewer)</p>
+                        <p class="text-xs text-slate-500">Manage access privileges</p>
                     </div>
                 </div>
-
                 <div class="glass-panel rounded-2xl overflow-hidden p-6 space-y-4">
                     <div class="space-y-3" id="usersListContainer"></div>
                 </div>
             </div>
 
-            <!-- TAB 4: PDF REPORT EXPORT -->
+            <!-- TAB 4: REPORTS -->
             <div id="tab-reports" class="hidden space-y-6">
                 <div class="glass-panel p-6 rounded-2xl flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-slate-900 text-lg">Official Financial & Audit Report (PDF)</h3>
-                        <p class="text-xs text-slate-500">Period: May 12, 2026 - October 17, 2026</p>
                     </div>
                     <button onclick="downloadOfficialPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center space-x-2">
                         <i class="fa-solid fa-download"></i>
                         <span>Download PDF Report</span>
                     </button>
                 </div>
-
                 <div id="pdfContentArea" class="bg-white p-8 rounded-2xl border shadow-sm space-y-6">
-                    <div class="flex justify-between items-center border-b pb-4">
-                        <div>
-                            <h2 class="text-xl font-black text-slate-900">MovePro Logistics & Financial Ledger</h2>
-                            <p class="text-xs text-slate-500 mt-1">Audit Period: 12/05/2026 - 17/10/2026</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs font-bold text-emerald-600">Total Revenue: $1,146,221</p>
-                            <p class="text-xs text-slate-500">Total Jobs: 312 | Deliveries: 69</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                        <div class="p-3 bg-slate-50 rounded-xl border">
-                            <p class="text-slate-500">Foreman 10%</p>
-                            <p class="font-bold text-slate-900 text-base mt-1">$114,598</p>
-                        </div>
-                        <div class="p-3 bg-slate-50 rounded-xl border">
-                            <p class="text-slate-500">Total Helpers</p>
-                            <p class="font-bold text-slate-900 text-base mt-1">$115,250</p>
-                        </div>
-                        <div class="p-3 bg-slate-50 rounded-xl border">
-                            <p class="text-slate-500">Total Drivers</p>
-                            <p class="font-bold text-slate-900 text-base mt-1">$74,615</p>
-                        </div>
-                        <div class="p-3 bg-slate-50 rounded-xl border">
-                            <p class="text-slate-500">Diesel Cost</p>
-                            <p class="font-bold text-amber-600 text-base mt-1">$34,889</p>
-                        </div>
-                    </div>
+                    <h2 class="text-xl font-black text-slate-900">MovePro Logistics & Financial Ledger</h2>
+                    <p class="text-xs text-slate-500">Total Revenue: $1,146,221 | Total Jobs: 312</p>
                 </div>
             </div>
 
         </main>
     </div>
 
-    <!-- MODAL FOR ADD/EDIT JOB -->
+    <!-- MODAL -->
     <div id="jobModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
             <h3 id="modalTitle" class="font-bold text-slate-900 text-base">Add New Dispatch</h3>
@@ -276,7 +216,7 @@
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-600 mb-1">Foreman Name</label>
-                    <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl" placeholder="Leave blank to default to 'no name'">
+                    <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl" placeholder="no name">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-600 mb-1">Total Amount</label>
@@ -290,508 +230,8 @@
         </div>
     </div>
 
-    <!-- SCRIPT ENGINE WITH COMPLETE 312 DATASET -->
-    <script>
-        let currentUserRole = 'Admin';
-
-        // Complete 312 records dataset loaded from audit report PDF
-        let masterJobs = [
-            { date: '5/12/2026', month: 5, year: 2026, jobNo: 'G4648193', route: 'NC → NV', foreman: '', total: '$3,795', pu: '1935 CC', dest: '1960' },
-            { date: '5/13/2026', month: 5, year: 2026, jobNo: 'G4625966', route: 'GA → TX', foreman: '', total: '-', pu: '22000 Cheque', dest: '7181' },
-            { date: '5/14/2026', month: 5, year: 2026, jobNo: 'None', route: 'GA → TX', foreman: '', total: '$29,181', pu: '-', dest: '-' },
-            { date: '5/15/2026', month: 5, year: 2026, jobNo: 'G4643026', route: 'SC → AZ', foreman: '', total: '$10,000', pu: '5000 Zelle', dest: '5000' },
-            { date: '5/16/2026', month: 5, year: 2026, jobNo: 'G4648690', route: 'GA → NC', foreman: '', total: '$3,936', pu: '3936 Zelle', dest: '-' },
-            { date: '5/17/2026', month: 5, year: 2026, jobNo: 'G4628588', route: 'GA → IL', foreman: '', total: '$1,048', pu: '700 Zelle', dest: '348' },
-            { date: '5/18/2026', month: 5, year: 2026, jobNo: 'G4647014', route: 'AL → SC', foreman: '', total: '$7,840', pu: '6000 Bank CK', dest: '1834 Cash' },
-            { date: '5/19/2026', month: 5, year: 2026, jobNo: 'G4650949', route: 'GA → LA', foreman: '', total: '$5,605', pu: '3500 Zelle', dest: '2105' },
-            { date: '5/20/2026', month: 5, year: 2026, jobNo: 'G4646690', route: 'GA → TX', foreman: '', total: '$2,500', pu: 'Zelle 1200', dest: '1300' },
-            { date: '5/20/2026', month: 5, year: 2026, jobNo: 'Delivery', route: 'GA → SC', foreman: '', total: '-', pu: '-', dest: '1834' },
-            { date: '5/21/2026', month: 5, year: 2026, jobNo: 'P4654415', route: 'GA → TX', foreman: '', total: '$11,306', pu: 'BC 8000', dest: '3306' },
-            { date: '5/22/2026', month: 5, year: 2026, jobNo: 'G4637417', route: 'GA → SC', foreman: '', total: '$5,946', pu: '3000 Zelle', dest: '2946 Cash' },
-            { date: '5/22/2026', month: 5, year: 2026, jobNo: 'G4640803', route: 'GA → SC', foreman: '', total: '$4,600', pu: '4600 Cash', dest: '-' },
-            { date: '5/23/2026', month: 5, year: 2026, jobNo: 'None', route: '- → -', foreman: '', total: '-', pu: '-', dest: '-' },
-            { date: '5/24/2026', month: 5, year: 2026, jobNo: 'G4643791', route: 'GA → OR', foreman: '', total: '$2,736', pu: '2058 PC', dest: '686' },
-            { date: '5/25/2026', month: 5, year: 2026, jobNo: 'Fadi', route: 'SC → -', foreman: '', total: '-', pu: '-', dest: '-' },
-            { date: '5/26/2026', month: 5, year: 2026, jobNo: 'G4655711', route: 'GA → FL', foreman: '', total: '$2,248', pu: '1500 Cash', dest: '748' },
-            { date: '5/26/2026', month: 5, year: 2026, jobNo: 'C7419696', route: 'NC → SC', foreman: '', total: '$2,132', pu: '1600 Cash', dest: '532' },
-            { date: '5/27/2026', month: 5, year: 2026, jobNo: 'G4636915', route: 'NC → NC', foreman: '', total: '$1,810', pu: '905 Zelle', dest: '905 Zelle' },
-            { date: '5/28/2026', month: 5, year: 2026, jobNo: 'G4657375', route: 'GA → DE', foreman: '', total: '$2,280', pu: '1600 Zelle', dest: '680' },
-            { date: '5/28/2026', month: 5, year: 2026, jobNo: 'G4657721', route: 'GA → GA', foreman: '', total: '$2,156', pu: '1078 Zelle', dest: '1078' },
-            { date: '5/28/2026', month: 5, year: 2026, jobNo: 'G464752', route: 'GA → MO', foreman: '', total: '$3,621', pu: 'Zelle 2716', dest: '905' },
-            { date: '5/29/2026', month: 5, year: 2026, jobNo: 'G4660050', route: 'GA → VA', foreman: '', total: '$1,138', pu: '853 Cash', dest: '285' },
-            { date: '5/29/2026', month: 5, year: 2026, jobNo: 'C7405469', route: 'SC → LA', foreman: '', total: '$1,250', pu: '613 Cash', dest: '637' },
-            { date: '5/29/2026', month: 5, year: 2026, jobNo: 'C7415355', route: 'SC → NC', foreman: '', total: '$1,909', pu: '1909 Cash', dest: '-' },
-            { date: '5/30/2026', month: 5, year: 2026, jobNo: 'G4639954', route: 'SC → VA', foreman: '', total: '$9,078', pu: '6400 Cheque', dest: '2679' },
-            { date: '5/30/2026', month: 5, year: 2026, jobNo: 'G4652601', route: 'SC → OH', foreman: '', total: '$2,657', pu: '2200 Cash', dest: '457' },
-            { date: '5/31/2026', month: 5, year: 2026, jobNo: 'G4655028', route: 'NC → NJ', foreman: '', total: '$2,000', pu: '1500 Zelle', dest: '500' },
-            { date: '5/31/2026', month: 5, year: 2026, jobNo: 'P4654831', route: 'NC → FL', foreman: '', total: '$2,978', pu: '2234 Zelle', dest: '744' },
-            { date: '6/1/2026', month: 6, year: 2026, jobNo: 'C7418527', route: 'NC → GA', foreman: '', total: '$2,621', pu: '1310 Cash', dest: '1310 Cash' },
-            { date: '6/1/2026', month: 6, year: 2026, jobNo: 'P4653010', route: 'SC → NC', foreman: '', total: '$2,088', pu: '1560 CC', dest: '528 Cash' },
-            { date: '6/1/2026', month: 6, year: 2026, jobNo: 'C7376684', route: 'NC → CO', foreman: '', total: '$1,585', pu: '800 Zelle', dest: '785' },
-            { date: '6/2/2026', month: 6, year: 2026, jobNo: 'C7417457', route: 'SC → KY', foreman: '', total: '$3,286', pu: '1643 Zelle', dest: '1643' },
-            { date: '6/2/2026', month: 6, year: 2026, jobNo: 'C7423900', route: 'NC → ME', foreman: '', total: '$1,200', pu: '600 Cash', dest: '600' },
-            { date: '6/3/2026', month: 6, year: 2026, jobNo: 'G4659141', route: 'NC → NM', foreman: '', total: '$4,005', pu: '2800 Zelle', dest: '1205' },
-            { date: '6/3/2026', month: 6, year: 2026, jobNo: 'C7427233', route: 'SC → NC', foreman: '', total: '$1,892', pu: '946 Zelle', dest: '946' },
-            { date: '6/3/2026', month: 6, year: 2026, jobNo: 'C7396132', route: 'SC → CA', foreman: '', total: '$1,716', pu: '858 Zelle', dest: '858' },
-            { date: '6/4/2026', month: 6, year: 2026, jobNo: 'G4660019', route: 'GA → PA', foreman: '', total: '$17,237', pu: '7000 Bank CK', dest: '10273' },
-            { date: '6/4/2026', month: 6, year: 2026, jobNo: 'C7421651', route: 'NC → NC', foreman: '', total: '$2,381', pu: '600 Cash', dest: '1781' },
-            { date: '6/4/2026', month: 6, year: 2026, jobNo: 'C7427564', route: 'NC → NC', foreman: '', total: '$1,300', pu: '1300 Cash', dest: '-' },
-            { date: '6/5/2026', month: 6, year: 2026, jobNo: 'T4645897', route: 'GA → CO', foreman: '', total: '$2,460', pu: '1700 Zelle', dest: '760' },
-            { date: '6/5/2026', month: 6, year: 2026, jobNo: 'C7420098', route: 'SC → NC', foreman: '', total: '$1,525', pu: '800 Cash', dest: '725' },
-            { date: '6/6/2026', month: 6, year: 2026, jobNo: 'G4657376', route: 'SC → SC', foreman: '', total: '$1,283', pu: '1283 Cash', dest: '-' },
-            { date: '6/7/2026', month: 6, year: 2026, jobNo: 'C7418309', route: 'NC → NC', foreman: '', total: '$1,479', pu: '739 Zelle', dest: '740 Cash' },
-            { date: '6/7/2026', month: 6, year: 2026, jobNo: 'C7430439', route: 'NC → AL', foreman: '', total: '$1,447', pu: '723 Cash', dest: '723' },
-            { date: '6/8/2026', month: 6, year: 2026, jobNo: 'C7427867', route: 'SC → SC', foreman: '', total: '$1,077', pu: '1077 Cash', dest: '-' },
-            { date: '6/8/2026', month: 6, year: 2026, jobNo: 'G4661045', route: 'NC → ME', foreman: '', total: '$1,639', pu: '819 Cheque', dest: '819' },
-            { date: '6/9/2026', month: 6, year: 2026, jobNo: 'G4650694', route: 'NC → FL', foreman: '', total: '$3,615', pu: '2000 Cheque', dest: '1616' },
-            { date: '6/9/2026', month: 6, year: 2026, jobNo: 'C74118668', route: 'SC → MO', foreman: '', total: '$1,080', pu: '1080 Cash', dest: '2421 Cash' },
-            { date: '6/11/2026', month: 6, year: 2026, jobNo: 'G4665439', route: 'SC → CO', foreman: '', total: '$4,890', pu: '2445 Zelle', dest: '2445' },
-            { date: '6/11/2026', month: 6, year: 2026, jobNo: 'C7419765', route: 'SC → TX', foreman: '', total: '$1,080', pu: '540 PMO', dest: '540' },
-            { date: '6/12/2026', month: 6, year: 2026, jobNo: 'C7426922', route: 'SC → MI', foreman: '', total: '$1,479', pu: '740 Zelle', dest: '739' },
-            { date: '6/13/2026', month: 6, year: 2026, jobNo: 'C7421005', route: 'NC → NC', foreman: '', total: '$1,936', pu: '968 BC', dest: '767 PMO' },
-            { date: '6/13/2026', month: 6, year: 2026, jobNo: '26030182', route: 'NC → WV', foreman: '', total: '$1,315', pu: '660 Cash', dest: '655' },
-            { date: '6/13/2026', month: 6, year: 2026, jobNo: '26147524', route: 'NC → FL', foreman: '', total: '$2,807', pu: '1400 Cash', dest: '1407' },
-            { date: '6/14/2026', month: 6, year: 2026, jobNo: 'C7430167', route: 'SC → FL', foreman: '', total: '$1,469', pu: '735 Zelle', dest: '734' },
-            { date: '6/14/2026', month: 6, year: 2026, jobNo: 'G4650327', route: 'SC → GA', foreman: '', total: '$3,500', pu: '2000 Zelle', dest: '1500' },
-            { date: '6/15/2026', month: 6, year: 2026, jobNo: 'C7215516', route: 'SC → NC', foreman: '', total: '$4,000', pu: '2000 PC', dest: '2000' },
-            { date: '6/16/2026', month: 6, year: 2026, jobNo: 'G4655154', route: 'GA → NC', foreman: '', total: '$5,717', pu: '3000 BC', dest: '2717 BC' },
-            { date: '6/16/2026', month: 6, year: 2026, jobNo: 'C7434382', route: 'NC → CA', foreman: '', total: '$1,735', pu: '868 Zelle', dest: '867' },
-            { date: '6/17/2026', month: 6, year: 2026, jobNo: 'G4666837', route: 'GA → VA', foreman: '', total: '$3,668', pu: '2600 Zelle', dest: '1068' },
-            { date: '6/17/2026', month: 6, year: 2026, jobNo: 'G4640988', route: 'GA → WA', foreman: '', total: '$3,980', pu: '2800 Zelle', dest: '1180' },
-            { date: '6/17/2026', month: 6, year: 2026, jobNo: 'G4637975', route: 'NC → TX', foreman: '', total: '$2,030', pu: '1015 Zelle', dest: '1015' },
-            { date: '6/18/2026', month: 6, year: 2026, jobNo: 'C7412689', route: 'GA → MD', foreman: '', total: '$4,212', pu: '3000 Cash', dest: '1212' },
-            { date: '6/18/2026', month: 6, year: 2026, jobNo: 'C7434877', route: 'NC → NC', foreman: '', total: '$2,235', pu: '1000 Zelle', dest: '1235 BC' },
-            { date: '6/19/2026', month: 6, year: 2026, jobNo: 'C7428627', route: 'NC → NC', foreman: '', total: '$3,234', pu: '2500 Zelle', dest: '734 Cash' },
-            { date: '6/19/2026', month: 6, year: 2026, jobNo: 'C7439102', route: 'NC → OK', foreman: '', total: '$3,090', pu: '2000 Cash', dest: '1090' },
-            { date: '6/19/2026', month: 6, year: 2026, jobNo: 'C7425772', route: 'SC → TN', foreman: '', total: '$2,735', pu: '800 Cash', dest: '1375' },
-            { date: '6/19/2026', month: 6, year: 2026, jobNo: 'C7435584', route: 'SC → TX', foreman: '', total: '$1,530', pu: '765 Zelle', dest: '765' },
-            { date: '6/20/2026', month: 6, year: 2026, jobNo: 'C7431458', route: 'NC → GA', foreman: '', total: '$1,695', pu: '1000 Cash', dest: '695' },
-            { date: '6/20/2026', month: 6, year: 2026, jobNo: 'C7411398', route: 'NC → NC', foreman: '', total: '$1,000', pu: '1000 Zelle', dest: '-' },
-            { date: '6/21/2026', month: 6, year: 2026, jobNo: 'C7424120', route: 'NC → GA', foreman: '', total: '$5,434', pu: '2300 Cash', dest: '1443' },
-            { date: '6/22/2026', month: 6, year: 2026, jobNo: 'G4664051', route: 'SC → FL', foreman: '', total: '$6,326', pu: '5000 BC', dest: '1326' },
-            { date: '6/22/2026', month: 6, year: 2026, jobNo: 'C7438342', route: 'SC → FL', foreman: '', total: '$1,500', pu: '800 Zelle', dest: '700' },
-            { date: '6/22/2026', month: 6, year: 2026, jobNo: 'C7441895', route: 'NC → OK', foreman: '', total: '$1,162', pu: '847 CC', dest: '315' },
-            { date: '6/22/2026', month: 6, year: 2026, jobNo: 'C7437336', route: 'NC → GA', foreman: '', total: '$1,619', pu: '-', dest: '1619' },
-            { date: '6/23/2026', month: 6, year: 2026, jobNo: 'C7418352', route: 'SC → OH', foreman: '', total: '$11,100', pu: '6500 Cash', dest: '4600' },
-            { date: '6/23/2026', month: 6, year: 2026, jobNo: 'G4650484', route: 'SC → MI', foreman: '', total: '$7,623', pu: '5500 PC', dest: '2123' },
-            { date: '6/25/2026', month: 6, year: 2026, jobNo: 'C7445869', route: 'GA → GA', foreman: '', total: '$1,730', pu: '865 Zelle', dest: '865 Zelle' },
-            { date: '6/25/2026', month: 6, year: 2026, jobNo: 'G4652787', route: 'GA → TN', foreman: '', total: '$5,030', pu: '2500 Zelle', dest: '2530' },
-            { date: '6/26/2026', month: 6, year: 2026, jobNo: 'G4652527', route: 'SC → FL', foreman: '', total: '$9,823', pu: '5000 Cash', dest: '4823' },
-            { date: '6/26/2026', month: 6, year: 2026, jobNo: 'C7440790', route: 'SC → NY', foreman: '', total: '$2,618', pu: '1560 Cash', dest: '1058' },
-            { date: '6/26/2026', month: 6, year: 2026, jobNo: 'C7446340', route: 'GA → GA', foreman: '', total: '$2,655', pu: '2655 Zelle', dest: '-' },
-            { date: '6/26/2026', month: 6, year: 2026, jobNo: 'C7446685', route: 'GA → SC', foreman: '', total: '$7,785', pu: '3893 Zelle', dest: '3882' },
-            { date: '6/26/2026', month: 6, year: 2026, jobNo: 'G4662203', route: 'GA → OH', foreman: '', total: '$1,926', pu: '963 Zelle', dest: '963' },
-            { date: '6/27/2026', month: 6, year: 2026, jobNo: 'G4662127', route: 'GA → CA', foreman: '', total: '$11,020', pu: '7280 CC', dest: '3740' },
-            { date: '6/27/2026', month: 6, year: 2026, jobNo: 'C7434886', route: 'NC → NC', foreman: '', total: '$2,858', pu: '1430 Cash', dest: '1428 Zelle' },
-            { date: '6/27/2026', month: 6, year: 2026, jobNo: 'G4662488', route: 'NC → GA', foreman: '', total: '$4,806', pu: '500 Cash', dest: '2506' },
-            { date: '6/28/2026', month: 6, year: 2026, jobNo: 'C7442714', route: 'NC → NC', foreman: '', total: '$1,000', pu: '500 PMO', dest: '500 PMO' },
-            { date: '6/28/2026', month: 6, year: 2026, jobNo: 'G4659830', route: 'NC → TX', foreman: '', total: '$8,406', pu: '1100 Cash', dest: '2000' },
-            { date: '6/29/2026', month: 6, year: 2026, jobNo: '26153672', route: 'SC → ME', foreman: '', total: '$5,504', pu: '1352 Zelle', dest: '2752' },
-            { date: '6/29/2026', month: 6, year: 2026, jobNo: 'C7420844', route: 'NC → NC', foreman: '', total: '$2,413', pu: '600 Cash', dest: '1816 other' },
-            { date: '6/29/2026', month: 6, year: 2026, jobNo: 'C7434805', route: 'NC → VA', foreman: '', total: '$3,525', pu: '2525 Cash', dest: '1000' },
-            { date: '6/30/2026', month: 6, year: 2026, jobNo: 'C7413544', route: 'NC → NY', foreman: '', total: '$1,500', pu: '1500 Zelle', dest: '-' },
-            { date: '6/30/2026', month: 6, year: 2026, jobNo: 'G4645029', route: 'NC → SC', foreman: '', total: '$3,780', pu: '1044 PMO', dest: '2736 other' },
-            { date: '6/30/2026', month: 6, year: 2026, jobNo: 'C7412112', route: 'SC → PA', foreman: '', total: '$2,800', pu: '1400 Cash', dest: '1400' },
-            { date: '6/30/2026', month: 6, year: 2026, jobNo: 'C7424586', route: 'SC → CA', foreman: '', total: '$3,468', pu: '2600 BC', dest: '867' },
-            { date: '7/1/2026', month: 7, year: 2026, jobNo: 'G4660928', route: 'NC → NC', foreman: '', total: '$17,076', pu: '17076 BC', dest: '-' },
-            { date: '7/1/2026', month: 7, year: 2026, jobNo: 'C7429121', route: 'SC → CT', foreman: '', total: '$3,707', pu: '2780 Zelle', dest: '927' },
-            { date: '7/1/2026', month: 7, year: 2026, jobNo: 'C7433460', route: 'NC → NC', foreman: '', total: '$1,705', pu: '1278 Zelle', dest: '426' },
-            { date: '7/2/2026', month: 7, year: 2026, jobNo: 'G4655009', route: 'NC → NY', foreman: '', total: '$1,925', pu: '1600 Zelle', dest: '325' },
-            { date: '7/2/2026', month: 7, year: 2026, jobNo: 'C7449060', route: 'NC → NC', foreman: '', total: '$1,128', pu: '847 Cash', dest: '281 Cash' },
-            { date: '7/2/2026', month: 7, year: 2026, jobNo: 'G4669830', route: 'NC → NJ', foreman: '', total: '$2,150', pu: '1800 Zelle', dest: '350' },
-            { date: '7/3/2026', month: 7, year: 2026, jobNo: 'C7448666', route: 'TN → UT', foreman: '', total: '$8,640', pu: '4640 CC', dest: '4000' },
-            { date: '7/3/2026', month: 7, year: 2026, jobNo: 'C7441303', route: 'SC → NC', foreman: '', total: '$1,217', pu: '617 Cash', dest: '600' },
-            { date: '7/3/2026', month: 7, year: 2026, jobNo: 'G4671363', route: 'GA → NJ', foreman: '', total: '$1,967', pu: '-', dest: '1967' },
-            { date: '7/3/2026', month: 7, year: 2026, jobNo: 'C7426930', route: 'NC → TX', foreman: '', total: '$4,047', pu: '2047 Zelle', dest: '2000' },
-            { date: '7/5/2026', month: 7, year: 2026, jobNo: 'C7450996', route: 'NC → NC', foreman: '', total: '$1,131', pu: '1131 Zelle', dest: '-' },
-            { date: '7/6/2026', month: 7, year: 2026, jobNo: 'G4670182', route: 'NC → TN', foreman: '', total: '$14,937', pu: '4937 Cash', dest: '-' },
-            { date: '7/6/2026', month: 7, year: 2026, jobNo: 'C7399983', route: 'SC → SC', foreman: '', total: '$1,300', pu: '1300 Cash', dest: '-' },
-            { date: '7/7/2026', month: 7, year: 2026, jobNo: 'C7449904', route: 'SC → GA', foreman: '', total: '$1,269', pu: '960 Cash', dest: '309' },
-            { date: '7/7/2026', month: 7, year: 2026, jobNo: 'G4669277', route: 'SC → FL', foreman: '', total: '$3,150', pu: '2500 Zelle', dest: '650' },
-            { date: '7/7/2026', month: 7, year: 2026, jobNo: 'G4666836', route: 'GA → FL', foreman: '', total: '$2,750', pu: '1700 Cash', dest: '1050' },
-            { date: '7/8/2026', month: 7, year: 2026, jobNo: 'C7418896', route: 'SC → SC', foreman: '', total: '$976', pu: '976 Cash', dest: '-' },
-            { date: '7/8/2026', month: 7, year: 2026, jobNo: 'C7341437', route: 'SC → SC', foreman: '', total: '$3,930', pu: '3930 Cash', dest: '-' },
-            { date: '7/8/2026', month: 7, year: 2026, jobNo: '26016688', route: 'NC → AZ', foreman: '', total: '$1,564', pu: '800 Zelle', dest: '764' },
-            { date: '7/9/2026', month: 7, year: 2026, jobNo: 'C7452816', route: 'SC → UT', foreman: '', total: '$1,335', pu: '667 Zelle', dest: '668' },
-            { date: '7/10/2026', month: 7, year: 2026, jobNo: 'C7453730', route: 'NC → FL', foreman: '', total: '$2,373', pu: '1187 Zelle', dest: '1186' },
-            { date: '7/10/2026', month: 7, year: 2026, jobNo: 'P4656899', route: 'NC → UT', foreman: '', total: '$3,537', pu: '2700 Cash', dest: '837' },
-            { date: '7/11/2026', month: 7, year: 2026, jobNo: 'C7425799', route: 'VA → VA', foreman: '', total: '$2,934', pu: '2201 Zelle', dest: '733' },
-            { date: '7/11/2026', month: 7, year: 2026, jobNo: 'C7448457', route: 'SC → WW', foreman: '', total: '$1,200', pu: '730 BC', dest: '470' },
-            { date: '7/11/2026', month: 7, year: 2026, jobNo: 'C7453515', route: 'NC → NC', foreman: '', total: '$2,052', pu: '2052 Cash', dest: '-' },
-            { date: '7/12/2026', month: 7, year: 2026, jobNo: 'G4672670', route: 'SC → TX', foreman: '', total: '$4,126', pu: '2126 CC', dest: '2000' },
-            { date: '7/12/2026', month: 7, year: 2026, jobNo: 'C7445419', route: 'GA → NJ', foreman: '', total: '$4,565', pu: '1400 Cash', dest: '565' },
-            { date: '7/12/2026', month: 7, year: 2026, jobNo: 'C7454463', route: 'NC → NC', foreman: '', total: '$2,670', pu: '192 Cash', dest: '400' },
-            { date: '7/13/2026', month: 7, year: 2026, jobNo: 'C7452499', route: 'SC → GA', foreman: '', total: '$1,017', pu: '520 Cash', dest: '497' },
-            { date: '7/13/2026', month: 7, year: 2026, jobNo: 'G4667581', route: 'NC → MI', foreman: '', total: '$6,419', pu: '3210 Zelle', dest: '3209' },
-            { date: '7/13/2026', month: 7, year: 2026, jobNo: 'G4653756', route: 'NC → FL', foreman: '', total: '$10,005', pu: '5600 BC', dest: '4405' },
-            { date: '7/14/2026', month: 7, year: 2026, jobNo: 'G4674535', route: 'NC → CO', foreman: '', total: '$3,584', pu: '2688 Zelle', dest: '896' },
-            { date: '7/14/2026', month: 7, year: 2026, jobNo: 'G4675039', route: 'GA → WI', foreman: '', total: '$1,617', pu: '1132 Zelle', dest: '485' },
-            { date: '7/14/2026', month: 7, year: 2026, jobNo: 'G4668456', route: 'GA → SC', foreman: '', total: '$2,000', pu: '2000 Zelle', dest: '-' },
-            { date: '7/14/2026', month: 7, year: 2026, jobNo: 'C7446714', route: 'NC → NC', foreman: '', total: '$1,000', pu: '1000 Cash', dest: '-' },
-            { date: '7/15/2026', month: 7, year: 2026, jobNo: 'C7455291', route: 'NC → OR', foreman: '', total: '$1,398', pu: '700 PC', dest: '698' },
-            { date: '7/15/2026', month: 7, year: 2026, jobNo: 'G4657379', route: 'NC → MS', foreman: '', total: '$1,140', pu: '570 Zelle', dest: '569' },
-            { date: '7/15/2026', month: 7, year: 2026, jobNo: 'G4652309', route: 'GA → GA', foreman: '', total: '$1,000', pu: '500 Cash', dest: '500 Cash' },
-            { date: '7/15/2026', month: 7, year: 2026, jobNo: 'G4675597', route: 'GA → NY', foreman: '', total: '$1,164', pu: '582 BC', dest: '582' },
-            { date: '7/16/2026', month: 7, year: 2026, jobNo: 'C7432134', route: 'SC → NY', foreman: '', total: '$1,017', pu: '600 Cash', dest: '417' },
-            { date: '7/16/2026', month: 7, year: 2026, jobNo: 'C7437910', route: 'SC → CT', foreman: '', total: '$4,256', pu: '2500 BC', dest: '1756' },
-            { date: '7/16/2026', month: 7, year: 2026, jobNo: 'G4675954', route: 'NC → GA', foreman: '', total: '$2,848', pu: '1987 BC', dest: '854' },
-            { date: '7/16/2026', month: 7, year: 2026, jobNo: 'C7447702', route: 'NC → NC', foreman: '', total: '$1,738', pu: '1000 Zelle', dest: '738 Zelle' },
-            { date: '7/17/2026', month: 7, year: 2026, jobNo: 'C7453982', route: 'NC → VA', foreman: '', total: '$3,500', pu: '1007 BC', dest: '1401' },
-            { date: '7/17/2026', month: 7, year: 2026, jobNo: 'G4666121', route: 'SC → PA', foreman: '', total: '$1,138', pu: '570 Zelle', dest: '568' },
-            { date: '7/17/2026', month: 7, year: 2026, jobNo: 'C7454991', route: 'NC → GA', foreman: '', total: '$831', pu: '560 Cash', dest: '271' },
-            { date: '7/18/2026', month: 7, year: 2026, jobNo: 'G4676527', route: 'GA → SC', foreman: '', total: '$7,424', pu: '7424 Zelle', dest: '-' },
-            { date: '7/18/2026', month: 7, year: 2026, jobNo: 'C7451897', route: 'VA → NM', foreman: '', total: '$1,928', pu: '1334 BC', dest: '594' },
-            { date: '7/19/2026', month: 7, year: 2026, jobNo: 'C7441722', route: 'SC → FL', foreman: '', total: '$3,782', pu: '3782 WT', dest: '-' },
-            { date: '7/19/2026', month: 7, year: 2026, jobNo: 'C7437800', route: 'SC → NY', foreman: '', total: '$1,016', pu: '508 Zelle', dest: '508' },
-            { date: '7/19/2026', month: 7, year: 2026, jobNo: 'C7440260', route: 'VA → CA', foreman: '', total: '$3,885', pu: 'Cash 2000', dest: '1885' },
-            { date: '7/20/2026', month: 7, year: 2026, jobNo: 'G4669926', route: 'GA → GA', foreman: '', total: '$10,651', pu: 'Cash 5651', dest: '5000' },
-            { date: '7/20/2026', month: 7, year: 2026, jobNo: 'C7455026', route: 'SC → WA', foreman: '', total: '$5,657', pu: '3500 Zelle', dest: '2157' },
-            { date: '7/21/2026', month: 7, year: 2026, jobNo: 'C7448812', route: 'NC → FL', foreman: '', total: '$1,017', pu: '517 Zelle', dest: '500' },
-            { date: '7/21/2026', month: 7, year: 2026, jobNo: 'C7447194', route: 'NC → FL', foreman: '', total: '$1,017', pu: '1017 BC', dest: '-' },
-            { date: '7/21/2026', month: 7, year: 2026, jobNo: 'G4657847', route: 'NC → TX', foreman: '', total: '$6,830', pu: '4200 Zelle', dest: '2630' },
-            { date: '7/22/2026', month: 7, year: 2026, jobNo: 'G4670373', route: 'SC → TX', foreman: '', total: '$13,890', pu: '-', dest: '4140' },
-            { date: '7/22/2026', month: 7, year: 2026, jobNo: 'G4669132', route: 'NC → TN', foreman: '', total: '$4,707', pu: '2354 PC', dest: '2353' },
-            { date: '7/22/2026', month: 7, year: 2026, jobNo: 'C7439187', route: 'SC → NC', foreman: '', total: '$3,669', pu: '1835 PC', dest: '1834' },
-            { date: '7/23/2026', month: 7, year: 2026, jobNo: 'G4680194', route: 'SC → NY', foreman: '', total: '$5,246', pu: '3208 PC', dest: '2138' },
-            { date: '7/23/2026', month: 7, year: 2026, jobNo: 'C7440916', route: 'SC → NC', foreman: '', total: '$3,212', pu: '2248 Zelle', dest: '963' },
-            { date: '7/23/2026', month: 7, year: 2026, jobNo: 'C7450611', route: 'SC → VA', foreman: '', total: '$2,968', pu: '1484 Cash', dest: '1484' },
-            { date: '7/23/2026', month: 7, year: 2026, jobNo: 'C7452695', route: 'SC → NJ', foreman: '', total: '$2,830', pu: '1190 Zelle', dest: '1190' },
-            { date: '7/24/2026', month: 7, year: 2026, jobNo: 'G4647617', route: 'GA → AL', foreman: '', total: '$9,935', pu: '6900 Cash', dest: '3035' },
-            { date: '7/24/2026', month: 7, year: 2026, jobNo: 'G4670953', route: 'GA → SC', foreman: '', total: '$3,000', pu: '1000 Cash', dest: '1000' },
-            { date: '7/24/2026', month: 7, year: 2026, jobNo: 'G4671001', route: 'GA → SC', foreman: '', total: '$1,788', pu: '894 Zelle', dest: '894' },
-            { date: '7/25/2026', month: 7, year: 2026, jobNo: 'C7427245', route: 'SC → GA', foreman: '', total: '$2,145', pu: '753 Zelle', dest: '1000 Zelle' },
-            { date: '7/25/2026', month: 7, year: 2026, jobNo: 'G4651024', route: 'NC → MO', foreman: '', total: '$5,318', pu: '800 PMO', dest: '818' },
-            { date: '7/25/2026', month: 7, year: 2026, jobNo: 'C7445023', route: 'NC → WV', foreman: '', total: '$5,228', pu: '4197 PMO', dest: '1031' },
-            { date: '7/26/2026', month: 7, year: 2026, jobNo: 'G4668674', route: 'NC → IL', foreman: '', total: '$3,771', pu: '2568 CC', dest: '1203' },
-            { date: '7/26/2026', month: 7, year: 2026, jobNo: 'G4673752', route: 'NC → VA', foreman: '', total: '$3,021', pu: '2021 Zelle', dest: '1000' },
-            { date: '7/27/2026', month: 7, year: 2026, jobNo: 'C7396214', route: 'SC → ME', foreman: '', total: '$1,778', pu: '889 Zelle', dest: '889' },
-            { date: '7/27/2026', month: 7, year: 2026, jobNo: 'C7416555', route: 'SC → TX', foreman: '', total: '$6,279', pu: '1700 Zelle', dest: '1812' },
-            { date: '7/27/2026', month: 7, year: 2026, jobNo: 'G4658479', route: 'SC → NC', foreman: '', total: '$7,000', pu: '2000 Zelle', dest: '5000' },
-            { date: '7/28/2026', month: 7, year: 2026, jobNo: 'C7464762', route: 'NC → NC', foreman: '', total: '$2,500', pu: '2500 Cash', dest: '-' },
-            { date: '7/28/2026', month: 7, year: 2026, jobNo: 'C7456794', route: 'NC → TX', foreman: '', total: '$2,126', pu: '1063 Cash', dest: '1063' },
-            { date: '7/28/2026', month: 7, year: 2026, jobNo: 'C7459309', route: 'NC → NJ', foreman: '', total: '$2,340', pu: '2340 CC', dest: '-' },
-            { date: '7/28/2026', month: 7, year: 2026, jobNo: 'C7465325', route: 'NC → GA', foreman: '', total: '$1,420', pu: '995 Zelle', dest: '425' },
-            { date: '7/28/2026', month: 7, year: 2026, jobNo: 'C7458503', route: 'NC → NC', foreman: '', total: '$1,249', pu: '760 Cash', dest: '489' },
-            { date: '7/29/2026', month: 7, year: 2026, jobNo: 'C7455003', route: 'NC → FL', foreman: '', total: '$1,017', pu: '509 Zelle', dest: '508' },
-            { date: '7/29/2026', month: 7, year: 2026, jobNo: 'C7462416', route: 'NC → SC', foreman: '', total: '$2,203', pu: 'Zelle 1100', dest: '1103' },
-            { date: '7/29/2026', month: 7, year: 2026, jobNo: 'G4664092', route: 'GA → CA', foreman: '', total: '$14,816', pu: '650 Cash', dest: '5450' },
-            { date: '7/30/2026', month: 7, year: 2026, jobNo: 'G4678498', route: 'SC → AR', foreman: '', total: '$11,500', pu: '11500 WT', dest: '-' },
-            { date: '7/30/2026', month: 7, year: 2026, jobNo: 'C7460013', route: 'SC → NY', foreman: '', total: '$1,100', pu: '500 Zelle', dest: '600' },
-            { date: '7/30/2026', month: 7, year: 2026, jobNo: 'C7457590', route: 'SC → SC', foreman: '', total: '$1,017', pu: '800 Cash', dest: '217' },
-            { date: '7/31/2026', month: 7, year: 2026, jobNo: 'C7466436', route: 'VA → NC', foreman: '', total: '$2,340', pu: '1170 Cash', dest: '1170' },
-            { date: '8/1/2026', month: 8, year: 2026, jobNo: 'C7459617', route: 'SC → VA', foreman: '', total: '$1,960', pu: '1560 Zelle', dest: '400' },
-            { date: '8/1/2026', month: 8, year: 2026, jobNo: 'C7427536', route: 'NC → NC', foreman: '', total: '$3,728', pu: '2000 Cash', dest: '1728' },
-            { date: '8/1/2026', month: 8, year: 2026, jobNo: 'C7466447', route: 'SC → SC', foreman: '', total: '$1,005', pu: '600 Cash', dest: '405' },
-            { date: '8/1/2026', month: 8, year: 2026, jobNo: 'G4668981', route: 'NC → NC', foreman: '', total: '$5,000', pu: '1000 Cash', dest: '4000' },
-            { date: '8/2/2026', month: 8, year: 2026, jobNo: 'C7469335', route: 'SC → SC', foreman: '', total: '$2,075', pu: '1000 Zelle', dest: '1075' },
-            { date: '8/2/2026', month: 8, year: 2026, jobNo: 'C7470056', route: 'NC → TX', foreman: '', total: '$3,109', pu: '1600 Zelle', dest: '1509' },
-            { date: '8/3/2026', month: 8, year: 2026, jobNo: 'G46641777', route: 'GA → IL', foreman: '', total: '$4,431', pu: '1500 Zelle', dest: '2931' },
-            { date: '8/4/2026', month: 8, year: 2026, jobNo: 'C7460784', route: 'SC → PA', foreman: '', total: '$3,660', pu: '2322 Cash', dest: '-' },
-            { date: '8/4/2026', month: 8, year: 2026, jobNo: 'C7471696', route: 'SC → SC', foreman: '', total: '$2,257', pu: '257 Cash', dest: '-' },
-            { date: '8/5/2026', month: 8, year: 2026, jobNo: 'G4684759', route: 'GA → MT', foreman: '', total: '$1,553', pu: '1087 Zelle', dest: '466' },
-            { date: '8/5/2026', month: 8, year: 2026, jobNo: 'G4681516', route: 'GA → NV', foreman: '', total: '$9,156', pu: '4500 BC', dest: '2746' },
-            { date: '8/5/2026', month: 8, year: 2026, jobNo: 'C7472669', route: 'SC → OH', foreman: '', total: '$1,680', pu: '900 Cash', dest: '780' },
-            { date: '8/7/2026', month: 8, year: 2026, jobNo: 'C7459854', route: 'NC → FL', foreman: '', total: '$1,017', pu: '1017 Cash', dest: '-' },
-            { date: '8/8/2026', month: 8, year: 2026, jobNo: 'G4679123', route: 'NC → CA', foreman: '', total: '$1,295', pu: '900 Zelle', dest: '395' },
-            { date: '8/8/2026', month: 8, year: 2026, jobNo: 'C7437867', route: 'NC → NC', foreman: '', total: '$1,619', pu: '1619 Cash', dest: '-' },
-            { date: '8/10/2026', month: 8, year: 2026, jobNo: 'G4666651', route: 'GA → NJ', foreman: '', total: '$3,957', pu: '1978 Zelle', dest: '1979' },
-            { date: '8/10/2026', month: 8, year: 2026, jobNo: 'G4686530', route: 'GA → NY', foreman: '', total: '$5,778', pu: '589 Cash', dest: '2889' },
-            { date: '8/10/2026', month: 8, year: 2026, jobNo: 'G4666449', route: 'GA → WA', foreman: '', total: '$5,997', pu: '4198 BC', dest: '1799' },
-            { date: '8/11/2026', month: 8, year: 2026, jobNo: 'C7472914', route: 'SC → SC', foreman: '', total: '$1,002', pu: '1002 Cash', dest: '-' },
-            { date: '8/12/2026', month: 8, year: 2026, jobNo: 'C7443828', route: 'VA → FL', foreman: '', total: '$2,950', pu: '1550 Zelle', dest: '1400' },
-            { date: '8/12/2026', month: 8, year: 2026, jobNo: 'C7476243', route: 'NC → NC', foreman: '', total: '$1,570', pu: '1570 Zelle', dest: '-' },
-            { date: '8/12/2026', month: 8, year: 2026, jobNo: 'G4677056', route: 'GA → TX', foreman: '', total: '$7,772', pu: '5000 Cash', dest: '1822' },
-            { date: '8/13/2026', month: 8, year: 2026, jobNo: 'G4684489', route: 'GA → VA', foreman: '', total: '$5,174', pu: '3000 Zelle', dest: '2174' },
-            { date: '8/13/2026', month: 8, year: 2026, jobNo: 'C7466759', route: 'NC → WI', foreman: '', total: '$1,081', pu: '1081 Cash', dest: '-' },
-            { date: '8/14/2026', month: 8, year: 2026, jobNo: 'C7469739', route: 'NC → FL', foreman: '', total: '$2,875', pu: '1976 Zelle', dest: '899' },
-            { date: '8/14/2026', month: 8, year: 2026, jobNo: 'C7469854', route: 'NC → NY', foreman: '', total: '$2,238', pu: '1119 Zelle', dest: '1119' },
-            { date: '8/14/2026', month: 8, year: 2026, jobNo: 'G4661329', route: 'GA → AZ', foreman: '', total: '$7,315', pu: '5000 Zelle', dest: '2315' },
-            { date: '8/14/2026', month: 8, year: 2026, jobNo: 'G4688562', route: 'GA → IA', foreman: '', total: '$5,264', pu: '3685 Zelle', dest: '1579' },
-            { date: '8/15/2026', month: 8, year: 2026, jobNo: 'G4687747', route: 'NC → TX', foreman: '', total: '$6,848', pu: '3500 PC', dest: '3348' },
-            { date: '8/15/2026', month: 8, year: 2026, jobNo: 'G4677469', route: 'SC → FL', foreman: '', total: '$2,890', pu: '1445 Zelle', dest: '1445' },
-            { date: '8/16/2026', month: 8, year: 2026, jobNo: 'G4674707', route: 'GA → TX', foreman: '', total: '$3,712', pu: '1856 Zelle', dest: '1856' },
-            { date: '8/17/2026', month: 8, year: 2026, jobNo: 'C7448755', route: 'NC → NC', foreman: '', total: '$2,000', pu: '2000 Cash', dest: '-' },
-            { date: '8/17/2026', month: 8, year: 2026, jobNo: 'C7480284', route: 'SC → NC', foreman: '', total: '$3,500', pu: '3500 Cash', dest: '-' },
-            { date: '8/17/2026', month: 8, year: 2026, jobNo: 'C7481097', route: 'NC → WV', foreman: '', total: '$1,437', pu: '720 Cash', dest: '717' },
-            { date: '8/18/2026', month: 8, year: 2026, jobNo: 'G4687896', route: 'GA → IN', foreman: '', total: '$4,277', pu: '2226 CC', dest: '2051' },
-            { date: '8/18/2026', month: 8, year: 2026, jobNo: 'G4671311', route: 'GA → TN', foreman: '', total: '$1,807', pu: '1445 Zelle', dest: '362' },
-            { date: '8/18/2026', month: 8, year: 2026, jobNo: 'C7481088', route: 'SC → GA', foreman: '', total: '$4,673', pu: '2804 Zelle', dest: '1869' },
-            { date: '8/19/2026', month: 8, year: 2026, jobNo: 'G4687210', route: 'NC → AR', foreman: '', total: '$10,200', pu: '5200 CC', dest: '5000' },
-            { date: '8/19/2026', month: 8, year: 2026, jobNo: 'C7482244', route: 'NC → TX', foreman: '', total: '$1,080', pu: '1080 Zelle', dest: '-' },
-            { date: '8/20/2026', month: 8, year: 2026, jobNo: 'C7439788', route: 'SC → SC', foreman: '', total: '$1,932', pu: '1000 Cash', dest: '932' },
-            { date: '8/20/2026', month: 8, year: 2026, jobNo: 'C7460835', route: 'SC → NY', foreman: '', total: '$3,766', pu: '1883 PC', dest: '1883' },
-            { date: '8/20/2026', month: 8, year: 2026, jobNo: 'C7482190', route: 'SC → OH', foreman: '', total: '$1,561', pu: '1100 Zelle', dest: '461' },
-            { date: '8/21/2026', month: 8, year: 2026, jobNo: 'C7476639', route: 'NC → NC', foreman: '', total: '$1,000', pu: '600 Cash', dest: '400' },
-            { date: '8/21/2026', month: 8, year: 2026, jobNo: 'G4690568', route: 'NC → NY', foreman: '', total: '$2,000', pu: '1000 Zelle', dest: '1000' },
-            { date: '8/22/2026', month: 8, year: 2026, jobNo: 'C7484322', route: 'SC → VA', foreman: '', total: '$1,016', pu: '508 Zelle', dest: '508' },
-            { date: '8/23/2026', month: 8, year: 2026, jobNo: 'C7458620', route: 'SC → AZ', foreman: '', total: '$5,345', pu: '2672 WT', dest: '2673' },
-            { date: '8/24/2026', month: 8, year: 2026, jobNo: 'C7482628', route: 'SC → TX', foreman: '', total: '$7,496', pu: '7496 PC', dest: '-' },
-            { date: '8/24/2026', month: 8, year: 2026, jobNo: 'C7480132', route: 'SC → SC', foreman: '', total: '$1,938', pu: '1277 PMO', dest: '661 Cash' },
-            { date: '8/25/2026', month: 8, year: 2026, jobNo: 'G4680841', route: 'GA → NY', foreman: '', total: '$1,139', pu: '570 Zelle', dest: '569' },
-            { date: '8/25/2026', month: 8, year: 2026, jobNo: 'G4685989', route: 'GA → AZ', foreman: '', total: '$9,194', pu: '4500 Zelle', dest: '4694' },
-            { date: '8/25/2026', month: 8, year: 2026, jobNo: 'G4685626', route: 'NC → FL', foreman: '', total: '$2,400', pu: '1680 Zelle', dest: '720' },
-            { date: '8/26/2026', month: 8, year: 2026, jobNo: 'C7448438', route: 'SC → MI', foreman: '', total: '$1,804', pu: '902 Zelle', dest: '902' },
-            { date: '8/27/2026', month: 8, year: 2026, jobNo: 'G4681748', route: 'GA → NC', foreman: '', total: '$10,511', pu: '6000 Zelle', dest: '4511' },
-            { date: '8/28/2026', month: 8, year: 2026, jobNo: 'G4680955', route: 'GA → TN', foreman: '', total: '$4,775', pu: '2000 Zelle', dest: '2775' },
-            { date: '8/28/2026', month: 8, year: 2026, jobNo: 'C7489210', route: 'NC → NC', foreman: '', total: '$1,500', pu: '1000 Cash', dest: '500' },
-            { date: '8/28/2026', month: 8, year: 2026, jobNo: 'C7446226', route: 'NC → FL', foreman: '', total: '$4,384', pu: '2642 Zelle', dest: '922' },
-            { date: '8/28/2026', month: 8, year: 2026, jobNo: 'G4688425', route: 'NC → FL', foreman: '', total: '$18,000', pu: '18000 BC', dest: '-' },
-            { date: '8/28/2026', month: 8, year: 2026, jobNo: 'C7485209', route: 'NC → FL', foreman: '', total: '$1,486', pu: '1000 Zelle', dest: '486' },
-            { date: '8/29/2026', month: 8, year: 2026, jobNo: 'C7488478', route: 'SC → SC', foreman: '', total: '$1,051', pu: '1051 Cash', dest: '-' },
-            { date: '8/29/2026', month: 8, year: 2026, jobNo: 'C7478596', route: 'SC → NC', foreman: '', total: '$5,817', pu: '5817 PC', dest: '-' },
-            { date: '8/29/2026', month: 8, year: 2026, jobNo: 'G4692727', route: 'NC → LA', foreman: '', total: '$6,635', pu: '3000 Zelle', dest: '3635' },
-            { date: '8/30/2026', month: 8, year: 2026, jobNo: 'G4674552', route: 'GA → FL', foreman: '', total: '$25,000', pu: '25000 BC', dest: '-' },
-            { date: '8/30/2026', month: 8, year: 2026, jobNo: 'G4688087', route: 'GA → TX', foreman: '', total: '$12,049', pu: '-', dest: '-' },
-            { date: '8/30/2026', month: 8, year: 2026, jobNo: 'C7429460', route: 'NC → GA', foreman: '', total: '$3,204', pu: '204 Cash', dest: '-' },
-            { date: '8/30/2026', month: 8, year: 2026, jobNo: 'C7473122', route: 'NC → NY', foreman: '', total: '$2,373', pu: '610 Cash', dest: '1763' },
-            { date: '8/31/2026', month: 8, year: 2026, jobNo: 'C7493475', route: 'NC → NC', foreman: '', total: '$1,328', pu: '1328 Cash', dest: '-' },
-            { date: '9/1/2026', month: 9, year: 2026, jobNo: 'C7456695', route: 'NC → TX', foreman: '', total: '$4,612', pu: '3228 Cash', dest: '1384' },
-            { date: '9/2/2026', month: 9, year: 2026, jobNo: 'G4671925', route: 'WV → MT', foreman: '', total: '$8,492', pu: '4800 BC', dest: '3692' },
-            { date: '9/3/2026', month: 9, year: 2026, jobNo: 'C7489737', route: 'SC → SC', foreman: '', total: '$1,252', pu: '1252 Cash', dest: '-' },
-            { date: '9/4/2026', month: 9, year: 2026, jobNo: '26182543', route: 'NC → CO', foreman: '', total: '$1,994', pu: '997 Zelle', dest: '997' },
-            { date: '9/4/2026', month: 9, year: 2026, jobNo: 'C7485844', route: 'NC → NC', foreman: '', total: '$1,300', pu: '1300 Zelle', dest: '-' },
-            { date: '9/4/2026', month: 9, year: 2026, jobNo: 'C7458233', route: 'NC → NC', foreman: '', total: '$1,034', pu: '1034 Zelle', dest: '-' },
-            { date: '9/5/2026', month: 9, year: 2026, jobNo: 'C7477507', route: 'NC → FL', foreman: '', total: '$3,602', pu: '346 Cash', dest: '1803' },
-            { date: '9/5/2026', month: 9, year: 2026, jobNo: 'G4684443', route: 'NC → PA', foreman: '', total: '$1,655', pu: '500 Cash', dest: '1155' },
-            { date: '9/5/2026', month: 9, year: 2026, jobNo: 'G4679017', route: 'NC → NH', foreman: '', total: '$11,755', pu: '8240 Cash', dest: '3515' },
-            { date: '9/6/2026', month: 9, year: 2026, jobNo: 'C7477971', route: 'SC → SC', foreman: 'Adam', total: '$1,000', pu: '1000 BC', dest: '-' },
-            { date: '9/8/2026', month: 9, year: 2026, jobNo: 'G4694050', route: 'GA → CA', foreman: 'Noah', total: '$5,717', pu: '2700 Cash', dest: '3017' },
-            { date: '9/8/2026', month: 9, year: 2026, jobNo: 'C7471144', route: 'NC → NC', foreman: 'adam', total: '$1,441', pu: '1441 BC', dest: '-' },
-            { date: '9/9/2026', month: 9, year: 2026, jobNo: 'G4685536', route: 'NC → PA', foreman: 'adam', total: '$5,000', pu: '3000 Zelle', dest: '2000' },
-            { date: '9/10/2026', month: 9, year: 2026, jobNo: 'G4683265', route: 'GA → AZ', foreman: 'adam', total: '$4,110', pu: '2000 Zelle', dest: '2110' },
-            { date: '9/10/2026', month: 9, year: 2026, jobNo: 'C7478089', route: 'NC → FL', foreman: 'Sammy', total: '$1,037', pu: '-', dest: '1037' },
-            { date: '9/10/2026', month: 9, year: 2026, jobNo: 'G4692016', route: 'NC → FL', foreman: 'Sammy', total: '$3,522', pu: '2221 Cash', dest: '1301' },
-            { date: '9/11/2026', month: 9, year: 2026, jobNo: 'G4697415', route: 'NC → FL', foreman: 'Sammy', total: '$2,509', pu: '1255 Zelle', dest: '1254' },
-            { date: '9/12/2026', month: 9, year: 2026, jobNo: 'G4678022', route: 'NC → KY', foreman: 'sammy', total: '$10,000', pu: '5000 PC', dest: '5000' },
-            { date: '9/13/2026', month: 9, year: 2026, jobNo: 'G4697689', route: 'SC → KY', foreman: 'Sammy', total: '$8,356', pu: '5456 PC', dest: '2900' },
-            { date: '9/13/2026', month: 9, year: 2026, jobNo: 'G4698761', route: 'GA → NY', foreman: 'cameron', total: '$2,161', pu: '1513 CC', dest: '648' },
-            { date: '9/14/2026', month: 9, year: 2026, jobNo: 'C7489792', route: 'NC → NC', foreman: 'said', total: '$1,000', pu: '1000 Zelle', dest: '-' },
-            { date: '9/15/2026', month: 9, year: 2026, jobNo: 'G4678146', route: 'NC → NC', foreman: 'Said', total: '$2,500', pu: '2500 Zelle', dest: '-' },
-            { date: '9/18/2026', month: 9, year: 2026, jobNo: 'C7502667', route: 'WV → MD', foreman: 'adam', total: '$4,700', pu: '2700 Zelle', dest: '2000' },
-            { date: '9/20/2026', month: 9, year: 2026, jobNo: 'G4678513', route: 'NC → GA', foreman: 'sammy', total: '$4,460', pu: '2730 Zelle', dest: '1730' },
-            { date: '9/21/2026', month: 9, year: 2026, jobNo: 'C7492618', route: 'SC → OH', foreman: 'adam', total: '$1,080', pu: '550 Cash', dest: '530' },
-            { date: '9/21/2026', month: 9, year: 2026, jobNo: 'C7485637', route: 'SC → GA', foreman: 'sammy', total: '$3,000', pu: '2000 Zelle', dest: '1000' },
-            { date: '9/22/2026', month: 9, year: 2026, jobNo: 'G4681622', route: 'NC → CA', foreman: 'sammy', total: '$1,294', pu: '600 Zelle', dest: '694' },
-            { date: '9/22/2026', month: 9, year: 2026, jobNo: 'C7499344', route: 'VA → GA', foreman: 'sammy', total: '$2,040', pu: '1020 Zelle', dest: '1020' },
-            { date: '9/22/2026', month: 9, year: 2026, jobNo: 'C7485943', route: 'SC → TX', foreman: 'said', total: '$1,080', pu: '540 Zelle', dest: '540' },
-            { date: '9/23/2026', month: 9, year: 2026, jobNo: 'G4703256', route: 'NC → NC', foreman: 'said', total: '$4,930', pu: '1815 Zelle, 3115 PC', dest: '-' },
-            { date: '9/23/2026', month: 9, year: 2026, jobNo: '26267193', route: 'VA → MS', foreman: 'sammy', total: '$2,016', pu: '1008 Zelle', dest: '1008' },
-            { date: '9/25/2026', month: 9, year: 2026, jobNo: '26281495', route: 'WW → WV', foreman: 'said', total: '$3,091', pu: '3091 Cash', dest: '-' },
-            { date: '9/26/2026', month: 9, year: 2026, jobNo: 'G4695661', route: 'SC → TX', foreman: 'sammy', total: '$1,868', pu: '1068 Zelle', dest: '800' },
-            { date: '9/26/2026', month: 9, year: 2026, jobNo: 'G4700041', route: 'GA → NE', foreman: 'omar', total: '$1,160', pu: '1160 Zelle', dest: '-' },
-            { date: '9/26/2026', month: 9, year: 2026, jobNo: 'G4704022', route: 'GA → NY', foreman: 'omar', total: '$3,364', pu: '750 Zelle', dest: '2614' },
-            { date: '9/27/2026', month: 9, year: 2026, jobNo: 'G4699948', route: 'VA → MS', foreman: 'said', total: '$6,000', pu: '500 Cash, 500 Zelle, 1500 PMO', dest: '3500' },
-            { date: '9/27/2026', month: 9, year: 2026, jobNo: 'G4695051', route: 'NC → PA', foreman: 'sammy', total: '$11,277', pu: '8000 PC', dest: '3277' },
-            { date: '9/28/2026', month: 9, year: 2026, jobNo: 'G4697552', route: 'VA → SC', foreman: 'sammy', total: '$7,180', pu: '3190 BC', dest: '3190' },
-            { date: '9/28/2026', month: 9, year: 2026, jobNo: 'G4671375', route: 'GA → IN', foreman: 'adam', total: '$10,954', pu: '8000 PC', dest: '2954' },
-            { date: '9/28/2026', month: 9, year: 2026, jobNo: 'G4692264', route: 'NC → MA', foreman: 'Said', total: '$11,987', pu: '10000 PC', dest: '1987' },
-            { date: '9/29/2026', month: 9, year: 2026, jobNo: 'G4696295', route: 'SC → KY', foreman: 'sammy', total: '$4,543', pu: '2000 Zelle', dest: '2542' },
-            { date: '10/1/2026', month: 10, year: 2026, jobNo: 'G4706943', route: 'GA → FL', foreman: 'adam', total: '$1,090', pu: '545 Zelle', dest: '545' },
-            { date: '10/1/2026', month: 10, year: 2026, jobNo: 'G4702991', route: 'GA → SC', foreman: 'adam', total: '$1,575', pu: '1575 Zelle', dest: '-' },
-            { date: '10/5/2026', month: 10, year: 2026, jobNo: 'G4690559', route: 'NC → NC', foreman: 'adam', total: '$8,000', pu: '4000 BC', dest: '4000' },
-            { date: '10/5/2026', month: 10, year: 2026, jobNo: 'G4680784', route: 'GA → IA', foreman: 'omar', total: '$2,976', pu: '585 Zelle', dest: '2391' },
-            { date: '10/6/2026', month: 10, year: 2026, jobNo: '26311670', route: 'SC → PA', foreman: 'omar', total: '$1,513', pu: '1513 PC', dest: '-' },
-            { date: '10/7/2026', month: 10, year: 2026, jobNo: 'G4707949', route: 'NC → GA', foreman: 'omar', total: '$4,500', pu: '2000 Cash, 250 Zelle', dest: '2250' },
-            { date: '10/8/2026', month: 10, year: 2026, jobNo: 'G4695665', route: 'SC → FL', foreman: 'omar', total: '$1,189', pu: '-', dest: '594' },
-            { date: '10/9/2026', month: 10, year: 2026, jobNo: 'G4682142', route: 'GA → TN', foreman: 'omar', total: '$4,060', pu: '-', dest: '4528 BC' }
-        ];
-
-        let systemUsers = [
-            { id: 1, name: 'Fatma Al-Wahaibi', email: 'fatma@movepro.com', role: 'Admin' },
-            { id: 2, name: 'Wathek Safieh', email: 'wathek@movepro.com', role: 'Member' },
-            { id: 3, name: 'Audit Team', email: 'audit@movepro.com', role: 'Viewer' }
-        ];
-
-        function renderUsers() {
-            const container = document.getElementById('usersListContainer');
-            if(!container) return;
-            container.innerHTML = systemUsers.map(u => `
-                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border text-xs">
-                    <div>
-                        <p class="font-bold text-slate-900 text-sm">${u.name}</p>
-                        <p class="text-slate-500">${u.email}</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <select onchange="updateUserRole(${u.id}, this.value)" class="p-2 border rounded-lg font-semibold bg-white" ${currentUserRole !== 'Admin' ? 'disabled' : ''}>
-                            <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>Admin</option>
-                            <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>Member</option>
-                            <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>Viewer</option>
-                        </select>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function updateUserRole(id, newRole) {
-            const user = systemUsers.find(u => u.id === id);
-            if(user) {
-                user.role = newRole;
-                if(id === 1) {
-                    currentUserRole = newRole;
-                    document.getElementById('activeRoleText').innerText = newRole;
-                    document.getElementById('currentUserRoleBadge').innerText = newRole;
-                    checkPermissions();
-                }
-                renderUsers();
-            }
-        }
-
-        function checkPermissions() {
-            const addBtn = document.getElementById('addJobBtn');
-            if (currentUserRole === 'Viewer') {
-                if(addBtn) addBtn.style.display = 'none';
-            } else {
-                if(addBtn) addBtn.style.display = 'flex';
-            }
-        }
-
-        function renderJobsCRUD(dataToRender) {
-            const tbody = document.getElementById('crudTableBody');
-            if(!tbody) return;
-            tbody.innerHTML = dataToRender.map((item, index) => {
-                const foremanDisplay = (!item.foreman || item.foreman.trim() === '') 
-                    ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
-                    : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
-                
-                let actions = `<span class="text-slate-400">Restricted</span>`;
-                if(currentUserRole === 'Admin') {
-                    actions = `
-                        <button onclick="editJob(${index})" class="text-blue-600 hover:text-blue-800 mr-2 font-bold"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteJob(${index})" class="text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-trash"></i></button>
-                    `;
-                } else if(currentUserRole === 'Member') {
-                    actions = `<button onclick="editJob(${index})" class="text-blue-600 hover:text-blue-800 font-bold">Edit Only</button>`;
-                }
-
-                return `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="py-3 px-4 font-mono text-slate-500">${item.date}</td>
-                        <td class="py-3 px-4 font-bold text-slate-900">${item.jobNo}</td>
-                        <td class="py-3 px-4 font-semibold text-emerald-700">${item.route}</td>
-                        <td class="py-3 px-4">${foremanDisplay}</td>
-                        <td class="py-3 px-4 font-extrabold text-slate-900">${item.total}</td>
-                        <td class="py-3 px-4 text-slate-600">${item.pu}</td>
-                        <td class="py-3 px-4 text-slate-600">${item.dest}</td>
-                        <td class="py-3 px-4 text-center">${actions}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function filterJobsTable() {
-            const selectedMonth = document.getElementById('filterMonth').value;
-            const selectedYear = document.getElementById('filterYear').value;
-
-            let filtered = masterJobs.filter(item => {
-                let matchMonth = (selectedMonth === 'ALL' || item.month == selectedMonth);
-                let matchYear = (item.year == selectedYear);
-                return matchMonth && matchYear;
-            });
-
-            renderJobsCRUD(filtered);
-            const countText = document.getElementById('filteredCountText');
-            if(countText) {
-                countText.innerText = `Showing ${filtered.length} of ${masterJobs.length} records`;
-            }
-        }
-
-        function openAddModal() {
-            if(currentUserRole === 'Viewer') {
-                alert('Access denied: Viewer role cannot add records.');
-                return;
-            }
-            document.getElementById('modalTitle').innerText = 'Add New Dispatch';
-            document.getElementById('editIndex').value = '-1';
-            document.getElementById('jobForm').reset();
-            const modal = document.getElementById('jobModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('jobModal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-        }
-
-        function saveJob(e) {
-            e.preventDefault();
-            const index = parseInt(document.getElementById('editIndex').value);
-            const dateVal = document.getElementById('jobDate').value;
-            const parts = dateVal.split('/');
-            const monthVal = parts.length > 0 ? parseInt(parts[0]) : 5;
-            const yearVal = parts.length > 2 ? parseInt(parts[2]) : 2026;
-
-            const newJob = {
-                date: dateVal,
-                month: monthVal,
-                year: yearVal,
-                jobNo: document.getElementById('jobNo').value,
-                route: document.getElementById('jobRoute').value,
-                foreman: document.getElementById('jobForeman').value,
-                total: document.getElementById('jobTotal').value,
-                pu: 'Cash',
-                dest: '-'
-            };
-
-            if(index === -1) {
-                masterJobs.push(newJob);
-            } else {
-                masterJobs[index] = newJob;
-            }
-            closeModal();
-            filterJobsTable();
-        }
-
-        function editJob(index) {
-            if(currentUserRole === 'Viewer') return;
-            const j = masterJobs[index];
-            document.getElementById('modalTitle').innerText = 'Edit Dispatch Record';
-            document.getElementById('editIndex').value = index;
-            document.getElementById('jobDate').value = j.date;
-            document.getElementById('jobNo').value = j.jobNo;
-            document.getElementById('jobRoute').value = j.route;
-            document.getElementById('jobForeman').value = j.foreman;
-            document.getElementById('jobTotal').value = j.total;
-            const modal = document.getElementById('jobModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function deleteJob(index) {
-            if(currentUserRole !== 'Admin') {
-                alert('Only Admin users can delete records.');
-                return;
-            }
-            if(confirm('Are you sure you want to delete this record permanently?')) {
-                masterJobs.splice(index, 1);
-                filterJobsTable();
-            }
-        }
-
-        function downloadOfficialPDF() {
-            const element = document.getElementById('pdfContentArea');
-            html2pdf().from(element).save('MovePro_Audit_Report.pdf');
-        }
-
-        function switchTab(tab) {
-            ['dashboard', 'jobs', 'users', 'reports'].forEach(t => {
-                const tabEl = document.getElementById(`tab-${t}`);
-                const navEl = document.getElementById(`nav-${t}`);
-                if(tabEl) tabEl.classList.add('hidden');
-                if(navEl) navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition';
-            });
-            const activeTab = document.getElementById(`tab-${tab}`);
-            const activeNav = document.getElementById(`nav-${tab}`);
-            if(activeTab) activeTab.classList.remove('hidden');
-            if(activeNav) activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
-        }
-
-        window.onload = () => {
-            filterJobsTable();
-            renderUsers();
-            checkPermissions();
-        };
-    </script>
+    <!-- External Script Files -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
