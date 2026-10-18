@@ -231,10 +231,20 @@ function closeModal() {
 function saveJob(e) {
     e.preventDefault();
     const index = parseInt(document.getElementById('editIndex').value);
-    const dateVal = document.getElementById('jobDate').value;
-    const parts = dateVal.split('/');
-    const monthVal = parts.length > 0 ? parseInt(parts[0]) : 5;
-    const yearVal = parts.length > 2 ? parseInt(parts[2]) : 2026;
+    const dateRaw = document.getElementById('jobDate').value; // يأتي بصيغة 2026-12-05 من التقويم
+    
+    let dateVal = dateRaw;
+    let monthVal = 5;
+    let yearVal = 2026;
+
+    if (dateRaw && dateRaw.includes('-')) {
+        const p = dateRaw.split('-');
+        yearVal = parseInt(p[0]);
+        monthVal = parseInt(p[1]);
+        const dayVal = parseInt(p[2]);
+        // تحويله تلقائياً للصيغة الأمريكية M/D/YYYY لتتوافق مع الجدول
+        dateVal = `${monthVal}/${dayVal}/${yearVal}`;
+    }
 
     let totalRaw = document.getElementById('jobTotal').value.trim();
     if (totalRaw && !totalRaw.startsWith('$') && totalRaw !== '-') {
@@ -277,7 +287,22 @@ function editJob(index) {
     const j = masterJobs[index];
     document.getElementById('modalTitle').innerText = 'Edit Dispatch Record';
     document.getElementById('editIndex').value = index;
-    document.getElementById('jobDate').value = j.date;
+    
+    // تحويل التاريخ من الجدول ليتوافق مع تقويم الإدخال
+    if (j.date && j.date.includes('/')) {
+        const parts = j.date.split('/');
+        if (parts.length === 3) {
+            const mm = parts[0].padStart(2, '0');
+            const dd = parts[1].padStart(2, '0');
+            const yyyy = parts[2];
+            document.getElementById('jobDate').value = `${yyyy}-${mm}-${dd}`;
+        } else {
+            document.getElementById('jobDate').value = j.date;
+        }
+    } else {
+        document.getElementById('jobDate').value = j.date || '';
+    }
+
     document.getElementById('jobNo').value = j.jobNo;
     document.getElementById('jobRoute').value = j.route;
     document.getElementById('jobForeman').value = j.foreman;
@@ -287,14 +312,11 @@ function editJob(index) {
     const puContainer = document.getElementById('puContainer');
     puContainer.innerHTML = '';
     if (j.pu && j.pu !== '-') {
-        const puParts = j.pu.split(',');
-        puParts.forEach(p => {
+        j.pu.split(',').forEach(p => {
             const trimP = p.trim();
             const lastSpace = trimP.lastIndexOf(' ');
             if (lastSpace !== -1) {
-                const amt = trimP.substring(0, lastSpace);
-                const mth = trimP.substring(lastSpace + 1);
-                addPaymentRow('puContainer', amt, mth);
+                addPaymentRow('puContainer', trimP.substring(0, lastSpace), trimP.substring(lastSpace + 1));
             } else {
                 addPaymentRow('puContainer', trimP, 'Cash');
             }
@@ -307,14 +329,11 @@ function editJob(index) {
     const destContainer = document.getElementById('destContainer');
     destContainer.innerHTML = '';
     if (j.dest && j.dest !== '-') {
-        const destParts = j.dest.split(',');
-        destParts.forEach(d => {
+        j.dest.split(',').forEach(d => {
             const trimD = d.trim();
             const lastSpace = trimD.lastIndexOf(' ');
             if (lastSpace !== -1) {
-                const amt = trimD.substring(0, lastSpace);
-                const mth = trimD.substring(lastSpace + 1);
-                addPaymentRow('destContainer', amt, mth);
+                addPaymentRow('destContainer', trimD.substring(0, lastSpace), trimD.substring(lastSpace + 1));
             } else {
                 addPaymentRow('destContainer', trimD, 'Cash');
             }
