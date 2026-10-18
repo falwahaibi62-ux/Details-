@@ -337,10 +337,14 @@
                     <label class="block font-semibold text-slate-700 mb-1">Job No</label>
                     <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="G4648193">
                 </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Route (From → To)</label>
-                    <input type="text" id="jobRoute" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="NC → NV">
-                </div>
+               <div>
+    <label class="block font-semibold text-slate-700 mb-1">Route (From → To)</label>
+    <div class="flex items-center gap-2">
+        <input type="text" id="routeFrom" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="From (e.g. NC)">
+        <span class="text-slate-400 font-bold text-sm px-1">→</span>
+        <input type="text" id="routeTo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="To (e.g. NV)">
+    </div>
+
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Foreman Name</label>
                     <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="no name">
