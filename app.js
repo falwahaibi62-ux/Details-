@@ -1,6 +1,7 @@
 let currentUserRole = 'Admin';
 let currentLoggedInUser = null;
 let revenueChartInstance = null;
+let paymentMixChartInstance = null;
 
 function handleLogin(e) {
     e.preventDefault();
@@ -30,6 +31,7 @@ function handleLogin(e) {
         populateYearFilter();
         filterJobsTable();
         renderUsers();
+        updateDashboardAnalytics();
     } else {
         errorDiv.classList.remove('hidden');
     }
@@ -211,7 +213,6 @@ function openAddModal() {
     document.getElementById('editIndex').value = '-1';
     document.getElementById('jobForm').reset();
     
-    // Clear dynamic containers and add one default row each
     document.getElementById('puContainer').innerHTML = '';
     document.getElementById('destContainer').innerHTML = '';
     addPaymentRow('puContainer');
@@ -231,7 +232,7 @@ function closeModal() {
 function saveJob(e) {
     e.preventDefault();
     const index = parseInt(document.getElementById('editIndex').value);
-    const dateRaw = document.getElementById('jobDate').value; // يأتي بصيغة 2026-12-05 من التقويم
+    const dateRaw = document.getElementById('jobDate').value;
     
     let dateVal = dateRaw;
     let monthVal = 5;
@@ -242,7 +243,6 @@ function saveJob(e) {
         yearVal = parseInt(p[0]);
         monthVal = parseInt(p[1]);
         const dayVal = parseInt(p[2]);
-        // تحويله تلقائياً للصيغة الأمريكية M/D/YYYY لتتوافق مع الجدول
         dateVal = `${monthVal}/${dayVal}/${yearVal}`;
     }
 
@@ -280,6 +280,7 @@ function saveJob(e) {
     closeModal();
     populateYearFilter();
     filterJobsTable();
+    updateDashboardAnalytics();
 }
 
 function editJob(index) {
@@ -288,7 +289,6 @@ function editJob(index) {
     document.getElementById('modalTitle').innerText = 'Edit Dispatch Record';
     document.getElementById('editIndex').value = index;
     
-    // تحويل التاريخ من الجدول ليتوافق مع تقويم الإدخال
     if (j.date && j.date.includes('/')) {
         const parts = j.date.split('/');
         if (parts.length === 3) {
@@ -308,7 +308,6 @@ function editJob(index) {
     document.getElementById('jobForeman').value = j.foreman;
     document.getElementById('jobTotal').value = j.total;
     
-    // Clear & Populate PU Container
     const puContainer = document.getElementById('puContainer');
     puContainer.innerHTML = '';
     if (j.pu && j.pu !== '-') {
@@ -325,7 +324,6 @@ function editJob(index) {
         addPaymentRow('puContainer');
     }
 
-    // Clear & Populate Dest Container
     const destContainer = document.getElementById('destContainer');
     destContainer.innerHTML = '';
     if (j.dest && j.dest !== '-') {
@@ -356,6 +354,131 @@ function deleteJob(index) {
         masterJobs.splice(index, 1);
         populateYearFilter();
         filterJobsTable();
+        updateDashboardAnalytics();
+    }
+}
+
+// دوال تحليل وإحصاءات الداشبورد الاحترافي
+function updateDashboardAnalytics() {
+    if (!window.masterJobs || masterJobs.length === 0) return;
+
+    let totalRev = 0;
+    const routeRevenueMap = {};
+    const paymentMethodMap = { Cash: 0, Zelle: 0, PS: 0, BS: 0, Others: 0 };
+    const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    masterJobs.forEach(job => {
+        let amt = 0;
+        if (job.total) {
+            amt = parseFloat(job.total.replace(/[^0-9.]/g, '')) || 0;
+        }
+        totalRev += amt;
+
+        if (job.month && job.month >= 1 && job.month <= 12) {
+            monthlyRev[job.month - 1] += amt;
+        }
+
+        if (job.route) {
+            routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
+        }
+
+        const extractMethods = (text) => {
+            if (!text || text === '-') return;
+            const lower = text.toLowerCase();
+            if (lower.includes('cash')) paymentMethodMap.Cash++;
+            else if (lower.includes('zelle')) paymentMethodMap.Zelle++;
+            else if (lower.includes('ps')) paymentMethodMap.PS++;
+            else if (lower.includes('bs')) paymentMethodMap.BS++;
+            else paymentMethodMap.Others++;
+        };
+
+        extractMethods(job.pu);
+        extractMethods(job.dest);
+    });
+
+    const completedJobsCount = masterJobs.length;
+    const avgJobVal = completedJobsCount > 0 ? (totalRev / completedJobsCount) : 0;
+
+    const revEl = document.getElementById('dashTotalRevenue');
+    if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
+
+    const jobsTextEl = document.getElementById('dashCompletedJobsText');
+    if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${completedJobsCount} Active Dispatches`;
+
+    const avgEl = document.getElementById('dashAvgJobValue');
+    if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
+
+    const topCorridorsContainer = document.getElementById('topCorridorsContainer');
+    if (topCorridorsContainer) {
+        const sortedRoutes = Object.entries(routeRevenueMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 4);
+
+        topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border">
+                <div class="flex items-center space-x-2">
+                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
+                    <span class="font-bold text-emerald-800">${route}</span>
+                </div>
+                <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
+            </div>
+        `).join('');
+    }
+
+    renderDashboardCharts(monthlyRev, paymentMethodMap);
+}
+
+function renderDashboardCharts(monthlyData, paymentData) {
+    const ctxRevenue = document.getElementById('revenueChart');
+    if (ctxRevenue) {
+        if (revenueChartInstance) revenueChartInstance.destroy();
+        revenueChartInstance = new Chart(ctxRevenue, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Monthly Revenue ($)',
+                    data: monthlyData,
+                    backgroundColor: 'rgba(5, 150, 105, 0.85)',
+                    borderRadius: 8,
+                    hoverBackgroundColor: '#047857'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+    }
+
+    const ctxPayment = document.getElementById('paymentMixChart');
+    if (ctxPayment) {
+        if (paymentMixChartInstance) paymentMixChartInstance.destroy();
+        paymentMixChartInstance = new Chart(ctxPayment, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(paymentData),
+                datasets: [{
+                    data: Object.values(paymentData),
+                    backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#64748b'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                },
+                cutout: '65%'
+            }
+        });
     }
 }
 
@@ -370,8 +493,13 @@ function switchTab(tab) {
     const activeNav = document.getElementById(`nav-${tab}`);
     if(activeTab) activeTab.classList.remove('hidden');
     if(activeNav) activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
+
+    if (tab === 'dashboard') {
+        setTimeout(updateDashboardAnalytics, 100);
+    }
 }
 
 window.onload = () => {
     renderUsers();
+    updateDashboardAnalytics();
 };
