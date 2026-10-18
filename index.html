@@ -1,41 +1,134 @@
-<!-- Actionable Decision Insights Panel -->
-<div class="glass-panel p-6 rounded-2xl bg-white shadow-sm lg:col-span-2 space-y-4">
-    <h3 class="font-bold text-slate-900 text-sm border-b pb-3"><i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>Strategic Business Recommendations & Optimizations</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl space-y-1.5">
-            <div class="flex items-center gap-2 font-bold text-emerald-800">
-                <i class="fa-solid fa-circle-arrow-up"></i> High Yield Lane Focus
-            </div>
-            <p class="text-slate-600 leading-relaxed">
-                Prioritize dispatch allocations on top-performing corridors to maximize revenue yield and minimize deadhead miles.
-            </p>
-        </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovePro - Enterprise Operations & Management System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN for Advanced Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
 
-        <div class="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-1.5">
-            <div class="flex items-center gap-2 font-bold text-blue-800">
-                <i class="fa-solid fa-shield-halved"></i> Liquidity Optimization
+    <!-- LOGIN SCREEN MODAL / OVERLAY -->
+    <div id="loginScreen" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 text-2xl font-bold mx-auto border border-emerald-500/20">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900">MovePro Enterprise</h2>
+                <p class="text-xs text-slate-500">Sign in with your authorized credentials to access operations</p>
             </div>
-            <p class="text-slate-600 leading-relaxed">
-                Monitor operational cash flows closely and balance upfront pick-up collections to maintain robust financial stability.
-            </p>
-        </div>
 
-        <div class="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl space-y-1.5">
-            <div class="flex items-center gap-2 font-bold text-purple-800">
-                <i class="fa-solid fa-chart-line"></i> Payment Method Balancing
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5">Full Name</label>
+                    <input type="text" id="loginName" required class="w-full p-3 bg-slate-50 border rounded-xl font-medium focus:outline-none focus:border-emerald-500" placeholder="e.g. Fatma Al-Wahaibi">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5">Email Address</label>
+                    <input type="email" id="loginEmail" required class="w-full p-3 bg-slate-50 border rounded-xl font-medium focus:outline-none focus:border-emerald-500" placeholder="e.g. fatma@movepro.com">
+                </div>
+                <div id="loginError" class="text-red-500 font-semibold text-center hidden">
+                    Invalid name or email. Please check your credentials.
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 transition">
+                    Access Dashboard
+                </button>
+            </form>
+            <div class="text-center">
+                <p class="text-[11px] text-slate-400">Authorized Personnel Only • Secure Session</p>
             </div>
-            <p class="text-slate-600 leading-relaxed">
-                Track digital payment channels (Zelle & PS) alongside cash transactions to accelerate bank reconciliations and auditing.
-            </p>
-        </div>
-
-        <div class="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl space-y-1.5">
-            <div class="flex items-center gap-2 font-bold text-amber-800">
-                <i class="fa-solid fa-user-gear"></i> Dispatch Allocation
-            </div>
-            <p class="text-slate-600 leading-relaxed">
-                Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence and mitigate risks.
-            </p>
         </div>
     </div>
-</div>
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 shadow-2xl">
+        <div>
+            <div class="p-5 flex items-center justify-between border-b border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 font-bold text-xl border border-emerald-500/20">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white leading-none">MovePro</h2>
+                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise Pro v16</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="p-4 space-y-1.5 text-sm">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition">
+                    <i class="fa-solid fa-gauge-high w-5 text-center"></i>
+                    <span>Dashboard & Analytics</span>
+                </button>
+                <button onclick="switchTab('jobs')" id="nav-jobs" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-truck-fast w-5 text-center text-emerald-400"></i>
+                    <span>Operations Ledger (CRUD)</span>
+                </button>
+                <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-users-gear w-5 text-center text-emerald-400"></i>
+                    <span>Users & Roles</span>
+                </button>
+                <button onclick="switchTab('reports')" id="nav-reports" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-file-pdf w-5 text-center text-emerald-400"></i>
+                    <span>Official PDF Report</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-slate-800 bg-slate-950/40">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div id="userAvatarInitials" class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">FA</div>
+                    <div class="text-xs truncate">
+                        <p id="currentUserNameDisplay" class="font-semibold text-white truncate">Fatma Al-Wahaibi</p>
+                        <p id="currentUserRoleBadge" class="text-emerald-400 font-medium">Admin</p>
+                    </div>
+                </div>
+                <button onclick="logoutSession()" title="Logout" class="text-slate-400 hover:text-red-400 transition text-sm">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
+
+        <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between shrink-0 shadow-sm">
+            <div>
+                <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Executive Dashboard & Advanced Analytics</h1>
+                <p class="text-xs text-slate-500">Real-time business insights and operational telemetry</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden sm:block">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </span>
+                    <input type="text" id="globalSearch" onkeyup="globalSearchFilter()" placeholder="Search jobs, routes..." class="w-56 pl-9 pr-4 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500 transition">
+                </div>
+                <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-lg border border-emerald-200">
+                    <i class="fa-solid fa-shield-halved mr-1"></i>Active Role: <span id="activeRoleText">Admin</span>
+                </span>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
+
+            <!-- TAB 1: ADVANCED DASHBOARD & CHARTS -->
+            <div id="tab-dashboard" class="space-y-6">
+                <!-- Dynamic Executive KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-600 bg-white shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Lifetime Revenue</p>
+                                <h3 id="dashTotalRevenue" class="text-2xl font-black text-slate-90
