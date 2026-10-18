@@ -252,10 +252,10 @@ function saveJob(e) {
         totalRaw = isNaN(num) ? totalRaw : '$' + num.toLocaleString('en-US');
     }
 
-    let routeRaw = document.getElementById('jobRoute').value.trim().toUpperCase();
-    if (routeRaw.includes(' ')) {
-        routeRaw = routeRaw.replace(/\s+/g, ' ').replace(' TO ', ' → ').replace(' - ', ' → ');
-    }
+    // قراءة القيم من الحقلين المنفصلين ودمجهما بالشكل الصحيح
+    const fromVal = document.getElementById('routeFrom').value.trim().toUpperCase();
+    const toVal = document.getElementById('routeTo').value.trim().toUpperCase();
+    const routeVal = `${fromVal} → ${toVal}`;
 
     const puFormatted = extractPaymentsFromContainer('puContainer');
     const destFormatted = extractPaymentsFromContainer('destContainer');
@@ -265,7 +265,7 @@ function saveJob(e) {
         month: monthVal,
         year: yearVal,
         jobNo: document.getElementById('jobNo').value.trim(),
-        route: routeRaw,
+        route: routeVal,
         foreman: document.getElementById('jobForeman').value.trim(),
         total: totalRaw,
         pu: puFormatted,
@@ -282,7 +282,6 @@ function saveJob(e) {
     filterJobsTable();
     updateDashboardAnalytics();
 }
-
 function editJob(index) {
     if(currentUserRole === 'Viewer') return;
     const j = masterJobs[index];
