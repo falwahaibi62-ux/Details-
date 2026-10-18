@@ -126,56 +126,129 @@
 
             <!-- TAB 1: ADVANCED DASHBOARD & CHARTS -->
             <div id="tab-dashboard" class="space-y-6">
-                <!-- KPI Cards -->
+                <!-- Dynamic Executive KPI Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-slate-900">
-                        <p class="text-xs text-slate-400 font-bold uppercase">Total Revenue</p>
-                        <h3 class="text-2xl font-black text-slate-900 mt-1">$1,146,221</h3>
-                        <p class="text-[11px] text-emerald-600 font-semibold mt-2"><i class="fa-solid fa-arrow-trend-up mr-1"></i>312 Completed Jobs</p>
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-600 bg-white shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Lifetime Revenue</p>
+                                <h3 id="dashTotalRevenue" class="text-2xl font-black text-slate-900 mt-1">$0</h3>
+                            </div>
+                            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><i class="fa-solid fa-wallet text-base"></i></div>
+                        </div>
+                        <p id="dashCompletedJobsText" class="text-[11px] text-emerald-600 font-semibold mt-2"><i class="fa-solid fa-truck-check mr-1"></i>0 Active Dispatches</p>
                     </div>
-                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-blue-600">
-                        <p class="text-xs text-slate-400 font-bold uppercase">Direct Deliveries</p>
-                        <h3 class="text-2xl font-black text-blue-600 mt-1">69 Deliveries</h3>
-                        <p class="text-[11px] text-slate-500 mt-2">High fulfillment rate</p>
+
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-blue-600 bg-white shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Avg. Job Value</p>
+                                <h3 id="dashAvgJobValue" class="text-2xl font-black text-blue-600 mt-1">$0</h3>
+                            </div>
+                            <div class="p-2 bg-blue-50 text-blue-600 rounded-xl"><i class="fa-solid fa-chart-line text-base"></i></div>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-2">Optimal Freight Yield Ratio</p>
                     </div>
-                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-amber-500">
-                        <p class="text-xs text-slate-400 font-bold uppercase">Diesel Expenses</p>
-                        <h3 class="text-2xl font-black text-amber-600 mt-1">$34,889</h3>
-                        <p class="text-[11px] text-slate-500 mt-2">Optimized fuel metrics</p>
+
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-purple-600 bg-white shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">P.U Collection Rate</p>
+                                <h3 id="dashPuRate" class="text-2xl font-black text-purple-600 mt-1">100%</h3>
+                            </div>
+                            <div class="p-2 bg-purple-50 text-purple-600 rounded-xl"><i class="fa-solid fa-hand-holding-dollar text-base"></i></div>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-2">Upfront Liquidity Performance</p>
                     </div>
-                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-500">
-                        <p class="text-xs text-slate-400 font-bold uppercase">Operating Margin</p>
-                        <h3 class="text-2xl font-black text-emerald-600 mt-1">70.4%</h3>
-                        <p class="text-[11px] text-emerald-600 font-semibold mt-2">Top tier performance</p>
+
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-amber-500 bg-white shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Destination Receivables</p>
+                                <h3 id="dashDestReceivables" class="text-2xl font-black text-amber-600 mt-1">Active</h3>
+                            </div>
+                            <div class="p-2 bg-amber-50 text-amber-600 rounded-xl"><i class="fa-solid fa-clock-rotate-left text-base"></i></div>
+                        </div>
+                        <p class="text-[11px] text-amber-700 font-semibold mt-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Settlement Tracking</p>
                     </div>
                 </div>
 
-                <!-- Interactive Charts Section -->
+                <!-- Charts & Advanced Telemetry -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="glass-panel p-6 rounded-2xl lg:col-span-2 space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-chart-area text-emerald-600 mr-2"></i>Monthly Operations Volume</h3>
-                            <span class="text-[11px] bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-lg">Multi-Year Analytics</span>
+                    <!-- Main Operations Trend Chart -->
+                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm lg:col-span-2 space-y-4">
+                        <div class="flex justify-between items-center border-b pb-3">
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-chart-column text-emerald-600 mr-2"></i>Monthly Revenue & Volume Trend</h3>
+                                <p class="text-[11px] text-slate-400">Real-time performance distribution derived from active ledger</p>
+                            </div>
+                            <span class="text-[11px] bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg">Real-Time Data</span>
                         </div>
                         <div class="h-64 relative">
                             <canvas id="revenueChart"></canvas>
                         </div>
                     </div>
 
-                    <div class="glass-panel p-6 rounded-2xl space-y-4">
-                        <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-bolt text-emerald-600 mr-2"></i>Quick Operational Health</h3>
-                        <div class="space-y-3 text-xs">
-                            <div class="p-3 bg-slate-50 rounded-xl border flex justify-between items-center">
-                                <span class="text-slate-600 font-medium">Unassigned Dispatches</span>
-                                <span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Action Req.</span>
+                    <!-- Payment Methods Breakdown Chart -->
+                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm space-y-4">
+                        <div class="border-b pb-3">
+                            <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-pie-chart text-emerald-600 mr-2"></i>Payment Channels Mix</h3>
+                            <p class="text-[11px] text-slate-400">Distribution of Cash, Zelle, PS, BS</p>
+                        </div>
+                        <div class="h-64 relative flex items-center justify-center">
+                            <canvas id="paymentMixChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Business Intelligence & Decision Recommendations -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Top Corridors & Lanes Analysis -->
+                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm space-y-4">
+                        <h3 class="font-bold text-slate-900 text-sm border-b pb-3"><i class="fa-solid fa-route text-emerald-600 mr-2"></i>Top Revenue Corridors</h3>
+                        <div id="topCorridorsContainer" class="space-y-3 text-xs">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Actionable Decision Insights Panel -->
+                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm lg:col-span-2 space-y-4">
+                        <h3 class="font-bold text-slate-900 text-sm border-b pb-3"><i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>Strategic Business Recommendations & Optimizations</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            <div class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl space-y-1.5">
+                                <div class="flex items-center gap-2 font-bold text-emerald-800">
+                                    <i class="fa-solid fa-circle-arrow-up"></i> High Yield Lane Focus
+                                </div>
+                                <p class="text-slate-600 leading-relaxed">
+                                    التركيز على إضافة شحنات إضافية في المسارات التي تسجل أعلى متوسط دخل لتفادي الرحلات غير العائدة (Deadhead miles).
+                                </p>
                             </div>
-                            <div class="p-3 bg-slate-50 rounded-xl border flex justify-between items-center">
-                                <span class="text-slate-600 font-medium">Active Corridors</span>
-                                <span class="text-emerald-700 font-bold">GA, NC, SC</span>
+
+                            <div class="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-1.5">
+                                <div class="flex items-center gap-2 font-bold text-blue-800">
+                                    <i class="fa-solid fa-shield-halved"></i> Liquidity Optimization
+                                </div>
+                                <p class="text-slate-600 leading-relaxed">
+                                    مراقبة التدفقات النقدية وتوزيع التحصيلات بين الدفعات النقدية والتحويلات الرقمية لضمان استقرار السيولة التشغيلية.
+                                </p>
                             </div>
-                            <div class="p-3 bg-slate-50 rounded-xl border flex justify-between items-center">
-                                <span class="text-slate-600 font-medium">Fleet Audit Status</span>
-                                <span class="text-emerald-600 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>Verified</span>
+
+                            <div class="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl space-y-1.5">
+                                <div class="flex items-center gap-2 font-bold text-purple-800">
+                                    <i class="fa-solid fa-chart-line"></i> Payment Method Balancing
+                                </div>
+                                <p class="text-slate-600 leading-relaxed">
+                                    تتبع القنوات المالية (Cash & Zelle) لتسريع التسويات البنكية ومطابقة السجلات المالية بدقة واحترافية.
+                                </p>
+                            </div>
+
+                            <div class="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl space-y-1.5">
+                                <div class="flex items-center gap-2 font-bold text-amber-800">
+                                    <i class="fa-solid fa-user-gear"></i> Dispatch Allocation
+                                </div>
+                                <p class="text-slate-600 leading-relaxed">
+                                    إسناد الشحنات ذات العائد المرتفع للمشرفين الميدانيين الأكثر كفاءة لضمان جودة الأداء وتقليل المخاطر.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -272,7 +345,7 @@
                 </div>
                 <div id="pdfContentArea" class="bg-white p-8 rounded-2xl border shadow-sm space-y-6">
                     <h2 class="text-xl font-black text-slate-900">MovePro Logistics & Financial Ledger</h2>
-                    <p class="text-xs text-slate-500">Total Revenue: $1,146,221 | Total Jobs: 312</p>
+                    <p class="text-xs text-slate-500">Enterprise Audit Report & Telemetry Data</p>
                 </div>
             </div>
 
