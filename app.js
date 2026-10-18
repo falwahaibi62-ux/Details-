@@ -74,20 +74,6 @@ function renderUsers() {
     `).join('');
 }
 
-function updateUserRole(id, newRole) {
-    const user = systemUsers.find(u => u.id === id);
-    if(user) {
-        user.role = newRole;
-        if(currentLoggedInUser && currentLoggedInUser.id === id) {
-            currentUserRole = newRole;
-            document.getElementById('activeRoleText').innerText = newRole;
-            document.getElementById('currentUserRoleBadge').innerText = newRole;
-            checkPermissions();
-        }
-        renderUsers();
-    }
-}
-
 function checkPermissions() {
     const addBtn = document.getElementById('addJobBtn');
     if (currentUserRole === 'Viewer') {
@@ -95,6 +81,56 @@ function checkPermissions() {
     } else {
         if(addBtn) addBtn.style.display = 'flex';
     }
+}
+
+// دالة إضافة صف دفعة ديناميكي (مبلغ + طريقة دفع)
+function addPaymentRow(containerId, amount = '', method = 'Cash') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const rowId = 'pay_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    const rowDiv = document.createElement('div');
+    rowDiv.id = rowId;
+    rowDiv.className = 'flex items-center gap-2 payment-row';
+
+    rowDiv.innerHTML = `
+        <input type="text" value="${amount}" placeholder="Amount (e.g. 500)" class="payment-amount flex-1 p-2 border rounded-xl text-xs">
+        <select class="payment-method w-28 p-2 border rounded-xl text-xs font-semibold bg-white">
+            <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
+            <option value="Zelle" ${method === 'Zelle' ? 'selected' : ''}>Zelle</option>
+            <option value="PS" ${method === 'PS' ? 'selected' : ''}>PS</option>
+            <option value="BS" ${method === 'BS' ? 'selected' : ''}>BS</option>
+            <option value="others" ${method === 'others' ? 'selected' : ''}>others</option>
+        </select>
+        <button type="button" onclick="removePaymentRow('${rowId}')" class="text-red-500 hover:text-red-700 px-2 font-bold text-sm">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    `;
+    container.appendChild(rowDiv);
+}
+
+function removePaymentRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) row.remove();
+}
+
+// دالة تجميع واستخراج الدفعات المتعددة بنص واحد منظم
+function extractPaymentsFromContainer(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return '-';
+
+    const rows = container.querySelectorAll('.payment-row');
+    const paymentsList = [];
+
+    rows.forEach(row => {
+        const amt = row.querySelector('.payment-amount').value.trim();
+        const mth = row.querySelector('.payment-method').value;
+        if (amt !== '') {
+            paymentsList.push(`${amt} ${mth}`);
+        }
+    });
+
+    return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
 }
 
 function renderJobsCRUD(dataToRender) {
@@ -115,20 +151,6 @@ function renderJobsCRUD(dataToRender) {
             actions = `<button onclick="editJob(${index})" class="text-blue-600 hover:text-blue-800 font-bold">Edit Only</button>`;
         }
 
-        let puDisplay = '-';
-        if (item.puAmount && item.puAmount.trim() !== '') {
-            puDisplay = `${item.puAmount} ${item.puMethod || ''}`.trim();
-        } else if (item.pu) {
-            puDisplay = item.pu;
-        }
-
-        let destDisplay = '-';
-        if (item.destAmount && item.destAmount.trim() !== '') {
-            destDisplay = `${item.destAmount} ${item.destMethod || ''}`.trim();
-        } else if (item.dest) {
-            destDisplay = item.dest;
-        }
-
         return `
             <tr class="hover:bg-slate-50 transition">
                 <td class="py-3 px-4 font-mono text-slate-500">${item.date}</td>
@@ -136,8 +158,8 @@ function renderJobsCRUD(dataToRender) {
                 <td class="py-3 px-4 font-semibold text-emerald-700">${item.route}</td>
                 <td class="py-3 px-4">${foremanDisplay}</td>
                 <td class="py-3 px-4 font-extrabold text-slate-900">${item.total}</td>
-                <td class="py-3 px-4 text-slate-600">${puDisplay}</td>
-                <td class="py-3 px-4 text-slate-600">${destDisplay}</td>
+                <td class="py-3 px-4 text-slate-600">${item.pu || '-'}</td>
+                <td class="py-3 px-4 text-slate-600">${item.dest || '-'}</td>
                 <td class="py-3 px-4 text-center">${actions}</td>
             </tr>
         `;
@@ -180,38 +202,6 @@ function globalSearchFilter() {
     }
 }
 
-function initDashboardChart() {
-    const ctx = document.getElementById('revenueChart');
-    if (!ctx) return;
-    
-    if (revenueChartInstance) revenueChartInstance.destroy();
-
-    revenueChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['May', 'June', 'July', 'August', 'September', 'October'],
-            datasets: [{
-                label: 'Operations Volume',
-                data: [45, 78, 62, 70, 52, 45],
-                borderColor: '#059669',
-                backgroundColor: 'rgba(5, 150, 105, 0.1)',
-                fill: true,
-                tension: 0.3,
-                borderWidth: 3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-            }
-        }
-    });
-}
-
 function openAddModal() {
     if(currentUserRole === 'Viewer') {
         alert('Access denied: Viewer role cannot add records.');
@@ -220,6 +210,13 @@ function openAddModal() {
     document.getElementById('modalTitle').innerText = 'Add New Dispatch';
     document.getElementById('editIndex').value = '-1';
     document.getElementById('jobForm').reset();
+    
+    // Clear dynamic containers and add one default row each
+    document.getElementById('puContainer').innerHTML = '';
+    document.getElementById('destContainer').innerHTML = '';
+    addPaymentRow('puContainer');
+    addPaymentRow('destContainer');
+
     const modal = document.getElementById('jobModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -250,10 +247,8 @@ function saveJob(e) {
         routeRaw = routeRaw.replace(/\s+/g, ' ').replace(' TO ', ' → ').replace(' - ', ' → ');
     }
 
-    const puAmt = document.getElementById('jobPuAmount').value.trim();
-    const puMth = document.getElementById('jobPuMethod').value;
-    const destAmt = document.getElementById('jobDestAmount').value.trim();
-    const destMth = document.getElementById('jobDestMethod').value;
+    const puFormatted = extractPaymentsFromContainer('puContainer');
+    const destFormatted = extractPaymentsFromContainer('destContainer');
 
     const newJob = {
         date: dateVal,
@@ -263,12 +258,8 @@ function saveJob(e) {
         route: routeRaw,
         foreman: document.getElementById('jobForeman').value.trim(),
         total: totalRaw,
-        puAmount: puAmt,
-        puMethod: puMth,
-        destAmount: destAmt,
-        destMethod: destMth,
-        pu: puAmt ? `${puAmt} ${puMth}` : '-',
-        dest: destAmt ? `${destAmt} ${destMth}` : '-'
+        pu: puFormatted,
+        dest: destFormatted
     };
 
     if(index === -1) {
@@ -292,10 +283,45 @@ function editJob(index) {
     document.getElementById('jobForeman').value = j.foreman;
     document.getElementById('jobTotal').value = j.total;
     
-    document.getElementById('jobPuAmount').value = j.puAmount || '';
-    document.getElementById('jobPuMethod').value = j.puMethod || 'Cash';
-    document.getElementById('jobDestAmount').value = j.destAmount || '';
-    document.getElementById('jobDestMethod').value = j.destMethod || 'Cash';
+    // Clear & Populate PU Container
+    const puContainer = document.getElementById('puContainer');
+    puContainer.innerHTML = '';
+    if (j.pu && j.pu !== '-') {
+        const puParts = j.pu.split(',');
+        puParts.forEach(p => {
+            const trimP = p.trim();
+            const lastSpace = trimP.lastIndexOf(' ');
+            if (lastSpace !== -1) {
+                const amt = trimP.substring(0, lastSpace);
+                const mth = trimP.substring(lastSpace + 1);
+                addPaymentRow('puContainer', amt, mth);
+            } else {
+                addPaymentRow('puContainer', trimP, 'Cash');
+            }
+        });
+    } else {
+        addPaymentRow('puContainer');
+    }
+
+    // Clear & Populate Dest Container
+    const destContainer = document.getElementById('destContainer');
+    destContainer.innerHTML = '';
+    if (j.dest && j.dest !== '-') {
+        const destParts = j.dest.split(',');
+        destParts.forEach(d => {
+            const trimD = d.trim();
+            const lastSpace = trimD.lastIndexOf(' ');
+            if (lastSpace !== -1) {
+                const amt = trimD.substring(0, lastSpace);
+                const mth = trimD.substring(lastSpace + 1);
+                addPaymentRow('destContainer', amt, mth);
+            } else {
+                addPaymentRow('destContainer', trimD, 'Cash');
+            }
+        });
+    } else {
+        addPaymentRow('destContainer');
+    }
 
     const modal = document.getElementById('jobModal');
     modal.classList.remove('hidden');
@@ -314,11 +340,6 @@ function deleteJob(index) {
     }
 }
 
-function downloadOfficialPDF() {
-    const element = document.getElementById('pdfContentArea');
-    html2pdf().from(element).save('MovePro_Audit_Report.pdf');
-}
-
 function switchTab(tab) {
     ['dashboard', 'jobs', 'users', 'reports'].forEach(t => {
         const tabEl = document.getElementById(`tab-${t}`);
@@ -330,10 +351,6 @@ function switchTab(tab) {
     const activeNav = document.getElementById(`nav-${tab}`);
     if(activeTab) activeTab.classList.remove('hidden');
     if(activeNav) activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
-
-    if (tab === 'dashboard') {
-        setTimeout(initDashboardChart, 100);
-    }
 }
 
 window.onload = () => {
