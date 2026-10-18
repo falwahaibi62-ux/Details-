@@ -7,6 +7,8 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN for Advanced Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- html2pdf Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- Custom CSS -->
@@ -24,7 +26,7 @@
                     </div>
                     <div>
                         <h2 class="text-lg font-bold text-white leading-none">MovePro</h2>
-                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise Modular</span>
+                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise Pro v14</span>
                     </div>
                 </div>
             </div>
@@ -32,7 +34,7 @@
             <nav class="p-4 space-y-1.5 text-sm">
                 <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition">
                     <i class="fa-solid fa-gauge-high w-5 text-center"></i>
-                    <span>Dashboard & Insights</span>
+                    <span>Dashboard & Analytics</span>
                 </button>
                 <button onclick="switchTab('jobs')" id="nav-jobs" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
                     <i class="fa-solid fa-truck-fast w-5 text-center text-emerald-400"></i>
@@ -67,10 +69,17 @@
 
         <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between shrink-0 shadow-sm">
             <div>
-                <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Executive Dashboard & Complete Audit Ledger</h1>
-                <p class="text-xs text-slate-500">Modular Architecture System</p>
+                <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Executive Dashboard & Advanced Analytics</h1>
+                <p class="text-xs text-slate-500">Real-time business insights and operational telemetry</p>
             </div>
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-4">
+                <!-- Global Live Search Bar -->
+                <div class="relative hidden sm:block">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </span>
+                    <input type="text" id="globalSearch" onkeyup="globalSearchFilter()" placeholder="Search jobs, routes..." class="w-56 pl-9 pr-4 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500 transition">
+                </div>
                 <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-lg border border-emerald-200">
                     <i class="fa-solid fa-shield-halved mr-1"></i>Active Role: <span id="activeRoleText">Admin</span>
                 </span>
@@ -79,28 +88,82 @@
 
         <main class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
 
-            <!-- TAB 1: DASHBOARD -->
+            <!-- TAB 1: ADVANCED DASHBOARD & CHARTS -->
             <div id="tab-dashboard" class="space-y-6">
+                <!-- KPI Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="glass-panel p-5 rounded-2xl">
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-slate-900">
                         <p class="text-xs text-slate-400 font-bold uppercase">Total Revenue</p>
                         <h3 class="text-2xl font-black text-slate-900 mt-1">$1,146,221</h3>
-                        <p class="text-[11px] text-emerald-600 font-semibold mt-2">↑ 312 Completed Jobs</p>
+                        <p class="text-[11px] text-emerald-600 font-semibold mt-2"><i class="fa-solid fa-arrow-trend-up mr-1"></i>312 Completed Jobs</p>
                     </div>
-                    <div class="glass-panel p-5 rounded-2xl">
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-blue-600">
                         <p class="text-xs text-slate-400 font-bold uppercase">Direct Deliveries</p>
                         <h3 class="text-2xl font-black text-blue-600 mt-1">69 Deliveries</h3>
                         <p class="text-[11px] text-slate-500 mt-2">High fulfillment rate</p>
                     </div>
-                    <div class="glass-panel p-5 rounded-2xl">
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-amber-500">
                         <p class="text-xs text-slate-400 font-bold uppercase">Diesel Expenses</p>
                         <h3 class="text-2xl font-black text-amber-600 mt-1">$34,889</h3>
-                        <p class="text-[11px] text-slate-500 mt-2">Optimized fuel consumption</p>
+                        <p class="text-[11px] text-slate-500 mt-2">Optimized fuel metrics</p>
                     </div>
-                    <div class="glass-panel p-5 rounded-2xl">
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-500">
                         <p class="text-xs text-slate-400 font-bold uppercase">Operating Margin</p>
                         <h3 class="text-2xl font-black text-emerald-600 mt-1">70.4%</h3>
-                        <p class="text-[11px] text-emerald-600 font-semibold mt-2">Excellent benchmark</p>
+                        <p class="text-[11px] text-emerald-600 font-semibold mt-2">Top tier performance</p>
+                    </div>
+                </div>
+
+                <!-- Interactive Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-panel p-6 rounded-2xl lg:col-span-2 space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-chart-area text-emerald-600 mr-2"></i>Monthly Operations Volume</h3>
+                            <span class="text-[11px] bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-lg">May - Oct 2026</span>
+                        </div>
+                        <div class="h-64 relative">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-2xl space-y-4">
+                        <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-bolt text-emerald-600 mr-2"></i>Quick Operational Health</h3>
+                        <div class="space-y-3 text-xs">
+                            <div class="p-3 bg-slate-50 rounded-xl border flex justify-between items-center">
+                                <span class="text-slate-600 font-medium">Unassigned Dispatches</span>
+                                <span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Action Req.</span>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-xl border flex justify-between items-center">
+                                <span class="text-slate-600 font-medium">Active Corridors</span>
+                                <span class="text-emerald-700 font-bold">GA, NC, SC</span>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-xl border flex justify-between items-center">
+                                <span class="text-slate-600 font-medium">Fleet Audit Status</span>
+                                <span class="text-emerald-600 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>Verified</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategic Recommendations Section -->
+                <div class="glass-panel p-6 rounded-2xl space-y-4 border-l-4 border-emerald-500">
+                    <div class="flex items-center space-x-2 text-emerald-700">
+                        <i class="fa-solid fa-lightbulb text-xl"></i>
+                        <h3 class="font-bold text-base">Strategic Recommendations for Productivity & Profit Growth</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        <div class="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 space-y-2">
+                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-route text-emerald-600 mr-1"></i>Route Optimization</h4>
+                            <p class="text-slate-600 leading-relaxed">Focus fleet dispatches on high-yield corridors such as Georgia (GA) and North Carolina (NC) to boost aggregate revenues by an estimated 12%.</p>
+                        </div>
+                        <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2">
+                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-wallet text-blue-600 mr-1"></i>Cash Flow Acceleration</h4>
+                            <p class="text-slate-600 leading-relaxed">Minimize reliance on destination balance delays and enforce immediate digital payment options (Zelle, CC) to mitigate credit risks.</p>
+                        </div>
+                        <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 space-y-2">
+                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-user-gear text-amber-600 mr-1"></i>Field Crew Workload Balancing</h4>
+                            <p class="text-slate-600 leading-relaxed">Distribute dispatches evenly across active foremen and reduce unassigned ('no name') logs to ensure tighter supervision.</p>
+                        </div>
                     </div>
                 </div>
             </div>
