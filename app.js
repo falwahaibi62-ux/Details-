@@ -303,7 +303,21 @@ function editJob(index) {
     }
 
     document.getElementById('jobNo').value = j.jobNo;
-    document.getElementById('jobRoute').value = j.route;
+
+    // تفكيك المسار وتوزيعه على الحقلين المنفصلين routeFrom و routeTo
+    if (j.route && j.route.includes('→')) {
+        const parts = j.route.split('→');
+        document.getElementById('routeFrom').value = parts[0].trim();
+        document.getElementById('routeTo').value = parts[1].trim();
+    } else if (j.route && j.route.includes('-')) {
+        const parts = j.route.split('-');
+        document.getElementById('routeFrom').value = parts[0].trim();
+        document.getElementById('routeTo').value = parts[1].trim();
+    } else {
+        document.getElementById('routeFrom').value = j.route || '';
+        document.getElementById('routeTo').value = '';
+    }
+
     document.getElementById('jobForeman').value = j.foreman;
     document.getElementById('jobTotal').value = j.total;
     
