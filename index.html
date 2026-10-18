@@ -279,67 +279,56 @@
         </main>
     </div>
 
-   <!-- MODAL -->
-<div id="jobModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-auto">
-        <h3 id="modalTitle" class="font-bold text-slate-900 text-base border-b pb-3">Add New Dispatch</h3>
-        <form id="jobForm" onsubmit="saveJob(event)" class="space-y-3 text-xs">
-            <input type="hidden" id="editIndex" value="-1">
-            
-            <div>
-                <label class="block font-semibold text-slate-700 mb-1">Date</label>
-                <input type="date" id="jobDate" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 bg-white">
-            </div>
-            <div>
-                <label class="block font-semibold text-slate-700 mb-1">Job No</label>
-                <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="G4648193">
-            </div>
-            <div>
-                <label class="block font-semibold text-slate-700 mb-1">Route (From → To)</label>
-                <input type="text" id="jobRoute" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="NC → NV">
-            </div>
-            <div>
-                <label class="block font-semibold text-slate-700 mb-1">Foreman Name</label>
-                <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="no name">
-            </div>
-            <div>
-                <label class="block font-semibold text-slate-700 mb-1">Total Amount</label>
-                <input type="text" id="jobTotal" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="$3,795">
-            </div>
+    <!-- MODAL -->
+    <div id="jobModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-auto">
+            <h3 id="modalTitle" class="font-bold text-slate-900 text-base border-b pb-3">Add New Dispatch</h3>
+            <form id="jobForm" onsubmit="saveJob(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="editIndex" value="-1">
+                
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Date</label>
+                    <input type="date" id="jobDate" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 bg-white">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Job No</label>
+                    <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="G4648193">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Route (From → To)</label>
+                    <input type="text" id="jobRoute" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="NC → NV">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Foreman Name</label>
+                    <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="no name">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Total Amount</label>
+                    <input type="text" id="jobTotal" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="$3,795">
+                </div>
 
-            <!-- Dynamic Pick Up Payments Section -->
-            <div class="border-t border-slate-200 pt-3 space-y-2">
-                <div class="flex justify-between items-center">
-                    <label class="block font-bold text-slate-700">P.U Payments</label>
-                    <button type="button" onclick="addPaymentRow('puContainer')" class="text-emerald-600 hover:text-emerald-700 text-xs font-bold flex items-center gap-1">
-                        <i class="fa-solid fa-plus"></i> Add Payment
-                    </button>
+                <!-- Dynamic Pick Up Payments Section -->
+                <div class="border-t border-slate-200 pt-3 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="block font-bold text-slate-700">P.U Payments</label>
+                        <button type="button" onclick="addPaymentRow('puContainer')" class="text-emerald-600 hover:text-emerald-700 text-xs font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Add Payment
+                        </button>
+                    </div>
+                    <div id="puContainer" class="space-y-2"></div>
                 </div>
-                <div id="puContainer" class="space-y-2">
-                    <!-- Dynamic Rows Will Appear Here -->
-                </div>
-            </div>
 
-            <!-- Dynamic Destination Payments Section -->
-            <div class="border-t border-slate-200 pt-3 space-y-2">
-                <div class="flex justify-between items-center">
-                    <label class="block font-bold text-slate-700">Destination Payments / Balance</label>
-                    <button type="button" onclick="addPaymentRow('destContainer')" class="text-emerald-600 hover:text-emerald-700 text-xs font-bold flex items-center gap-1">
-                        <i class="fa-solid fa-plus"></i> Add Payment
-                    </button>
+                <!-- Dynamic Destination Payments Section -->
+                <div class="border-t border-slate-200 pt-3 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="block font-bold text-slate-700">Destination Payments / Balance</label>
+                        <button type="button" onclick="addPaymentRow('destContainer')" class="text-emerald-600 hover:text-emerald-700 text-xs font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Add Payment
+                        </button>
+                    </div>
+                    <div id="destContainer" class="space-y-2"></div>
                 </div>
-                <div id="destContainer" class="space-y-2">
-                    <!-- Dynamic Rows Will Appear Here -->
-                </div>
-            </div>
 
-            <div class="flex justify-end space-x-2 pt-4 border-t">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition">Cancel</button>
-                <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition shadow-md shadow-emerald-600/20">Save Record</button>
-            </div>
-        </form>
-    </div>
-</div>
                 <div class="flex justify-end space-x-2 pt-4 border-t">
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition">Cancel</button>
                     <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition shadow-md shadow-emerald-600/20">Save Record</button>
