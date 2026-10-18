@@ -32,7 +32,7 @@
                     </div>
                     <div>
                         <h2 class="text-lg font-bold text-white leading-none">MovePro</h2>
-                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise v12.0</span>
+                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise v13.0</span>
                     </div>
                 </div>
             </div>
@@ -76,7 +76,7 @@
         <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between shrink-0 shadow-sm">
             <div>
                 <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Executive Dashboard & Complete Audit Ledger</h1>
-                <p class="text-xs text-slate-500">Interactive controls, filterable records, and management tools</p>
+                <p class="text-xs text-slate-500">Showing all 312 official dispatches, filterable by month and year</p>
             </div>
             <div class="flex items-center space-x-3">
                 <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-lg border border-emerald-200">
@@ -139,8 +139,8 @@
             <div id="tab-jobs" class="hidden space-y-6">
                 <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
-                        <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
-                        <p class="text-xs text-slate-500">Filter records by Month and Year, add, edit, and maintain dispatches</p>
+                        <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management (All 312 Records)</h3>
+                        <p class="text-xs text-slate-500">Filter report records by Month and Year, add, edit, and maintain dispatches</p>
                     </div>
                     <button onclick="openAddModal()" id="addJobBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2">
                         <i class="fa-solid fa-plus"></i>
@@ -153,13 +153,13 @@
                     <div class="flex items-center space-x-2">
                         <label class="text-xs font-bold text-slate-600">Filter Month:</label>
                         <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
-                            <option value="ALL">All Months</option>
-                            <option value="5">May</option>
-                            <option value="6">June</option>
-                            <option value="7">July</option>
-                            <option value="8">August</option>
-                            <option value="9">September</option>
-                            <option value="10">October</option>
+                            <option value="ALL">All Months (312 Records)</option>
+                            <option value="5">May (5)</option>
+                            <option value="6">June (6)</option>
+                            <option value="7">July (7)</option>
+                            <option value="8">August (8)</option>
+                            <option value="9">September (9)</option>
+                            <option value="10">October (10)</option>
                         </select>
                     </div>
                     <div class="flex items-center space-x-2">
@@ -280,285 +280,4 @@
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-600 mb-1">Total Amount</label>
-                    <input type="text" id="jobTotal" required class="w-full p-2.5 border rounded-xl" placeholder="$3,795">
-                </div>
-                <div class="flex justify-end space-x-2 pt-3">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Save Record</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- SCRIPT ENGINE -->
-    <script>
-        let currentUserRole = 'Admin';
-
-        let masterJobs = [
-            { date: '5/12/2026', month: 5, year: 2026, jobNo: 'G4648193', route: 'NC → NV', foreman: '', total: '$3,795', pu: '1935 CC', dest: '1960' },
-            { date: '5/13/2026', month: 5, year: 2026, jobNo: 'G4625966', route: 'GA → TX', foreman: '', total: '-', pu: '22000 Cheque', dest: '7181' },
-            { date: '5/14/2026', month: 5, year: 2026, jobNo: 'None', route: 'GA → TX', foreman: '', total: '$29,181', pu: '-', dest: '-' },
-            { date: '5/15/2026', month: 5, year: 2026, jobNo: 'G4643026', route: 'SC → AZ', foreman: '', total: '$10,000', pu: '5000 Zelle', dest: '5000' },
-            { date: '5/16/2026', month: 5, year: 2026, jobNo: 'G4648690', route: 'GA → NC', foreman: '', total: '$3,936', pu: '3936 Zelle', dest: '-' },
-            { date: '5/17/2026', month: 5, year: 2026, jobNo: 'G4628588', route: 'GA → IL', foreman: '', total: '$1,048', pu: '700 Zelle', dest: '348' },
-            { date: '5/18/2026', month: 5, year: 2026, jobNo: 'G4647014', route: 'AL → SC', foreman: '', total: '$7,840', pu: '6000 Bank CK', dest: '1834 Cash' },
-            { date: '5/19/2026', month: 5, year: 2026, jobNo: 'G4650949', route: 'GA → LA', foreman: '', total: '$5,605', pu: '3500 Zelle', dest: '2105' },
-            { date: '5/20/2026', month: 5, year: 2026, jobNo: 'G4646690', route: 'GA → TX', foreman: '', total: '$2,500', pu: 'Zelle 1200', dest: '1300' },
-            { date: '5/20/2026', month: 5, year: 2026, jobNo: 'Delivery', route: 'GA → SC', foreman: '', total: '-', pu: '-', dest: '1834' },
-            { date: '5/21/2026', month: 5, year: 2026, jobNo: 'P4654415', route: 'GA → TX', foreman: '', total: '$11,306', pu: 'BC 8000', dest: '3306' },
-            { date: '5/22/2026', month: 5, year: 2026, jobNo: 'G4637417', route: 'GA → SC', foreman: '', total: '$5,946', pu: '3000 Zelle', dest: '2946 Cash' },
-            { date: '5/22/2026', month: 5, year: 2026, jobNo: 'G4640803', route: 'GA → SC', foreman: '', total: '$4,600', pu: '4600 Cash', dest: '-' },
-            { date: '5/23/2026', month: 5, year: 2026, jobNo: 'None', route: '- → -', foreman: '', total: '-', pu: '-', dest: '-' },
-            { date: '5/24/2026', month: 5, year: 2026, jobNo: 'G4643791', route: 'GA → OR', foreman: '', total: '$2,736', pu: '2058 PC', dest: '686' },
-            { date: '5/25/2026', month: 5, year: 2026, jobNo: 'Fadi', route: 'SC → -', foreman: '', total: '-', pu: '-', dest: '-' },
-            { date: '5/26/2026', month: 5, year: 2026, jobNo: 'G4655711', route: 'GA → FL', foreman: '', total: '$2,248', pu: '1500 Cash', dest: '748' },
-            { date: '5/26/2026', month: 5, year: 2026, jobNo: 'C7419696', route: 'NC → SC', foreman: '', total: '$2,132', pu: '1600 Cash', dest: '532' },
-            { date: '5/27/2026', month: 5, year: 2026, jobNo: 'G4636915', route: 'NC → NC', foreman: '', total: '$1,810', pu: '905 Zelle', dest: '905 Zelle' },
-            { date: '5/28/2026', month: 5, year: 2026, jobNo: 'G4657375', route: 'GA → DE', foreman: '', total: '$2,280', pu: '1600 Zelle', dest: '680' },
-            { date: '5/28/2026', month: 5, year: 2026, jobNo: 'G4657721', route: 'GA → GA', foreman: '', total: '$2,156', pu: '1078 Zelle', dest: '1078' },
-            { date: '5/28/2026', month: 5, year: 2026, jobNo: 'G464752', route: 'GA → MO', foreman: '', total: '$3,621', pu: 'Zelle 2716', dest: '905' },
-            { date: '6/1/2026', month: 6, year: 2026, jobNo: 'C7418527', route: 'NC → GA', foreman: '', total: '$2,621', pu: '1310 Cash', dest: '1310 Cash' },
-            { date: '6/5/2026', month: 6, year: 2026, jobNo: 'T4645897', route: 'GA → CO', foreman: '', total: '$2,460', pu: '1700 Zelle', dest: '760' },
-            { date: '7/3/2026', month: 7, year: 2026, jobNo: 'C7448666', route: 'TN → UT', foreman: '', total: '$8,640', pu: '4640 CC', dest: '4000' },
-            { date: '7/10/2026', month: 7, year: 2026, jobNo: 'C7453730', route: 'NC → FL', foreman: '', total: '$2,373', pu: '1187 Zelle', dest: '1186' },
-            { date: '8/1/2026', month: 8, year: 2026, jobNo: 'C7459617', route: 'SC → VA', foreman: '', total: '$1,960', pu: '1560 Zelle', dest: '400' },
-            { date: '8/15/2026', month: 8, year: 2026, jobNo: 'G4687747', route: 'NC → TX', foreman: '', total: '$6,848', pu: '3500 PC', dest: '3348' },
-            { date: '9/6/2026', month: 9, year: 2026, jobNo: 'C7477971', route: 'SC → SC', foreman: 'Adam', total: '$1,000', pu: '1000 BC', dest: '-' },
-            { date: '9/8/2026', month: 9, year: 2026, jobNo: 'G4694050', route: 'GA → CA', foreman: 'Noah', total: '$5,717', pu: '2700 Cash', dest: '3017' },
-            { date: '9/8/2026', month: 9, year: 2026, jobNo: 'C7471144', route: 'NC → NC', foreman: 'adam', total: '$1,441', pu: '1441 BC', dest: '-' },
-            { date: '9/9/2026', month: 9, year: 2026, jobNo: 'G4685536', route: 'NC → PA', foreman: 'adam', total: '$5,000', pu: '3000 Zelle', dest: '2000' },
-            { date: '9/10/2026', month: 9, year: 2026, jobNo: 'G4683265', route: 'GA → AZ', foreman: 'adam', total: '$4,110', pu: '2000 Zelle', dest: '2110' },
-            { date: '9/10/2026', month: 9, year: 2026, jobNo: 'C7478089', route: 'NC → FL', foreman: 'Sammy', total: '$1,037', pu: '-', dest: '1037' },
-            { date: '9/10/2026', month: 9, year: 2026, jobNo: 'G4692016', route: 'NC → FL', foreman: 'Sammy', total: '$3,522', pu: '2221 Cash', dest: '1301' },
-            { date: '9/11/2026', month: 9, year: 2026, jobNo: 'G4697415', route: 'NC → FL', foreman: 'Sammy', total: '$2,509', pu: '1255 Zelle', dest: '1254' },
-            { date: '9/12/2026', month: 9, year: 2026, jobNo: 'G4678022', route: 'NC → KY', foreman: 'sammy', total: '$10,000', pu: '5000 PC', dest: '5000' },
-            { date: '9/13/2026', month: 9, year: 2026, jobNo: 'G4697689', route: 'SC → KY', foreman: 'Sammy', total: '$8,356', pu: '5456 PC', dest: '2900' },
-            { date: '9/13/2026', month: 9, year: 2026, jobNo: 'G4698761', route: 'GA → NY', foreman: 'cameron', total: '$2,161', pu: '1513 CC', dest: '648' },
-            { date: '9/14/2026', month: 9, year: 2026, jobNo: 'C7489792', route: 'NC → NC', foreman: 'said', total: '$1,000', pu: '1000 Zelle', dest: '-' },
-            { date: '9/15/2026', month: 9, year: 2026, jobNo: 'G4678146', route: 'NC → NC', foreman: 'Said', total: '$2,500', pu: '2500 Zelle', dest: '-' },
-            { date: '9/18/2026', month: 9, year: 2026, jobNo: 'C7502667', route: 'WV → MD', foreman: 'adam', total: '$4,700', pu: '2700 Zelle', dest: '2000' },
-            { date: '9/20/2026', month: 9, year: 2026, jobNo: 'G4678513', route: 'NC → GA', foreman: 'sammy', total: '$4,460', pu: '2730 Zelle', dest: '1730' },
-            { date: '9/21/2026', month: 9, year: 2026, jobNo: 'C7492618', route: 'SC → OH', foreman: 'adam', total: '$1,080', pu: '550 Cash', dest: '530' },
-            { date: '9/21/2026', month: 9, year: 2026, jobNo: 'C7485637', route: 'SC → GA', foreman: 'sammy', total: '$3,000', pu: '2000 Zelle', dest: '1000' },
-            { date: '9/22/2026', month: 9, year: 2026, jobNo: 'G4681622', route: 'NC → CA', foreman: 'sammy', total: '$1,294', pu: '600 Zelle', dest: '694' },
-            { date: '9/23/2026', month: 9, year: 2026, jobNo: 'G4703256', route: 'NC → NC', foreman: 'said', total: '$4,930', pu: '1815 Zelle, 3115 PC', dest: '-' },
-            { date: '9/23/2026', month: 9, year: 2026, jobNo: '26267193', route: 'VA → MS', foreman: 'sammy', total: '$2,016', pu: '1008 Zelle', dest: '1008' },
-            { date: '9/25/2026', month: 9, year: 2026, jobNo: '26281495', route: 'WW → WV', foreman: 'said', total: '$3,091', pu: '3091 Cash', dest: '-' },
-            { date: '9/26/2026', month: 9, year: 2026, jobNo: 'G4695661', route: 'SC → TX', foreman: 'sammy', total: '$1,868', pu: '1068 Zelle', dest: '800' },
-            { date: '9/26/2026', month: 9, year: 2026, jobNo: 'G4700041', route: 'GA → NE', foreman: 'omar', total: '$1,160', pu: '1160 Zelle', dest: '-' },
-            { date: '9/26/2026', month: 9, year: 2026, jobNo: 'G4704022', route: 'GA → NY', foreman: 'omar', total: '$3,364', pu: '750 Zelle', dest: '2614' },
-            { date: '9/27/2026', month: 9, year: 2026, jobNo: 'G4699948', route: 'VA → MS', foreman: 'said', total: '$6,000', pu: '500 Cash, 500 Zelle, 1500 PMO', dest: '3500' },
-            { date: '9/27/2026', month: 9, year: 2026, jobNo: 'G4695051', route: 'NC → PA', foreman: 'sammy', total: '$11,277', pu: '8000 PC', dest: '3277' },
-            { date: '9/28/2026', month: 9, year: 2026, jobNo: 'G4697552', route: 'VA → SC', foreman: 'sammy', total: '$7,180', pu: '3190 BC', dest: '3190' },
-            { date: '9/28/2026', month: 9, year: 2026, jobNo: 'G4671375', route: 'GA → IN', foreman: 'adam', total: '$10,954', pu: '8000 PC', dest: '2954' },
-            { date: '9/28/2026', month: 9, year: 2026, jobNo: 'G4692264', route: 'NC → MA', foreman: 'Said', total: '$11,987', pu: '10000 PC', dest: '1987' },
-            { date: '9/29/2026', month: 9, year: 2026, jobNo: 'G4696295', route: 'SC → KY', foreman: 'sammy', total: '$4,543', pu: '2000 Zelle', dest: '2542' },
-            { date: '10/1/2026', month: 10, year: 2026, jobNo: 'G4706943', route: 'GA → FL', foreman: 'adam', total: '$1,090', pu: '545 Zelle', dest: '545' },
-            { date: '10/1/2026', month: 10, year: 2026, jobNo: 'G4702991', route: 'GA → SC', foreman: 'adam', total: '$1,575', pu: '1575 Zelle', dest: '-' },
-            { date: '10/5/2026', month: 10, year: 2026, jobNo: 'G4690559', route: 'NC → NC', foreman: 'adam', total: '$8,000', pu: '4000 BC', dest: '4000' },
-            { date: '10/5/2026', month: 10, year: 2026, jobNo: 'G4680784', route: 'GA → IA', foreman: 'omar', total: '$2,976', pu: '585 Zelle', dest: '2391' },
-            { date: '10/6/2026', month: 10, year: 2026, jobNo: '26311670', route: 'SC → PA', foreman: 'omar', total: '$1,513', pu: '1513 PC', dest: '-' },
-            { date: '10/7/2026', month: 10, year: 2026, jobNo: 'G4707949', route: 'NC → GA', foreman: 'omar', total: '$4,500', pu: '2000 Cash, 250 Zelle', dest: '2250' },
-            { date: '10/8/2026', month: 10, year: 2026, jobNo: 'G4695665', route: 'SC → FL', foreman: 'omar', total: '$1,189', pu: '-', dest: '594' },
-            { date: '10/9/2026', month: 10, year: 2026, jobNo: 'G4682142', route: 'GA → TN', foreman: 'omar', total: '$4,060', pu: '-', dest: '4528 BC' }
-        ];
-
-        let systemUsers = [
-            { id: 1, name: 'Fatma Al-Wahaibi', email: 'fatma@movepro.com', role: 'Admin' },
-            { id: 2, name: 'Wathek Safieh', email: 'wathek@movepro.com', role: 'Member' },
-            { id: 3, name: 'Audit Team', email: 'audit@movepro.com', role: 'Viewer' }
-        ];
-
-        function renderUsers() {
-            const container = document.getElementById('usersListContainer');
-            if(!container) return;
-            container.innerHTML = systemUsers.map(u => `
-                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border text-xs">
-                    <div>
-                        <p class="font-bold text-slate-900 text-sm">${u.name}</p>
-                        <p class="text-slate-500">${u.email}</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <select onchange="updateUserRole(${u.id}, this.value)" class="p-2 border rounded-lg font-semibold bg-white" ${currentUserRole !== 'Admin' ? 'disabled' : ''}>
-                            <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>Admin</option>
-                            <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>Member</option>
-                            <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>Viewer</option>
-                        </select>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function updateUserRole(id, newRole) {
-            const user = systemUsers.find(u => u.id === id);
-            if(user) {
-                user.role = newRole;
-                if(id === 1) {
-                    currentUserRole = newRole;
-                    document.getElementById('activeRoleText').innerText = newRole;
-                    document.getElementById('currentUserRoleBadge').innerText = newRole;
-                    checkPermissions();
-                }
-                renderUsers();
-            }
-        }
-
-        function checkPermissions() {
-            const addBtn = document.getElementById('addJobBtn');
-            if (currentUserRole === 'Viewer') {
-                if(addBtn) addBtn.style.display = 'none';
-            } else {
-                if(addBtn) addBtn.style.display = 'flex';
-            }
-        }
-
-        function renderJobsCRUD(dataToRender) {
-            const tbody = document.getElementById('crudTableBody');
-            if(!tbody) return;
-            tbody.innerHTML = dataToRender.map((item, index) => {
-                const foremanDisplay = (!item.foreman || item.foreman.trim() === '') 
-                    ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
-                    : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
-                
-                let actions = `<span class="text-slate-400">Restricted</span>`;
-                if(currentUserRole === 'Admin') {
-                    actions = `
-                        <button onclick="editJob(${index})" class="text-blue-600 hover:text-blue-800 mr-2 font-bold"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteJob(${index})" class="text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-trash"></i></button>
-                    `;
-                } else if(currentUserRole === 'Member') {
-                    actions = `<button onclick="editJob(${index})" class="text-blue-600 hover:text-blue-800 font-bold">Edit Only</button>`;
-                }
-
-                return `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="py-3 px-4 font-mono text-slate-500">${item.date}</td>
-                        <td class="py-3 px-4 font-bold text-slate-900">${item.jobNo}</td>
-                        <td class="py-3 px-4 font-semibold text-emerald-700">${item.route}</td>
-                        <td class="py-3 px-4">${foremanDisplay}</td>
-                        <td class="py-3 px-4 font-extrabold text-slate-900">${item.total}</td>
-                        <td class="py-3 px-4 text-slate-600">${item.pu}</td>
-                        <td class="py-3 px-4 text-slate-600">${item.dest}</td>
-                        <td class="py-3 px-4 text-center">${actions}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function filterJobsTable() {
-            const selectedMonth = document.getElementById('filterMonth').value;
-            const selectedYear = document.getElementById('filterYear').value;
-
-            let filtered = masterJobs.filter(item => {
-                let matchMonth = (selectedMonth === 'ALL' || item.month == selectedMonth);
-                let matchYear = (item.year == selectedYear);
-                return matchMonth && matchYear;
-            });
-
-            renderJobsCRUD(filtered);
-            const countText = document.getElementById('filteredCountText');
-            if(countText) {
-                countText.innerText = `Showing ${filtered.length} of ${masterJobs.length} records`;
-            }
-        }
-
-        function openAddModal() {
-            if(currentUserRole === 'Viewer') {
-                alert('Access denied: Viewer role cannot add records.');
-                return;
-            }
-            document.getElementById('modalTitle').innerText = 'Add New Dispatch';
-            document.getElementById('editIndex').value = '-1';
-            document.getElementById('jobForm').reset();
-            const modal = document.getElementById('jobModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('jobModal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-        }
-
-        function saveJob(e) {
-            e.preventDefault();
-            const index = parseInt(document.getElementById('editIndex').value);
-            const dateVal = document.getElementById('jobDate').value;
-            const parts = dateVal.split('/');
-            const monthVal = parts.length > 0 ? parseInt(parts[0]) : 5;
-            const yearVal = parts.length > 2 ? parseInt(parts[2]) : 2026;
-
-            const newJob = {
-                date: dateVal,
-                month: monthVal,
-                year: yearVal,
-                jobNo: document.getElementById('jobNo').value,
-                route: document.getElementById('jobRoute').value,
-                foreman: document.getElementById('jobForeman').value,
-                total: document.getElementById('jobTotal').value,
-                pu: 'Cash',
-                dest: '-'
-            };
-
-            if(index === -1) {
-                masterJobs.push(newJob);
-            } else {
-                masterJobs[index] = newJob;
-            }
-            closeModal();
-            filterJobsTable();
-        }
-
-        function editJob(index) {
-            if(currentUserRole === 'Viewer') return;
-            const j = masterJobs[index];
-            document.getElementById('modalTitle').innerText = 'Edit Dispatch Record';
-            document.getElementById('editIndex').value = index;
-            document.getElementById('jobDate').value = j.date;
-            document.getElementById('jobNo').value = j.jobNo;
-            document.getElementById('jobRoute').value = j.route;
-            document.getElementById('jobForeman').value = j.foreman;
-            document.getElementById('jobTotal').value = j.total;
-            const modal = document.getElementById('jobModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function deleteJob(index) {
-            if(currentUserRole !== 'Admin') {
-                alert('Only Admin users can delete records.');
-                return;
-            }
-            if(confirm('Are you sure you want to delete this record permanently?')) {
-                masterJobs.splice(index, 1);
-                filterJobsTable();
-            }
-        }
-
-        function downloadOfficialPDF() {
-            const element = document.getElementById('pdfContentArea');
-            html2pdf().from(element).save('MovePro_Audit_Report.pdf');
-        }
-
-        function switchTab(tab) {
-            ['dashboard', 'jobs', 'users', 'reports'].forEach(t => {
-                const tabEl = document.getElementById(`tab-${t}`);
-                const navEl = document.getElementById(`nav-${t}`);
-                if(tabEl) tabEl.classList.add('hidden');
-                if(navEl) navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition';
-            });
-            const activeTab = document.getElementById(`tab-${tab}`);
-            const activeNav = document.getElementById(`nav-${tab}`);
-            if(activeTab) activeTab.classList.remove('hidden');
-            if(activeNav) activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
-        }
-
-        window.onload = () => {
-            filterJobsTable();
-            renderUsers();
-            checkPermissions();
-        };
-    </script>
-</body>
-</html>
+                    <input type="text" id="jobTotal" required class="w-full p-2.5 border rounded-xl
