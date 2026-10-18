@@ -1,4 +1,5 @@
 let currentUserRole = 'Admin';
+let revenueChartInstance = null;
 
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
@@ -93,6 +94,57 @@ function filterJobsTable() {
     }
 }
 
+function globalSearchFilter() {
+    const query = document.getElementById('globalSearch').value.toLowerCase();
+    if (!query) {
+        filterJobsTable();
+        return;
+    }
+    let filtered = masterJobs.filter(item => 
+        item.jobNo.toLowerCase().includes(query) || 
+        item.route.toLowerCase().includes(query) || 
+        (item.foreman && item.foreman.toLowerCase().includes(query))
+    );
+    switchTab('jobs');
+    renderJobsCRUD(filtered);
+    const countText = document.getElementById('filteredCountText');
+    if(countText) {
+        countText.innerText = `Search results: ${filtered.length} records`;
+    }
+}
+
+function initDashboardChart() {
+    const ctx = document.getElementById('revenueChart');
+    if (!ctx) return;
+    
+    if (revenueChartInstance) revenueChartInstance.destroy();
+
+    revenueChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['May', 'June', 'July', 'August', 'September', 'October'],
+            datasets: [{
+                label: 'Operations Volume',
+                data: [45, 78, 62, 70, 52, 45],
+                borderColor: '#059669',
+                backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+            }
+        }
+    });
+}
+
 function openAddModal() {
     if(currentUserRole === 'Viewer') {
         alert('Access denied: Viewer role cannot add records.');
@@ -183,10 +235,15 @@ function switchTab(tab) {
     const activeNav = document.getElementById(`nav-${tab}`);
     if(activeTab) activeTab.classList.remove('hidden');
     if(activeNav) activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
+
+    if (tab === 'dashboard') {
+        setTimeout(initDashboardChart, 100);
+    }
 }
 
 window.onload = () => {
     filterJobsTable();
     renderUsers();
     checkPermissions();
+    initDashboardChart();
 };
