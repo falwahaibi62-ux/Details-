@@ -1,5 +1,61 @@
 let currentUserRole = 'Admin';
+let currentLoggedInUser = null;
 let revenueChartInstance = null;
+
+function handleLogin(e) {
+    e.preventDefault();
+    const nameInput = document.getElementById('loginName').value.trim().toLowerCase();
+    const emailInput = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const errorDiv = document.getElementById('loginError');
+
+    const matchedUser = systemUsers.find(u => 
+        u.name.toLowerCase() === nameInput && u.email.toLowerCase() === emailInput
+    );
+
+    if (matchedUser) {
+        currentLoggedInUser = matchedUser;
+        currentUserRole = matchedUser.role;
+
+        document.getElementById('currentUserNameDisplay').innerText = matchedUser.name;
+        document.getElementById('currentUserRoleBadge').innerText = matchedUser.role;
+        document.getElementById('activeRoleText').innerText = matchedUser.role;
+
+        const initials = matchedUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        document.getElementById('userAvatarInitials').innerText = initials;
+
+        const loginScreen = document.getElementById('loginScreen');
+        loginScreen.classList.add('hidden');
+
+        checkPermissions();
+        populateYearFilter(); // تعبئة السنوات تلقائياً عند تسجيل الدخول
+        filterJobsTable();
+        renderUsers();
+    } else {
+        errorDiv.classList.remove('hidden');
+    }
+}
+
+function logoutSession() {
+    currentLoggedInUser = null;
+    document.getElementById('loginForm').reset();
+    document.getElementById('loginError').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+// دالة لاستخراج وتعبئة السنوات تلقائياً من قائمة الأجور والعمليات
+function populateYearFilter() {
+    const yearSelect = document.getElementById('filterYear');
+    if (!yearSelect) return;
+
+    // استخراج السنوات الفريدة وترتيبها تنازلياً
+    const uniqueYears = [...new Set(masterJobs.map(item => item.year))].sort((a, b) => b - a);
+    
+    const currentSelected = yearSelect.value;
+
+    yearSelect.innerHTML = uniqueYears.map(year => 
+        `<option value="${year}" ${year == currentSelected ? 'selected' : ''}>${year}</option>`
+    ).join('');
+}
 
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
@@ -25,7 +81,7 @@ function updateUserRole(id, newRole) {
     const user = systemUsers.find(u => u.id === id);
     if(user) {
         user.role = newRole;
-        if(id === 1) {
+        if(currentLoggedInUser && currentLoggedInUser.id === id) {
             currentUserRole = newRole;
             document.getElementById('activeRoleText').innerText = newRole;
             document.getElementById('currentUserRoleBadge').innerText = newRole;
@@ -190,6 +246,7 @@ function saveJob(e) {
         masterJobs[index] = newJob;
     }
     closeModal();
+    populateYearFilter(); // تحديث قائمة السنوات تلقائياً عند إضافة سنة جديدة
     filterJobsTable();
 }
 
@@ -215,6 +272,7 @@ function deleteJob(index) {
     }
     if(confirm('Are you sure you want to delete this record permanently?')) {
         masterJobs.splice(index, 1);
+        populateYearFilter();
         filterJobsTable();
     }
 }
@@ -242,8 +300,5 @@ function switchTab(tab) {
 }
 
 window.onload = () => {
-    filterJobsTable();
     renderUsers();
-    checkPermissions();
-    initDashboardChart();
 };
