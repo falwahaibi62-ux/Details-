@@ -115,8 +115,19 @@ function renderJobsCRUD(dataToRender) {
             actions = `<button onclick="editJob(${index})" class="text-blue-600 hover:text-blue-800 font-bold">Edit Only</button>`;
         }
 
-        const puDisplay = item.puAmount ? `${item.puAmount} ${item.puMethod || ''}` : (item.pu || '-');
-        const destDisplay = item.destAmount ? `${item.destAmount} ${item.destMethod || ''}` : (item.dest || '-');
+        let puDisplay = '-';
+        if (item.puAmount && item.puAmount.trim() !== '') {
+            puDisplay = `${item.puAmount} ${item.puMethod || ''}`.trim();
+        } else if (item.pu) {
+            puDisplay = item.pu;
+        }
+
+        let destDisplay = '-';
+        if (item.destAmount && item.destAmount.trim() !== '') {
+            destDisplay = `${item.destAmount} ${item.destMethod || ''}`.trim();
+        } else if (item.dest) {
+            destDisplay = item.dest;
+        }
 
         return `
             <tr class="hover:bg-slate-50 transition">
@@ -228,20 +239,36 @@ function saveJob(e) {
     const monthVal = parts.length > 0 ? parseInt(parts[0]) : 5;
     const yearVal = parts.length > 2 ? parseInt(parts[2]) : 2026;
 
+    let totalRaw = document.getElementById('jobTotal').value.trim();
+    if (totalRaw && !totalRaw.startsWith('$') && totalRaw !== '-') {
+        let num = parseFloat(totalRaw.replace(/[^0-9.]/g, ''));
+        totalRaw = isNaN(num) ? totalRaw : '$' + num.toLocaleString('en-US');
+    }
+
+    let routeRaw = document.getElementById('jobRoute').value.trim().toUpperCase();
+    if (routeRaw.includes(' ')) {
+        routeRaw = routeRaw.replace(/\s+/g, ' ').replace(' TO ', ' → ').replace(' - ', ' → ');
+    }
+
+    const puAmt = document.getElementById('jobPuAmount').value.trim();
+    const puMth = document.getElementById('jobPuMethod').value;
+    const destAmt = document.getElementById('jobDestAmount').value.trim();
+    const destMth = document.getElementById('jobDestMethod').value;
+
     const newJob = {
         date: dateVal,
         month: monthVal,
         year: yearVal,
-        jobNo: document.getElementById('jobNo').value,
-        route: document.getElementById('jobRoute').value,
-        foreman: document.getElementById('jobForeman').value,
-        total: document.getElementById('jobTotal').value,
-        puAmount: document.getElementById('jobPuAmount').value,
-        puMethod: document.getElementById('jobPuMethod').value,
-        destAmount: document.getElementById('jobDestAmount').value,
-        destMethod: document.getElementById('jobDestMethod').value,
-        pu: document.getElementById('jobPuAmount').value ? `${document.getElementById('jobPuAmount').value} ${document.getElementById('jobPuMethod').value}` : '-',
-        dest: document.getElementById('jobDestAmount').value ? `${document.getElementById('jobDestAmount').value} ${document.getElementById('jobDestMethod').value}` : '-'
+        jobNo: document.getElementById('jobNo').value.trim(),
+        route: routeRaw,
+        foreman: document.getElementById('jobForeman').value.trim(),
+        total: totalRaw,
+        puAmount: puAmt,
+        puMethod: puMth,
+        destAmount: destAmt,
+        destMethod: destMth,
+        pu: puAmt ? `${puAmt} ${puMth}` : '-',
+        dest: destAmt ? `${destAmt} ${destMth}` : '-'
     };
 
     if(index === -1) {
