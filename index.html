@@ -16,6 +16,39 @@
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
 
+    <!-- LOGIN SCREEN MODAL / OVERLAY -->
+    <div id="loginScreen" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 text-2xl font-bold mx-auto border border-emerald-500/20">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900">MovePro Enterprise</h2>
+                <p class="text-xs text-slate-500">Sign in with your authorized credentials to access operations</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5">Full Name</label>
+                    <input type="text" id="loginName" required class="w-full p-3 bg-slate-50 border rounded-xl font-medium focus:outline-none focus:border-emerald-500" placeholder="e.g. Fatma Al-Wahaibi">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5">Email Address</label>
+                    <input type="email" id="loginEmail" required class="w-full p-3 bg-slate-50 border rounded-xl font-medium focus:outline-none focus:border-emerald-500" placeholder="e.g. fatma@movepro.com">
+                </div>
+                <div id="loginError" class="text-red-500 font-semibold text-center hidden">
+                    Invalid name or email. Please check your credentials.
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 transition">
+                    Access Dashboard
+                </button>
+            </form>
+            <div class="text-center">
+                <p class="text-[11px] text-slate-400">Authorized Personnel Only • Secure Session</p>
+            </div>
+        </div>
+    </div>
+
     <!-- SIDEBAR -->
     <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 shadow-2xl">
         <div>
@@ -26,7 +59,7 @@
                     </div>
                     <div>
                         <h2 class="text-lg font-bold text-white leading-none">MovePro</h2>
-                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise Pro v14</span>
+                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise Pro v16</span>
                     </div>
                 </div>
             </div>
@@ -54,12 +87,15 @@
         <div class="p-4 border-t border-slate-800 bg-slate-950/40">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">FA</div>
+                    <div id="userAvatarInitials" class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">FA</div>
                     <div class="text-xs truncate">
-                        <p class="font-semibold text-white truncate">Fatma Al-Wahaibi</p>
+                        <p id="currentUserNameDisplay" class="font-semibold text-white truncate">Fatma Al-Wahaibi</p>
                         <p id="currentUserRoleBadge" class="text-emerald-400 font-medium">Admin</p>
                     </div>
                 </div>
+                <button onclick="logoutSession()" title="Logout" class="text-slate-400 hover:text-red-400 transition text-sm">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
             </div>
         </div>
     </aside>
@@ -119,7 +155,7 @@
                     <div class="glass-panel p-6 rounded-2xl lg:col-span-2 space-y-4">
                         <div class="flex justify-between items-center">
                             <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-chart-area text-emerald-600 mr-2"></i>Monthly Operations Volume</h3>
-                            <span class="text-[11px] bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-lg">May - Oct 2026</span>
+                            <span class="text-[11px] bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-lg">Multi-Year Analytics</span>
                         </div>
                         <div class="h-64 relative">
                             <canvas id="revenueChart"></canvas>
@@ -144,28 +180,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Strategic Recommendations Section -->
-                <div class="glass-panel p-6 rounded-2xl space-y-4 border-l-4 border-emerald-500">
-                    <div class="flex items-center space-x-2 text-emerald-700">
-                        <i class="fa-solid fa-lightbulb text-xl"></i>
-                        <h3 class="font-bold text-base">Strategic Recommendations for Productivity & Profit Growth</h3>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                        <div class="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 space-y-2">
-                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-route text-emerald-600 mr-1"></i>Route Optimization</h4>
-                            <p class="text-slate-600 leading-relaxed">Focus fleet dispatches on high-yield corridors such as Georgia (GA) and North Carolina (NC) to boost aggregate revenues by an estimated 12%.</p>
-                        </div>
-                        <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2">
-                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-wallet text-blue-600 mr-1"></i>Cash Flow Acceleration</h4>
-                            <p class="text-slate-600 leading-relaxed">Minimize reliance on destination balance delays and enforce immediate digital payment options (Zelle, CC) to mitigate credit risks.</p>
-                        </div>
-                        <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 space-y-2">
-                            <h4 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-user-gear text-amber-600 mr-1"></i>Field Crew Workload Balancing</h4>
-                            <p class="text-slate-600 leading-relaxed">Distribute dispatches evenly across active foremen and reduce unassigned ('no name') logs to ensure tighter supervision.</p>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- TAB 2: JOBS CRUD & FILTER -->
@@ -186,18 +200,24 @@
                         <label class="text-xs font-bold text-slate-600">Filter Month:</label>
                         <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
                             <option value="ALL">All Months</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
                             <option value="5">May</option>
                             <option value="6">June</option>
                             <option value="7">July</option>
                             <option value="8">August</option>
                             <option value="9">September</option>
                             <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
                         </select>
                     </div>
                     <div class="flex items-center space-x-2">
                         <label class="text-xs font-bold text-slate-600">Filter Year:</label>
                         <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
-                            <option value="2026">2026</option>
+                            <!-- Populated dynamically via app.js -->
                         </select>
                     </div>
                     <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">
