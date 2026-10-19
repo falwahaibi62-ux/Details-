@@ -136,6 +136,7 @@ function extractPaymentsFromContainer(containerId) {
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('crudTableBody');
     if(!tbody) return;
+    
     tbody.innerHTML = dataToRender.map((item, index) => {
         const foremanDisplay = (!item.foreman || item.foreman.trim() === '') 
             ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
@@ -144,44 +145,32 @@ function renderJobsCRUD(dataToRender) {
         let actions = `<span class="text-slate-400">Restricted</span>`;
         if(currentUserRole === 'Admin') {
             actions = `
-                <button onclick="editJob(${index})" class="text-blue-600 hover:text-blue-800 mr-2 font-bold"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button onclick="deleteJob(${index})" class="text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-trash"></i></button>
+                <button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button onclick="deleteJob(${index})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
             `;
         } else if(currentUserRole === 'Member') {
-            actions = `<button onclick="editJob(${index})" class="text-blue-600 hover:text-blue-800 font-bold">Edit Only</button>`;
+            actions = `<button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg font-bold">Edit Only</button>`;
         }
 
+        const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
+        const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
+
         return `
-            <tr class="hover:bg-slate-50 transition">
-                <td class="py-3 px-4 font-mono text-slate-500">${item.date}</td>
-                <td class="py-3 px-4 font-bold text-slate-900">${item.jobNo}</td>
-                <td class="py-3 px-4 font-semibold text-emerald-700">${item.route}</td>
-                <td class="py-3 px-4">${foremanDisplay}</td>
-                <td class="py-3 px-4 font-extrabold text-slate-900">${item.total}</td>
-                <td class="py-3 px-4 text-slate-600">${item.pu || '-'}</td>
-                <td class="py-3 px-4 text-slate-600">${item.dest || '-'}</td>
-                <td class="py-3 px-4 text-center">${actions}</td>
+            <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
+                <td class="p-3 text-slate-700 font-bold text-xs">${item.jobNo || '-'}</td>
+                <td class="p-3 text-slate-600 text-xs">${item.route || '-'}</td>
+                <td class="p-3 text-xs">${foremanDisplay}</td>
+                <td class="p-3 text-emerald-600 font-bold text-xs">${item.total || '-'}</td>
+                <td class="p-3 text-slate-600 text-xs">${item.pu || '-'}</td>
+                <td class="p-3 text-slate-600 text-xs">${item.dest || '-'}</td>
+                <td class="p-3 text-emerald-700 font-semibold text-xs">${dieselVal}</td>
+                <td class="p-3 text-indigo-700 font-semibold text-xs">${hotelVal}</td>
+                <td class="p-3 text-center">${actions}</td>
             </tr>
         `;
     }).join('');
 }
-
-tr.innerHTML = `
-    <td class="p-3 text-slate-700 font-medium">${job.date || '-'}</td>
-    <td class="p-3 text-slate-700 font-bold">${job.jobNo || '-'}</td>
-    <td class="p-3 text-slate-600">${job.route || '-'}</td>
-    <td class="p-3 text-slate-600">${job.foreman || '-'}</td>
-    <td class="p-3 text-emerald-600 font-bold">${job.total || '-'}</td>
-    <td class="p-3 text-slate-600 text-xs">${job.pu || '-'}</td>
-    <td class="p-3 text-slate-600 text-xs">${job.dest || '-'}</td>
-    <td class="p-3 text-emerald-700 font-semibold text-xs">${job.diesel && job.diesel !== '-' ? job.diesel : '-'}</td>
-    <td class="p-3 text-indigo-700 font-semibold text-xs">${job.hotel && job.hotel !== '-' ? job.hotel : '-'}</td>
-    <td class="p-3 text-center space-x-1">
-        <button onclick="editJob(${realIndex})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg"><i class="fa-solid fa-pen-to-square"></i></button>
-        <button onclick="deleteJob(${realIndex})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
-    </td>
-`;
-
 function globalSearchFilter() {
     const query = document.getElementById('globalSearch').value.toLowerCase();
     if (!query) {
