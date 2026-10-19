@@ -558,8 +558,12 @@ function switchTab(tab) {
 }
 
 window.onload = () => {
+    if (typeof loadMasterJobs === 'function') {
+        masterJobs = loadMasterJobs(); 
+    }
     renderUsers();
     populateYearFilter();
     filterJobsTable();
-    updateDashboardAnalytics();
+    updateDashboardAnalytics(); 
 };
+
