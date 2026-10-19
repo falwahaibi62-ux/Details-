@@ -17,69 +17,62 @@
 <body class="bg-slate-100 font-sans text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
 
   
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 shadow-2xl">
-        <div>
-            <div class="p-5 flex items-center justify-between border-b border-slate-800">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 font-bold text-xl border border-emerald-500/20">
-                        <i class="fa-solid fa-chart-line"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-lg font-bold text-white leading-none">MovePro</h2>
-                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise Pro v16</span>
-                    </div>
+   <!-- SIDEBAR -->
+<aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 shadow-2xl">
+    <div>
+        <div class="p-5 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 font-bold text-xl border border-emerald-500/20">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-white leading-none">MovePro</h2>
+                    <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Enterprise Pro v16</span>
                 </div>
             </div>
-
-            <nav class="p-4 space-y-1.5 text-sm">
-                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition">
-                    <i class="fa-solid fa-gauge-high w-5 text-center"></i>
-                    <span>Dashboard & Analytics</span>
-                </button>
-                <button onclick="switchTab('jobs')" id="nav-jobs" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-truck-fast w-5 text-center text-emerald-400"></i>
-                    <span>Operations Ledger (CRUD)</span>
-                </button>
-                <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-users-gear w-5 text-center text-emerald-400"></i>
-                    <span>Users & Roles</span>
-                </button>
-                <button onclick="switchTab('reports')" id="nav-reports" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-file-pdf w-5 text-center text-emerald-400"></i>
-                    <span>Official PDF Report</span>
-                </button>
-            </nav>
         </div>
-      <!-- Sidebar Navigation -->
-<div class="space-y-1">
-    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="...">...</button>
-    <button onclick="switchTab('jobs')" id="nav-jobs" class="...">...</button>
-    <button onclick="switchTab('users')" id="nav-users" class="...">...</button>
-    <button onclick="switchTab('reports')" id="nav-reports" class="...">...</button>
-    
-    <button onclick="switchTab('trash')" id="nav-trash" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition text-xs">
-        <i class="fa-solid fa-trash-arrow-up w-4 text-center"></i>
-        <span>Recycle Bin</span>
-    </button>
-</div>
 
-        <div class="p-4 border-t border-slate-800 bg-slate-950/40">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <div id="userAvatarInitials" class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">FA</div>
-                    <div class="text-xs truncate">
-                        <p id="currentUserNameDisplay" class="font-semibold text-white truncate">Fatma Al-Wahaibi</p>
-                        <p id="currentUserRoleBadge" class="text-emerald-400 font-medium">Admin</p>
-                    </div>
+        <!-- Sidebar Navigation -->
+        <nav class="p-4 space-y-1.5 text-sm">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition">
+                <i class="fa-solid fa-gauge-high w-5 text-center"></i>
+                <span>Dashboard & Analytics</span>
+            </button>
+            <button onclick="switchTab('jobs')" id="nav-jobs" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-truck-fast w-5 text-center text-emerald-400"></i>
+                <span>Operations Ledger (CRUD)</span>
+            </button>
+            <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-users-gear w-5 text-center text-emerald-400"></i>
+                <span>Users & Roles</span>
+            </button>
+            <button onclick="switchTab('reports')" id="nav-reports" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-file-pdf w-5 text-center text-emerald-400"></i>
+                <span>Official PDF Report</span>
+            </button>
+            <!-- زر سلة المحذوفات من ضمن القائمة -->
+            <button onclick="switchTab('trash')" id="nav-trash" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-trash-arrow-up w-5 text-center text-emerald-400"></i>
+                <span>Recycle Bin</span>
+            </button>
+        </nav>
+    </div>
+
+    <div class="p-4 border-t border-slate-800 bg-slate-950/40">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div id="userAvatarInitials" class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">FA</div>
+                <div class="text-xs truncate">
+                    <p id="currentUserNameDisplay" class="font-semibold text-white truncate">Fatma Al-Wahaibi</p>
+                    <p id="currentUserRoleBadge" class="text-emerald-400 font-medium">Admin</p>
                 </div>
-                <button onclick="logoutSession()" title="Logout" class="text-slate-400 hover:text-red-400 transition text-sm">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                </button>
             </div>
+            <button onclick="logoutSession()" title="Logout" class="text-slate-400 hover:text-red-400 transition text-sm">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
         </div>
-    </aside>
-
+    </div>
+</aside>
     <!-- MAIN CONTENT -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
 
