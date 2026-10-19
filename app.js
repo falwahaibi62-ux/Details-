@@ -123,11 +123,12 @@ function extractPaymentsFromContainer(containerId) {
     return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
 }
 
+// Function to render the jobs CRUD table using unique jobNo for safe actions
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('crudTableBody');
     if(!tbody) return;
     
-    tbody.innerHTML = dataToRender.map((item, index) => {
+    tbody.innerHTML = dataToRender.map((item) => {
         const foremanDisplay = (!item.foreman || item.foreman.trim() === '') 
             ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
             : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
@@ -135,11 +136,11 @@ function renderJobsCRUD(dataToRender) {
         let actions = `<span class="text-slate-400">Restricted</span>`;
         if(currentUserRole === 'Admin') {
             actions = `
-                <button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button onclick="deleteJob(${index})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+                <button onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg" title="Move to Recycle Bin"><i class="fa-solid fa-trash-can"></i></button>
             `;
         } else if(currentUserRole === 'Member') {
-            actions = `<button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg font-bold">Edit Only</button>`;
+            actions = `<button onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg font-bold" title="Edit Only">Edit Only</button>`;
         }
 
         const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
@@ -148,7 +149,7 @@ function renderJobsCRUD(dataToRender) {
         const driversVal = (item.drivers && item.drivers !== '-') ? item.drivers : '-'; 
 
         return `
-            <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <tr class="hover:bg-slate-50 transition border-b border-slate-150">
                 <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
                 <td class="p-3 text-slate-700 font-bold text-xs">${item.jobNo || '-'}</td>
                 <td class="p-3 text-slate-600 text-xs">${item.route || '-'}</td>
