@@ -356,20 +356,26 @@ function editJob(index) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
-function deleteJob(index) {
-    if(confirm('Are you sure you want to move this record to the Recycle Bin?')) {
-        const removedItem = masterJobs.splice(index, 1)[0];
-        masterTrash.push(removedItem);
-        
+// Function to delete/move a specific dispatch record to the Recycle Bin safely using jobNo
+function deleteJob(jobNo) {
+    if (!confirm('Are you sure you want to move this dispatch to Recycle Bin?')) return;
+
+    // 1. Find the exact index of the job in the master list
+    const jobIndex = masterJobs.findIndex(j => j.jobNo === jobNo);
+
+    if (jobIndex !== -1) {
+        // 2. Extract the specific job and push it to the trash bin array
+        const deletedJob = masterJobs.splice(jobIndex, 1)[0];
+        trashBin.push(deletedJob);
+
+        // 3. Persist the updated state to LocalStorage
         saveMasterJobs(masterJobs);
-        saveTrash(masterTrash);
-        
-        populateYearFilter();
+        saveTrashBin(trashBin);
+
+        // 4. Refresh the UI tables, analytics, and trash bin view
         filterJobsTable();
         updateDashboardAnalytics();
-        if (typeof renderTrashBin === 'function') {
-            renderTrashBin();
-        }
+        renderTrashBin();
     }
 }
 
