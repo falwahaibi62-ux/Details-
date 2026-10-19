@@ -491,7 +491,7 @@ function renderDashboardCharts(monthlyData, paymentData) {
 }
 
 function switchTab(tab) {
-    ['dashboard', 'jobs', 'users', 'reports'].forEach(t => {
+    ['dashboard', 'jobs', 'users', 'reports', 'trash'].forEach(t => {
         const tabEl = document.getElementById(`tab-${t}`);
         const navEl = document.getElementById(`nav-${t}`);
         if(tabEl) tabEl.classList.add('hidden');
@@ -506,6 +506,8 @@ function switchTab(tab) {
 
     if (tab === 'dashboard') {
         setTimeout(updateDashboardAnalytics, 100);
+    } else if (tab === 'trash') {
+        renderTrashBin();
     }
 }
 
