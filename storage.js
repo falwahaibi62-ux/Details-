@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'movePro_masterJobs';
+const TRASH_STORAGE_KEY = 'movepro_trash';
 
 function loadMasterJobs() {
     const savedJobs = localStorage.getItem(STORAGE_KEY);
@@ -22,3 +23,9 @@ function saveMasterJobs(jobsArray) {
 }
 
 let masterJobs = loadMasterJobs();
+
+let masterTrash = JSON.parse(localStorage.getItem(TRASH_STORAGE_KEY)) || [];
+
+function saveTrash(trashData) {
+    localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trashData));
+}
