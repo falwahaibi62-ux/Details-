@@ -2,7 +2,6 @@ let currentUserRole = 'Admin';
 let currentLoggedInUser = null;
 let revenueChartInstance = null;
 let paymentMixChartInstance = null;
-let masterJobs = [];
 
 function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
