@@ -491,18 +491,29 @@ function renderDashboardCharts(monthlyData, paymentData) {
 }
 
 function switchTab(tab) {
-    ['dashboard', 'jobs', 'users', 'reports', 'trash'].forEach(t => {
+    const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash'];
+    
+    tabs.forEach(t => {
         const tabEl = document.getElementById(`tab-${t}`);
         const navEl = document.getElementById(`nav-${t}`);
-        if(tabEl) tabEl.classList.add('hidden');
-        if(navEl) navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition';
+        
+        if(tabEl) {
+            tabEl.classList.add('hidden');
+        }
+        if(navEl) {
+            navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition';
+        }
     });
 
     const activeTab = document.getElementById(`tab-${tab}`);
     const activeNav = document.getElementById(`nav-${tab}`);
     
-    if(activeTab) activeTab.classList.remove('hidden');
-    if(activeNav) activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
+    if(activeTab) {
+        activeTab.classList.remove('hidden');
+    }
+    if(activeNav) {
+        activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
+    }
 
     if (tab === 'dashboard') {
         setTimeout(updateDashboardAnalytics, 100);
