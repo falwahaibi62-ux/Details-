@@ -239,9 +239,14 @@ function saveJob(e) {
     const hotelFormatted = hotelRaw ? `${hotelRaw} ${document.getElementById('hotelMethod').value}` : '-';
 
     const helpersSelect = document.getElementById('helpersCost');
-    const helpersCostVal = helpersSelect ? parseFloat(helpersSelect.value) || 0 : 0;
-    const helpersFormatted = helpersCostVal > 0 ? `$${helpersCostVal.toLocaleString('en-US')}` : '-';
+    let helpersFormatted = '-';
+    let helpersCostVal = 0;
 
+    if (helpersSelect && helpersSelect.selectedIndex !== -1) {
+        helpersCostVal = parseFloat(helpersSelect.value) || 0;
+        const selectedText = helpersSelect.options[helpersSelect.selectedIndex].text;
+        helpersFormatted = helpersCostVal > 0 ? selectedText : '-';
+    }
     const newJob = {
         date: dateVal,
         month: monthVal,
