@@ -559,11 +559,14 @@ function switchTab(tab) {
 
 window.onload = () => {
     if (typeof loadMasterJobs === 'function') {
-        masterJobs = loadMasterJobs(); 
+        masterJobs = loadMasterJobs();
     }
+    
+    currentUserRole = 'Admin';
+    checkPermissions();
     renderUsers();
     populateYearFilter();
     filterJobsTable();
-    updateDashboardAnalytics(); 
+    updateDashboardAnalytics();
 };
 
