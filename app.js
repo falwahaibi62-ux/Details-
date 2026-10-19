@@ -135,6 +135,7 @@ function renderJobsCRUD(dataToRender) {
 
         const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
         const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
+        
         const helpersVal = (item.helpers && item.helpers !== '-') ? item.helpers : '-';
 
         return `
