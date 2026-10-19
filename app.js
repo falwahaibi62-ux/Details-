@@ -260,6 +260,22 @@ function saveJob(e) {
     const puFormatted = extractPaymentsFromContainer('puContainer');
     const destFormatted = extractPaymentsFromContainer('destContainer');
 
+    // قراءة وتنسيق مصاريف الديزل
+    let dieselRaw = document.getElementById('dieselAmount').value.trim();
+    if (dieselRaw && !dieselRaw.startsWith('$') && dieselRaw !== '-') {
+        let num = parseFloat(dieselRaw.replace(/[^0-9.]/g, ''));
+        dieselRaw = isNaN(num) ? dieselRaw : '$' + num.toLocaleString('en-US');
+    }
+    const dieselFormatted = dieselRaw ? `${dieselRaw} ${document.getElementById('dieselMethod').value}` : '-';
+
+    // قراءة وتنسيق مصاريف الفندق
+    let hotelRaw = document.getElementById('hotelAmount').value.trim();
+    if (hotelRaw && !hotelRaw.startsWith('$') && hotelRaw !== '-') {
+        let num = parseFloat(hotelRaw.replace(/[^0-9.]/g, ''));
+        hotelRaw = isNaN(num) ? hotelRaw : '$' + num.toLocaleString('en-US');
+    }
+    const hotelFormatted = hotelRaw ? `${hotelRaw} ${document.getElementById('hotelMethod').value}` : '-';
+
     const newJob = {
         date: dateVal,
         month: monthVal,
@@ -269,7 +285,9 @@ function saveJob(e) {
         foreman: document.getElementById('jobForeman').value.trim(),
         total: totalRaw,
         pu: puFormatted,
-        dest: destFormatted
+        dest: destFormatted,
+        diesel: dieselFormatted,
+        hotel: hotelFormatted
     };
 
     if(index === -1) {
@@ -321,6 +339,26 @@ function editJob(index) {
     document.getElementById('jobForeman').value = j.foreman;
     document.getElementById('jobTotal').value = j.total;
     
+    // تعبئة حقول الديزل
+    if (j.diesel && j.diesel !== '-') {
+        const parts = j.diesel.trim().split(' ');
+        document.getElementById('dieselAmount').value = parts[0] || '';
+        if (parts[1]) document.getElementById('dieselMethod').value = parts[1];
+    } else {
+        document.getElementById('dieselAmount').value = '';
+        document.getElementById('dieselMethod').value = 'Cash';
+    }
+
+    // تعبئة حقول الفندق
+    if (j.hotel && j.hotel !== '-') {
+        const parts = j.hotel.trim().split(' ');
+        document.getElementById('hotelAmount').value = parts[0] || '';
+        if (parts[1]) document.getElementById('hotelMethod').value = parts[1];
+    } else {
+        document.getElementById('hotelAmount').value = '';
+        document.getElementById('hotelMethod').value = 'Cash';
+    }
+
     const puContainer = document.getElementById('puContainer');
     puContainer.innerHTML = '';
     if (j.pu && j.pu !== '-') {
