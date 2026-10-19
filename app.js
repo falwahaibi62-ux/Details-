@@ -4,47 +4,6 @@ let revenueChartInstance = null;
 let paymentMixChartInstance = null;
 let masterJobs = [];
 
-function handleLogin(e) {
-    e.preventDefault();
-    const nameInput = document.getElementById('loginName').value.trim().toLowerCase();
-    const emailInput = document.getElementById('loginEmail').value.trim().toLowerCase();
-    const errorDiv = document.getElementById('loginError');
-
-    const matchedUser = systemUsers.find(u => 
-        u.name.toLowerCase() === nameInput && u.email.toLowerCase() === emailInput
-    );
-
-    if (matchedUser) {
-        currentLoggedInUser = matchedUser;
-        currentUserRole = matchedUser.role;
-
-        document.getElementById('currentUserNameDisplay').innerText = matchedUser.name;
-        document.getElementById('currentUserRoleBadge').innerText = matchedUser.role;
-        document.getElementById('activeRoleText').innerText = matchedUser.role;
-
-        const initials = matchedUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        document.getElementById('userAvatarInitials').innerText = initials;
-
-        const loginScreen = document.getElementById('loginScreen');
-        loginScreen.classList.add('hidden');
-
-        checkPermissions();
-        populateYearFilter();
-        filterJobsTable();
-        renderUsers();
-        updateDashboardAnalytics();
-    } else {
-        errorDiv.classList.remove('hidden');
-    }
-}
-
-function logoutSession() {
-    currentLoggedInUser = null;
-    document.getElementById('loginForm').reset();
-    document.getElementById('loginError').classList.add('hidden');
-    document.getElementById('loginScreen').classList.remove('hidden');
-}
-
 function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
     if (!yearSelect) return;
@@ -81,6 +40,7 @@ function filterJobsTable() {
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
     if(!container) return;
+    if(typeof systemUsers === 'undefined') return;
     container.innerHTML = systemUsers.map(u => `
         <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border text-xs">
             <div>
@@ -88,7 +48,7 @@ function renderUsers() {
                 <p class="text-slate-500">${u.email}</p>
             </div>
             <div class="flex items-center space-x-3">
-                <select onchange="updateUserRole(${u.id}, this.value)" class="p-2 border rounded-lg font-semibold bg-white" ${currentUserRole !== 'Admin' ? 'disabled' : ''}>
+                <select class="p-2 border rounded-lg font-semibold bg-white" disabled>
                     <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>Admin</option>
                     <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>Member</option>
                     <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>Viewer</option>
@@ -164,15 +124,10 @@ function renderJobsCRUD(dataToRender) {
             ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
             : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
         
-        let actions = `<span class="text-slate-400">Restricted</span>`;
-        if(currentUserRole === 'Admin') {
-            actions = `
-                <button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button onclick="deleteJob(${index})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
-            `;
-        } else if(currentUserRole === 'Member') {
-            actions = `<button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg font-bold">Edit Only</button>`;
-        }
+        const actions = `
+            <button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button onclick="deleteJob(${index})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+        `;
 
         const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
         const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
@@ -214,10 +169,6 @@ function globalSearchFilter() {
 }
 
 function openAddModal() {
-    if(currentUserRole === 'Viewer') {
-        alert('Access denied: Viewer role cannot add records.');
-        return;
-    }
     document.getElementById('modalTitle').innerText = 'Add New Dispatch';
     document.getElementById('editIndex').value = '-1';
     document.getElementById('jobForm').reset();
@@ -303,7 +254,6 @@ function saveJob(e) {
     }
 
     saveMasterJobs(masterJobs);
-
     closeModal();
     populateYearFilter();
     filterJobsTable();
@@ -311,7 +261,6 @@ function saveJob(e) {
 }
 
 function editJob(index) {
-    if(currentUserRole === 'Viewer') return;
     const j = masterJobs[index];
     document.getElementById('modalTitle').innerText = 'Edit Dispatch Record';
     document.getElementById('editIndex').value = index;
@@ -336,10 +285,6 @@ function editJob(index) {
         const parts = j.route.split('→');
         document.getElementById('routeFrom').value = parts[0].trim();
         document.getElementById('routeTo').value = parts[1].trim();
-    } else if (j.route && j.route.includes('-')) {
-        const parts = j.route.split('-');
-        document.getElementById('routeFrom').value = parts[0].trim();
-        document.getElementById('routeTo').value = parts[1].trim();
     } else {
         document.getElementById('routeFrom').value = j.route || '';
         document.getElementById('routeTo').value = '';
@@ -347,56 +292,6 @@ function editJob(index) {
 
     document.getElementById('jobForeman').value = j.foreman;
     document.getElementById('jobTotal').value = j.total;
-    
-    if (j.diesel && j.diesel !== '-') {
-        const parts = j.diesel.trim().split(' ');
-        document.getElementById('dieselAmount').value = parts[0] || '';
-        if (parts[1]) document.getElementById('dieselMethod').value = parts[1];
-    } else {
-        document.getElementById('dieselAmount').value = '';
-        document.getElementById('dieselMethod').value = 'Cash';
-    }
-
-    if (j.hotel && j.hotel !== '-') {
-        const parts = j.hotel.trim().split(' ');
-        document.getElementById('hotelAmount').value = parts[0] || '';
-        if (parts[1]) document.getElementById('hotelMethod').value = parts[1];
-    } else {
-        document.getElementById('hotelAmount').value = '';
-        document.getElementById('hotelMethod').value = 'Cash';
-    }
-
-    const puContainer = document.getElementById('puContainer');
-    puContainer.innerHTML = '';
-    if (j.pu && j.pu !== '-') {
-        j.pu.split(',').forEach(p => {
-            const trimP = p.trim();
-            const lastSpace = trimP.lastIndexOf(' ');
-            if (lastSpace !== -1) {
-                addPaymentRow('puContainer', trimP.substring(0, lastSpace), trimP.substring(lastSpace + 1));
-            } else {
-                addPaymentRow('puContainer', trimP, 'Cash');
-            }
-        });
-    } else {
-        addPaymentRow('puContainer');
-    }
-
-    const destContainer = document.getElementById('destContainer');
-    destContainer.innerHTML = '';
-    if (j.dest && j.dest !== '-') {
-        j.dest.split(',').forEach(d => {
-            const trimD = d.trim();
-            const lastSpace = trimD.lastIndexOf(' ');
-            if (lastSpace !== -1) {
-                addPaymentRow('destContainer', trimD.substring(0, lastSpace), trimD.substring(lastSpace + 1));
-            } else {
-                addPaymentRow('destContainer', trimD, 'Cash');
-            }
-        });
-    } else {
-        addPaymentRow('destContainer');
-    }
 
     const modal = document.getElementById('jobModal');
     modal.classList.remove('hidden');
@@ -404,10 +299,6 @@ function editJob(index) {
 }
 
 function deleteJob(index) {
-    if(currentUserRole !== 'Admin') {
-        alert('Only Admin users can delete records.');
-        return;
-    }
     if(confirm('Are you sure you want to delete this record permanently?')) {
         masterJobs.splice(index, 1);
         saveMasterJobs(masterJobs);
@@ -418,7 +309,7 @@ function deleteJob(index) {
 }
 
 function updateDashboardAnalytics() {
-    if (!window.masterJobs || masterJobs.length === 0) return;
+    if (!masterJobs || masterJobs.length === 0) return;
 
     let totalRev = 0;
     const routeRevenueMap = {};
@@ -560,15 +451,9 @@ function switchTab(tab) {
 }
 
 window.onload = () => {
-    try {
-        if (typeof loadMasterJobs === 'function') {
-            masterJobs = loadMasterJobs();
-        }
-    } catch(err) {
-        console.error("Error loading jobs:", err);
-        masterJobs = [];
+    if (typeof loadMasterJobs === 'function') {
+        masterJobs = loadMasterJobs();
     }
-    
     currentUserRole = 'Admin';
     checkPermissions();
     renderUsers();
