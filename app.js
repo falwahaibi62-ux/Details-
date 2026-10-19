@@ -250,7 +250,6 @@ function saveJob(e) {
         totalRaw = isNaN(num) ? totalRaw : '$' + num.toLocaleString('en-US');
     }
 
-    // قراءة القيم من الحقلين المنفصلين ودمجهما بالشكل الصحيح
     const fromVal = document.getElementById('routeFrom').value.trim().toUpperCase();
     const toVal = document.getElementById('routeTo').value.trim().toUpperCase();
     const routeVal = `${fromVal} → ${toVal}`;
@@ -258,7 +257,6 @@ function saveJob(e) {
     const puFormatted = extractPaymentsFromContainer('puContainer');
     const destFormatted = extractPaymentsFromContainer('destContainer');
 
-    // قراءة وتنسيق مصاريف الديزل
     let dieselRaw = document.getElementById('dieselAmount').value.trim();
     if (dieselRaw && !dieselRaw.startsWith('$') && dieselRaw !== '-') {
         let num = parseFloat(dieselRaw.replace(/[^0-9.]/g, ''));
@@ -266,7 +264,6 @@ function saveJob(e) {
     }
     const dieselFormatted = dieselRaw ? `${dieselRaw} ${document.getElementById('dieselMethod').value}` : '-';
 
-    // قراءة وتنسيق مصاريف الفندق
     let hotelRaw = document.getElementById('hotelAmount').value.trim();
     if (hotelRaw && !hotelRaw.startsWith('$') && hotelRaw !== '-') {
         let num = parseFloat(hotelRaw.replace(/[^0-9.]/g, ''));
@@ -293,11 +290,15 @@ function saveJob(e) {
     } else {
         masterJobs[index] = newJob;
     }
+
+    saveMasterJobs(masterJobs);
+
     closeModal();
     populateYearFilter();
     filterJobsTable();
     updateDashboardAnalytics();
 }
+
 function editJob(index) {
     if(currentUserRole === 'Viewer') return;
     const j = masterJobs[index];
@@ -401,6 +402,9 @@ function deleteJob(index) {
     }
     if(confirm('Are you sure you want to delete this record permanently?')) {
         masterJobs.splice(index, 1);
+        
+        saveMasterJobs(masterJobs);
+
         populateYearFilter();
         filterJobsTable();
         updateDashboardAnalytics();
