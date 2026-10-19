@@ -76,7 +76,7 @@
 <!-- Main Content Area -->
 <main class="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto bg-slate-100 p-8">
 
-    <!-- TAB 1: DASHBOARD & ANALYTICS -->
+    <!-- ================= TAB 1: DASHBOARD & ANALYTICS ================= -->
     <div id="tab-dashboard" class="space-y-6">
         <!-- Top Header, Search, and Analytics Overview -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -84,27 +84,86 @@
                 <h1 class="text-2xl font-black text-slate-900 tracking-tight truncate">Executive Dashboard & Advanced Analytics</h1>
                 <p class="text-xs text-slate-500 mt-0.5">Real-time business insights and operational telemetry</p>
             </div>
-            <!-- ... Remaining header and search elements ... -->
         </div>
-        <!-- Dashboard content and remaining metrics -->
+
+        <!-- KPI Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Total Lifetime Revenue, Avg Job Value, etc. -->
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Monthly Revenue Chart & Payment Mix Chart -->
+        </div>
+
+        <!-- Bottom Grids -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Top Revenue Corridors & Optimizations -->
+        </div>
     </div>
 
-    <!-- TAB 2: OPERATIONS LEDGER (CRUD) -->
+
+    <!-- ================= TAB 2: OPERATIONS LEDGER (CRUD) ================= -->
     <div id="tab-jobs" class="hidden space-y-6">
-        <!-- Operations ledger and table content -->
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">Operations Ledger (CRUD)</h2>
+                <p class="text-xs text-slate-500">Manage, search, and edit active dispatch records</p>
+            </div>
+            <button onclick="openJobModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-md transition flex items-center space-x-2">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add New Job</span>
+            </button>
+        </div>
+
+        <!-- CRUD Table Container -->
+        <div class="glass-panel rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs min-w-[1000px]">
+                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                        <tr>
+                            <th class="p-3 text-left">Date</th>
+                            <th class="p-3 text-left">Job No</th>
+                            <th class="p-3 text-left">Route</th>
+                            <th class="p-3 text-left">Foreman</th>
+                            <th class="p-3 text-left text-purple-700">Helpers</th>
+                            <th class="p-3 text-left text-blue-700">Drivers</th>
+                            <th class="p-3 text-left">Total</th>
+                            <th class="p-3 text-left">P.U</th>
+                            <th class="p-3 text-left">DEST</th>
+                            <th class="p-3 text-left">Diesel</th>
+                            <th class="p-3 text-left">Hotel</th>
+                            <th class="p-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="crudTableBody" class="divide-y text-slate-700 bg-white"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <!-- TAB 3: USERS & ROLES -->
+
+    <!-- ================= TAB 3: USERS & ROLES ================= -->
     <div id="tab-users" class="hidden space-y-6">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Users & Access Management</h2>
+            <p class="text-xs text-slate-500">Control system users, permissions, and roles</p>
+        </div>
         <!-- User management and permissions content -->
     </div>
 
-    <!-- TAB 4: OFFICIAL PDF REPORT -->
+
+    <!-- ================= TAB 4: OFFICIAL PDF REPORT ================= -->
     <div id="tab-reports" class="hidden space-y-6">
-        <!-- Official PDF report generation content -->
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Official Operational Report</h2>
+            <p class="text-xs text-slate-500">Generate, view, and export formatted PDF reports</p>
+        </div>
+        <!-- PDF report preview/options content -->
     </div>
 
-    <!-- TAB 5: RECYCLE BIN -->
+
+    <!-- ================= TAB 5: RECYCLE BIN ================= -->
     <div id="tab-trash" class="hidden space-y-6">
         <!-- Recycle Bin Header and Actions -->
         <div class="glass-panel p-5 rounded-2xl flex justify-between items-center">
