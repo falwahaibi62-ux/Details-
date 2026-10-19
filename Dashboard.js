@@ -38,7 +38,6 @@ function updateDashboardAnalytics() {
     const completedJobsCount = masterJobs.length;
     const avgJobVal = completedJobsCount > 0 ? (totalRev / completedJobsCount) : 0;
 
-    // تحديث العناصر بناءً على الـ IDs الصحيحة في ملف الـ HTML
     const revEl = document.getElementById('dashTotalRevenue');
     if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
