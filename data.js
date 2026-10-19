@@ -1,4 +1,4 @@
-let masterJobs = [
+window.masterJobs = [   
     { date: '5/12/2026', month: 5, year: 2026, jobNo: 'G4648193', route: 'NC → NV', foreman: '', total: '$3,795', pu: '1935 CC', dest: '1960' },
     { date: '5/13/2026', month: 5, year: 2026, jobNo: 'G4625966', route: 'GA → TX', foreman: '', total: '-', pu: '22000 Cheque', dest: '7181' },
     { date: '5/14/2026', month: 5, year: 2026, jobNo: 'None', route: 'GA → TX', foreman: '', total: '$29,181', pu: '-', dest: '-' },
