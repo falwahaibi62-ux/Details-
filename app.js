@@ -18,24 +18,27 @@ function populateYearFilter() {
     yearSelect.innerHTML = optionsHTML;
 }
 
+// Function to filter the master jobs ledger based on selected month and year filters
 function filterJobsTable() {
     const monthVal = document.getElementById('filterMonth')?.value || 'ALL';
     const yearVal = document.getElementById('filterYear')?.value || 'ALL';
 
+    // Filter master jobs array based on month and year matching criteria
     let filtered = masterJobs.filter(job => {
         const matchesMonth = (monthVal === 'ALL') || (job.month && job.month.toString() === monthVal);
         const matchesYear = (yearVal === 'ALL') || (job.year && job.year.toString() === yearVal);
         return matchesMonth && matchesYear;
     });
 
+    // Update the record count display text dynamically
     const countText = document.getElementById('filteredCountText');
-    if(countText) {
+    if (countText) {
         countText.innerText = `Showing ${filtered.length} of ${masterJobs.length} records`;
     }
 
+    // Render the filtered records into the CRUD table view
     renderJobsCRUD(filtered);
 }
-
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
     if(!container) return;
