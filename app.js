@@ -232,6 +232,10 @@ function saveJob(e) {
     }
     const hotelFormatted = hotelRaw ? `${hotelRaw} ${document.getElementById('hotelMethod').value}` : '-';
 
+    const helpersSelect = document.getElementById('helpersCost');
+    const helpersCostVal = helpersSelect ? parseFloat(helpersSelect.value) || 0 : 0;
+    const helpersFormatted = helpersCostVal > 0 ? `$${helpersCostVal.toLocaleString('en-US')}` : '-';
+
     const newJob = {
         date: dateVal,
         month: monthVal,
@@ -240,6 +244,8 @@ function saveJob(e) {
         route: routeVal,
         foreman: document.getElementById('jobForeman').value.trim(),
         total: totalRaw,
+        helpers: helpersFormatted,       
+        helpersNum: helpersCostVal,     
         pu: puFormatted,
         dest: destFormatted,
         diesel: dieselFormatted,
@@ -258,7 +264,6 @@ function saveJob(e) {
     filterJobsTable();
     updateDashboardAnalytics();
 }
-
 function editJob(index) {
     const j = masterJobs[index];
     document.getElementById('modalTitle').innerText = 'Edit Dispatch Record';
