@@ -166,22 +166,21 @@ function renderJobsCRUD(dataToRender) {
     }).join('');
 }
 
-function filterJobsTable() {
-    const selectedMonth = document.getElementById('filterMonth').value;
-    const selectedYear = document.getElementById('filterYear').value;
-
-    let filtered = masterJobs.filter(item => {
-        let matchMonth = (selectedMonth === 'ALL' || item.month == selectedMonth);
-        let matchYear = (item.year == selectedYear);
-        return matchMonth && matchYear;
-    });
-
-    renderJobsCRUD(filtered);
-    const countText = document.getElementById('filteredCountText');
-    if(countText) {
-        countText.innerText = `Showing ${filtered.length} of ${masterJobs.length} records`;
-    }
-}
+tr.innerHTML = `
+    <td class="p-3 text-slate-700 font-medium">${job.date || '-'}</td>
+    <td class="p-3 text-slate-700 font-bold">${job.jobNo || '-'}</td>
+    <td class="p-3 text-slate-600">${job.route || '-'}</td>
+    <td class="p-3 text-slate-600">${job.foreman || '-'}</td>
+    <td class="p-3 text-emerald-600 font-bold">${job.total || '-'}</td>
+    <td class="p-3 text-slate-600 text-xs">${job.pu || '-'}</td>
+    <td class="p-3 text-slate-600 text-xs">${job.dest || '-'}</td>
+    <td class="p-3 text-emerald-700 font-semibold text-xs">${job.diesel && job.diesel !== '-' ? job.diesel : '-'}</td>
+    <td class="p-3 text-indigo-700 font-semibold text-xs">${job.hotel && job.hotel !== '-' ? job.hotel : '-'}</td>
+    <td class="p-3 text-center space-x-1">
+        <button onclick="editJob(${realIndex})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg"><i class="fa-solid fa-pen-to-square"></i></button>
+        <button onclick="deleteJob(${realIndex})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+    </td>
+`;
 
 function globalSearchFilter() {
     const query = document.getElementById('globalSearch').value.toLowerCase();
