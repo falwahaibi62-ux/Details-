@@ -123,13 +123,19 @@ function renderJobsCRUD(dataToRender) {
             ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
             : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
         
-        const actions = `
-            <button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1"><i class="fa-solid fa-pen-to-square"></i></button>
-            <button onclick="deleteJob(${index})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
-        `;
+        let actions = `<span class="text-slate-400">Restricted</span>`;
+        if(currentUserRole === 'Admin') {
+            actions = `
+                <button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button onclick="deleteJob(${index})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+            `;
+        } else if(currentUserRole === 'Member') {
+            actions = `<button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg font-bold">Edit Only</button>`;
+        }
 
         const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
         const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
+        const helpersVal = (item.helpers && item.helpers !== '-') ? item.helpers : '-';
 
         return `
             <tr class="hover:bg-slate-50 transition border-b border-slate-100">
@@ -142,12 +148,12 @@ function renderJobsCRUD(dataToRender) {
                 <td class="p-3 text-slate-600 text-xs">${item.dest || '-'}</td>
                 <td class="p-3 text-emerald-700 font-semibold text-xs">${dieselVal}</td>
                 <td class="p-3 text-indigo-700 font-semibold text-xs">${hotelVal}</td>
+                <td class="p-3 text-purple-700 font-semibold text-xs">${helpersVal}</td>
                 <td class="p-3 text-center">${actions}</td>
             </tr>
         `;
     }).join('');
 }
-
 function globalSearchFilter() {
     const query = document.getElementById('globalSearch').value.toLowerCase();
     if (!query) {
