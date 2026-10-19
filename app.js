@@ -48,12 +48,33 @@ function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
     if (!yearSelect) return;
 
-    const uniqueYears = [...new Set(masterJobs.map(item => item.year))].sort((a, b) => b - a);
+    const uniqueYears = [...new Set(masterJobs.map(item => item.year))].filter(y => y).sort((a, b) => b - a);
     const currentSelected = yearSelect.value;
 
-    yearSelect.innerHTML = uniqueYears.map(year => 
-        `<option value="${year}" ${year == currentSelected ? 'selected' : ''}>${year}</option>`
-    ).join('');
+    let optionsHTML = `<option value="ALL">All Years</option>`;
+    uniqueYears.forEach(year => {
+        optionsHTML += `<option value="${year}" ${year == currentSelected ? 'selected' : ''}>${year}</option>`;
+    });
+
+    yearSelect.innerHTML = optionsHTML;
+}
+
+function filterJobsTable() {
+    const monthVal = document.getElementById('filterMonth')?.value || 'ALL';
+    const yearVal = document.getElementById('filterYear')?.value || 'ALL';
+
+    let filtered = masterJobs.filter(job => {
+        const matchesMonth = (monthVal === 'ALL') || (job.month && job.month.toString() === monthVal);
+        const matchesYear = (yearVal === 'ALL') || (job.year && job.year.toString() === yearVal);
+        return matchesMonth && matchesYear;
+    });
+
+    const countText = document.getElementById('filteredCountText');
+    if(countText) {
+        countText.innerText = `Showing ${filtered.length} of ${masterJobs.length} records`;
+    }
+
+    renderJobsCRUD(filtered);
 }
 
 function renderUsers() {
@@ -171,6 +192,7 @@ function renderJobsCRUD(dataToRender) {
         `;
     }).join('');
 }
+
 function globalSearchFilter() {
     const query = document.getElementById('globalSearch').value.toLowerCase();
     if (!query) {
@@ -309,7 +331,6 @@ function editJob(index) {
 
     document.getElementById('jobNo').value = j.jobNo;
 
-    // تفكيك المسار وتوزيعه على الحقلين المنفصلين routeFrom و routeTo
     if (j.route && j.route.includes('→')) {
         const parts = j.route.split('→');
         document.getElementById('routeFrom').value = parts[0].trim();
@@ -326,7 +347,6 @@ function editJob(index) {
     document.getElementById('jobForeman').value = j.foreman;
     document.getElementById('jobTotal').value = j.total;
     
-    // تعبئة حقول الديزل
     if (j.diesel && j.diesel !== '-') {
         const parts = j.diesel.trim().split(' ');
         document.getElementById('dieselAmount').value = parts[0] || '';
@@ -336,7 +356,6 @@ function editJob(index) {
         document.getElementById('dieselMethod').value = 'Cash';
     }
 
-    // تعبئة حقول الفندق
     if (j.hotel && j.hotel !== '-') {
         const parts = j.hotel.trim().split(' ');
         document.getElementById('hotelAmount').value = parts[0] || '';
@@ -390,9 +409,7 @@ function deleteJob(index) {
     }
     if(confirm('Are you sure you want to delete this record permanently?')) {
         masterJobs.splice(index, 1);
-        
         saveMasterJobs(masterJobs);
-
         populateYearFilter();
         filterJobsTable();
         updateDashboardAnalytics();
@@ -468,7 +485,6 @@ function updateDashboardAnalytics() {
     renderDashboardCharts(monthlyRev, paymentMethodMap);
 }
 
-
 function renderDashboardCharts(monthlyData, paymentData) {
     const ctxRevenue = document.getElementById('revenueChart');
     if (ctxRevenue) {
@@ -542,5 +558,7 @@ function switchTab(tab) {
 
 window.onload = () => {
     renderUsers();
+    populateYearFilter();
+    filterJobsTable();
     updateDashboardAnalytics();
 };
