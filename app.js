@@ -70,27 +70,33 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const rowId = 'pay_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    const rowId = 'payment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+
     const rowDiv = document.createElement('div');
+    rowDiv.className = 'flex items-center gap-2';
     rowDiv.id = rowId;
-    rowDiv.className = 'flex items-center gap-2 payment-row';
 
     rowDiv.innerHTML = `
-        <input type="text" value="${amount}" placeholder="Amount (e.g. 500)" class="payment-amount flex-1 p-2 border rounded-xl text-xs">
-        <select class="payment-method w-28 p-2 border rounded-xl text-xs font-semibold bg-white">
+        <input type="text" placeholder="Amount (e.g. 500)" value="${amount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500">
+        
+        <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500">
             <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
             <option value="Zelle" ${method === 'Zelle' ? 'selected' : ''}>Zelle</option>
-            <option value="PS" ${method === 'PS' ? 'selected' : ''}>PS</option>
-            <option value="BS" ${method === 'BS' ? 'selected' : ''}>BS</option>
-            <option value="others" ${method === 'others' ? 'selected' : ''}>others</option>
+            <option value="Cheque" ${method === 'Cheque' ? 'selected' : ''}>Cheque</option>
+            <option value="PMO" ${method === 'PMO' ? 'selected' : ''}>PMO</option>
+            <option value="BC" ${method === 'BC' ? 'selected' : ''}>BC</option>
+            <option value="PC" ${method === 'PC' ? 'selected' : ''}>PC</option>
+            <option value="CC" ${method === 'CC' ? 'selected' : ''}>CC</option>
+            <option value="WT" ${method === 'WT' ? 'selected' : ''}>WT</option>
         </select>
-        <button type="button" onclick="removePaymentRow('${rowId}')" class="text-red-500 hover:text-red-700 px-2 font-bold text-sm">
+
+        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:text-red-700 text-sm font-bold px-1">
             <i class="fa-solid fa-xmark"></i>
         </button>
     `;
+
     container.appendChild(rowDiv);
 }
-
 function removePaymentRow(rowId) {
     const row = document.getElementById(rowId);
     if (row) row.remove();
