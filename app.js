@@ -135,7 +135,6 @@ function renderJobsCRUD(dataToRender) {
 
         const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
         const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
-        
         const helpersVal = (item.helpers && item.helpers !== '-') ? item.helpers : '-';
 
         return `
@@ -144,12 +143,12 @@ function renderJobsCRUD(dataToRender) {
                 <td class="p-3 text-slate-700 font-bold text-xs">${item.jobNo || '-'}</td>
                 <td class="p-3 text-slate-600 text-xs">${item.route || '-'}</td>
                 <td class="p-3 text-xs">${foremanDisplay}</td>
+                <td class="p-3 text-purple-700 font-semibold text-xs">${helpersVal}</td>
                 <td class="p-3 text-emerald-600 font-bold text-xs">${item.total || '-'}</td>
                 <td class="p-3 text-slate-600 text-xs">${item.pu || '-'}</td>
                 <td class="p-3 text-slate-600 text-xs">${item.dest || '-'}</td>
                 <td class="p-3 text-emerald-700 font-semibold text-xs">${dieselVal}</td>
                 <td class="p-3 text-indigo-700 font-semibold text-xs">${hotelVal}</td>
-                <td class="p-3 text-purple-700 font-semibold text-xs">${helpersVal}</td>
                 <td class="p-3 text-center">${actions}</td>
             </tr>
         `;
