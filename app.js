@@ -2,6 +2,7 @@ let currentUserRole = 'Admin';
 let currentLoggedInUser = null;
 let revenueChartInstance = null;
 let paymentMixChartInstance = null;
+let masterJobs = [];
 
 function handleLogin(e) {
     e.preventDefault();
