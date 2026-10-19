@@ -85,7 +85,6 @@ function checkPermissions() {
     }
 }
 
-// دالة إضافة صف دفعة ديناميكي (مبلغ + طريقة دفع)
 function addPaymentRow(containerId, amount = '', method = 'Cash') {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -116,7 +115,6 @@ function removePaymentRow(rowId) {
     if (row) row.remove();
 }
 
-// دالة تجميع واستخراج الدفعات المتعددة بنص واحد منظم
 function extractPaymentsFromContainer(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return '-';
@@ -409,7 +407,6 @@ function deleteJob(index) {
     }
 }
 
-// دوال تحليل وإحصاءات الداشبورد الاحترافي
 function updateDashboardAnalytics() {
     if (!window.masterJobs || masterJobs.length === 0) return;
 
@@ -478,6 +475,7 @@ function updateDashboardAnalytics() {
 
     renderDashboardCharts(monthlyRev, paymentMethodMap);
 }
+
 
 function renderDashboardCharts(monthlyData, paymentData) {
     const ctxRevenue = document.getElementById('revenueChart');
