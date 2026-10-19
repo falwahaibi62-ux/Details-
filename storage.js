@@ -2,6 +2,11 @@ const STORAGE_KEY = 'movePro_masterJobs';
 const TRASH_STORAGE_KEY = 'movepro_trash';
 
 function loadMasterJobs() {
+    if (window.masterJobs && Array.isArray(window.masterJobs)) {
+        saveMasterJobs(window.masterJobs);
+        return window.masterJobs;
+    }
+
     const savedJobs = localStorage.getItem(STORAGE_KEY);
     if (savedJobs) {
         try {
@@ -11,10 +16,6 @@ function loadMasterJobs() {
         }
     }
     
-    if (window.masterJobs && Array.isArray(window.masterJobs)) {
-        saveMasterJobs(window.masterJobs);
-        return window.masterJobs;
-    }
     return [];
 }
 
