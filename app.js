@@ -297,11 +297,22 @@ function editJob(index) {
     document.getElementById('jobForeman').value = j.foreman;
     document.getElementById('jobTotal').value = j.total;
 
+    const helpersSelect = document.getElementById('helpersCost');
+    if (helpersSelect) {
+        if (j.helpersNum !== undefined && j.helpersNum !== null) {
+            helpersSelect.value = j.helpersNum;
+        } else if (j.helpers && j.helpers !== '-') {
+            const num = parseFloat(j.helpers.replace(/[^0-9.]/g, '')) || 0;
+            helpersSelect.value = num;
+        } else {
+            helpersSelect.value = '0';
+        }
+    }
+
     const modal = document.getElementById('jobModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
-
 function deleteJob(index) {
     if(confirm('Are you sure you want to delete this record permanently?')) {
         masterJobs.splice(index, 1);
