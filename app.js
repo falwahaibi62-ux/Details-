@@ -590,6 +590,5 @@ window.onload = () => {
     populateYearFilter();
     filterJobsTable();
     updateDashboardAnalytics();
-    generateCustomReport();
     renderTrashBin();
 };
