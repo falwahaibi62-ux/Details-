@@ -540,16 +540,20 @@ function switchTab(tab) {
     }
 }
 
+// Function to render the Recycle Bin table view
 function renderTrashBin() {
     const tbody = document.getElementById('trashTableBody');
     if (!tbody) return;
 
-    if (masterTrash.length === 0) {
+    // Ensure trashBin array is initialized
+    if (!window.trashBin) window.trashBin = [];
+
+    if (trashBin.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">Recycle Bin is empty.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = masterTrash.map((item, index) => `
+    tbody.innerHTML = trashBin.map((item, index) => `
         <tr class="hover:bg-slate-50 transition border-b border-slate-100">
             <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
             <td class="p-3 text-slate-700 font-bold text-xs">${item.jobNo || '-'}</td>
@@ -570,30 +574,52 @@ function renderTrashBin() {
     `).join('');
 }
 
+// Function to restore a job from Recycle Bin back to master jobs ledger
 function restoreJob(index) {
-    const restoredItem = masterTrash.splice(index, 1)[0];
-    masterJobs.push(restoredItem);
+    if (!window.trashBin) window.trashBin = [];
+    if (!window.masterJobs) window.masterJobs = [];
 
-    saveMasterJobs(masterJobs);
-    saveTrash(masterTrash);
+    const restoredItem = trashBin.splice(index, 1)[0];
+    if (restoredItem) {
+        masterJobs.push(restoredItem);
 
-    filterJobsTable();
-    updateDashboardAnalytics();
-    renderTrashBin();
-}
+        // Save states securely
+        if (typeof saveMasterJobs === 'function') saveMasterJobs(masterJobs);
+        if (typeof saveTrashBin === 'function') saveTrashBin(trashBin);
 
-function permanentDeleteJob(index) {
-    if (confirm('Are you sure you want to permanently delete this record? This action cannot be undone.')) {
-        masterTrash.splice(index, 1);
-        saveTrash(masterTrash);
+        // Refresh UI views
+        filterJobsTable();
+        updateDashboardAnalytics();
         renderTrashBin();
     }
 }
 
+// Function to permanently delete a single record from the Recycle Bin
+function permanentDeleteJob(index) {
+    if (!window.trashBin) window.trashBin = [];
+
+    if (confirm('Are you sure you want to permanently delete this record? This action cannot be undone.')) {
+        trashBin.splice(index, 1);
+        if (typeof saveTrashBin === 'function') {
+            saveTrashBin(trashBin);
+        } else {
+            localStorage.setItem('trashBin', JSON.stringify(trashBin));
+        }
+        renderTrashBin();
+    }
+}
+
+// Function to empty the entire Recycle Bin
 function emptyTrashBin() {
+    if (!window.trashBin) window.trashBin = [];
+
     if (confirm('Are you sure you want to empty the Recycle Bin? All items will be permanently deleted.')) {
-        masterTrash = [];
-        saveTrash(masterTrash);
+        trashBin = [];
+        if (typeof saveTrashBin === 'function') {
+            saveTrashBin(trashBin);
+        } else {
+            localStorage.setItem('trashBin', JSON.stringify(trashBin));
+        }
         renderTrashBin();
     }
 }
