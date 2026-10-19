@@ -560,8 +560,13 @@ function switchTab(tab) {
 }
 
 window.onload = () => {
-    if (typeof loadMasterJobs === 'function') {
-        masterJobs = loadMasterJobs();
+    try {
+        if (typeof loadMasterJobs === 'function') {
+            masterJobs = loadMasterJobs();
+        }
+    } catch(err) {
+        console.error("Error loading jobs:", err);
+        masterJobs = [];
     }
     
     currentUserRole = 'Admin';
@@ -571,4 +576,3 @@ window.onload = () => {
     filterJobsTable();
     updateDashboardAnalytics();
 };
-
