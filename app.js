@@ -136,6 +136,7 @@ function renderJobsCRUD(dataToRender) {
         const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
         const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
         const helpersVal = (item.helpers && item.helpers !== '-') ? item.helpers : '-';
+        const driversVal = (item.drivers && item.drivers !== '-') ? item.drivers : '-'; 
 
         return `
             <tr class="hover:bg-slate-50 transition border-b border-slate-100">
@@ -144,6 +145,7 @@ function renderJobsCRUD(dataToRender) {
                 <td class="p-3 text-slate-600 text-xs">${item.route || '-'}</td>
                 <td class="p-3 text-xs">${foremanDisplay}</td>
                 <td class="p-3 text-purple-700 font-semibold text-xs">${helpersVal}</td>
+                <td class="p-3 text-blue-700 font-semibold text-xs">${driversVal}</td> 
                 <td class="p-3 text-emerald-600 font-bold text-xs">${item.total || '-'}</td>
                 <td class="p-3 text-slate-600 text-xs">${item.pu || '-'}</td>
                 <td class="p-3 text-slate-600 text-xs">${item.dest || '-'}</td>
@@ -247,6 +249,16 @@ function saveJob(e) {
         const selectedText = helpersSelect.options[helpersSelect.selectedIndex].text;
         helpersFormatted = helpersCostVal > 0 ? selectedText : '-';
     }
+
+    const driversSelect = document.getElementById('driversCost');
+    let driversFormatted = '-';
+    let driversCostVal = 0;
+
+    if (driversSelect && driversSelect.selectedIndex !== -1) {
+        driversCostVal = parseFloat(driversSelect.value) || 0;
+        const selectedText = driversSelect.options[driversSelect.selectedIndex].text;
+        driversFormatted = driversCostVal > 0 ? selectedText : '-';
+    }
     const newJob = {
         date: dateVal,
         month: monthVal,
@@ -256,7 +268,9 @@ function saveJob(e) {
         foreman: document.getElementById('jobForeman').value.trim(),
         total: totalRaw,
         helpers: helpersFormatted,       
-        helpersNum: helpersCostVal,     
+        helpersNum: helpersCostVal, 
+        drivers: driversFormatted,       
+        driversNum: driversCostVal,     
         pu: puFormatted,
         dest: destFormatted,
         diesel: dieselFormatted,
@@ -317,6 +331,18 @@ function editJob(index) {
             helpersSelect.value = num;
         } else {
             helpersSelect.value = '0';
+        }
+    }
+
+    const driversSelect = document.getElementById('driversCost');
+    if (driversSelect) {
+        if (j.driversNum !== undefined && j.driversNum !== null) {
+            driversSelect.value = j.driversNum;
+        } else if (j.drivers && j.drivers !== '-') {
+            const num = parseFloat(j.drivers.replace(/[^0-9.]/g, '')) || 0;
+            driversSelect.value = num;
+        } else {
+            driversSelect.value = '0';
         }
     }
 
