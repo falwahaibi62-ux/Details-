@@ -16,6 +16,7 @@ function saveWarehouseRecords(data) {
 let warehouseRecords = loadWarehouseRecords();
 
 // Render Tab Screen
+// Render Tab Screen
 function renderWarehouseTab() {
     const container = document.getElementById('tab-warehouse');
     if (!container) return;
@@ -23,37 +24,36 @@ function renderWarehouseTab() {
     container.innerHTML = `
         <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-sm">
             <div>
-                <h3 class="font-bold text-slate-900 text-base">Warehouse & Storage Records</h3>
-                <p class="text-xs text-slate-500">Manage rental items and warehouse space allocations</p>
+                <h3 class="font-bold text-slate-900 text-base">Warehouse and Others Management</h3>
+                <p class="text-xs text-slate-500">Manage warehouse expenses, labor, rent, and operational materials</p>
             </div>
             <button onclick="openWarehouseModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2">
                 <i class="fa-solid fa-plus"></i>
-                <span>Add Warehouse Record</span>
+                <span>Add Record</span>
             </button>
         </div>
 
         <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-sm">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs min-w-[1000px]">
-                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b">
+                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
                         <tr>
-                            <th class="p-3">Date</th>
-                            <th class="p-3">Client / Title</th>
-                            <th class="p-3">Item Details</th>
-                            <th class="p-3">Space / Unit</th>
-                            <th class="p-3">Amount</th>
+                            <th class="p-3 text-left">Date</th>
+                            <th class="p-3 text-left">Service / Item</th>
+                            <th class="p-3 text-left">Amount</th>
+                            <th class="p-3 text-left">Payment Type</th>
+                            <th class="p-3 text-left">Details</th>
                             <th class="p-3 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="warehouseTableBody" class="divide-y text-slate-700 bg-white"></tbody>
+                    <tbody id="warehouseTableBody" class="divide-y text-slate-700 bg-white">
+                        ${generateWarehouseRowsHTML()}
+                    </tbody>
                 </table>
             </div>
         </div>
     `;
-
-    loadWarehouseTableData();
 }
-
 function generateWarehouseRowsHTML() {
     if (warehouseRecords.length === 0) {
         return `
