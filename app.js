@@ -628,7 +628,7 @@ function restoreJob(index) {
     }
 }
 
-// Unified Restore Function for Both Jobs and Rentals
+// Unified Restore Function for warehouse and Jobs and Rentals
 function renderTrashBin() {
     const tbody = document.getElementById('trashTableBody');
     if (!tbody) return;
@@ -657,6 +657,27 @@ function renderTrashBin() {
                     <td class="p-3 text-slate-800 font-bold text-xs">${item.truckLabel || 'Truck Rental'}</td>
                     <td class="p-3 text-slate-600 text-xs">${item.days || 0} Days</td>
                     <td class="p-3 text-slate-600 text-xs">${item.paidBy || '-'}</td>
+                    <td class="p-3 text-purple-700 text-xs">-</td>
+                    <td class="p-3 text-blue-700 text-xs">-</td>
+                    <td class="p-3 text-emerald-600 font-bold text-xs">$${parseFloat(item.amount || 0).toLocaleString()}</td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition" title="Restore">
+                            <i class="fa-solid fa-rotate-left"></i> Restore
+                        </button>
+                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition" title="Delete Permanently">
+                            <i class="fa-solid fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        } else if (item.recordType === 'warehouse') {
+            return `
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                    <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
+                    <td class="p-3 text-xs"><span class="px-2 py-0.5 bg-amber-50 text-amber-700 rounded font-bold text-[10px]">Warehouse</span></td>
+                    <td class="p-3 text-slate-800 font-bold text-xs">${item.services || 'Warehouse Service'}</td>
+                    <td class="p-3 text-slate-600 text-xs">${item.details || '-'}</td>
+                    <td class="p-3 text-slate-600 text-xs">${item.paymentType || '-'}</td>
                     <td class="p-3 text-purple-700 text-xs">-</td>
                     <td class="p-3 text-blue-700 text-xs">-</td>
                     <td class="p-3 text-emerald-600 font-bold text-xs">$${parseFloat(item.amount || 0).toLocaleString()}</td>
