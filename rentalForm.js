@@ -1,6 +1,6 @@
 /**
  * Private Truck Rental Component
- * Handles data storage, table rendering, and the form modal for private truck rentals.
+ * Manages data storage, table rendering, and screen switching for private truck rentals.
  */
 
 const RENTAL_STORAGE_KEY = 'movepro_private_truck_rentals';
@@ -25,23 +25,34 @@ function savePrivateTruckRentals(data) {
 
 let privateTruckRentals = loadPrivateTruckRentals();
 
-// Render Main Table View in Content Area
+// Render Main Tab Screen (Ensures it acts as a standalone screen)
 function renderPrivateTruckRentalTab() {
-    const mainContent = document.getElementById('mainContentWrapper') || document.querySelector('.flex-1.flex.flex-col');
-    
-    // Hide other tabs if applicable
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+    // 1. Hide all other main views/sections in the dashboard
+    const allViews = document.querySelectorAll('.main-section, .tab-content, #dashboardSection, #crudSection, #usersSection, #reportSection, #trashSection');
+    allViews.forEach(view => {
+        if (view) view.classList.add('hidden');
+    });
 
+    // Also hide standard dashboard containers if present
+    const mainContentWrapper = document.getElementById('mainContentWrapper') || document.querySelector('.flex-1.flex.flex-col');
+    
+    // Check if rental tab view already exists, if not create it
     let rentalTab = document.getElementById('rentalTabContent');
     if (!rentalTab) {
         rentalTab = document.createElement('div');
         rentalTab.id = 'rentalTabContent';
-        rentalTab.className = 'tab-content p-6 space-y-6 overflow-y-auto flex-1';
-        mainContent.appendChild(rentalTab);
+        rentalTab.className = 'main-section p-6 space-y-6 overflow-y-auto flex-1 bg-slate-100';
+        if (mainContentWrapper) {
+            mainContentWrapper.appendChild(rentalTab);
+        } else {
+            document.body.appendChild(rentalTab);
+        }
     }
 
+    // Show this tab
     rentalTab.classList.remove('hidden');
 
+    // Render the screen layout with header, action button, and table
     rentalTab.innerHTML = `
         <!-- Header & Action Bar -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
@@ -59,7 +70,7 @@ function renderPrivateTruckRentalTab() {
         <!-- Table Container -->
         <div class="glass-panel rounded-2xl overflow-hidden border border-slate-200/80 bg-white shadow-xs">
             <div class="overflow-x-auto w-full">
-                <table class="w-full text-left text-xs min-w-[850px] border-collapse">
+                <table class="w-full text-left text-xs min-w-[900px] border-collapse">
                     <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
                         <tr>
                             <th class="p-3.5 text-left">Date</th>
@@ -85,8 +96,8 @@ function generateRentalTableRows() {
     if (privateTruckRentals.length === 0) {
         return `
             <tr>
-                <td colspan="7" class="p-8 text-center text-slate-400 text-xs">
-                    <i class="fa-solid fa-folder-open text-2xl mb-2 block"></i>
+                <td colspan="7" class="p-10 text-center text-slate-400 text-xs">
+                    <i class="fa-solid fa-truck-ramp-box text-3xl mb-2 block text-slate-300"></i>
                     No rental records found. Click "Add New Rental" to create one.
                 </td>
             </tr>
@@ -119,7 +130,7 @@ function deleteRentalRecord(index) {
     }
 }
 
-// Render Modal Form
+// Render Modal Form (Popup)
 function renderPrivateTruckRentalModal() {
     let modalContainer = document.getElementById('privateTruckModal');
     if (!modalContainer) {
