@@ -1,11 +1,11 @@
 /**
- * Private Truck Rental Component
- * Manages data storage, table rendering, and screen switching for private truck rentals.
+ * Private Truck Rental Module
+ * Manages rendering the dedicated tab view and modal form for Private Truck Rentals.
  */
 
 const RENTAL_STORAGE_KEY = 'movepro_private_truck_rentals';
 
-// Load rentals from localStorage
+// Load rental records from localStorage
 function loadPrivateTruckRentals() {
     const saved = localStorage.getItem(RENTAL_STORAGE_KEY);
     if (saved) {
@@ -18,43 +18,49 @@ function loadPrivateTruckRentals() {
     return [];
 }
 
-// Save rentals to localStorage
+// Save rental records to localStorage
 function savePrivateTruckRentals(data) {
     localStorage.setItem(RENTAL_STORAGE_KEY, JSON.stringify(data));
 }
 
 let privateTruckRentals = loadPrivateTruckRentals();
 
-// Render Main Tab Screen (Ensures it acts as a standalone screen)
-function renderPrivateTruckRentalTab() {
-    // 1. Hide all other main views/sections in the dashboard
-    const allViews = document.querySelectorAll('.main-section, .tab-content, #dashboardSection, #crudSection, #usersSection, #reportSection, #trashSection');
-    allViews.forEach(view => {
-        if (view) view.classList.add('hidden');
+// Main function to show Private Truck Rental screen as a clean, isolated Tab
+function showPrivateTruckRentalTab() {
+    // 1. Hide all main tab sections/wrappers to prevent UI overlap
+    const mainSections = document.querySelectorAll('.tab-content, .main-section, #dashboardSection, #crudSection, #usersSection, #reportSection, #trashSection');
+    mainSections.forEach(section => {
+        if (section) {
+            section.classList.add('hidden');
+        }
     });
 
-    // Also hide standard dashboard containers if present
-    const mainContentWrapper = document.getElementById('mainContentWrapper') || document.querySelector('.flex-1.flex.flex-col');
-    
-    // Check if rental tab view already exists, if not create it
+    // Also clear active menu state styling on sidebar buttons if needed
+    document.querySelectorAll('aside nav button').forEach(btn => {
+        btn.classList.remove('bg-emerald-600', 'text-white');
+    });
+
+    // 2. Get or Create the dedicated Rental Tab Container
     let rentalTab = document.getElementById('rentalTabContent');
+    const mainWrapper = document.getElementById('mainContentWrapper') || document.querySelector('main') || document.querySelector('.flex-1.flex.flex-col');
+
     if (!rentalTab) {
         rentalTab = document.createElement('div');
         rentalTab.id = 'rentalTabContent';
-        rentalTab.className = 'main-section p-6 space-y-6 overflow-y-auto flex-1 bg-slate-100';
-        if (mainContentWrapper) {
-            mainContentWrapper.appendChild(rentalTab);
+        rentalTab.className = 'tab-content p-6 space-y-6 overflow-y-auto flex-1 bg-slate-100';
+        if (mainWrapper) {
+            mainWrapper.appendChild(rentalTab);
         } else {
             document.body.appendChild(rentalTab);
         }
     }
 
-    // Show this tab
+    // 3. Make sure the rental tab is visible
     rentalTab.classList.remove('hidden');
 
-    // Render the screen layout with header, action button, and table
+    // 4. Populate table & view content
     rentalTab.innerHTML = `
-        <!-- Header & Action Bar -->
+        <!-- Header Bar -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
             <div>
                 <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -67,7 +73,7 @@ function renderPrivateTruckRentalTab() {
             </button>
         </div>
 
-        <!-- Table Container -->
+        <!-- Data Table Container -->
         <div class="glass-panel rounded-2xl overflow-hidden border border-slate-200/80 bg-white shadow-xs">
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-xs min-w-[900px] border-collapse">
@@ -83,7 +89,7 @@ function renderPrivateTruckRentalTab() {
                         </tr>
                     </thead>
                     <tbody id="rentalTableBody" class="divide-y divide-slate-100 text-slate-700 bg-white">
-                        ${generateRentalTableRows()}
+                        ${generateRentalRowsHTML()}
                     </tbody>
                 </table>
             </div>
@@ -91,14 +97,14 @@ function renderPrivateTruckRentalTab() {
     `;
 }
 
-// Generate rows for the table
-function generateRentalTableRows() {
+// Helper to generate table rows
+function generateRentalRowsHTML() {
     if (privateTruckRentals.length === 0) {
         return `
             <tr>
                 <td colspan="7" class="p-10 text-center text-slate-400 text-xs">
                     <i class="fa-solid fa-truck-ramp-box text-3xl mb-2 block text-slate-300"></i>
-                    No rental records found. Click "Add New Rental" to create one.
+                    No rental records found. Click "Add New Rental" to add one.
                 </td>
             </tr>
         `;
@@ -126,12 +132,12 @@ function deleteRentalRecord(index) {
     if (confirm('Are you sure you want to delete this rental record?')) {
         privateTruckRentals.splice(index, 1);
         savePrivateTruckRentals(privateTruckRentals);
-        renderPrivateTruckRentalTab();
+        showPrivateTruckRentalTab();
     }
 }
 
-// Render Modal Form (Popup)
-function renderPrivateTruckRentalModal() {
+// Render Modal Pop-up (Only builds/shows when explicitly opened)
+function renderPrivateTruckModal() {
     let modalContainer = document.getElementById('privateTruckModal');
     if (!modalContainer) {
         modalContainer = document.createElement('div');
@@ -216,7 +222,7 @@ function renderPrivateTruckRentalModal() {
 }
 
 function openPrivateTruckModal() {
-    renderPrivateTruckRentalModal();
+    renderPrivateTruckModal();
     const modal = document.getElementById('privateTruckModal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -258,5 +264,5 @@ function handlePrivateTruckSubmit(event) {
     savePrivateTruckRentals(privateTruckRentals);
 
     closePrivateTruckModal();
-    renderPrivateTruckRentalTab();
+    showPrivateTruckRentalTab();
 }
