@@ -90,9 +90,25 @@ function deleteRentalRecord(index) {
         return;
     }
 
-    privateTruckRentals.splice(index, 1);
+    const deletedItem = privateTruckRentals.splice(index, 1)[0];
     savePrivateTruckRentals(privateTruckRentals);
+
+    const TRASH_KEY = 'movepro_trash_bin';
+    let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
+    
+    trashBin.unshift({
+        ...deletedItem,
+        recordType: 'rental',
+        deletedAt: new Date().toISOString()
+    });
+    
+    localStorage.setItem(TRASH_KEY, JSON.stringify(trashBin));
+
     renderPrivateTruckRentalTab();
+    
+    if (typeof renderTrashBin === 'function') {
+        renderTrashBin();
+    }
 }
 
 // Render Modal Form (Hidden by default using 'hidden' class)
