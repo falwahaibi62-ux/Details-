@@ -640,14 +640,16 @@ function restoreTrashItem(index) {
     
     if (index < 0 || index >= trashBin.length) return;
 
-    const restoredItem = trashBin.splice(index, 1)[0];
-    if (!restoredItem) return;
+    const trashItem = trashBin.splice(index, 1)[0];
+    if (!trashItem) return;
 
-    if (restoredItem.recordType === 'rental') {
+    const { recordType, deletedAt, ...restoredItem } = trashItem;
+
+    if (recordType === 'rental') {
         let rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
         rentals.unshift(restoredItem);
         localStorage.setItem('movepro_private_truck_rentals', JSON.stringify(rentals));
-    } else if (restoredItem.recordType === 'warehouse') {
+    } else if (recordType === 'warehouse') {
         let warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
         warehouse.unshift(restoredItem);
         localStorage.setItem('movepro_warehouse_records', JSON.stringify(warehouse));
