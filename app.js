@@ -507,7 +507,7 @@ function renderDashboardCharts(monthlyData, paymentData) {
 }
 
 function switchTab(tab) {
-    const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals'];
+    const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse'];
     
     tabs.forEach(t => {
         const tabEl = document.getElementById(`tab-${t}`);
@@ -539,6 +539,8 @@ function switchTab(tab) {
         renderTrashBin();
     } else if (tab === 'rentals') {
         renderPrivateTruckRentalTab();
+    } else if (tab === 'warehouse') {
+        renderWarehouseTab();
     }
 }
 
