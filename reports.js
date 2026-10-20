@@ -30,7 +30,7 @@ function parseCurrency(val) {
 }
 
 function generateSummaryReportData() {
-    const jobs = JSON.parse(localStorage.getItem('movepro_jobs')) || [];
+    const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     const warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
 
@@ -80,7 +80,7 @@ function generateSummaryReportData() {
 }
 
 function generateDetailedReportData() {
-    const jobs = JSON.parse(localStorage.getItem('movepro_jobs')) || [];
+    const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     const tbody = document.getElementById('detailedReportBody');
     if (!tbody) return;
 
