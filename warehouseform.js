@@ -1,11 +1,14 @@
 /**
- * Warehouse and Others Module
+ * Warehouse and Others Module - Zero Conflict Version
  */
 
-const WAREHOUSE_STORAGE_KEY = window.WAREHOUSE_STORAGE_KEY || 'movepro_warehouse_records';
-window.WAREHOUSE_STORAGE_KEY = WAREHOUSE_STORAGE_KEY;
+// تهيئة مفتاح التخزين بشكل آمن بدون استخدام const لتفادي أي تعارض بين الملفات
+if (typeof window.WAREHOUSE_STORAGE_KEY === 'undefined') {
+    window.WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
+}
+
 function loadWarehouseRecords() {
-    const saved = localStorage.getItem(WAREHOUSE_STORAGE_KEY);
+    const saved = localStorage.getItem(window.WAREHOUSE_STORAGE_KEY);
     if (saved) {
         try {
             return JSON.parse(saved);
@@ -19,12 +22,12 @@ function loadWarehouseRecords() {
         { date: "2026-06-05", services: "Palettes", amount: 2000, paymentType: "Cash", details: "Warehouse palettes purchase" },
         { date: "2026-09-05", services: "Rent", amount: 5500, paymentType: "Others", details: "Warehouse monthly rent" }
     ];
-    localStorage.setItem(WAREHOUSE_STORAGE_KEY, JSON.stringify(defaultData));
+    localStorage.setItem(window.WAREHOUSE_STORAGE_KEY, JSON.stringify(defaultData));
     return defaultData;
 }
 
 function saveWarehouseRecords(data) {
-    localStorage.setItem(WAREHOUSE_STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(window.WAREHOUSE_STORAGE_KEY, JSON.stringify(data));
 }
 
 let warehouseRecords = loadWarehouseRecords();
