@@ -76,8 +76,6 @@ function generateRentalRowsHTML() {
             <td class="p-3.5"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 text-[10px] font-bold">${item.paymentType || '-'}</span></td>
             <td class="p-3.5 text-slate-600">${item.paidBy || '-'}</td>
             <td class="p-3.5 text-slate-600">${item.truckLabel || '-'}</td>
-            
-            <!-- ضعي الكود هنا في خانة الـ Actions -->
             <td class="p-3.5 text-center">
                 <button onclick="deleteRentalRecord(${index})" class="p-1.5 text-slate-400 hover:text-red-600 transition" title="Delete Record">
                     <i class="fa-solid fa-trash-can"></i>
@@ -86,14 +84,14 @@ function generateRentalRowsHTML() {
         </tr>
     `).join('');
 }
+
 function deleteRentalRecord(index) {
     if (!confirm('Are you sure you want to delete this rental record?')) {
         return;
     }
 
-    const deletedItem = privateTruckRentals.splice(index, 1)[0];
+    privateTruckRentals.splice(index, 1);
     savePrivateTruckRentals(privateTruckRentals);
-
     renderPrivateTruckRentalTab();
 }
 
