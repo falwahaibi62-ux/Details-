@@ -210,69 +210,70 @@
 
             <!-- TAB 2: JOBS CRUD & FILTER -->
             <div id="tab-jobs" class="hidden space-y-6">
-                <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <!-- TAB: Private Truck Rental -->
-             <div id="tab-rentals" class="hidden space-y-6">
-                   </div>
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
-                        <p class="text-xs text-slate-500">Filter records by Month and Year</p>
-                    </div>
-                    <button onclick="openAddModal()" id="addJobBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Add New Job</span>
-                    </button>
-                </div>
+    <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+            <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
+            <p class="text-xs text-slate-500">Filter records by Month and Year</p>
+        </div>
+        <button onclick="openAddModal()" id="addJobBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Add New Job</span>
+        </button>
+    </div>
 
-                <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4">
-                    <div class="flex items-center space-x-2">
-                        <label class="text-xs font-bold text-slate-600">Filter Month:</label>
-                        <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
-                            <option value="ALL">All Months</option>
-                            <option value="1">January</option>
-                            <option value="2">February</option>
-                            <option value="3">March</option>
-                            <option value="4">April</option>
-                            <option value="5">May</option>
-                            <option value="6">June</option>
-                            <option value="7">July</option>
-                            <option value="8">August</option>
-                            <option value="9">September</option>
-                            <option value="10">October</option>
-                            <option value="11">November</option>
-                            <option value="12">December</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <label class="text-xs font-bold text-slate-600">Filter Year:</label>
-                        <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white"></select>
-                    </div>
-                    <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
-                </div>
+    <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4">
+        <div class="flex items-center space-x-2">
+            <label class="text-xs font-bold text-slate-600">Filter Month:</label>
+            <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
+                <option value="ALL">All Months</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </select>
+        </div>
+        <div class="flex items-center space-x-2">
+            <label class="text-xs font-bold text-slate-600">Filter Year:</label>
+            <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white"></select>
+        </div>
+        <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
+    </div>
 
-                <div class="glass-panel rounded-2xl overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs min-w-[1000px]">
-                            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3 text-left">Date</th>
-                                    <th class="p-3 text-left">Job No</th>
-                                    <th class="p-3 text-left">Route (From → To)</th>
-                                    <th class="p-3 text-left">Foreman</th>
-                                    <th class="p-3 text-left text-purple-700">Helpers</th>
-                                    <th class="p-3 text-left text-blue-700">Drivers</th>
-                                    <th class="p-3 text-left">Total</th>
-                                    <th class="p-3 text-left">P.U Payments</th>
-                                    <th class="p-3 text-left">Destination</th>
-                                    <th class="p-3 text-left text-emerald-700">Diesel</th>
-                                    <th class="p-3 text-left text-indigo-700">Hotel</th>
-                                    <th class="p-3 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="crudTableBody" class="divide-y text-slate-700 bg-white"></tbody>
-                        </table>
-                    </div>
-                </div>
+    <div class="glass-panel rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs min-w-[1000px]">
+                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                    <tr>
+                        <th class="p-3 text-left">Date</th>
+                        <th class="p-3 text-left">Job No</th>
+                        <th class="p-3 text-left">Route (From → To)</th>
+                        <th class="p-3 text-left">Foreman</th>
+                        <th class="p-3 text-left text-purple-700">Helpers</th>
+                        <th class="p-3 text-left text-blue-700">Drivers</th>
+                        <th class="p-3 text-left">Total</th>
+                        <th class="p-3 text-left">P.U Payments</th>
+                        <th class="p-3 text-left">Destination</th>
+                        <th class="p-3 text-left text-emerald-700">Diesel</th>
+                        <th class="p-3 text-left text-indigo-700">Hotel</th>
+                        <th class="p-3 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="crudTableBody" class="divide-y text-slate-700 bg-white"></tbody>
+            </table>
+        </div>
+    </div>
+</div> 
+
+
+<div id="tab-rentals" class="hidden space-y-6"></div>
             </div> <!-- END TAB 2 -->
 
             <!-- TAB 3: USERS -->
