@@ -784,10 +784,9 @@ window.onload = () => {
     if (typeof loadTruckRentals === 'function') {
         loadTruckRentals();
     }
-    if (typeof loadWarehouseRecords === 'function') {
-        loadWarehouseRecords();
+   if (typeof loadWarehouseRecords === 'function') {
+        warehouseRecords = loadWarehouseRecords();
     }
-
     currentUserRole = 'Admin';
     checkPermissions();
     renderUsers();
