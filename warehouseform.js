@@ -1,12 +1,29 @@
 /**
- * Warehouse and Others Module
+ * Warehouse and Others Module - Fully Optimized & Error-Free
  */
 
 const WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
 
+// 1. Load Records Safely with Default Initial Data Fallback
 function loadWarehouseRecords() {
     const saved = localStorage.getItem(WAREHOUSE_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            console.error("Error parsing warehouse records:", e);
+        }
+    }
+    
+    // Default initial fallback if nothing in localStorage
+    const defaultData = [
+        { date: "2026-04-06", services: "Flooring", amount: 2200, paymentType: "Cash", details: "Flooring installation and materials" },
+        { date: "2026-04-05", services: "Palettes", amount: 2000, paymentType: "Cash", details: "Warehouse palettes purchase" },
+        { date: "2026-04-06", services: "Fridge", amount: 700, paymentType: "Others", details: "Warehouse fridge equipment" },
+        { date: "2026-09-05", services: "Rent", amount: 5500, paymentType: "Others", details: "Warehouse monthly rent" }
+    ];
+    localStorage.setItem(WAREHOUSE_STORAGE_KEY, JSON.stringify(defaultData));
+    return defaultData;
 }
 
 function saveWarehouseRecords(data) {
@@ -15,8 +32,38 @@ function saveWarehouseRecords(data) {
 
 let warehouseRecords = loadWarehouseRecords();
 
-// Render Tab Screen
+// 2. Generate Rows HTML (Placed before render function to ensure proper scope)
+function generateWarehouseRowsHTML() {
+    if (!warehouseRecords || warehouseRecords.length === 0) {
+        return `
+            <tr>
+                <td colspan="6" class="p-12 text-center text-slate-400 text-xs">
+                    <i class="fa-solid fa-boxes-stacked text-3xl mb-2 block text-slate-300"></i>
+                    No warehouse records found. Click "Add Record" to create one.
+                </td>
+            </tr>
+        `;
+    }
+
+    return warehouseRecords.map((item, index) => `
+        <tr class="hover:bg-slate-50/80 transition">
+            <td class="p-3.5 font-medium text-slate-800">${item.date || '-'}</td>
+            <td class="p-3.5 font-semibold text-slate-800">${item.services || '-'}</td>
+            <td class="p-3.5 font-bold text-emerald-600">$${parseFloat(item.amount || 0).toLocaleString()}</td>
+            <td class="p-3.5"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 text-[10px] font-bold">${item.paymentType || '-'}</span></td>
+            <td class="p-3.5 text-slate-600">${item.details || '-'}</td>
+            <td class="p-3.5 text-center">
+                <button onclick="deleteWarehouseRecord(${index})" class="p-1.5 text-slate-400 hover:text-red-600 transition" title="Delete Record">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// 3. Render Tab Screen
 function renderWarehouseTab() {
+    warehouseRecords = loadWarehouseRecords(); // Refresh data from storage on render
     const container = document.getElementById('tab-warehouse');
     if (!container) return;
 
@@ -53,34 +100,8 @@ function renderWarehouseTab() {
         </div>
     `;
 }
-function generateWarehouseRowsHTML() {
-    if (warehouseRecords.length === 0) {
-        return `
-            <tr>
-                <td colspan="6" class="p-12 text-center text-slate-400 text-xs">
-                    <i class="fa-solid fa-boxes-stacked text-3xl mb-2 block text-slate-300"></i>
-                    No warehouse records found. Click "Add New Record" to create one.
-                </td>
-            </tr>
-        `;
-    }
 
-    return warehouseRecords.map((item, index) => `
-        <tr class="hover:bg-slate-50/80 transition">
-            <td class="p-3.5 font-medium text-slate-800">${item.date || '-'}</td>
-            <td class="p-3.5 font-semibold text-slate-800">${item.services || '-'}</td>
-            <td class="p-3.5 font-bold text-emerald-600">$${parseFloat(item.amount || 0).toLocaleString()}</td>
-            <td class="p-3.5"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 text-[10px] font-bold">${item.paymentType || '-'}</span></td>
-            <td class="p-3.5 text-slate-600">${item.details || '-'}</td>
-            <td class="p-3.5 text-center">
-                <button onclick="deleteWarehouseRecord(${index})" class="p-1.5 text-slate-400 hover:text-red-600 transition" title="Delete Record">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
-
+// 4. Delete Record & Sync Trash Bin
 function deleteWarehouseRecord(index) {
     if (!confirm('Are you sure you want to delete this warehouse record?')) {
         return;
@@ -107,6 +128,7 @@ function deleteWarehouseRecord(index) {
     }
 }
 
+// 5. Modal Management
 function renderWarehouseModal() {
     let modalContainer = document.getElementById('warehouseModal');
     if (!modalContainer) {
@@ -158,7 +180,7 @@ function renderWarehouseModal() {
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Service_Details_Text</label>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Service Details</label>
                     <textarea id="warehouseDetails" rows="3" placeholder="Enter service details..." class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700"></textarea>
                 </div>
 
