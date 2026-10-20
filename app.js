@@ -635,4 +635,5 @@ window.onload = () => {
     filterJobsTable();
     updateDashboardAnalytics();
     renderTrashBin();
+    openPrivateTruckModal();
 };
