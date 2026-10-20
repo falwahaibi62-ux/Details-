@@ -2,8 +2,8 @@
  * Warehouse and Others Module
  */
 
-const WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
-
+const WAREHOUSE_STORAGE_KEY = window.WAREHOUSE_STORAGE_KEY || 'movepro_warehouse_records';
+window.WAREHOUSE_STORAGE_KEY = WAREHOUSE_STORAGE_KEY;
 function loadWarehouseRecords() {
     const saved = localStorage.getItem(WAREHOUSE_STORAGE_KEY);
     if (saved) {
