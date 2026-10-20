@@ -214,146 +214,171 @@
                 </div>
             </div> <!-- END TAB 1 -->
 
-            <!-- TAB 2: JOBS CRUD & FILTER -->
-        
-<div id="tab-jobs" class="hidden space-y-6">
-    <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div>
-            <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
-            <p class="text-xs text-slate-500">Filter records by Month and Year</p>
+<!-- TAB 1: JOBS -->
+    <div id="tab-jobs" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
+        <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 bg-white shadow-xs">
+            <div>
+                <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
+                <p class="text-xs text-slate-500">Filter records by Month and Year</p>
+            </div>
+            <button onclick="openAddModal()" id="addJobBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add New Job</span>
+            </button>
         </div>
-        <button onclick="openAddModal()" id="addJobBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2">
-            <i class="fa-solid fa-plus"></i>
-            <span>Add New Job</span>
-        </button>
-    </div>
-
-    <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4">
-        <div class="flex items-center space-x-2">
-            <label class="text-xs font-bold text-slate-600">Filter Month:</label>
-            <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
-                <option value="ALL">All Months</option>
-                <option value="1">January</option>
-                <option value="2">February</option>
-                <option value="3">March</option>
-                <option value="4">April</option>
-                <option value="5">May</option>
-                <option value="6">June</option>
-                <option value="7">July</option>
-                <option value="8">August</option>
-                <option value="9">September</option>
-                <option value="10">October</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
-            </select>
+        <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4 bg-white shadow-xs">
+            <div class="flex items-center space-x-2">
+                <label class="text-xs font-bold text-slate-600">Filter Month:</label>
+                <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
+                    <option value="ALL">All Months</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+            <div class="flex items-center space-x-2">
+                <label class="text-xs font-bold text-slate-600">Filter Year:</label>
+                <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white"></select>
+            </div>
+            <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
         </div>
-        <div class="flex items-center space-x-2">
-            <label class="text-xs font-bold text-slate-600">Filter Year:</label>
-            <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white"></select>
-        </div>
-        <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
-    </div>
-
-    <div class="glass-panel rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs min-w-[1000px]">
-                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
-                    <tr>
-                        <th class="p-3 text-left">Date</th>
-                        <th class="p-3 text-left">Job No</th>
-                        <th class="p-3 text-left">Route (From → To)</th>
-                        <th class="p-3 text-left">Foreman</th>
-                        <th class="p-3 text-left text-purple-700">Helpers</th>
-                        <th class="p-3 text-left text-blue-700">Drivers</th>
-                        <th class="p-3 text-left">Total</th>
-                        <th class="p-3 text-left">P.U Payments</th>
-                        <th class="p-3 text-left">Destination</th>
-                        <th class="p-3 text-left text-emerald-700">Diesel</th>
-                        <th class="p-3 text-left text-indigo-700">Hotel</th>
-                        <th class="p-3 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="crudTableBody" class="divide-y text-slate-700 bg-white"></tbody>
-            </table>
+        <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs min-w-[1000px]">
+                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                        <tr>
+                            <th class="p-3 text-left">Date</th>
+                            <th class="p-3 text-left">Job No</th>
+                            <th class="p-3 text-left">Route (From → To)</th>
+                            <th class="p-3 text-left">Foreman</th>
+                            <th class="p-3 text-left text-purple-700">Helpers</th>
+                            <th class="p-3 text-left text-blue-700">Drivers</th>
+                            <th class="p-3 text-left">Total</th>
+                            <th class="p-3 text-left">P.U Payments</th>
+                            <th class="p-3 text-left">Destination</th>
+                            <th class="p-3 text-left text-emerald-700">Diesel</th>
+                            <th class="p-3 text-left text-indigo-700">Hotel</th>
+                            <th class="p-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="crudTableBody" class="divide-y text-slate-700 bg-white"></tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
 
+    <!-- TAB 2: RENTALS -->
+    <div id="tab-rentals" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
+        <!-- يتم تحميل محتوى جدول التأجير برمجياً -->
+    </div>
 
-<div id="tab-rentals" class="hidden space-y-6">
+    <!-- TAB 3: WAREHOUSE -->
+    <div id="tab-warehouse" class="space-y-6 w-full p-6 overflow-y-auto flex-1">
+        <!-- سيتم عرض محتوى المستودعات هنا -->
+    </div>
 
-</div>
-
-
-<div id="tab-warehouse" class="space-y-6 w-full p-6">
- 
-</div>
-            <!-- TAB 3: USERS -->
-<div id="tab-users" class="hidden space-y-6 w-full p-6">
-    <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs">
-        <div>
-            <h3 class="font-bold text-slate-900 text-base">Users & Roles Control Panel</h3>
-            <p class="text-xs text-slate-500">Manage access privileges</p>
+    <!-- TAB 4: USERS -->
+    <div id="tab-users" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
+        <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs">
+            <div>
+                <h3 class="font-bold text-slate-900 text-base">Users & Roles Control Panel</h3>
+                <p class="text-xs text-slate-500">Manage access privileges</p>
+            </div>
+        </div>
+        <div class="glass-panel rounded-2xl overflow-hidden p-6 space-y-4 bg-white shadow-xs">
+            <div class="space-y-3" id="usersListContainer"></div>
         </div>
     </div>
-    <div class="glass-panel rounded-2xl overflow-hidden p-6 space-y-4 bg-white shadow-xs">
-        <div class="space-y-3" id="usersListContainer"></div>
-    </div>
-</div>
 
-            <!-- TAB 4: REPORTS -->
-<div id="tab-reports" class="hidden space-y-6 w-full p-6">
-    <div class="glass-panel p-6 rounded-2xl flex justify-between items-center bg-white shadow-xs">
-        <div>
-            <h3 class="font-bold text-slate-900 text-lg">Official Financial & Audit Report (PDF)</h3>
+    <!-- TAB 5: REPORTS -->
+    <div id="tab-reports" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
+        <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs">
+            <div>
+                <h3 class="font-bold text-slate-900 text-base">Financial & Operations Reports</h3>
+                <p class="text-xs text-slate-500">Summary and Detailed views</p>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="switchReportMode('summary')" id="btnSummaryMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition">Summary</button>
+                <button onclick="switchReportMode('detailed')" id="btnDetailedMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Detailed</button>
+            </div>
         </div>
-        <button onclick="downloadOfficialPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center space-x-2 transition">
-            <i class="fa-solid fa-download"></i>
-            <span>Download PDF Report</span>
-        </button>
-    </div>
-    <div id="pdfContentArea" class="bg-white p-8 rounded-2xl border border-slate-100 shadow-xs space-y-6">
-        <h2 class="text-xl font-black text-slate-900">MovePro Logistics & Financial Ledger</h2>
-        <p class="text-xs text-slate-500">Enterprise Audit Report & Telemetry Data</p>
-    </div>
-</div> <!-- END TAB 4 -->
-
-          <!-- TAB 5: RECYCLE BIN -->
-<div id="tab-trash" class="hidden space-y-6 w-full p-6">
-    <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs">
-        <div>
-            <h3 class="font-bold text-slate-900 text-base">Recycle Bin</h3>
-            <p class="text-xs text-slate-500">Manage and restore deleted dispatch and rental records</p>
+        <div id="summaryReportView" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs"><div class="text-slate-500 text-xs">Total Jobs</div><div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div></div>
+                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs"><div class="text-slate-500 text-xs">Total Deliveries</div><div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div></div>
+                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs"><div class="text-slate-500 text-xs">Total Revenue</div><div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div></div>
+                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs"><div class="text-slate-500 text-xs">Total Expenses</div><div id="sumTotalExpenses" class="text-lg font-bold text-red-600">$0</div></div>
+            </div>
+            <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-4">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] border-b">
+                        <tr>
+                            <th class="p-3 border">Jan</th><th class="p-3 border">Feb</th><th class="p-3 border">Mar</th><th class="p-3 border">Apr</th>
+                            <th class="p-3 border">May</th><th class="p-3 border">Jun</th><th class="p-3 border">Jul</th><th class="p-3 border font-bold text-emerald-600">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryMatrixBody"></tbody>
+                </table>
+            </div>
         </div>
-        <button onclick="emptyTrashBin()" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs">
-            Empty Bin
-        </button>
-    </div>
-
-    <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs border border-slate-200/80">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs min-w-[1000px]">
-                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
-                    <tr>
-                        <th class="p-3 text-left">Date</th>
-                        <th class="p-3 text-left">Record Type</th>
-                        <th class="p-3 text-left">Identifier / Details</th>
-                        <th class="p-3 text-left">Route / Info</th>
-                        <th class="p-3 text-left">Foreman / Payer</th>
-                        <th class="p-3 text-left text-purple-700">Helpers / -</th>
-                        <th class="p-3 text-left text-blue-700">Drivers / -</th>
-                        <th class="p-3 text-left">Total / Amount</th>
-                        <th class="p-3 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="trashTableBody" class="divide-y divide-slate-100 text-slate-700 bg-white"></tbody>
-            </table>
+        <div id="detailedReportView" class="hidden space-y-6">
+            <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] border-b">
+                        <tr>
+                            <th class="p-3 border">Date</th><th class="p-3 border">Job No</th><th class="p-3 border">Route</th>
+                            <th class="p-3 border">Foreman</th><th class="p-3 border">Helpers</th><th class="p-3 border">Drivers</th>
+                            <th class="p-3 border">Total</th><th class="p-3 border">P.U Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailedReportBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div> <!-- END TAB 5 -->
 
-        </main>
-    </div>
+    <!-- TAB 6: TRASH BIN -->
+    <div id="tab-trash" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
+        <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs">
+            <div>
+                <h3 class="font-bold text-slate-900 text-base">Recycle Bin</h3>
+                <p class="text-xs text-slate-500">Restore or permanently delete deleted records</p>
+            </div>
+            <button onclick="emptyTrashBin()" class="px-3 py-2 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-semibold transition">
+                <i class="fa-solid fa-trash-can mr-1"></i> Empty Trash
+            </button>
+        </div>
+        <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs min-w-[1000px]">
+                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                        <tr>
+                            <th class="p-3 text-left">Date</th>
+                            <th class="p-3 text-left">Type</th>
+                            <th class="p-3 text-left">Identifier / Title</th>
+                            <th class="p-3 text-left">Details / Route</th>
+                            <th class="p-3 text-left">Assigned / Paid By</th>
+                            <th class="p-3 text-left text-purple-700">Helpers</th>
+                            <th class="p-3 text-left text-blue-700">Drivers</th>
+                            <th class="p-3 text-left text-emerald-600">Amount / Total</th>
+                            <th class="p-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trashTableBody" class="divide-y text-slate-700 bg-white"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>        
+
 
     <!-- MODAL -->
     <div id="jobModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 overflow-y-auto">
