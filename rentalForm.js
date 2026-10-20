@@ -1,37 +1,26 @@
 /**
  * Private Truck Rental Module
- * Manages rendering the dedicated tab view, table, and modal form for Private Truck Rentals.
  */
 
 const RENTAL_STORAGE_KEY = 'movepro_private_truck_rentals';
 
-// Load rental records from localStorage
 function loadPrivateTruckRentals() {
     const saved = localStorage.getItem(RENTAL_STORAGE_KEY);
-    if (saved) {
-        try {
-            return JSON.parse(saved);
-        } catch (e) {
-            console.error('Error parsing rental data:', e);
-        }
-    }
-    return [];
+    return saved ? JSON.parse(saved) : [];
 }
 
-// Save rental records to localStorage
 function savePrivateTruckRentals(data) {
     localStorage.setItem(RENTAL_STORAGE_KEY, JSON.stringify(data));
 }
 
 let privateTruckRentals = loadPrivateTruckRentals();
 
-// Render Private Truck Rental Screen inside #tab-rentals
+// Render Tab Screen
 function renderPrivateTruckRentalTab() {
     const container = document.getElementById('tab-rentals');
     if (!container) return;
 
     container.innerHTML = `
-        <!-- Top Bar with Title & Add New Record Button -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-xs mb-6">
             <div>
                 <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -44,7 +33,6 @@ function renderPrivateTruckRentalTab() {
             </button>
         </div>
 
-        <!-- Data Table Container -->
         <div class="glass-panel rounded-2xl overflow-hidden border border-slate-200/80 bg-white shadow-xs">
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-xs min-w-[900px] border-collapse">
@@ -68,7 +56,6 @@ function renderPrivateTruckRentalTab() {
     `;
 }
 
-// Generate table rows dynamically
 function generateRentalRowsHTML() {
     if (privateTruckRentals.length === 0) {
         return `
@@ -98,7 +85,6 @@ function generateRentalRowsHTML() {
     `).join('');
 }
 
-// Delete Record
 function deleteRentalRecord(index) {
     if (confirm('Are you sure you want to delete this rental record?')) {
         privateTruckRentals.splice(index, 1);
@@ -107,7 +93,7 @@ function deleteRentalRecord(index) {
     }
 }
 
-// Render Modal Form (Popup)
+// Render Modal Form (Hidden by default using 'hidden' class)
 function renderPrivateTruckModal() {
     let modalContainer = document.getElementById('privateTruckModal');
     if (!modalContainer) {
@@ -131,16 +117,14 @@ function renderPrivateTruckModal() {
             <form id="privateTruckForm" onsubmit="handlePrivateTruckSubmit(event)" class="p-6 space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Date <span class="text-red-500">*</span></label>
-                    <input type="date" id="rentalDate" required
-                        class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                    <input type="date" id="rentalDate" required class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">No of days <span class="text-red-500">*</span></label>
                     <div class="flex items-center">
                         <button type="button" onclick="adjustRentalNumber('rentalDays', -1)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-l-xl border border-r-0 border-slate-200 transition text-xs font-bold">-</button>
-                        <input type="number" id="rentalDays" value="0" min="0" required
-                            class="w-full px-3 py-2.5 text-xs text-center bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                        <input type="number" id="rentalDays" value="0" min="0" required class="w-full px-3 py-2.5 text-xs text-center bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
                         <button type="button" onclick="adjustRentalNumber('rentalDays', 1)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-r-xl border border-l-0 border-slate-200 transition text-xs font-bold">+</button>
                     </div>
                 </div>
@@ -149,16 +133,14 @@ function renderPrivateTruckModal() {
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Amount <span class="text-red-500">*</span></label>
                     <div class="flex items-center">
                         <button type="button" onclick="adjustRentalNumber('rentalAmount', -10)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-l-xl border border-r-0 border-slate-200 transition text-xs font-bold">-</button>
-                        <input type="number" id="rentalAmount" value="0" min="0" step="0.01" required
-                            class="w-full px-3 py-2.5 text-xs text-center bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                        <input type="number" id="rentalAmount" value="0" min="0" step="0.01" required class="w-full px-3 py-2.5 text-xs text-center bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
                         <button type="button" onclick="adjustRentalNumber('rentalAmount', 10)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-r-xl border border-l-0 border-slate-200 transition text-xs font-bold">+</button>
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Payment type</label>
-                    <select id="rentalPaymentType"
-                        class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                    <select id="rentalPaymentType" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
                         <option value="" disabled selected>Select payment method</option>
                         <option value="Cash">Cash</option>
                         <option value="Zelle">Zelle</option>
@@ -173,14 +155,12 @@ function renderPrivateTruckModal() {
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Paid By</label>
-                    <input type="text" id="rentalPaidBy" placeholder="Enter Payer Name"
-                        class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                    <input type="text" id="rentalPaidBy" placeholder="Enter Payer Name" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Truck_Label</label>
-                    <input type="text" id="rentalTruckLabel" placeholder="days paid by"
-                        class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                    <input type="text" id="rentalTruckLabel" placeholder="days paid by" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
