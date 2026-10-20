@@ -86,11 +86,14 @@ function generateRentalRowsHTML() {
 }
 
 function deleteRentalRecord(index) {
-    if (confirm('Are you sure you want to delete this rental record?')) {
-        privateTruckRentals.splice(index, 1);
-        savePrivateTruckRentals(privateTruckRentals);
-        renderPrivateTruckRentalTab();
+    if (!confirm('Are you sure you want to delete this rental record?')) {
+        return;
     }
+
+    const deletedItem = privateTruckRentals.splice(index, 1)[0];
+    savePrivateTruckRentals(privateTruckRentals);
+
+    renderPrivateTruckRentalTab();
 }
 
 // Render Modal Form (Hidden by default using 'hidden' class)
