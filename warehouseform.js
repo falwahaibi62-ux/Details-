@@ -21,38 +21,37 @@ function renderWarehouseTab() {
     if (!container) return;
 
     container.innerHTML = `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-xs mb-6">
+        <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-sm">
             <div>
-                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-warehouse text-indigo-600"></i> Warehouse and Others Management
-                </h2>
-                <p class="text-xs text-slate-500 mt-0.5">Manage and track warehouse and other service records</p>
+                <h3 class="font-bold text-slate-900 text-base">Warehouse & Storage Records</h3>
+                <p class="text-xs text-slate-500">Manage rental items and warehouse space allocations</p>
             </div>
-            <button onclick="openWarehouseModal()" class="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition">
-                <i class="fa-solid fa-plus"></i> Add New Record
+            <button onclick="openWarehouseModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add Warehouse Record</span>
             </button>
         </div>
 
-        <div class="glass-panel rounded-2xl overflow-hidden border border-slate-200/80 bg-white shadow-xs">
-            <div class="overflow-x-auto w-full">
-                <table class="w-full text-left text-xs min-w-[900px] border-collapse">
-                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+        <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs min-w-[1000px]">
+                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b">
                         <tr>
-                            <th class="p-3.5 text-left">Date</th>
-                            <th class="p-3.5 text-left">Services</th>
-                            <th class="p-3.5 text-left text-emerald-700">Amount</th>
-                            <th class="p-3.5 text-left">Payment Type</th>
-                            <th class="p-3.5 text-left">Service Details</th>
-                            <th class="p-3.5 text-center">Actions</th>
+                            <th class="p-3">Date</th>
+                            <th class="p-3">Client / Title</th>
+                            <th class="p-3">Item Details</th>
+                            <th class="p-3">Space / Unit</th>
+                            <th class="p-3">Amount</th>
+                            <th class="p-3 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="warehouseTableBody" class="divide-y divide-slate-100 text-slate-700 bg-white">
-                        ${generateWarehouseRowsHTML()}
-                    </tbody>
+                    <tbody id="warehouseTableBody" class="divide-y text-slate-700 bg-white"></tbody>
                 </table>
             </div>
         </div>
     `;
+
+    loadWarehouseTableData();
 }
 
 function generateWarehouseRowsHTML() {
