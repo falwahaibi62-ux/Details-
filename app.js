@@ -544,7 +544,7 @@ if (tab === 'dashboard') {
         if (typeof renderReportsTab === 'function') {
             renderReportsTab();
         }
-    }
+    
 }
 
 // Function to render the Recycle Bin table view
