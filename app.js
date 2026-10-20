@@ -530,17 +530,20 @@ function switchTab(tab) {
     if (activeNav) {
         activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
     }
-
-    if (tab === 'dashboard') {
+if (tab === 'dashboard') {
         setTimeout(updateDashboardAnalytics, 100);
     } else if (tab === 'jobs') {
-        filterJobsTable(); 
+        filterJobsTable();
     } else if (tab === 'trash') {
         renderTrashBin();
     } else if (tab === 'rentals') {
         renderPrivateTruckRentalTab();
     } else if (tab === 'warehouse') {
         renderWarehouseTab();
+    } else if (tab === 'reports') {
+        if (typeof renderReportsTab === 'function') {
+            renderReportsTab();
+        }
     }
 }
 
