@@ -30,3 +30,6 @@ const initialWarehouseRecords = [
     { date: "10/9/2026", services: "Warehouse Labor", amount: 700, paymentType: "Cash", details: "Warehouse labor and handling" },
     { date: "10/16/2026", services: "Warehouse", amount: 700, paymentType: "Cash", details: "Warehouse services" }
 ];
+if (!localStorage.getItem('movepro_warehouse_records')) {
+    localStorage.setItem('movepro_warehouse_records', JSON.stringify(initialWarehouseRecords));
+}
