@@ -1,25 +1,22 @@
 /**
- * Warehouse and Others Module - Fully Optimized & Error-Free
+ * Warehouse and Others Module
  */
 
 const WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
 
-// 1. Load Records Safely with Default Initial Data Fallback
 function loadWarehouseRecords() {
     const saved = localStorage.getItem(WAREHOUSE_STORAGE_KEY);
     if (saved) {
         try {
             return JSON.parse(saved);
         } catch (e) {
-            console.error("Error parsing warehouse records:", e);
+            console.error('Error parsing warehouse records:', e);
         }
     }
     
-    // Default initial fallback if nothing in localStorage
     const defaultData = [
-        { date: "2026-04-06", services: "Flooring", amount: 2200, paymentType: "Cash", details: "Flooring installation and materials" },
-        { date: "2026-04-05", services: "Palettes", amount: 2000, paymentType: "Cash", details: "Warehouse palettes purchase" },
-        { date: "2026-04-06", services: "Fridge", amount: 700, paymentType: "Others", details: "Warehouse fridge equipment" },
+        { date: "2026-06-04", services: "Flooring", amount: 2200, paymentType: "Cash", details: "Flooring installation and materials" },
+        { date: "2026-06-05", services: "Palettes", amount: 2000, paymentType: "Cash", details: "Warehouse palettes purchase" },
         { date: "2026-09-05", services: "Rent", amount: 5500, paymentType: "Others", details: "Warehouse monthly rent" }
     ];
     localStorage.setItem(WAREHOUSE_STORAGE_KEY, JSON.stringify(defaultData));
@@ -32,7 +29,6 @@ function saveWarehouseRecords(data) {
 
 let warehouseRecords = loadWarehouseRecords();
 
-// 2. Generate Rows HTML (Placed before render function to ensure proper scope)
 function generateWarehouseRowsHTML() {
     if (!warehouseRecords || warehouseRecords.length === 0) {
         return `
@@ -61,9 +57,8 @@ function generateWarehouseRowsHTML() {
     `).join('');
 }
 
-// 3. Render Tab Screen
 function renderWarehouseTab() {
-    warehouseRecords = loadWarehouseRecords(); // Refresh data from storage on render
+    warehouseRecords = loadWarehouseRecords();
     const container = document.getElementById('tab-warehouse');
     if (!container) return;
 
@@ -101,11 +96,8 @@ function renderWarehouseTab() {
     `;
 }
 
-// 4. Delete Record & Sync Trash Bin
 function deleteWarehouseRecord(index) {
-    if (!confirm('Are you sure you want to delete this warehouse record?')) {
-        return;
-    }
+    if (!confirm('Are you sure you want to delete this warehouse record?')) return;
 
     const deletedItem = warehouseRecords.splice(index, 1)[0];
     saveWarehouseRecords(warehouseRecords);
@@ -120,15 +112,10 @@ function deleteWarehouseRecord(index) {
     });
     
     localStorage.setItem(TRASH_KEY, JSON.stringify(trashBin));
-
     renderWarehouseTab();
-    
-    if (typeof renderTrashBin === 'function') {
-        renderTrashBin();
-    }
+    if (typeof renderTrashBin === 'function') renderTrashBin();
 }
 
-// 5. Modal Management
 function renderWarehouseModal() {
     let modalContainer = document.getElementById('warehouseModal');
     if (!modalContainer) {
@@ -152,26 +139,26 @@ function renderWarehouseModal() {
             <form id="warehouseForm" onsubmit="handleWarehouseSubmit(event)" class="p-6 space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Date <span class="text-red-500">*</span></label>
-                    <input type="date" id="warehouseDate" required class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                    <input type="date" id="warehouseDate" required class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition text-slate-700">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Services</label>
-                    <input type="text" id="warehouseServices" placeholder="Enter service name" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                    <input type="text" id="warehouseServices" placeholder="Enter service name" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition text-slate-700">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Amount <span class="text-red-500">*</span></label>
                     <div class="flex items-center">
                         <button type="button" onclick="adjustWarehouseNumber('warehouseAmount', -10)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-l-xl border border-r-0 border-slate-200 transition text-xs font-bold">-</button>
-                        <input type="number" id="warehouseAmount" value="0" min="0" step="0.01" required class="w-full px-3 py-2.5 text-xs text-center bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                        <input type="number" id="warehouseAmount" value="0" min="0" step="0.01" required class="w-full px-3 py-2.5 text-xs text-center bg-white border border-slate-200 focus:outline-none transition text-slate-700">
                         <button type="button" onclick="adjustWarehouseNumber('warehouseAmount', 10)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-r-xl border border-l-0 border-slate-200 transition text-xs font-bold">+</button>
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Payment type</label>
-                    <select id="warehousePaymentType" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                    <select id="warehousePaymentType" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
                         <option value="" disabled selected>Select payment method</option>
                         <option value="Cash">Cash</option>
                         <option value="Zelle">Zelle</option>
@@ -181,7 +168,7 @@ function renderWarehouseModal() {
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Service Details</label>
-                    <textarea id="warehouseDetails" rows="3" placeholder="Enter service details..." class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700"></textarea>
+                    <textarea id="warehouseDetails" rows="3" placeholder="Enter service details..." class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700"></textarea>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
