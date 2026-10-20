@@ -530,7 +530,8 @@ function switchTab(tab) {
     if (activeNav) {
         activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
     }
-if (tab === 'dashboard') {
+
+    if (tab === 'dashboard') {
         setTimeout(updateDashboardAnalytics, 100);
     } else if (tab === 'jobs') {
         filterJobsTable();
@@ -544,7 +545,7 @@ if (tab === 'dashboard') {
         if (typeof renderReportsTab === 'function') {
             renderReportsTab();
         }
-    
+    }
 }
 
 // Function to render the Recycle Bin table view
