@@ -16,7 +16,6 @@ function saveWarehouseRecords(data) {
 let warehouseRecords = loadWarehouseRecords();
 
 // Render Tab Screen
-// Render Tab Screen
 function renderWarehouseTab() {
     const container = document.getElementById('tab-warehouse');
     if (!container) return;
