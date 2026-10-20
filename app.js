@@ -551,7 +551,14 @@ function renderTrashBin() {
     let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
 
     if (trashBin.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 text-xs"><i class="fa-solid fa-trash text-3xl mb-2 block text-slate-300"></i>Recycle Bin is empty.</td></tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="p-12 text-center text-slate-400 text-xs">
+                    <i class="fa-solid fa-trash text-3xl mb-2 block text-slate-300"></i>
+                    Recycle Bin is empty.
+                </td>
+            </tr>
+        `;
         return;
     }
 
@@ -561,16 +568,17 @@ function renderTrashBin() {
                 <tr class="hover:bg-slate-50 transition border-b border-slate-100">
                     <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
                     <td class="p-3 text-xs"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded font-bold text-[10px]">Rental</span></td>
-                    <td class="p-3 text-slate-600 text-xs">Truck: ${item.truckLabel || '-'} (${item.days || 0} Days)</td>
+                    <td class="p-3 text-slate-800 font-bold text-xs">${item.truckLabel || 'Truck Rental'}</td>
+                    <td class="p-3 text-slate-600 text-xs">${item.days || 0} Days</td>
                     <td class="p-3 text-slate-600 text-xs">${item.paidBy || '-'}</td>
                     <td class="p-3 text-purple-700 text-xs">-</td>
                     <td class="p-3 text-blue-700 text-xs">-</td>
                     <td class="p-3 text-emerald-600 font-bold text-xs">$${parseFloat(item.amount || 0).toLocaleString()}</td>
                     <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold" title="Restore">
+                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition" title="Restore">
                             <i class="fa-solid fa-rotate-left"></i> Restore
                         </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold" title="Delete Permanently">
+                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition" title="Delete Permanently">
                             <i class="fa-solid fa-trash"></i> Delete
                         </button>
                     </td>
@@ -580,17 +588,18 @@ function renderTrashBin() {
             return `
                 <tr class="hover:bg-slate-50 transition border-b border-slate-100">
                     <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
-                    <td class="p-3 text-slate-700 font-bold text-xs">${item.jobNo || '-'}</td>
+                    <td class="p-3 text-xs"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-bold text-[10px]">Job</span></td>
+                    <td class="p-3 text-slate-800 font-bold text-xs">${item.jobNo || '-'}</td>
                     <td class="p-3 text-slate-600 text-xs">${item.route || '-'}</td>
-                    <td class="p-3 text-xs">${item.foreman || 'no name'}</td>
+                    <td class="p-3 text-slate-600 text-xs">${item.foreman || '-'}</td>
                     <td class="p-3 text-purple-700 font-semibold text-xs">${item.helpers || '-'}</td>
                     <td class="p-3 text-blue-700 font-semibold text-xs">${item.drivers || '-'}</td>
                     <td class="p-3 text-emerald-600 font-bold text-xs">${item.total || '-'}</td>
                     <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold" title="Restore">
+                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition" title="Restore">
                             <i class="fa-solid fa-rotate-left"></i> Restore
                         </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold" title="Delete Permanently">
+                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition" title="Delete Permanently">
                             <i class="fa-solid fa-trash"></i> Delete
                         </button>
                     </td>
@@ -599,8 +608,6 @@ function renderTrashBin() {
         }
     }).join('');
 }
-
-
 // Function to restore a job from Recycle Bin back to master jobs ledger
 function restoreJob(index) {
     if (!window.trashBin) window.trashBin = [];
