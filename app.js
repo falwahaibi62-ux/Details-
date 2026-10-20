@@ -590,6 +590,25 @@ function renderTrashBin() {
                     </td>
                 </tr>
             `;
+        } else if (item.recordType === 'warehouse') {
+            return `
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                    <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
+                    <td class="p-3 text-xs"><span class="px-2 py-0.5 bg-amber-50 text-amber-700 rounded font-bold text-[10px]">Warehouse</span></td>
+                    <td class="p-3 text-slate-800 font-bold text-xs">${item.services || '-'}</td>
+                    <td class="p-3 text-slate-600 text-xs">${item.paymentType || '-'}</td>
+                    <td class="p-3 text-slate-600 text-xs" colspan="3">${item.details || '-'}</td>
+                    <td class="p-3 text-emerald-600 font-bold text-xs">$${parseFloat(item.amount || 0).toLocaleString()}</td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition" title="Restore">
+                            <i class="fa-solid fa-rotate-left"></i> Restore
+                        </button>
+                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition" title="Delete Permanently">
+                            <i class="fa-solid fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
         } else {
             return `
                 <tr class="hover:bg-slate-50 transition border-b border-slate-100">
@@ -615,25 +634,37 @@ function renderTrashBin() {
     }).join('');
 }
 // Function to restore a job from Recycle Bin back to master jobs ledger
-function restoreJob(index) {
-    if (!window.trashBin) window.trashBin = [];
-    if (!window.masterJobs) window.masterJobs = [];
+function restoreTrashItem(index) {
+    const TRASH_KEY = 'movepro_trash_bin';
+    let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
+    
+    if (index < 0 || index >= trashBin.length) return;
 
     const restoredItem = trashBin.splice(index, 1)[0];
-    if (restoredItem) {
-        masterJobs.push(restoredItem);
+    if (!restoredItem) return;
 
-        // Save states securely
-        if (typeof saveMasterJobs === 'function') saveMasterJobs(masterJobs);
-        if (typeof saveTrashBin === 'function') saveTrashBin(trashBin);
-
-        // Refresh UI views
-        filterJobsTable();
-        updateDashboardAnalytics();
-        renderTrashBin();
+    if (restoredItem.recordType === 'rental') {
+        let rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+        rentals.unshift(restoredItem);
+        localStorage.setItem('movepro_private_truck_rentals', JSON.stringify(rentals));
+    } else if (restoredItem.recordType === 'warehouse') {
+        let warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+        warehouse.unshift(restoredItem);
+        localStorage.setItem('movepro_warehouse_records', JSON.stringify(warehouse));
+    } else {
+        let jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
+        jobs.unshift(restoredItem);
+        localStorage.setItem('movePro_masterJobs', JSON.stringify(jobs));
     }
-}
 
+    localStorage.setItem(TRASH_KEY, JSON.stringify(trashBin));
+
+    renderTrashBin();
+    if (typeof filterJobsTable === 'function') filterJobsTable();
+    if (typeof renderPrivateTruckRentalTab === 'function') renderPrivateTruckRentalTab();
+    if (typeof renderWarehouseTab === 'function') renderWarehouseTab();
+    if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
+}
 // Unified Restore Function for warehouse and Jobs and Rentals
 function renderTrashBin() {
     const tbody = document.getElementById('trashTableBody');
@@ -750,6 +781,13 @@ window.onload = () => {
     if (typeof loadMasterJobs === 'function') {
         masterJobs = loadMasterJobs();
     }
+    if (typeof loadTruckRentals === 'function') {
+        loadTruckRentals();
+    }
+    if (typeof loadWarehouseRecords === 'function') {
+        loadWarehouseRecords();
+    }
+
     currentUserRole = 'Admin';
     checkPermissions();
     renderUsers();
