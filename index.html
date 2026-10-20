@@ -277,67 +277,67 @@
             </div> <!-- END TAB 2 -->
 
             <!-- TAB 3: USERS -->
-            <div id="tab-users" class="hidden space-y-6">
-                <div class="glass-panel p-5 rounded-2xl flex justify-between items-center">
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-base">Users & Roles Control Panel</h3>
-                        <p class="text-xs text-slate-500">Manage access privileges</p>
-                    </div>
-                </div>
-                <div class="glass-panel rounded-2xl overflow-hidden p-6 space-y-4">
-                    <div class="space-y-3" id="usersListContainer"></div>
-                </div>
-            </div> <!-- END TAB 3 -->
+<div id="tab-users" class="hidden space-y-6 w-full p-6">
+    <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs">
+        <div>
+            <h3 class="font-bold text-slate-900 text-base">Users & Roles Control Panel</h3>
+            <p class="text-xs text-slate-500">Manage access privileges</p>
+        </div>
+    </div>
+    <div class="glass-panel rounded-2xl overflow-hidden p-6 space-y-4 bg-white shadow-xs">
+        <div class="space-y-3" id="usersListContainer"></div>
+    </div>
+</div>
 
             <!-- TAB 4: REPORTS -->
-            <div id="tab-reports" class="hidden space-y-6">
-                <div class="glass-panel p-6 rounded-2xl flex justify-between items-center">
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-lg">Official Financial & Audit Report (PDF)</h3>
-                    </div>
-                    <button onclick="downloadOfficialPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center space-x-2">
-                        <i class="fa-solid fa-download"></i>
-                        <span>Download PDF Report</span>
-                    </button>
-                </div>
-                <div id="pdfContentArea" class="bg-white p-8 rounded-2xl border shadow-sm space-y-6">
-                    <h2 class="text-xl font-black text-slate-900">MovePro Logistics & Financial Ledger</h2>
-                    <p class="text-xs text-slate-500">Enterprise Audit Report & Telemetry Data</p>
-                </div>
-            </div> <!-- END TAB 4 -->
+<div id="tab-reports" class="hidden space-y-6 w-full p-6">
+    <div class="glass-panel p-6 rounded-2xl flex justify-between items-center bg-white shadow-xs">
+        <div>
+            <h3 class="font-bold text-slate-900 text-lg">Official Financial & Audit Report (PDF)</h3>
+        </div>
+        <button onclick="downloadOfficialPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center space-x-2 transition">
+            <i class="fa-solid fa-download"></i>
+            <span>Download PDF Report</span>
+        </button>
+    </div>
+    <div id="pdfContentArea" class="bg-white p-8 rounded-2xl border border-slate-100 shadow-xs space-y-6">
+        <h2 class="text-xl font-black text-slate-900">MovePro Logistics & Financial Ledger</h2>
+        <p class="text-xs text-slate-500">Enterprise Audit Report & Telemetry Data</p>
+    </div>
+</div> <!-- END TAB 4 -->
 
-            <!-- TAB 5: RECYCLE BIN -->
-            <div id="tab-trash" class="hidden space-y-6">
-                <div class="glass-panel p-5 rounded-2xl flex justify-between items-center">
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-base">Recycle Bin</h3>
-                        <p class="text-xs text-slate-500">Manage and restore deleted dispatch records</p>
-                    </div>
-                    <button onclick="emptyTrashBin()" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-bold transition">
-                        Empty Bin
-                    </button>
-                </div>
+           <!-- TAB 5: RECYCLE BIN -->
+<div id="tab-trash" class="hidden space-y-6 w-full p-6">
+    <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs">
+        <div>
+            <h3 class="font-bold text-slate-900 text-base">Recycle Bin</h3>
+            <p class="text-xs text-slate-500">Manage and restore deleted dispatch and rental records</p>
+        </div>
+        <button onclick="emptyTrashBin()" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs">
+            Empty Bin
+        </button>
+    </div>
 
-                <div class="glass-panel rounded-2xl overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs min-w-[1000px]">
-                            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3 text-left">Date</th>
-                                    <th class="p-3 text-left">Job No</th>
-                                    <th class="p-3 text-left">Route</th>
-                                    <th class="p-3 text-left">Foreman</th>
-                                    <th class="p-3 text-left text-purple-700">Helpers</th>
-                                    <th class="p-3 text-left text-blue-700">Drivers</th>
-                                    <th class="p-3 text-left">Total</th>
-                                    <th class="p-3 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="trashTableBody" class="divide-y text-slate-700 bg-white"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div> <!-- END TAB 5 -->
+    <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs border border-slate-200/80">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs min-w-[1000px]">
+                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                    <tr>
+                        <th class="p-3 text-left">Date</th>
+                        <th class="p-3 text-left">Identifier / Type</th>
+                        <th class="p-3 text-left">Details / Route</th>
+                        <th class="p-3 text-left">Payer / Foreman</th>
+                        <th class="p-3 text-left text-purple-700">Helpers</th>
+                        <th class="p-3 text-left text-blue-700">Drivers</th>
+                        <th class="p-3 text-left">Total / Amount</th>
+                        <th class="p-3 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="trashTableBody" class="divide-y divide-slate-100 text-slate-700 bg-white"></tbody>
+            </table>
+        </div>
+    </div>
+</div> <!-- END TAB 5 -->
 
         </main>
     </div>
