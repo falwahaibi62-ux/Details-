@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'movePro_masterJobs';
-const TRASH_STORAGE_KEY = 'movepro_trash';
+const TRASH_STORAGE_KEY = 'movepro_trash_bin'; 
 const RENTALS_STORAGE_KEY = 'movepro_private_truck_rentals';
 const WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
 
@@ -57,7 +57,14 @@ function loadWarehouseRecords() {
             console.error('Error parsing warehouse records:', e);
         }
     }
-    return [];
+    
+    const initialWarehouseRecords = [
+        { date: "2026-06-04", services: "Flooring", amount: 2200, paymentType: "Cash", details: "Flooring installation and materials" },
+        { date: "2026-06-05", services: "Palettes", amount: 2000, paymentType: "Cash", details: "Warehouse palettes purchase" },
+        { date: "2026-09-05", services: "Rent", amount: 5500, paymentType: "Others", details: "Warehouse monthly rent" }
+    ];
+    saveWarehouseRecords(initialWarehouseRecords);
+    return initialWarehouseRecords;
 }
 
 function saveWarehouseRecords(data) {
