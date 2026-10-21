@@ -62,7 +62,6 @@ function generateSummaryReportData() {
     if (sumRevEl) sumRevEl.innerText = '$' + totalRevenue.toLocaleString();
     if (sumExpEl) sumExpEl.innerText = '$' + (totalRentalExp + totalWarehouseExp).toLocaleString();
 
-    // تجميع الإيرادات الشهرية (يناير = index 0 إلى ديسمبر = index 11)
     const monthlyRevenue = Array(12).fill(0);
     jobs.forEach(j => {
         if (j.date) {
@@ -76,7 +75,6 @@ function generateSummaryReportData() {
 
     const monthsLabels = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-    // بناء الجدول العصري والمتناسق
     const container = document.getElementById('summaryReportContainer');
     if (container) {
         container.innerHTML = `
@@ -119,7 +117,6 @@ function generateSummaryReportData() {
 }
 
 function exportOfficialPDF() {
-    // جلب عنصر التقرير
     const reportElement = document.getElementById('summaryReportView') || document.getElementById('tab-reports');
     
     if (!reportElement) {
@@ -127,7 +124,6 @@ function exportOfficialPDF() {
         return;
     }
 
-    // فتح نافذة طباعة مخصصة لتنفيذ الحفظ بتنسيق رسمي بسيط
     const printWindow = window.open('', '_blank');
     
     const htmlContent = `
@@ -171,7 +167,51 @@ function exportOfficialPDF() {
     printWindow.document.close();
 }
 
+function applyReportFilters() {
+    const isSummaryActive = !document.getElementById('summaryReportView').classList.contains('hidden');
+    if (isSummaryActive) {
+        generateSummaryReportData();
+    } else {
+        generateDetailedReportData();
+    }
+}
 
+function resetReportFilters() {
+    document.getElementById('filterStartDate').value = '';
+    document.getElementById('filterEndDate').value = '';
+    document.getElementById('filterJobType').value = 'all';
+    applyReportFilters();
+}
+
+function getFilteredJobsData() {
+    const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
+    
+    const startDateVal = document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('filterEndDate')?.value;
+    const jobTypeVal = document.getElementById('filterJobType')?.value || 'all';
+
+    const startDate = startDateVal ? new Date(startDateVal) : null;
+    const endDate = endDateVal ? new Date(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59); // لتشمل نهاية اليوم بالكامل
+
+    return jobs.filter(j => {
+        if (j.date) {
+            const jDate = new Date(j.date);
+            if (startDate && jDate < startDate) return false;
+            if (endDate && jDate > endDate) return false;
+        } else if (startDate || endDate) {
+            return false;
+        }
+
+        if (jobTypeVal === 'delivery') {
+            if (!j.jobNo || !String(j.jobNo).toLowerCase().includes('delivery')) return false;
+        } else if (jobTypeVal === 'moving') {
+            if (j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')) return false;
+        }
+
+        return true;
+    });
+}
 function generateDetailedReportData() {
     const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     const tbody = document.getElementById('detailedReportBody');
