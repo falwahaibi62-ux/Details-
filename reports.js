@@ -313,28 +313,99 @@ function generateSummaryReportData() {
 }
 
 // --- 5. الجدول التفصيلي للعمليات ---
+// --- دالة توليد وعرض الجداول الثلاثة التفصيلية ---
 function generateDetailedReportData() {
-    const filteredJobs = getFilteredJobsData();
-    const tbody = document.getElementById('detailedReportBody');
-    if (!tbody) return;
+    const startDateVal = document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('filterEndDate')?.value;
 
-    if (filteredJobs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No records found matching criteria.</td></tr>`;
-        return;
+    const startDate = startDateVal ? new Date(startDateVal) : null;
+    const endDate = endDateVal ? new Date(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59);
+
+    // 1. جدول الوظائف والعمليات (Master Jobs)
+    const filteredJobs = getFilteredJobsData();
+    const jobsTbody = document.getElementById('detailedReportBody');
+    const jobsBadge = document.getElementById('detailedJobsBadge');
+
+    if (jobsBadge) jobsBadge.innerText = `${filteredJobs.length} Jobs`;
+    if (jobsTbody) {
+        if (filteredJobs.length === 0) {
+            jobsTbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No job records found for selected period.</td></tr>`;
+        } else {
+            jobsTbody.innerHTML = filteredJobs.map(item => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 border">${item.date || '-'}</td>
+                    <td class="p-3 border font-semibold text-slate-800">${item.jobNo || '-'}</td>
+                    <td class="p-3 border">${item.from || '-'} → ${item.to || '-'}</td>
+                    <td class="p-3 border">${item.foreman || '-'}</td>
+                    <td class="p-3 border">${item.helpers || '-'}</td>
+                    <td class="p-3 border">${item.drivers || '-'}</td>
+                    <td class="p-3 border font-bold text-emerald-600">$${parseCurrency(item.total).toLocaleString()}</td>
+                    <td class="p-3 border">${item.puPayment || '-'}</td>
+                </tr>
+            `).join('');
+        }
     }
 
-    tbody.innerHTML = filteredJobs.map(item => `
-        <tr class="border-b hover:bg-slate-50 transition">
-            <td class="p-3 border">${item.date || '-'}</td>
-            <td class="p-3 border font-semibold text-slate-800">${item.jobNo || '-'}</td>
-            <td class="p-3 border">${item.from || '-'} → ${item.to || '-'}</td>
-            <td class="p-3 border">${item.foreman || '-'}</td>
-            <td class="p-3 border">${item.helpers || '-'}</td>
-            <td class="p-3 border">${item.drivers || '-'}</td>
-            <td class="p-3 border font-bold text-emerald-600">${item.total || '-'}</td>
-            <td class="p-3 border">${item.puPayment || '-'}</td>
-        </tr>
-    `).join('');
+    // 2. جدول إيجار الشاحنات الخاصة (Private Truck Rentals)
+    const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+    const filteredRentals = rentals.filter(r => {
+        if (!r.date) return true;
+        const rDate = new Date(r.date);
+        if (startDate && rDate < startDate) return false;
+        if (endDate && rDate > endDate) return false;
+        return true;
+    });
+
+    const rentalsTbody = document.getElementById('detailedRentalsBody');
+    const rentalsBadge = document.getElementById('detailedRentalsBadge');
+
+    if (rentalsBadge) rentalsBadge.innerText = `${filteredRentals.length} Records`;
+    if (rentalsTbody) {
+        if (filteredRentals.length === 0) {
+            rentalsTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No truck rental records found for selected period.</td></tr>`;
+        } else {
+            rentalsTbody.innerHTML = filteredRentals.map(r => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 border">${r.date || '-'}</td>
+                    <td class="p-3 border font-semibold text-slate-800">${r.vendor || r.truckNo || 'Rental Truck'}</td>
+                    <td class="p-3 border">${r.description || r.notes || '-'}</td>
+                    <td class="p-3 border">${r.paymentType || r.paymentMethod || 'Cash'}</td>
+                    <td class="p-3 border text-right font-bold text-amber-600">$${parseCurrency(r.amount).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    // 3. جدول المستودع والمصروفات الأخرى (Warehouse & Others)
+    const warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+    const filteredWarehouse = warehouse.filter(w => {
+        if (!w.date) return true;
+        const wDate = new Date(w.date);
+        if (startDate && wDate < startDate) return false;
+        if (endDate && wDate > endDate) return false;
+        return true;
+    });
+
+    const warehouseTbody = document.getElementById('detailedWarehouseBody');
+    const warehouseBadge = document.getElementById('detailedWarehouseBadge');
+
+    if (warehouseBadge) warehouseBadge.innerText = `${filteredWarehouse.length} Records`;
+    if (warehouseTbody) {
+        if (filteredWarehouse.length === 0) {
+            warehouseTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No warehouse records found for selected period.</td></tr>`;
+        } else {
+            warehouseTbody.innerHTML = filteredWarehouse.map(w => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 border">${w.date || '-'}</td>
+                    <td class="p-3 border font-semibold text-slate-800">${w.category || w.type || 'Warehouse Expense'}</td>
+                    <td class="p-3 border">${w.description || w.facility || '-'}</td>
+                    <td class="p-3 border">${w.paymentType || w.paymentMethod || 'Cash'}</td>
+                    <td class="p-3 border text-right font-bold text-purple-600">$${parseCurrency(w.amount).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+    }
 }
 
 function exportOfficialPDF() {
