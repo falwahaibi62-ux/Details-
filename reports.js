@@ -199,66 +199,110 @@ function generateSummaryReportData() {
 }
 
 function generateOfficialSummaryTable(filteredJobs) {
-    let totalJobs = filteredJobs.length;
-    let totalDeliveries = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
+    const totalJobs = filteredJobs.length;
+    const totalDeliveries = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
 
+    // 2. المتغيرات المالية
     let sumForeman10 = 0;
     let sumHelpers = 0;
     let sumDrivers = 0;
     let sumCashDiesel = 0;
+    
     let sumCashPu = 0;
-    let sumZellePu = 0;
-    let sumDestZelle = 0;
-    let sumAfterDeposit = 0;
+    let sumCashDest = 0;
+    let sumPmoPu = 0;
+    let sumZellePu = 0; // دفعات الاستلام بدون كاش و PMO (مثل Zelle)
+    
+    let sumDestZelle = 0; // رصيد الوجهة عبر Zelle
+    let sumDestNoCashPmo = 0; // الأرصدة بدون كاش و PMO
+    let sumPmoDeliveries = 0;
+    let sumTotalAfterDeposit = 0;
 
     filteredJobs.forEach(item => {
-        sumForeman10 += parseCurrency(item.foreman);
+        sumForeman10 += parseCurrency(item.foreman || item.foreman10);
         sumHelpers += parseCurrency(item.helpers);
         sumDrivers += parseCurrency(item.drivers);
-        sumAfterDeposit += parseCurrency(item.total);
+        sumCashDiesel += parseCurrency(item.diesel || item.cashDiesel);
+        sumTotalAfterDeposit += parseCurrency(item.total || item.totalAfterDeposit);
 
-        const paymentStr = String(item.puPayment || '').toLowerCase();
-        if (paymentStr.includes('cash')) {
-            sumCashPu += parseCurrency(item.puPayment);
-        } else if (paymentStr.includes('zelle')) {
-            sumZellePu += parseCurrency(item.puPayment);
+        const puStr = String(item.puPayment || '').toLowerCase();
+        const puVal = parseCurrency(item.puPayment);
+        
+        if (puStr.includes('cash')) {
+            sumCashPu += puVal;
+        } else if (puStr.includes('pmo')) {
+            sumPmoPu += puVal;
+        } else {
+            sumZellePu += puVal;
+        }
+
+        const destStr = String(item.destBalance || item.destPayment || '').toLowerCase();
+        const destVal = parseCurrency(item.destBalance || item.destPayment);
+
+        if (destStr.includes('cash')) {
+            sumCashDest += destVal;
+        } else if (destStr.includes('zelle')) {
+            sumDestZelle += destVal;
+            sumDestNoCashPmo += destVal;
+        } else if (!destStr.includes('pmo')) {
+            sumDestNoCashPmo += destVal;
+        }
+
+        // توصيلات PMO
+        if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
+            sumPmoDeliveries += puVal;
         }
     });
 
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
-            <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+            <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                 <div>
-                    <h3 class="text-sm font-bold text-slate-800">Official Period Financial Summary</h3>
-                    <p class="text-[11px] text-slate-400">Aggregated totals of jobs, payments, and operational breakdowns</p>
+                    <h3 class="text-sm font-bold text-slate-800">Financial & Payment Methods Breakdown</h3>
+                    <p class="text-[11px] text-slate-400">Comprehensive summary of labor fees, cash, Zelle, and PMO breakdown</p>
                 </div>
-                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
-                    Total Jobs: ${totalJobs} | Deliveries: ${totalDeliveries}[cite: 3]
-                </span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                        Total Jobs: <span class="text-emerald-600">${totalJobs}</span>
+                    </span>
+                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                        Total Deliveries: <span class="text-blue-600">${totalDeliveries}</span>
+                    </span>
+                </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
+            <div class="overflow-x-auto rounded-xl border border-slate-100">
+                <table class="w-full text-left border-collapse text-[11px]">
                     <thead>
-                        <tr class="bg-slate-50 text-[10px] font-bold text-slate-600 uppercase border-b">
-                            <th class="p-2.5 border text-center">Foreman 10%</th>
-                            <th class="p-2.5 border text-center">Helpers</th>
-                            <th class="p-2.5 border text-center">Drivers</th>
-                            <th class="p-2.5 border text-center">Cash Diesel</th>
-                            <th class="p-2.5 border text-center">Cash PU Payment</th>
-                            <th class="p-2.5 border text-center">Zelle / Other</th>
-                            <th class="p-2.5 border text-center bg-emerald-50 text-emerald-800">Total After Deposit</th>
+                        <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">Foreman 10%</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">Helpers</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">Drivers</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-amber-700 bg-amber-50/50">Cash Diesel</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash PU Payment</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash Dest-Balance</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">PMO PU Payment</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">PU (No Cash/PMO)</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">Balance (No Cash/PMO)</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">PMO Deliveries</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-purple-700 bg-purple-50/30">Dest Balance Zelle</th>
+                            <th class="p-2.5 text-center bg-emerald-600 text-white font-extrabold">Total After Deposit</th>
                         </tr>
                     </thead>
-                    <tbody class="font-semibold text-slate-700">
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="p-2.5 border text-center">$${sumForeman10.toLocaleString()}</td>
-                            <td class="p-2.5 border text-center">$${sumHelpers.toLocaleString()}</td>
-                            <td class="p-2.5 border text-center">$${sumDrivers.toLocaleString()}</td>
-                            <td class="p-2.5 border text-center">$${sumCashDiesel.toLocaleString()}</td>
-                            <td class="p-2.5 border text-center text-emerald-600">$${sumCashPu.toLocaleString()}</td>
-                            <td class="p-2.5 border text-center text-blue-600">$${sumZellePu.toLocaleString()}</td>
-                            <td class="p-2.5 border text-center bg-emerald-50/50 text-emerald-700 font-bold">$${sumAfterDeposit.toLocaleString()}</td>
+                    <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-2.5 border-r text-center">$${sumForeman10.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center">$${sumHelpers.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center">$${sumDrivers.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-amber-700 font-bold bg-amber-50/20">$${sumCashDiesel.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${sumCashPu.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${sumCashDest.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center">$${sumPmoPu.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${sumZellePu.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${sumDestNoCashPmo.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center">$${sumPmoDeliveries.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-purple-600 font-bold">$${sumDestZelle.toLocaleString()}</td>
+                            <td class="p-2.5 text-center bg-emerald-50 text-emerald-800 font-extrabold text-xs">$${sumTotalAfterDeposit.toLocaleString()}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -266,9 +310,6 @@ function generateOfficialSummaryTable(filteredJobs) {
         </div>
     `;
 }
-
-
-
 
 function generateDetailedReportData() {
     const filteredJobs = getFilteredJobsData();
