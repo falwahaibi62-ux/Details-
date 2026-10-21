@@ -57,41 +57,63 @@ function generateSummaryReportData() {
     const sumRevEl = document.getElementById('sumTotalRevenue');
     const sumExpEl = document.getElementById('sumTotalExpenses');
 
-    if (sumJobsEl) sumJobsEl.innerText = totalJobsCount;
-    if (sumDelivEl) sumDelivEl.innerText = totalDeliveriesCount;
+    if (sumJobsEl) sumJobsEl.innerText = totalJobsCount.toLocaleString();
+    if (sumDelivEl) sumDelivEl.innerText = totalDeliveriesCount.toLocaleString();
     if (sumRevEl) sumRevEl.innerText = '$' + totalRevenue.toLocaleString();
     if (sumExpEl) sumExpEl.innerText = '$' + (totalRentalExp + totalWarehouseExp).toLocaleString();
 
-    // مصفوفة لتجميع الإيرادات حسب الأشهر (من الشهر 0 إلى 11)
+    // تجميع الإيرادات الشهرية (يناير = index 0 إلى ديسمبر = index 11)
     const monthlyRevenue = Array(12).fill(0);
     jobs.forEach(j => {
         if (j.date) {
             const dateObj = new Date(j.date);
-            const month = dateObj.getMonth(); // 0 = January, 7 = August, etc.
-            if (!isNaN(month)) {
+            const month = dateObj.getMonth();
+            if (!isNaN(month) && month >= 0 && month < 12) {
                 monthlyRevenue[month] += parseCurrency(j.total);
             }
         }
     });
 
-    const matrixBody = document.getElementById('summaryMatrixBody');
-    if (matrixBody) {
-        matrixBody.innerHTML = `
-            <tr class="text-slate-700 font-medium border-b">
-                <td class="p-3 border">$${monthlyRevenue[0].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[1].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[2].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[3].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[4].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[5].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[6].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[7].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[8].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[9].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[10].toLocaleString()}</td>
-                <td class="p-3 border">$${monthlyRevenue[11].toLocaleString()}</td>
-                <td class="p-3 border font-bold text-emerald-600">$${totalRevenue.toLocaleString()}</td>
-            </tr>
+    const monthsLabels = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+    // بناء الجدول العصري والمتناسق
+    const container = document.getElementById('summaryReportContainer');
+    if (container) {
+        container.innerHTML = `
+            <!-- Monthly Revenue Matrix Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-800">Monthly Revenue Breakdown</h3>
+                        <p class="text-xs text-slate-400 font-medium mt-0.5">Automated financial distribution across 12 calendar months</p>
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> FY 2026 Live
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <table class="w-full text-left border-collapse min-w-[900px]">
+                        <thead>
+                            <tr class="bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/60">
+                                ${monthsLabels.map(m => `<th class="px-4 py-3 text-center border-r border-slate-200/40 last:border-0">${m}</th>`).join('')}
+                                <th class="px-4 py-3 text-center bg-emerald-50/70 text-emerald-800 font-extrabold border-l border-emerald-100">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                ${monthlyRevenue.map(val => `
+                                    <td class="px-3 py-4 text-center border-r border-slate-100 ${val > 0 ? 'text-slate-800 font-bold' : 'text-slate-300 font-normal'}"> $${val.toLocaleString()}
+                                    </td>
+                                `).join('')}
+                                <td class="px-4 py-4 text-center bg-emerald-50/40 text-emerald-700 font-extrabold text-sm border-l border-emerald-100">
+                                    $${totalRevenue.toLocaleString()}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         `;
     }
 }
