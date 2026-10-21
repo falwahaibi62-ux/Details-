@@ -1,4 +1,3 @@
-// --- 1. التحكم في وضع العرض (ملخص أو تفصيلي) ---
 function switchReportMode(mode) {
     const summaryView = document.getElementById('summaryReportView');
     const detailedView = document.getElementById('detailedReportView');
@@ -22,7 +21,6 @@ function switchReportMode(mode) {
     }
 }
 
-// دالة مساعدة لتنظيف وقراءة القيم المالية
 function parseCurrency(val) {
     if (!val) return 0;
     if (typeof val === 'number') return val;
@@ -31,7 +29,6 @@ function parseCurrency(val) {
     return isNaN(parsed) ? 0 : parsed;
 }
 
-// --- 2. دالة تطبيق المحددات الشاملة ---
 function applyReportFilters() {
     const isSummaryActive = !document.getElementById('summaryReportView').classList.contains('hidden');
     if (isSummaryActive) {
@@ -55,7 +52,6 @@ function resetReportFilters() {
     applyReportFilters();
 }
 
-// فلترة الوظائف بناءً على المحددات النشطة
 function getFilteredJobsData() {
     const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     
@@ -69,7 +65,6 @@ function getFilteredJobsData() {
     if (endDate) endDate.setHours(23, 59, 59);
 
     return jobs.filter(j => {
-        // فلترة التاريخ
         if (j.date) {
             const jDate = new Date(j.date);
             if (startDate && jDate < startDate) return false;
@@ -78,14 +73,12 @@ function getFilteredJobsData() {
             return false;
         }
 
-        // فلترة نوع العملية
         if (jobTypeVal === 'delivery') {
             if (!j.jobNo || !String(j.jobNo).toLowerCase().includes('delivery')) return false;
         } else if (jobTypeVal === 'moving') {
             if (j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')) return false;
         }
 
-        // فلترة طريقة الدفع
         if (paymentVal !== 'all') {
             const paymentField = String(j.paymentType || j.puPayment || '').toLowerCase();
             if (!paymentField.includes(paymentVal)) return false;
@@ -95,7 +88,6 @@ function getFilteredJobsData() {
     });
 }
 
-// --- 3. توليد بيانات وملخص اللوحة التنفيذية ---
 function generateSummaryReportData() {
     const filteredJobs = getFilteredJobsData();
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
@@ -115,7 +107,6 @@ function generateSummaryReportData() {
     const endDate = endDateVal ? new Date(endDateVal) : null;
     if (endDate) endDate.setHours(23, 59, 59);
 
-    // حساب المصروفات المصفاة
     let totalRentalExp = 0;
     rentals.forEach(r => {
         if (r.date) {
@@ -139,7 +130,6 @@ function generateSummaryReportData() {
     const totalExpenses = totalRentalExp + totalWarehouseExp;
     const netProfit = totalRevenue - totalExpenses;
 
-    // تحديث عناصر الـ KPI في الواجهة
     const sumJobsEl = document.getElementById('sumTotalJobs');
     const sumDelivEl = document.getElementById('sumTotalDeliveries');
     const sumRevEl = document.getElementById('sumTotalRevenue');
@@ -150,7 +140,6 @@ function generateSummaryReportData() {
     if (sumRevEl) sumRevEl.innerText = '$' + totalRevenue.toLocaleString();
     if (sumExpEl) sumExpEl.innerText = '$' + totalExpenses.toLocaleString();
 
-    // مصفوفة الإيرادات الشهرية (12 شهراً)
     const monthlyRevenue = Array(12).fill(0);
     filteredJobs.forEach(j => {
         if (j.date) {
@@ -164,7 +153,6 @@ function generateSummaryReportData() {
 
     const monthsLabels = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-    // رسم الجدول داخل الحاوي المخصص
     const container = document.getElementById('summaryReportContainer');
     if (container) {
         container.innerHTML = `
@@ -210,7 +198,6 @@ function generateSummaryReportData() {
     }
 }
 
-// --- 4. توليد الجدول التفصيلي للعمليات ---
 function generateDetailedReportData() {
     const filteredJobs = getFilteredJobsData();
     const tbody = document.getElementById('detailedReportBody');
@@ -235,7 +222,6 @@ function generateDetailedReportData() {
     `).join('');
 }
 
-// --- 5. تصدير التقرير الرسمي PDF التنفيذي ---
 function exportOfficialPDF() {
     const reportElement = document.getElementById('summaryReportView') || document.getElementById('tab-reports');
     
@@ -286,7 +272,6 @@ function exportOfficialPDF() {
     printWindow.document.close();
 }
 
-// التهيئة عند فتح التبويبة
 function renderReportsTab() {
     switchReportMode('summary');
 }
