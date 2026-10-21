@@ -302,52 +302,64 @@
     </div>
 
     <!-- TAB 5: REPORTS -->
-    <div id="tab-reports" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
-        <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs">
-            <div>
-                <h3 class="font-bold text-slate-900 text-base">Financial & Operations Reports</h3>
-                <p class="text-xs text-slate-500">Summary and Detailed views</p>
-            </div>
-            <div class="flex space-x-2">
-                <button onclick="switchReportMode('summary')" id="btnSummaryMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition">Summary</button>
-                <button onclick="switchReportMode('detailed')" id="btnDetailedMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Detailed</button>
-            </div>
+<div id="tab-reports" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
+    <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs">
+        <div>
+            <h3 class="font-bold text-slate-900 text-base">Financial & Operations Reports</h3>
+            <p class="text-xs text-slate-500">Summary and Detailed views</p>
         </div>
-        <div id="summaryReportView" class="space-y-6">
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs"><div class="text-slate-500 text-xs">Total Jobs</div><div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div></div>
-                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs"><div class="text-slate-500 text-xs">Total Deliveries</div><div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div></div>
-                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs"><div class="text-slate-500 text-xs">Total Revenue</div><div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div></div>
-                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs"><div class="text-slate-500 text-xs">Total Expenses</div><div id="sumTotalExpenses" class="text-lg font-bold text-red-600">$0</div></div>
-            </div>
-            <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-4">
-                <table class="w-full text-left text-xs">
-                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] border-b">
-                        <tr>
-                            <th class="p-3 border">Jan</th><th class="p-3 border">Feb</th><th class="p-3 border">Mar</th><th class="p-3 border">Apr</th>
-                            <th class="p-3 border">May</th><th class="p-3 border">Jun</th><th class="p-3 border">Jul</th><th class="p-3 border font-bold text-emerald-600">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="summaryMatrixBody"></tbody>
-                </table>
-            </div>
-        </div>
-        <div id="detailedReportView" class="hidden space-y-6">
-            <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs">
-                <table class="w-full text-left text-xs">
-                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] border-b">
-                        <tr>
-                            <th class="p-3 border">Date</th><th class="p-3 border">Job No</th><th class="p-3 border">Route</th>
-                            <th class="p-3 border">Foreman</th><th class="p-3 border">Helpers</th><th class="p-3 border">Drivers</th>
-                            <th class="p-3 border">Total</th><th class="p-3 border">P.U Payment</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detailedReportBody"></tbody>
-                </table>
-            </div>
+        <div class="flex space-x-2">
+            <button onclick="switchReportMode('summary')" id="btnSummaryMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition">Summary</button>
+            <button onclick="switchReportMode('detailed')" id="btnDetailedMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Detailed</button>
         </div>
     </div>
 
+    <!-- Summary Report View -->
+    <div id="summaryReportView" class="space-y-6">
+        <!-- KPI Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="glass-panel p-4 rounded-xl bg-white shadow-xs">
+                <div class="text-slate-500 text-xs">Total Jobs</div>
+                <div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl bg-white shadow-xs">
+                <div class="text-slate-500 text-xs">Total Deliveries</div>
+                <div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl bg-white shadow-xs">
+                <div class="text-slate-500 text-xs">Total Revenue</div>
+                <div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div>
+            </div>
+            <div class="glass-panel p-4 rounded-xl bg-white shadow-xs">
+                <div class="text-slate-500 text-xs">Total Expenses</div>
+                <div id="sumTotalExpenses" class="text-lg font-bold text-rose-600">$0</div>
+            </div>
+        </div>
+
+        <div id="summaryReportContainer"></div>
+    </div>
+
+    <!-- Detailed Report View -->
+    <div id="detailedReportView" class="hidden space-y-6">
+        <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] border-b">
+                    <tr>
+                        <th class="p-3 border">Date</th>
+                        <th class="p-3 border">Job No</th>
+                        <th class="p-3 border">Route</th>
+                        <th class="p-3 border">Foreman</th>
+                        <th class="p-3 border">Helpers</th>
+                        <th class="p-3 border">Drivers</th>
+                        <th class="p-3 border">Total</th>
+                        <th class="p-3 border">P.U Payment</th>
+                    </tr>
+                </thead>
+                <tbody id="detailedReportBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
     <!-- TAB 6: TRASH BIN -->
     <div id="tab-trash" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
         <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs">
