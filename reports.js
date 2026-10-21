@@ -62,23 +62,39 @@ function generateSummaryReportData() {
     if (sumRevEl) sumRevEl.innerText = '$' + totalRevenue.toLocaleString();
     if (sumExpEl) sumExpEl.innerText = '$' + (totalRentalExp + totalWarehouseExp).toLocaleString();
 
+    // مصفوفة لتجميع الإيرادات حسب الأشهر (من الشهر 0 إلى 11)
+    const monthlyRevenue = Array(12).fill(0);
+    jobs.forEach(j => {
+        if (j.date) {
+            const dateObj = new Date(j.date);
+            const month = dateObj.getMonth(); // 0 = January, 7 = August, etc.
+            if (!isNaN(month)) {
+                monthlyRevenue[month] += parseCurrency(j.total);
+            }
+        }
+    });
+
     const matrixBody = document.getElementById('summaryMatrixBody');
     if (matrixBody) {
         matrixBody.innerHTML = `
             <tr class="text-slate-700 font-medium border-b">
-                <td class="p-3 border">$115,761</td>
-                <td class="p-3 border">$115,500</td>
-                <td class="p-3 border">$76,639</td>
-                <td class="p-3 border">$36,113</td>
-                <td class="p-3 border">$159,842</td>
-                <td class="p-3 border">$43,694</td>
-                <td class="p-3 border">$14,103</td>
-                <td class="p-3 border font-bold text-emerald-600">$${totalRevenue.toLocaleString() || '1,157,851'}</td>
+                <td class="p-3 border">$${monthlyRevenue[0].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[1].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[2].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[3].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[4].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[5].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[6].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[7].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[8].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[9].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[10].toLocaleString()}</td>
+                <td class="p-3 border">$${monthlyRevenue[11].toLocaleString()}</td>
+                <td class="p-3 border font-bold text-emerald-600">$${totalRevenue.toLocaleString()}</td>
             </tr>
         `;
     }
 }
-
 function generateDetailedReportData() {
     const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     const tbody = document.getElementById('detailedReportBody');
