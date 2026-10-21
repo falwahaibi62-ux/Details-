@@ -117,6 +117,61 @@ function generateSummaryReportData() {
         `;
     }
 }
+
+function exportOfficialPDF() {
+    // جلب عنصر التقرير
+    const reportElement = document.getElementById('summaryReportView') || document.getElementById('tab-reports');
+    
+    if (!reportElement) {
+        alert('Report section not found');
+        return;
+    }
+
+    // فتح نافذة طباعة مخصصة لتنفيذ الحفظ بتنسيق رسمي بسيط
+    const printWindow = window.open('', '_blank');
+    
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>MovePro - Official Financial & Operations Report</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <style>
+                body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; color: #1e293b; }
+                @page { size: A4 landscape; margin: 10mm; }
+                .no-print { display: none !important; }
+            </style>
+        </head>
+        <body>
+            <div class="border-b border-slate-200 pb-4 mb-6 flex justify-between items-center">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900">MovePro Enterprise - Financial & Operations Report</h1>
+                    <p class="text-xs text-slate-500">Generated on: ${new Date().toLocaleDateString('en-US', { dateStyle: 'full' })}</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">OFFICIAL REPORT</span>
+                </div>
+            </div>
+            
+            <div>
+                ${reportElement.innerHTML}
+            </div>
+
+            <script>
+                setTimeout(() => {
+                    window.print();
+                    window.close();
+                }, 500);
+            <\/script>
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+}
+
+
 function generateDetailedReportData() {
     const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     const tbody = document.getElementById('detailedReportBody');
