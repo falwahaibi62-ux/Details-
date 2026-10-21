@@ -1,3 +1,4 @@
+// --- 1. التحكم في وضع العرض (ملخص أو تفصيلي) ---
 function switchReportMode(mode) {
     const summaryView = document.getElementById('summaryReportView');
     const detailedView = document.getElementById('detailedReportView');
@@ -21,6 +22,7 @@ function switchReportMode(mode) {
     }
 }
 
+// دالة مساعدة لتنظيف وقراءة القيم المالية
 function parseCurrency(val) {
     if (!val) return 0;
     if (typeof val === 'number') return val;
@@ -29,29 +31,115 @@ function parseCurrency(val) {
     return isNaN(parsed) ? 0 : parsed;
 }
 
-function generateSummaryReportData() {
+// --- 2. دالة تطبيق المحددات الشاملة ---
+function applyReportFilters() {
+    const isSummaryActive = !document.getElementById('summaryReportView').classList.contains('hidden');
+    if (isSummaryActive) {
+        generateSummaryReportData();
+    } else {
+        generateDetailedReportData();
+    }
+}
+
+function resetReportFilters() {
+    const startEl = document.getElementById('filterStartDate');
+    const endEl = document.getElementById('filterEndDate');
+    const typeEl = document.getElementById('filterJobType');
+    const payEl = document.getElementById('filterPaymentType');
+
+    if (startEl) startEl.value = '';
+    if (endEl) endEl.value = '';
+    if (typeEl) typeEl.value = 'all';
+    if (payEl) payEl.value = 'all';
+
+    applyReportFilters();
+}
+
+// فلترة الوظائف بناءً على المحددات النشطة
+function getFilteredJobsData() {
     const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
+    
+    const startDateVal = document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('filterEndDate')?.value;
+    const jobTypeVal = document.getElementById('filterJobType')?.value || 'all';
+    const paymentVal = document.getElementById('filterPaymentType')?.value || 'all';
+
+    const startDate = startDateVal ? new Date(startDateVal) : null;
+    const endDate = endDateVal ? new Date(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59);
+
+    return jobs.filter(j => {
+        // فلترة التاريخ
+        if (j.date) {
+            const jDate = new Date(j.date);
+            if (startDate && jDate < startDate) return false;
+            if (endDate && jDate > endDate) return false;
+        } else if (startDate || endDate) {
+            return false;
+        }
+
+        // فلترة نوع العملية
+        if (jobTypeVal === 'delivery') {
+            if (!j.jobNo || !String(j.jobNo).toLowerCase().includes('delivery')) return false;
+        } else if (jobTypeVal === 'moving') {
+            if (j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')) return false;
+        }
+
+        // فلترة طريقة الدفع
+        if (paymentVal !== 'all') {
+            const paymentField = String(j.paymentType || j.puPayment || '').toLowerCase();
+            if (!paymentField.includes(paymentVal)) return false;
+        }
+
+        return true;
+    });
+}
+
+// --- 3. توليد بيانات وملخص اللوحة التنفيذية ---
+function generateSummaryReportData() {
+    const filteredJobs = getFilteredJobsData();
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     const warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
 
-    const totalJobsCount = jobs.length;
-    const totalDeliveriesCount = jobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
+    const totalJobsCount = filteredJobs.length;
+    const totalDeliveriesCount = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
 
     let totalRevenue = 0;
-    jobs.forEach(j => {
+    filteredJobs.forEach(j => {
         totalRevenue += parseCurrency(j.total);
     });
 
+    const startDateVal = document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('filterEndDate')?.value;
+    const startDate = startDateVal ? new Date(startDateVal) : null;
+    const endDate = endDateVal ? new Date(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59);
+
+    // حساب المصروفات المصفاة
     let totalRentalExp = 0;
     rentals.forEach(r => {
+        if (r.date) {
+            const rDate = new Date(r.date);
+            if (startDate && rDate < startDate) return;
+            if (endDate && rDate > endDate) return;
+        }
         totalRentalExp += parseCurrency(r.amount);
     });
 
     let totalWarehouseExp = 0;
     warehouse.forEach(w => {
+        if (w.date) {
+            const wDate = new Date(w.date);
+            if (startDate && wDate < startDate) return;
+            if (endDate && wDate > endDate) return;
+        }
         totalWarehouseExp += parseCurrency(w.amount);
     });
 
+    const totalExpenses = totalRentalExp + totalWarehouseExp;
+    const netProfit = totalRevenue - totalExpenses;
+
+    // تحديث عناصر الـ KPI في الواجهة
     const sumJobsEl = document.getElementById('sumTotalJobs');
     const sumDelivEl = document.getElementById('sumTotalDeliveries');
     const sumRevEl = document.getElementById('sumTotalRevenue');
@@ -60,10 +148,11 @@ function generateSummaryReportData() {
     if (sumJobsEl) sumJobsEl.innerText = totalJobsCount.toLocaleString();
     if (sumDelivEl) sumDelivEl.innerText = totalDeliveriesCount.toLocaleString();
     if (sumRevEl) sumRevEl.innerText = '$' + totalRevenue.toLocaleString();
-    if (sumExpEl) sumExpEl.innerText = '$' + (totalRentalExp + totalWarehouseExp).toLocaleString();
+    if (sumExpEl) sumExpEl.innerText = '$' + totalExpenses.toLocaleString();
 
+    // مصفوفة الإيرادات الشهرية (12 شهراً)
     const monthlyRevenue = Array(12).fill(0);
-    jobs.forEach(j => {
+    filteredJobs.forEach(j => {
         if (j.date) {
             const dateObj = new Date(j.date);
             const month = dateObj.getMonth();
@@ -75,19 +164,24 @@ function generateSummaryReportData() {
 
     const monthsLabels = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
+    // رسم الجدول داخل الحاوي المخصص
     const container = document.getElementById('summaryReportContainer');
     if (container) {
         container.innerHTML = `
-            <!-- Monthly Revenue Matrix Card -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
-                        <h3 class="text-base font-bold text-slate-800">Monthly Revenue Breakdown</h3>
-                        <p class="text-xs text-slate-400 font-medium mt-0.5">Automated financial distribution across 12 calendar months</p>
+                        <h3 class="text-base font-bold text-slate-800">Executive Monthly Financial Breakdown</h3>
+                        <p class="text-xs text-slate-400 font-medium mt-0.5">Automated telemetry & revenue distribution across fiscal year</p>
                     </div>
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> FY 2026 Live
-                    </span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                            Net Profit: <span class="${netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}">$${netProfit.toLocaleString()}</span>
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Active View
+                        </span>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto rounded-xl border border-slate-100">
@@ -116,6 +210,32 @@ function generateSummaryReportData() {
     }
 }
 
+// --- 4. توليد الجدول التفصيلي للعمليات ---
+function generateDetailedReportData() {
+    const filteredJobs = getFilteredJobsData();
+    const tbody = document.getElementById('detailedReportBody');
+    if (!tbody) return;
+
+    if (filteredJobs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No records found matching criteria.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filteredJobs.map(item => `
+        <tr class="border-b hover:bg-slate-50 transition">
+            <td class="p-3 border">${item.date || '-'}</td>
+            <td class="p-3 border font-semibold text-slate-800">${item.jobNo || '-'}</td>
+            <td class="p-3 border">${item.from || '-'} → ${item.to || '-'}</td>
+            <td class="p-3 border">${item.foreman || '-'}</td>
+            <td class="p-3 border">${item.helpers || '-'}</td>
+            <td class="p-3 border">${item.drivers || '-'}</td>
+            <td class="p-3 border font-bold text-emerald-600">${item.total || '-'}</td>
+            <td class="p-3 border">${item.puPayment || '-'}</td>
+        </tr>
+    `).join('');
+}
+
+// --- 5. تصدير التقرير الرسمي PDF التنفيذي ---
 function exportOfficialPDF() {
     const reportElement = document.getElementById('summaryReportView') || document.getElementById('tab-reports');
     
@@ -130,22 +250,21 @@ function exportOfficialPDF() {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>MovePro - Official Financial & Operations Report</title>
+            <title>MovePro Executive - Financial & Operations Report</title>
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
-                body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; color: #1e293b; }
+                body { font-family: system-ui, -apple-system, sans-serif; padding: 25px; color: #1e293b; background: #fff; }
                 @page { size: A4 landscape; margin: 10mm; }
-                .no-print { display: none !important; }
             </style>
         </head>
         <body>
             <div class="border-b border-slate-200 pb-4 mb-6 flex justify-between items-center">
                 <div>
-                    <h1 class="text-xl font-bold text-slate-900">MovePro Enterprise - Financial & Operations Report</h1>
+                    <h1 class="text-xl font-bold text-slate-900">MovePro Enterprise - Executive Financial Report</h1>
                     <p class="text-xs text-slate-500">Generated on: ${new Date().toLocaleDateString('en-US', { dateStyle: 'full' })}</p>
                 </div>
                 <div class="text-right">
-                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">OFFICIAL REPORT</span>
+                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">OFFICIAL EXECUTIVE REPORT</span>
                 </div>
             </div>
             
@@ -167,75 +286,7 @@ function exportOfficialPDF() {
     printWindow.document.close();
 }
 
-function applyReportFilters() {
-    const isSummaryActive = !document.getElementById('summaryReportView').classList.contains('hidden');
-    if (isSummaryActive) {
-        generateSummaryReportData();
-    } else {
-        generateDetailedReportData();
-    }
-}
-
-function resetReportFilters() {
-    document.getElementById('filterStartDate').value = '';
-    document.getElementById('filterEndDate').value = '';
-    document.getElementById('filterJobType').value = 'all';
-    applyReportFilters();
-}
-
-function getFilteredJobsData() {
-    const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
-    
-    const startDateVal = document.getElementById('filterStartDate')?.value;
-    const endDateVal = document.getElementById('filterEndDate')?.value;
-    const jobTypeVal = document.getElementById('filterJobType')?.value || 'all';
-
-    const startDate = startDateVal ? new Date(startDateVal) : null;
-    const endDate = endDateVal ? new Date(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59); // لتشمل نهاية اليوم بالكامل
-
-    return jobs.filter(j => {
-        if (j.date) {
-            const jDate = new Date(j.date);
-            if (startDate && jDate < startDate) return false;
-            if (endDate && jDate > endDate) return false;
-        } else if (startDate || endDate) {
-            return false;
-        }
-
-        if (jobTypeVal === 'delivery') {
-            if (!j.jobNo || !String(j.jobNo).toLowerCase().includes('delivery')) return false;
-        } else if (jobTypeVal === 'moving') {
-            if (j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')) return false;
-        }
-
-        return true;
-    });
-}
-function generateDetailedReportData() {
-    const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
-    const tbody = document.getElementById('detailedReportBody');
-    if (!tbody) return;
-
-    if (jobs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No records found.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = jobs.map(item => `
-        <tr class="border-b hover:bg-slate-50 transition">
-            <td class="p-3 border">${item.date || '-'}</td>
-            <td class="p-3 border font-semibold text-slate-800">${item.jobNo || '-'}</td>
-            <td class="p-3 border">${item.from || '-'} → ${item.to || '-'}</td>
-            <td class="p-3 border">${item.foreman || '-'}</td>
-            <td class="p-3 border">${item.helpers || '-'}</td>
-            <td class="p-3 border">${item.drivers || '-'}</td>
-            <td class="p-3 border font-bold text-emerald-600">${item.total || '-'}</td>
-            <td class="p-3 border">${item.puPayment || '-'}</td>
-        </tr>
-    `).join('');
-}
-
+// التهيئة عند فتح التبويبة
 function renderReportsTab() {
     switchReportMode('summary');
 }
