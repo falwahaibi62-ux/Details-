@@ -374,11 +374,21 @@
         <div id="summaryReportContainer"></div>
     </div>
 
-    <!-- Detailed Report View -->
-    <div id="detailedReportView" class="hidden space-y-6">
-        <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] border-b">
+<!-- Detailed Report View (Three Tables: Jobs, Rentals, Warehouse) -->
+<div id="detailedReportView" class="hidden space-y-8">
+    
+    <!-- Table 1: Master Jobs Ledger -->
+    <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200/80 space-y-3">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <div>
+                <h4 class="font-bold text-slate-800 text-sm">1. Operations Ledger (Master Jobs)</h4>
+                <p class="text-[11px] text-slate-400">Detailed job operations, crew allocations, and revenues</p>
+            </div>
+            <span id="detailedJobsBadge" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">0 Jobs</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
                     <tr>
                         <th class="p-3 border">Date</th>
                         <th class="p-3 border">Job No</th>
@@ -390,10 +400,61 @@
                         <th class="p-3 border">P.U Payment</th>
                     </tr>
                 </thead>
-                <tbody id="detailedReportBody"></tbody>
+                <tbody id="detailedReportBody" class="divide-y divide-slate-100"></tbody>
             </table>
         </div>
     </div>
+
+    <!-- Table 2: Private Truck Rental Records -->
+    <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200/80 space-y-3">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <div>
+                <h4 class="font-bold text-slate-800 text-sm">2. Private Truck Rental Ledger</h4>
+                <p class="text-[11px] text-slate-400">Recorded truck rental expenses for selected period</p>
+            </div>
+            <span id="detailedRentalsBadge" class="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-lg border border-amber-200">0 Records</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
+                    <tr>
+                        <th class="p-3 border">Date</th>
+                        <th class="p-3 border">Vendor / Truck No</th>
+                        <th class="p-3 border">Description / Notes</th>
+                        <th class="p-3 border">Payment Method</th>
+                        <th class="p-3 border text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="detailedRentalsBody" class="divide-y divide-slate-100"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Table 3: Warehouse & Others Records -->
+    <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200/80 space-y-3">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <div>
+                <h4 class="font-bold text-slate-800 text-sm">3. Warehouse & Other Expenses Ledger</h4>
+                <p class="text-[11px] text-slate-400">Warehouse costs, storage units, diesel, and miscellaneous expenses</p>
+            </div>
+            <span id="detailedWarehouseBadge" class="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-lg border border-purple-200">0 Records</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
+                    <tr>
+                        <th class="p-3 border">Date</th>
+                        <th class="p-3 border">Category / Type</th>
+                        <th class="p-3 border">Description / Facility</th>
+                        <th class="p-3 border">Payment Method</th>
+                        <th class="p-3 border text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="detailedWarehouseBody" class="divide-y divide-slate-100"></tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
     <!-- TAB 6: TRASH BIN -->
     <div id="tab-trash" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
