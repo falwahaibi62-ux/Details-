@@ -1,8 +1,3 @@
-/* تصغير مقياس الشاشة وعرض العناصر بنسبة متناسقة */
-html {
-    zoom: 90%; /* يمكنك تعديل النسبة إلى 85% أو 88% حسب رغبتك في تصغير العناصر */
-}
-
 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
 .glass-panel {
