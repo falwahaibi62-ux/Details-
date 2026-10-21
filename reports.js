@@ -1,4 +1,3 @@
-// --- 1. التحكم في وضع العرض (ملخص أو تفصيلي) ---
 function switchReportMode(mode) {
     const summaryView = document.getElementById('summaryReportView');
     const detailedView = document.getElementById('detailedReportView');
@@ -22,7 +21,6 @@ function switchReportMode(mode) {
     }
 }
 
-// دالة مساعدة لقراءة وتنظيف القيم المالية
 function parseCurrency(val) {
     if (!val) return 0;
     if (typeof val === 'number') return val;
@@ -31,7 +29,6 @@ function parseCurrency(val) {
     return isNaN(parsed) ? 0 : parsed;
 }
 
-// --- 2. المحددات والفلترة الشاملة ---
 function applyReportFilters() {
     const isSummaryActive = !document.getElementById('summaryReportView').classList.contains('hidden');
     if (isSummaryActive) {
@@ -68,7 +65,6 @@ function getFilteredJobsData() {
     if (endDate) endDate.setHours(23, 59, 59);
 
     return jobs.filter(j => {
-        // فلترة التاريخ
         if (j.date) {
             const jDate = new Date(j.date);
             if (startDate && jDate < startDate) return false;
@@ -77,7 +73,6 @@ function getFilteredJobsData() {
             return false;
         }
 
-        // فلترة نوع العمليات
         if (jobTypeVal === 'delivery') {
             if (!j.jobNo || !String(j.jobNo).toLowerCase().includes('delivery')) return false;
         } else if (jobTypeVal === 'moving') {
@@ -94,7 +89,6 @@ function getFilteredJobsData() {
     });
 }
 
-// --- 3. الجدول المالي الرسمي الشامل للإجماليات وطرق الدفع ---
 function generateOfficialSummaryTable(filteredJobs) {
     const totalJobs = filteredJobs.length;
     const totalDeliveries = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
@@ -115,20 +109,20 @@ function generateOfficialSummaryTable(filteredJobs) {
     let sumTotalAfterDeposit = 0;
 
     filteredJobs.forEach(item => {
-        sumForeman10 += parseCurrency(item.foreman || item.foreman10);
-        sumHelpers += parseCurrency(item.helpers);
-        sumDrivers += parseCurrency(item.drivers);
-        sumCashDiesel += parseCurrency(item.diesel || item.cashDiesel);
-        sumTotalAfterDeposit += parseCurrency(item.total || item.totalAfterDeposit);
+        sumForeman10 += parseCurrency(item.foreman || item.foreman10 || item.foremanFee);
+        sumHelpers += parseCurrency(item.helpers || item.helpersCost);
+        sumDrivers += parseCurrency(item.drivers || item.driversCost);
+        sumCashDiesel += parseCurrency(item.diesel || item.cashDiesel || item.dieselCost);
+        sumTotalAfterDeposit += parseCurrency(item.total || item.totalAfterDeposit || item.amount);
 
-        const puStr = String(item.puPayment || '').toLowerCase();
-        const puVal = parseCurrency(item.puPayment);
+        const puStr = String(item.puPayment || item.paymentType || '').toLowerCase();
+        const puVal = parseCurrency(item.puPayment || item.paymentAmount);
         
         if (puStr.includes('cash')) {
             sumCashPu += puVal;
         } else if (puStr.includes('pmo')) {
             sumPmoPu += puVal;
-        } else {
+        } else if (puVal > 0) {
             sumZellePu += puVal;
         }
 
@@ -140,7 +134,7 @@ function generateOfficialSummaryTable(filteredJobs) {
         } else if (destStr.includes('zelle')) {
             sumDestZelle += destVal;
             sumDestNoCashPmo += destVal;
-        } else if (!destStr.includes('pmo')) {
+        } else if (!destStr.includes('pmo') && destVal > 0) {
             sumDestNoCashPmo += destVal;
         }
 
@@ -205,8 +199,6 @@ function generateOfficialSummaryTable(filteredJobs) {
         </div>
     `;
 }
-
-// --- 4. توليد الملخص التنفيذي ومصفوفة الـ 12 شهراً ---
 function generateSummaryReportData() {
     const filteredJobs = getFilteredJobsData();
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
@@ -345,7 +337,6 @@ function generateDetailedReportData() {
     `).join('');
 }
 
-// --- 6. تصدير التقرير الرسمي PDF التنفيذي ---
 function exportOfficialPDF() {
     const reportElement = document.getElementById('summaryReportView') || document.getElementById('tab-reports');
     
