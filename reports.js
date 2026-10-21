@@ -198,6 +198,78 @@ function generateSummaryReportData() {
     }
 }
 
+function generateOfficialSummaryTable(filteredJobs) {
+    let totalJobs = filteredJobs.length;
+    let totalDeliveries = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
+
+    let sumForeman10 = 0;
+    let sumHelpers = 0;
+    let sumDrivers = 0;
+    let sumCashDiesel = 0;
+    let sumCashPu = 0;
+    let sumZellePu = 0;
+    let sumDestZelle = 0;
+    let sumAfterDeposit = 0;
+
+    filteredJobs.forEach(item => {
+        sumForeman10 += parseCurrency(item.foreman);
+        sumHelpers += parseCurrency(item.helpers);
+        sumDrivers += parseCurrency(item.drivers);
+        sumAfterDeposit += parseCurrency(item.total);
+
+        const paymentStr = String(item.puPayment || '').toLowerCase();
+        if (paymentStr.includes('cash')) {
+            sumCashPu += parseCurrency(item.puPayment);
+        } else if (paymentStr.includes('zelle')) {
+            sumZellePu += parseCurrency(item.puPayment);
+        }
+    });
+
+    return `
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
+            <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800">Official Period Financial Summary</h3>
+                    <p class="text-[11px] text-slate-400">Aggregated totals of jobs, payments, and operational breakdowns</p>
+                </div>
+                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
+                    Total Jobs: ${totalJobs} | Deliveries: ${totalDeliveries}[cite: 3]
+                </span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 text-[10px] font-bold text-slate-600 uppercase border-b">
+                            <th class="p-2.5 border text-center">Foreman 10%</th>
+                            <th class="p-2.5 border text-center">Helpers</th>
+                            <th class="p-2.5 border text-center">Drivers</th>
+                            <th class="p-2.5 border text-center">Cash Diesel</th>
+                            <th class="p-2.5 border text-center">Cash PU Payment</th>
+                            <th class="p-2.5 border text-center">Zelle / Other</th>
+                            <th class="p-2.5 border text-center bg-emerald-50 text-emerald-800">Total After Deposit</th>
+                        </tr>
+                    </thead>
+                    <tbody class="font-semibold text-slate-700">
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="p-2.5 border text-center">$${sumForeman10.toLocaleString()}</td>
+                            <td class="p-2.5 border text-center">$${sumHelpers.toLocaleString()}</td>
+                            <td class="p-2.5 border text-center">$${sumDrivers.toLocaleString()}</td>
+                            <td class="p-2.5 border text-center">$${sumCashDiesel.toLocaleString()}</td>
+                            <td class="p-2.5 border text-center text-emerald-600">$${sumCashPu.toLocaleString()}</td>
+                            <td class="p-2.5 border text-center text-blue-600">$${sumZellePu.toLocaleString()}</td>
+                            <td class="p-2.5 border text-center bg-emerald-50/50 text-emerald-700 font-bold">$${sumAfterDeposit.toLocaleString()}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+
+
+
 function generateDetailedReportData() {
     const filteredJobs = getFilteredJobsData();
     const tbody = document.getElementById('detailedReportBody');
