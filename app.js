@@ -803,12 +803,7 @@ window.onload = () => {
     updateDashboardAnalytics();
     renderTrashBin();
 
-    // ⭐ الحل الجذري: إظهار التبويب الرئيسي واختياره افتراضياً عند فتح الصفحة
-    if (typeof switchTab === 'function') {
-        switchTab('jobs');
-    }
-
-    // استماع زر إضافة وظيفة جديدة مع فتح المودال فوراً
+  
     document.addEventListener('click', function(event) {
         const addBtn = event.target.closest('#addJobBtn');
         if (addBtn) {
