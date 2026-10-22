@@ -364,22 +364,18 @@ function editJob(index) {
 function deleteJob(jobNo) {
     if (!confirm('Are you sure you want to move this dispatch to Recycle Bin?')) return;
 
-    // 1. Find the exact index of the job in the master list
     const jobIndex = masterJobs.findIndex(j => j.jobNo === jobNo);
 
     if (jobIndex !== -1) {
-        // 2. Extract the specific job and push it to the trash bin array
         const deletedJob = masterJobs.splice(jobIndex, 1)[0];
-        trashBin.push(deletedJob);
+        window.masterTrash.push(deletedJob);
 
-        // 3. Persist the updated state to LocalStorage
         saveMasterJobs(masterJobs);
-        saveTrashBin(trashBin);
+        saveTrashBin(window.masterTrash);
 
-        // 4. Refresh the UI tables, analytics, and trash bin view
         filterJobsTable();
         updateDashboardAnalytics();
-        renderTrashBin();
+        if (typeof renderTrashBin === 'function') renderTrashBin();
     }
 }
 
