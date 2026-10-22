@@ -186,7 +186,6 @@ function globalSearchFilter() {
 }
 
 
-
 window.openAddModal = function() {
     const modal = document.getElementById('jobModal');
     if (!modal) {
@@ -214,11 +213,14 @@ window.openAddModal = function() {
         addPaymentRow('destContainer');
     }
 
-    // إزالة الكلاس hidden وإضافة flex مع فرض الـ style مباشرة لضمان الظهور الفوري
+    // ⭐ الحل الجذري: إزالة الكلاسات المخفية وتطبيق العرض الفوري مع إعادة الرسم الإجباري
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    modal.style.display = 'none';
+    modal.offsetHeight; // هذه الخطوة تجبر المتصفح على عمل Reflow فوري وتحديث الشاشة
     modal.style.display = 'flex';
 };
+
 
 
 
