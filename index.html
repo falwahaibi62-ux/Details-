@@ -102,10 +102,10 @@
             <input type="text" id="globalSearch" onkeyup="globalSearchFilter()" placeholder="Search jobs, routes..." class="w-56 pl-9 pr-4 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500 transition">
         </div>
 
-        <button onclick="exportOfficialPDF()" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition flex items-center gap-1.5 shadow-xs">
-            <i class="fa-solid fa-file-pdf text-red-400"></i>
-            <span>Export Official PDF</span>
-        </button>
+       <button id="exportPdfBtn" onclick="exportOfficialPDF()" class="hidden px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition items-center gap-1.5 shadow-xs">
+    <i class="fa-solid fa-file-pdf text-red-400"></i>
+    <span>Export Official PDF</span>
+</button>
 
         <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-lg border border-emerald-200 shrink-0">
             <i class="fa-solid fa-shield-halved mr-1"></i>Active Role: <span id="activeRoleText">Admin</span>
