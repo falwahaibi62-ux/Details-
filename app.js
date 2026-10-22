@@ -206,9 +206,13 @@ function openAddModal() {
 
 function closeModal() {
     const modal = document.getElementById('jobModal');
-    if (!modal) return; 
-    modal.classList.remove('flex');
-    modal.classList.add('hidden');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        console.log("Modal closed successfully!");
+    } else {
+        console.error("jobModal element not found!");
+    }
 }
 
 
