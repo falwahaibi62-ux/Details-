@@ -173,9 +173,9 @@ function globalSearchFilter() {
         return;
     }
     let filtered = masterJobs.filter(item => 
-        item.jobNo.toLowerCase().includes(query) || 
-        item.route.toLowerCase().includes(query) || 
-        (item.foreman && item.foreman.toLowerCase().includes(query))
+       String(item.jobNo || '').toLowerCase().includes(query) || 
+       String(item.route || '').toLowerCase().includes(query) || 
+       String(item.foreman || '').toLowerCase().includes(query))
     );
     switchTab('jobs');
     renderJobsCRUD(filtered);
