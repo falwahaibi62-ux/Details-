@@ -197,8 +197,7 @@ function openAddModal() {
     const editIndex = document.getElementById('editIndex');
     if (editIndex) editIndex.value = -1;
 
-    // إظهار نافذة الإدخال (Modal)
-    const modal = document.getElementById('jobModal'); // أو اسم الـ ID الخاص بالنافذة المنبثقة لديك
+    const modal = document.getElementById('jobModal'); 
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -208,24 +207,21 @@ function openAddModal() {
 
 function closeModal() {
     const modal = document.getElementById('jobModal');
-    if (!modal) return; // <-- حماية إضافية
+    if (!modal) return; 
     modal.classList.remove('flex');
     modal.classList.add('hidden');
 }
 
 
-
 function saveJob(e) {
     e.preventDefault();
 
-    // 1. التحقق الآمن من مؤشر التعديل لضمان عدم حدوث خطأ NaN
     const editIndexInput = document.getElementById('editIndex');
     const index = editIndexInput ? parseInt(editIndexInput.value) : -1;
 
-    // 2. التحقق من رقم الوظيفة الأساسي
     const jobNoInput = document.getElementById('jobNo');
     if (!jobNoInput || !jobNoInput.value.trim()) {
-        alert('الرجاء إدخال رقم الوظيفة (Job Number).');
+        alert('Please enter the Job Number.');
         if (jobNoInput) jobNoInput.focus();
         return;
     }
