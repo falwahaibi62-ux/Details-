@@ -189,29 +189,22 @@ function globalSearchFilter() {
 }
 
 
-function openAddModal() {
-    const form = document.getElementById('jobForm'); 
-    if (form) form.reset();
-    
-    const editIndex = document.getElementById('editIndex');
-    if (editIndex) editIndex.value = -1;
-
-    const modal = document.getElementById('jobModal'); 
+function openModal() {
+    const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        modal.style.display = 'flex'; 
     }
 }
-
 
 function closeModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        modal.style.display = 'none'; 
         console.log("Modal closed successfully!");
-    } else {
-        console.error("jobModal element not found!");
     }
 }
 
@@ -579,7 +572,6 @@ function renderDashboardCharts(monthlyData, paymentData) {
 }
 
 function switchTab(tab) {
-    // 1. إغلاق أي نافذة منبثقة (Modal) مفتوحة فوراً لمنع تداخل الحالة عند التنقل
     if (typeof closeModal === 'function') {
         closeModal();
     }
