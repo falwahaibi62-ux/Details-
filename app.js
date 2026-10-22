@@ -817,14 +817,27 @@ window.onload = () => {
     updateDashboardAnalytics();
     renderTrashBin();
 
+    // الاستماع العام لزر إضافة وظيفة جديدة مع إجبار العرض الفوري
     document.addEventListener('click', function(event) {
         const addBtn = event.target.closest('#addJobBtn');
         if (addBtn) {
             event.preventDefault();
+            event.stopPropagation();
+            
             if (typeof openAddModal === 'function') {
                 openAddModal();
             } else {
                 console.error('openAddModal function is not defined!');
+            }
+
+            // إجبار المتصفح على إظهار المودال بصرياً فوراً وتجاوز أي تأخير
+            const modal = document.getElementById('jobModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                modal.style.display = 'none';
+                modal.offsetHeight; // سحر إعادة الرسم (Reflow) الفوري
+                modal.style.display = 'flex';
             }
         }
     });
