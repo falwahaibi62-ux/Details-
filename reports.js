@@ -305,7 +305,6 @@ function generateSummaryReportData() {
                 </div>
             </div>
 
-            <!-- الجدول الرسمي للإجماليات أسفل مصفوفة الأشهر -->
             ${generateOfficialSummaryTable(filteredJobs)}
         `;
     }
