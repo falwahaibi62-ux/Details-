@@ -185,6 +185,35 @@ function globalSearchFilter() {
     }
 }
 
+
+
+window.openAddModal = function() {
+    const modal = document.getElementById('jobModal');
+    if (!modal) return;
+
+    const modalTitle = document.getElementById('modalTitle');
+    const editIndex = document.getElementById('editIndex');
+    const jobForm = document.getElementById('jobForm');
+
+    if (modalTitle) modalTitle.innerText = 'Add New Dispatch';
+    if (editIndex) editIndex.value = '-1';
+    if (jobForm) jobForm.reset();
+    
+    const puContainer = document.getElementById('puContainer');
+    const destContainer = document.getElementById('destContainer');
+    if (puContainer) puContainer.innerHTML = '';
+    if (destContainer) destContainer.innerHTML = '';
+    
+    if (typeof addPaymentRow === 'function') {
+        addPaymentRow('puContainer');
+        addPaymentRow('destContainer');
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+};
+
+
 function openAddModal() {
     document.getElementById('modalTitle').innerText = 'Add New Dispatch';
     document.getElementById('editIndex').value = '-1';
