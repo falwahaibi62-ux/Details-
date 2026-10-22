@@ -186,19 +186,6 @@ function globalSearchFilter() {
 }
 
 
-window.openAddModal = function() {
-    const modal = document.getElementById('jobModal');
-    if (!modal) return;
-
-    // تصفير وتجهيز الحقول...
-    const jobForm = document.getElementById('jobForm');
-    if (jobForm) jobForm.reset();
-
-    // إظهار المودال وإجبار المتصفح على إعادة الرسم فوراً
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    void modal.offsetWidth; // هذا السطر يمنع الحاجة للضغط على التقارير ليظهر المودال
-};
 
 
 
