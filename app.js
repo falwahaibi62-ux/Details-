@@ -177,14 +177,13 @@ function globalSearchFilter() {
        String(item.route || '').toLowerCase().includes(query) || 
        String(item.foreman || '').toLowerCase().includes(query)
     );
-    switchTab('jobs');
+   switchTab('jobs');
     renderJobsCRUD(filtered);
     const countText = document.getElementById('filteredCountText');
     if(countText) {
         countText.innerText = `Search results: ${filtered.length} records`;
     }
 }
-
 
 
 
