@@ -347,7 +347,6 @@ function saveJob(e) {
 
 
 function editJob(param) {
-    // التحقق مما إذا كان المدخل رقم إرسالية (String) أو مؤشر (Number) وإيجاد الفهرس الصحيح
     let index = param;
     if (typeof param === 'string' || isNaN(param)) {
         index = masterJobs.findIndex(j => j.jobNo == param);
@@ -609,7 +608,6 @@ function switchTab(tab) {
         activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
     }
 
-    // التحكم بظهور زر تصدير الـ PDF الرسمي حصرياً في صفحة التقارير ('reports')
     const exportBtn = document.getElementById('exportPdfBtn');
     if (exportBtn) {
         if (tab === 'reports') { 
@@ -901,7 +899,7 @@ window.onload = () => {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
                 modal.style.display = 'none';
-                modal.offsetHeight; // إعادة الرسم الفوري
+                modal.offsetHeight; 
                 modal.style.display = 'flex';
             }
         }
