@@ -133,14 +133,14 @@ function renderJobsCRUD(dataToRender) {
             ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
             : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
         
-        let actions = `<span class="text-slate-400">Restricted</span>`;
-        if(currentUserRole === 'Admin') {
+        let actions = `<span class="text-xs text-slate-400">-</span>`;
+        if (currentUserRole === 'Admin') {
             actions = `
                 <button onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
                 <button onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg" title="Move to Recycle Bin"><i class="fa-solid fa-trash-can"></i></button>
             `;
-        } else if(currentUserRole === 'Member') {
-            actions = `<button onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg font-bold" title="Edit Only">Edit Only</button>`;
+        } else if (currentUserRole === 'Member') {
+            actions = `<span class="text-xs text-slate-400">-</span>`; 
         }
 
         const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
@@ -166,6 +166,9 @@ function renderJobsCRUD(dataToRender) {
         `;
     }).join('');
 }
+
+
+
 function globalSearchFilter() {
     const query = document.getElementById('globalSearch').value.toLowerCase();
     if (!query) {
