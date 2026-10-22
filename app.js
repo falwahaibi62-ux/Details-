@@ -190,8 +190,7 @@ function globalSearchFilter() {
 
 
 function openAddModal() {
-    // إعادة تعيين نموذج الإدخال إذا وجد
-    const form = document.getElementById('jobForm'); // أو اسم الـ ID الخاص بالنموذج لديك
+    const form = document.getElementById('jobForm'); 
     if (form) form.reset();
     
     const editIndex = document.getElementById('editIndex');
@@ -216,9 +215,6 @@ function closeModal() {
 function saveJob(e) {
     e.preventDefault();
 
-    const editIndexInput = document.getElementById('editIndex');
-    const index = editIndexInput ? parseInt(editIndexInput.value) : -1;
-
     const jobNoInput = document.getElementById('jobNo');
     if (!jobNoInput || !jobNoInput.value.trim()) {
         alert('Please enter the Job Number.');
@@ -226,52 +222,71 @@ function saveJob(e) {
         return;
     }
 
-    const dateRaw = document.getElementById('jobDate').value;
-    let dateVal = dateRaw;
-    let monthVal = 5;
-    let yearVal = 2026;
+    const jobNoVal = jobNoInput.value.trim();
+    if (!window.masterJobs) window.masterJobs = [];
 
-    if (dateRaw && dateRaw.includes('-')) {
-        const p = dateRaw.split('-');
-        yearVal = parseInt(p[0]) || 2026;
-        monthVal = parseInt(p[1]) || 5;
-        const dayVal = parseInt(p[2]) || 1;
-        dateVal = `${monthVal}/${dayVal}/${yearVal}`;
+    // Check for duplicate jobNo if it's a new entry
+    const editIndexInput = document.getElementById('editIndex');
+    const existingIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
+    const isEditing = editIndexInput && editIndexInput.value !== "" && editIndexInput.value !== "-1";
+
+    if (!isEditing && existingIndex !== -1) {
+        alert(`Job Number "${jobNoVal}" already exists. Please use a unique Job Number.`);
+        jobNoInput.focus();
+        return;
     }
+
+    // Safe Date Parsing
+    const dateInput = document.getElementById('jobDate');
+    const dateRaw = dateInput ? dateInput.value : '';
+    let dateVal = dateRaw;
+    let monthVal = new Date().getMonth() + 1;
+    let yearVal = new Date().getFullYear();
+
+    if (dateRaw) {
+        if (dateRaw.includes('-')) {
+            const p = dateRaw.split('-');
+            yearVal = parseInt(p[0]) || yearVal;
+            monthVal = parseInt(p[1]) || monthVal;
+            const dayVal = parseInt(p[2]) || 1;
+            dateVal = `${String(monthVal).padStart(2, '0')}/${String(dayVal).padStart(2, '0')}/${yearVal}`;
+        } else if (dateRaw.includes('/')) {
+            const p = dateRaw.split('/');
+            monthVal = parseInt(p[0]) || monthVal;
+            yearVal = parseInt(p[2]) || yearVal;
+            dateVal = dateRaw; // Already US format
+        }
+    }
+
+    // Currency Sanitizer Helper
+    const formatCurrency = (val) => {
+        if (!val || val === '-') return '-';
+        if (val.startsWith('$')) return val;
+        let num = parseFloat(val.replace(/[^0-9.]/g, ''));
+        return isNaN(num) ? val : '$' + num.toLocaleString('en-US');
+    };
 
     let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '';
-    if (totalRaw && !totalRaw.startsWith('$') && totalRaw !== '-') {
-        let num = parseFloat(totalRaw.replace(/[^0-9.]/g, ''));
-        totalRaw = isNaN(num) ? totalRaw : '$' + num.toLocaleString('en-US');
-    }
+    let totalFormatted = formatCurrency(totalRaw);
 
     const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
     const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
-    const routeVal = `${fromVal} → ${toVal}`;
+    const routeVal = (fromVal || toVal) ? `${fromVal} → ${toVal}` : '-';
 
     const puFormatted = typeof extractPaymentsFromContainer === 'function' ? extractPaymentsFromContainer('puContainer') : '-';
     const destFormatted = typeof extractPaymentsFromContainer === 'function' ? extractPaymentsFromContainer('destContainer') : '-';
 
     let dieselRaw = document.getElementById('dieselAmount') ? document.getElementById('dieselAmount').value.trim() : '';
-    if (dieselRaw && !dieselRaw.startsWith('$') && dieselRaw !== '-') {
-        let num = parseFloat(dieselRaw.replace(/[^0-9.]/g, ''));
-        dieselRaw = isNaN(num) ? dieselRaw : '$' + num.toLocaleString('en-US');
-    }
     const dieselMethod = document.getElementById('dieselMethod') ? document.getElementById('dieselMethod').value : '';
-    const dieselFormatted = dieselRaw ? `${dieselRaw} ${dieselMethod}` : '-';
+    const dieselFormatted = dieselRaw ? `${formatCurrency(dieselRaw)} ${dieselMethod}`.trim() : '-';
 
     let hotelRaw = document.getElementById('hotelAmount') ? document.getElementById('hotelAmount').value.trim() : '';
-    if (hotelRaw && !hotelRaw.startsWith('$') && hotelRaw !== '-') {
-        let num = parseFloat(hotelRaw.replace(/[^0-9.]/g, ''));
-        hotelRaw = isNaN(num) ? hotelRaw : '$' + num.toLocaleString('en-US');
-    }
     const hotelMethod = document.getElementById('hotelMethod') ? document.getElementById('hotelMethod').value : '';
-    const hotelFormatted = hotelRaw ? `${hotelRaw} ${hotelMethod}` : '-';
+    const hotelFormatted = hotelRaw ? `${formatCurrency(hotelRaw)} ${hotelMethod}`.trim() : '-';
 
     const helpersSelect = document.getElementById('helpersCost');
     let helpersFormatted = '-';
     let helpersCostVal = 0;
-
     if (helpersSelect && helpersSelect.selectedIndex !== -1) {
         helpersCostVal = parseFloat(helpersSelect.value) || 0;
         const selectedText = helpersSelect.options[helpersSelect.selectedIndex].text;
@@ -281,21 +296,20 @@ function saveJob(e) {
     const driversSelect = document.getElementById('driversCost');
     let driversFormatted = '-';
     let driversCostVal = 0;
-
     if (driversSelect && driversSelect.selectedIndex !== -1) {
         driversCostVal = parseFloat(driversSelect.value) || 0;
         const selectedText = driversSelect.options[driversSelect.selectedIndex].text;
         driversFormatted = driversCostVal > 0 ? selectedText : '-';
     }
 
-    const newJob = {
+    const jobData = {
         date: dateVal,
         month: monthVal,
         year: yearVal,
-        jobNo: jobNoInput.value.trim(),
+        jobNo: jobNoVal,
         route: routeVal,
         foreman: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
-        total: totalRaw,
+        total: totalFormatted,
         helpers: helpersFormatted,        
         helpersNum: helpersCostVal, 
         drivers: driversFormatted,        
@@ -306,14 +320,20 @@ function saveJob(e) {
         hotel: hotelFormatted
     };
 
-    if (!window.masterJobs) window.masterJobs = [];
-
-    if(isNaN(index) || index === -1) {
-        window.masterJobs.unshift(newJob); // الإضافة في البداية لتظهر الوظيفة الجديدة مباشرة
+    // Save/Update logic using jobNo instead of unstable array indexes
+    if (isEditing) {
+        // Find by jobNo or fallback to index if stored index is a valid jobNo match
+        const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
+        if (targetIndex !== -1) {
+            window.masterJobs[targetIndex] = jobData;
+        } else {
+            window.masterJobs.unshift(jobData);
+        }
     } else {
-        window.masterJobs[index] = newJob;
+        window.masterJobs.unshift(jobData);
     }
 
+    // Persistence & UI Refresh
     if (typeof saveMasterJobs === 'function') saveMasterJobs(window.masterJobs);
     if (typeof closeModal === 'function') closeModal();
     if (typeof populateYearFilter === 'function') populateYearFilter();
