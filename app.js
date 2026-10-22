@@ -196,49 +196,65 @@ function closeModal() {
     modal.classList.remove('flex');
     modal.classList.add('hidden');
 }
+
+
+
 function saveJob(e) {
     e.preventDefault();
-    const index = parseInt(document.getElementById('editIndex').value);
+
+    // 1. التحقق الآمن من مؤشر التعديل لضمان عدم حدوث خطأ NaN
+    const editIndexInput = document.getElementById('editIndex');
+    const index = editIndexInput ? parseInt(editIndexInput.value) : -1;
+
+    // 2. التحقق من رقم الوظيفة الأساسي
+    const jobNoInput = document.getElementById('jobNo');
+    if (!jobNoInput || !jobNoInput.value.trim()) {
+        alert('الرجاء إدخال رقم الوظيفة (Job Number).');
+        if (jobNoInput) jobNoInput.focus();
+        return;
+    }
+
     const dateRaw = document.getElementById('jobDate').value;
-    
     let dateVal = dateRaw;
     let monthVal = 5;
     let yearVal = 2026;
 
     if (dateRaw && dateRaw.includes('-')) {
         const p = dateRaw.split('-');
-        yearVal = parseInt(p[0]);
-        monthVal = parseInt(p[1]);
-        const dayVal = parseInt(p[2]);
+        yearVal = parseInt(p[0]) || 2026;
+        monthVal = parseInt(p[1]) || 5;
+        const dayVal = parseInt(p[2]) || 1;
         dateVal = `${monthVal}/${dayVal}/${yearVal}`;
     }
 
-    let totalRaw = document.getElementById('jobTotal').value.trim();
+    let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '';
     if (totalRaw && !totalRaw.startsWith('$') && totalRaw !== '-') {
         let num = parseFloat(totalRaw.replace(/[^0-9.]/g, ''));
         totalRaw = isNaN(num) ? totalRaw : '$' + num.toLocaleString('en-US');
     }
 
-    const fromVal = document.getElementById('routeFrom').value.trim().toUpperCase();
-    const toVal = document.getElementById('routeTo').value.trim().toUpperCase();
+    const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
+    const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
     const routeVal = `${fromVal} → ${toVal}`;
 
-    const puFormatted = extractPaymentsFromContainer('puContainer');
-    const destFormatted = extractPaymentsFromContainer('destContainer');
+    const puFormatted = typeof extractPaymentsFromContainer === 'function' ? extractPaymentsFromContainer('puContainer') : '-';
+    const destFormatted = typeof extractPaymentsFromContainer === 'function' ? extractPaymentsFromContainer('destContainer') : '-';
 
-    let dieselRaw = document.getElementById('dieselAmount').value.trim();
+    let dieselRaw = document.getElementById('dieselAmount') ? document.getElementById('dieselAmount').value.trim() : '';
     if (dieselRaw && !dieselRaw.startsWith('$') && dieselRaw !== '-') {
         let num = parseFloat(dieselRaw.replace(/[^0-9.]/g, ''));
         dieselRaw = isNaN(num) ? dieselRaw : '$' + num.toLocaleString('en-US');
     }
-    const dieselFormatted = dieselRaw ? `${dieselRaw} ${document.getElementById('dieselMethod').value}` : '-';
+    const dieselMethod = document.getElementById('dieselMethod') ? document.getElementById('dieselMethod').value : '';
+    const dieselFormatted = dieselRaw ? `${dieselRaw} ${dieselMethod}` : '-';
 
-    let hotelRaw = document.getElementById('hotelAmount').value.trim();
+    let hotelRaw = document.getElementById('hotelAmount') ? document.getElementById('hotelAmount').value.trim() : '';
     if (hotelRaw && !hotelRaw.startsWith('$') && hotelRaw !== '-') {
         let num = parseFloat(hotelRaw.replace(/[^0-9.]/g, ''));
         hotelRaw = isNaN(num) ? hotelRaw : '$' + num.toLocaleString('en-US');
     }
-    const hotelFormatted = hotelRaw ? `${hotelRaw} ${document.getElementById('hotelMethod').value}` : '-';
+    const hotelMethod = document.getElementById('hotelMethod') ? document.getElementById('hotelMethod').value : '';
+    const hotelFormatted = hotelRaw ? `${hotelRaw} ${hotelMethod}` : '-';
 
     const helpersSelect = document.getElementById('helpersCost');
     let helpersFormatted = '-';
@@ -259,17 +275,18 @@ function saveJob(e) {
         const selectedText = driversSelect.options[driversSelect.selectedIndex].text;
         driversFormatted = driversCostVal > 0 ? selectedText : '-';
     }
+
     const newJob = {
         date: dateVal,
         month: monthVal,
         year: yearVal,
-        jobNo: document.getElementById('jobNo').value.trim(),
+        jobNo: jobNoInput.value.trim(),
         route: routeVal,
-        foreman: document.getElementById('jobForeman').value.trim(),
+        foreman: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
         total: totalRaw,
-        helpers: helpersFormatted,       
+        helpers: helpersFormatted,        
         helpersNum: helpersCostVal, 
-        drivers: driversFormatted,       
+        drivers: driversFormatted,        
         driversNum: driversCostVal,     
         pu: puFormatted,
         dest: destFormatted,
@@ -277,18 +294,22 @@ function saveJob(e) {
         hotel: hotelFormatted
     };
 
-    if(index === -1) {
-        masterJobs.push(newJob);
+    if (!window.masterJobs) window.masterJobs = [];
+
+    if(isNaN(index) || index === -1) {
+        window.masterJobs.unshift(newJob); // الإضافة في البداية لتظهر الوظيفة الجديدة مباشرة
     } else {
-        masterJobs[index] = newJob;
+        window.masterJobs[index] = newJob;
     }
 
-    saveMasterJobs(masterJobs);
-    closeModal();
-    populateYearFilter();
-    filterJobsTable();
-    updateDashboardAnalytics();
+    if (typeof saveMasterJobs === 'function') saveMasterJobs(window.masterJobs);
+    if (typeof closeModal === 'function') closeModal();
+    if (typeof populateYearFilter === 'function') populateYearFilter();
+    if (typeof filterJobsTable === 'function') filterJobsTable();
+    if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 }
+
+
 function editJob(index) {
     const j = masterJobs[index];
     document.getElementById('modalTitle').innerText = 'Edit Dispatch Record';
