@@ -326,10 +326,17 @@ function saveJob(e) {
 }
 
 
-function editJob(index) {
-    // التأكد من أن المصفوفة ومفتاح العنصر موجودان
-    if (!masterJobs || !masterJobs[index]) {
-        console.error("Job record not found at index:", index);
+function editJob(param) {
+    // التحقق مما إذا كان المدخل رقم إرسالية (String) أو مؤشر (Number) وإيجاد الفهرس الصحيح
+    let index = param;
+    if (typeof param === 'string' || isNaN(param)) {
+        index = masterJobs.findIndex(j => j.jobNo == param);
+    } else {
+        index = parseInt(param);
+    }
+
+    if (!masterJobs || index < 0 || !masterJobs[index]) {
+        console.error("Job record not found for:", param);
         alert("Could not load the record for editing. Please refresh the table.");
         return;
     }
@@ -409,8 +416,6 @@ function editJob(index) {
         modal.classList.add('flex');
     }
 }
-
-
 
 // Function to delete/move a specific dispatch record to the Recycle Bin safely using jobNo
 function deleteJob(jobNo) {
