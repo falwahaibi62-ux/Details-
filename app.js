@@ -76,13 +76,13 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
     const rowId = 'payment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
 
     const rowDiv = document.createElement('div');
-    rowDiv.className = 'flex items-center gap-2';
+    rowDiv.className = 'flex items-center gap-2 payment-row'; // <-- أضفنا payment-row هنا
     rowDiv.id = rowId;
 
     rowDiv.innerHTML = `
-        <input type="text" placeholder="Amount (e.g. 500)" value="${amount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500">
+        <input type="text" placeholder="Amount (e.g. 500)" value="${amount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
         
-        <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500">
+        <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
             <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
             <option value="Zelle" ${method === 'Zelle' ? 'selected' : ''}>Zelle</option>
             <option value="Cheque" ${method === 'Cheque' ? 'selected' : ''}>Cheque</option>
@@ -192,10 +192,10 @@ function globalSearchFilter() {
 
 function closeModal() {
     const modal = document.getElementById('jobModal');
+    if (!modal) return; // <-- حماية إضافية
     modal.classList.remove('flex');
     modal.classList.add('hidden');
 }
-
 function saveJob(e) {
     e.preventDefault();
     const index = parseInt(document.getElementById('editIndex').value);
