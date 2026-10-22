@@ -815,9 +815,7 @@ window.onload = () => {
             event.preventDefault();
             event.stopPropagation();
             
-            if (typeof openAddModal === 'function') {
-                openAddModal();
-            }
+            
 
             const modal = document.getElementById('jobModal');
             if (modal) {
