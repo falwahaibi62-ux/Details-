@@ -186,7 +186,21 @@ function globalSearchFilter() {
 }
 
 
+function openAddModal() {
+    // إعادة تعيين نموذج الإدخال إذا وجد
+    const form = document.getElementById('jobForm'); // أو اسم الـ ID الخاص بالنموذج لديك
+    if (form) form.reset();
+    
+    const editIndex = document.getElementById('editIndex');
+    if (editIndex) editIndex.value = -1;
 
+    // إظهار نافذة الإدخال (Modal)
+    const modal = document.getElementById('jobModal'); // أو اسم الـ ID الخاص بالنافذة المنبثقة لديك
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
 
 
 function closeModal() {
