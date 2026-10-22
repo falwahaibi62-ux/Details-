@@ -189,12 +189,19 @@ function globalSearchFilter() {
 }
 
 
-function openModal() {
+function openAddModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         modal.style.display = 'flex'; 
+        
+        
+        const jobForm = document.getElementById('jobForm');
+        if (jobForm) jobForm.reset();
+        
+        const editIndex = document.getElementById('editIndex');
+        if (editIndex) editIndex.value = '-1';
     }
 }
 
