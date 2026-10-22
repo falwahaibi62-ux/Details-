@@ -513,6 +513,11 @@ function renderDashboardCharts(monthlyData, paymentData) {
 }
 
 function switchTab(tab) {
+    // 1. إغلاق أي نافذة منبثقة (Modal) مفتوحة فوراً لمنع تداخل الحالة عند التنقل
+    if (typeof closeModal === 'function') {
+        closeModal();
+    }
+
     const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse'];
     
     tabs.forEach(t => {
@@ -535,6 +540,18 @@ function switchTab(tab) {
     }
     if (activeNav) {
         activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
+    }
+
+    // التحكم بظهور زر تصدير الـ PDF الرسمي حصرياً في صفحة التقارير ('reports')
+    const exportBtn = document.getElementById('exportPdfBtn');
+    if (exportBtn) {
+        if (tab === 'reports') { 
+            exportBtn.classList.remove('hidden');
+            exportBtn.classList.add('flex');
+        } else {
+            exportBtn.classList.add('hidden');
+            exportBtn.classList.remove('flex');
+        }
     }
 
     if (tab === 'dashboard') {
