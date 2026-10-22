@@ -188,32 +188,16 @@ function globalSearchFilter() {
 
 window.openAddModal = function() {
     const modal = document.getElementById('jobModal');
-    if (!modal) {
-        console.error("modal element not found!");
-        return;
-    }
+    if (!modal) return;
 
-    const modalTitle = document.getElementById('modalTitle');
-    const editIndex = document.getElementById('editIndex');
+    // تصفير وتجهيز الحقول...
     const jobForm = document.getElementById('jobForm');
-
-    if (modalTitle) modalTitle.innerText = 'Add New Dispatch';
-    if (editIndex) editIndex.value = '-1';
     if (jobForm) jobForm.reset();
-    
-    const puContainer = document.getElementById('puContainer');
-    const destContainer = document.getElementById('destContainer');
-    if (puContainer) puContainer.innerHTML = '';
-    if (destContainer) destContainer.innerHTML = '';
-    
-    if (typeof addPaymentRow === 'function') {
-        addPaymentRow('puContainer');
-        addPaymentRow('destContainer');
-    }
+
+    // إظهار المودال وإجبار المتصفح على إعادة الرسم فوراً
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    
-    void modal.offsetWidth; 
+    void modal.offsetWidth; // هذا السطر يمنع الحاجة للضغط على التقارير ليظهر المودال
 };
 
 
