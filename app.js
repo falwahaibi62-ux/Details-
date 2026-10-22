@@ -811,7 +811,7 @@ window.onload = () => {
     if (typeof loadTruckRentals === 'function') {
         loadTruckRentals();
     }
-   if (typeof loadWarehouseRecords === 'function') {
+    if (typeof loadWarehouseRecords === 'function') {
         warehouseRecords = loadWarehouseRecords();
     }
     currentUserRole = 'Admin';
@@ -821,5 +821,16 @@ window.onload = () => {
     filterJobsTable();
     updateDashboardAnalytics();
     renderTrashBin();
-    
+
+    document.addEventListener('click', function(event) {
+        const addBtn = event.target.closest('#addJobBtn');
+        if (addBtn) {
+            event.preventDefault();
+            if (typeof openAddModal === 'function') {
+                openAddModal();
+            } else {
+                console.error('openAddModal function is not defined!');
+            }
+        }
+    });
 };
