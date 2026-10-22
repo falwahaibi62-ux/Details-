@@ -324,37 +324,57 @@ function saveJob(e) {
 
 
 function editJob(index) {
-    const j = masterJobs[index];
-    document.getElementById('modalTitle').innerText = 'Edit Dispatch Record';
-    document.getElementById('editIndex').value = index;
-    
-    if (j.date && j.date.includes('/')) {
-        const parts = j.date.split('/');
-        if (parts.length === 3) {
-            const mm = parts[0].padStart(2, '0');
-            const dd = parts[1].padStart(2, '0');
-            const yyyy = parts[2];
-            document.getElementById('jobDate').value = `${yyyy}-${mm}-${dd}`;
-        } else {
-            document.getElementById('jobDate').value = j.date;
-        }
-    } else {
-        document.getElementById('jobDate').value = j.date || '';
+    // التأكد من أن المصفوفة ومفتاح العنصر موجودان
+    if (!masterJobs || !masterJobs[index]) {
+        console.error("Job record not found at index:", index);
+        alert("Could not load the record for editing. Please refresh the table.");
+        return;
     }
 
-    document.getElementById('jobNo').value = j.jobNo;
+    const j = masterJobs[index];
+    
+    const modalTitle = document.getElementById('modalTitle');
+    if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
+    
+    const editIndex = document.getElementById('editIndex');
+    if (editIndex) editIndex.value = index;
+    
+    const dateInput = document.getElementById('jobDate');
+    if (dateInput) {
+        if (j.date && j.date.includes('/')) {
+            const parts = j.date.split('/');
+            if (parts.length === 3) {
+                const mm = parts[0].padStart(2, '0');
+                const dd = parts[1].padStart(2, '0');
+                const yyyy = parts[2];
+                dateInput.value = `${yyyy}-${mm}-${dd}`;
+            } else {
+                dateInput.value = j.date;
+            }
+        } else {
+            dateInput.value = j.date || '';
+        }
+    }
 
+    const jobNoInput = document.getElementById('jobNo');
+    if (jobNoInput) jobNoInput.value = j.jobNo || '';
+
+    const routeFrom = document.getElementById('routeFrom');
+    const routeTo = document.getElementById('routeTo');
     if (j.route && j.route.includes('→')) {
         const parts = j.route.split('→');
-        document.getElementById('routeFrom').value = parts[0].trim();
-        document.getElementById('routeTo').value = parts[1].trim();
+        if (routeFrom) routeFrom.value = parts[0].trim();
+        if (routeTo) routeTo.value = parts[1].trim();
     } else {
-        document.getElementById('routeFrom').value = j.route || '';
-        document.getElementById('routeTo').value = '';
+        if (routeFrom) routeFrom.value = j.route || '';
+        if (routeTo) routeTo.value = '';
     }
 
-    document.getElementById('jobForeman').value = j.foreman;
-    document.getElementById('jobTotal').value = j.total;
+    const jobForeman = document.getElementById('jobForeman');
+    if (jobForeman) jobForeman.value = j.foreman || '';
+
+    const jobTotal = document.getElementById('jobTotal');
+    if (jobTotal) jobTotal.value = j.total || '';
 
     const helpersSelect = document.getElementById('helpersCost');
     if (helpersSelect) {
@@ -381,9 +401,14 @@ function editJob(index) {
     }
 
     const modal = document.getElementById('jobModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 }
+
+
+
 // Function to delete/move a specific dispatch record to the Recycle Bin safely using jobNo
 function deleteJob(jobNo) {
     if (!confirm('Are you sure you want to move this dispatch to Recycle Bin?')) return;
