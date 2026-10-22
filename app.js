@@ -783,7 +783,12 @@ window.onload = () => {
     updateDashboardAnalytics();
     renderTrashBin();
 
-    // الاستماع العام لزر إضافة وظيفة جديدة مع إجبار العرض الفوري
+    // ⭐ الحل الجذري: إظهار التبويب الرئيسي واختياره افتراضياً عند فتح الصفحة
+    if (typeof switchTab === 'function') {
+        switchTab('jobs');
+    }
+
+    // استماع زر إضافة وظيفة جديدة مع فتح المودال فوراً
     document.addEventListener('click', function(event) {
         const addBtn = event.target.closest('#addJobBtn');
         if (addBtn) {
@@ -792,17 +797,14 @@ window.onload = () => {
             
             if (typeof openAddModal === 'function') {
                 openAddModal();
-            } else {
-                console.error('openAddModal function is not defined!');
             }
 
-            // إجبار المتصفح على إظهار المودال بصرياً فوراً وتجاوز أي تأخير
             const modal = document.getElementById('jobModal');
             if (modal) {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
                 modal.style.display = 'none';
-                modal.offsetHeight; // سحر إعادة الرسم (Reflow) الفوري
+                modal.offsetHeight; // إعادة الرسم الفوري
                 modal.style.display = 'flex';
             }
         }
