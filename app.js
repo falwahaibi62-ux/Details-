@@ -193,7 +193,6 @@ window.openAddModal = function() {
         return;
     }
 
-    // تعيين العنوان وقيمة التعديل
     const modalTitle = document.getElementById('modalTitle');
     const editIndex = document.getElementById('editIndex');
     const jobForm = document.getElementById('jobForm');
@@ -202,7 +201,6 @@ window.openAddModal = function() {
     if (editIndex) editIndex.value = '-1';
     if (jobForm) jobForm.reset();
     
-    // تصفير حاويات الدفع وإضافة صفوف جديدة
     const puContainer = document.getElementById('puContainer');
     const destContainer = document.getElementById('destContainer');
     if (puContainer) puContainer.innerHTML = '';
@@ -212,13 +210,10 @@ window.openAddModal = function() {
         addPaymentRow('puContainer');
         addPaymentRow('destContainer');
     }
-
-    // ⭐ الحل الجذري: إزالة الكلاسات المخفية وتطبيق العرض الفوري مع إعادة الرسم الإجباري
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    modal.style.display = 'none';
-    modal.offsetHeight; // هذه الخطوة تجبر المتصفح على عمل Reflow فوري وتحديث الشاشة
-    modal.style.display = 'flex';
+    
+    void modal.offsetWidth; 
 };
 
 
