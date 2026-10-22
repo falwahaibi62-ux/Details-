@@ -10,7 +10,7 @@
     <!-- Chart.js CDN for Advanced Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- html2pdf Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0ب.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
@@ -223,18 +223,21 @@
             </div> <!-- END TAB 1 -->
 
 <!-- TAB 1: JOBS -->
- 
 <div id="tab-jobs" class="space-y-6 w-full p-6 overflow-y-auto flex-1">
+    
+    <!-- Top Bar with Title and Add Button -->
     <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 bg-white shadow-xs">
         <div>
             <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
             <p class="text-xs text-slate-500">Filter records by Month and Year</p>
         </div>
-      <button onclick="openAddModal()" id="addJobBtn" class="...">
-    <i class="fa-solid fa-plus"></i>
-    <span>Add New Job</span>
-</button>
+        <button onclick="openAddModal()" id="addJobBtn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-plus"></i>
+            <span>Add New Job</span>
+        </button>
+    </div>
     
+    <!-- Filters Bar -->
     <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4 bg-white shadow-xs">
         <div class="flex items-center space-x-2">
             <label class="text-xs font-bold text-slate-600">Filter Month:</label>
@@ -263,6 +266,7 @@
         <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
     </div>
     
+    <!-- Data Table Container -->
     <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs min-w-[1000px]">
@@ -279,7 +283,7 @@
                         <th class="p-3 text-left">Destination</th>
                         <th class="p-3 text-left text-emerald-700">Diesel</th>
                         <th class="p-3 text-left text-indigo-700">Hotel</th>
-                        <th class="p-3 center">Actions</th>
+                        <th class="p-3 text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="crudTableBody" class="divide-y text-slate-700 bg-white"></tbody>
