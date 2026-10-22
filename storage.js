@@ -17,19 +17,26 @@ function loadMasterJobs() {
             console.error('Error parsing stored jobs:', e);
         }
     }
-    
     return [];
 }
 
 function saveMasterJobs(jobsArray) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(jobsArray));
+    window.masterJobs = jobsArray; // تحديث النطاق العام
 }
 
-let masterJobs = loadMasterJobs();
-let masterTrash = JSON.parse(localStorage.getItem(TRASH_STORAGE_KEY)) || [];
+// توحيد المسميات لتتطابق مع دوال الـ CRUD
+window.masterJobs = loadMasterJobs();
+window.masterTrash = JSON.parse(localStorage.getItem(TRASH_STORAGE_KEY)) || [];
+
+// دالة الحفظ الموحدة لسلة المهملات (تدعم الاسمين لتجنب أي خطأ)
+function saveTrashBin(trashData) {
+    window.masterTrash = trashData;
+    localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trashData));
+}
 
 function saveTrash(trashData) {
-    localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trashData));
+    saveTrashBin(trashData);
 }
 
 function loadTruckRentals() {
