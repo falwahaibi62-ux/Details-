@@ -189,8 +189,12 @@ function globalSearchFilter() {
 
 window.openAddModal = function() {
     const modal = document.getElementById('jobModal');
-    if (!modal) return;
+    if (!modal) {
+        console.error("modal element not found!");
+        return;
+    }
 
+    // تعيين العنوان وقيمة التعديل
     const modalTitle = document.getElementById('modalTitle');
     const editIndex = document.getElementById('editIndex');
     const jobForm = document.getElementById('jobForm');
@@ -199,6 +203,7 @@ window.openAddModal = function() {
     if (editIndex) editIndex.value = '-1';
     if (jobForm) jobForm.reset();
     
+    // تصفير حاويات الدفع وإضافة صفوف جديدة
     const puContainer = document.getElementById('puContainer');
     const destContainer = document.getElementById('destContainer');
     if (puContainer) puContainer.innerHTML = '';
@@ -209,26 +214,13 @@ window.openAddModal = function() {
         addPaymentRow('destContainer');
     }
 
+    // إزالة الكلاس hidden وإضافة flex مع فرض الـ style مباشرة لضمان الظهور الفوري
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     modal.style.display = 'flex';
 };
 
 
-function openAddModal() {
-    document.getElementById('modalTitle').innerText = 'Add New Dispatch';
-    document.getElementById('editIndex').value = '-1';
-    document.getElementById('jobForm').reset();
-    
-    document.getElementById('puContainer').innerHTML = '';
-    document.getElementById('destContainer').innerHTML = '';
-    addPaymentRow('puContainer');
-    addPaymentRow('destContainer');
-
-    const modal = document.getElementById('jobModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
 
 function closeModal() {
     const modal = document.getElementById('jobModal');
