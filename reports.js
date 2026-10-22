@@ -79,7 +79,6 @@ function getFilteredJobsData() {
             if (j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')) return false;
         }
 
-        // فلترة طريقة الدفع
         if (paymentVal !== 'all') {
             const paymentField = String(j.paymentType || j.puPayment || '').toLowerCase();
             if (!paymentField.includes(paymentVal)) return false;
@@ -373,7 +372,6 @@ function generateDetailedReportData() {
         }
     }
 
-    // 3. جدول المستودع والمصروفات الأخرى (Warehouse & Others)
     const warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
     const filteredWarehouse = warehouse.filter(w => {
         if (!w.date) return true;
