@@ -211,6 +211,7 @@ window.openAddModal = function() {
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    modal.style.display = 'flex';
 };
 
 
