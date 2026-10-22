@@ -1,8 +1,5 @@
-/**
- * Warehouse and Others Module - Zero Conflict Version
- */
 
-// تهيئة مفتاح التخزين بشكل آمن بدون استخدام const لتفادي أي تعارض بين الملفات
+
 if (typeof window.WAREHOUSE_STORAGE_KEY === 'undefined') {
     window.WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
 }
