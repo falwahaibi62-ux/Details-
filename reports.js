@@ -312,8 +312,6 @@ function generateSummaryReportData() {
     }
 }
 
-// --- 5. الجدول التفصيلي للعمليات ---
-// --- دالة توليد وعرض الجداول الثلاثة التفصيلية ---
 function generateDetailedReportData() {
     const startDateVal = document.getElementById('filterStartDate')?.value;
     const endDateVal = document.getElementById('filterEndDate')?.value;
@@ -322,7 +320,6 @@ function generateDetailedReportData() {
     const endDate = endDateVal ? new Date(endDateVal) : null;
     if (endDate) endDate.setHours(23, 59, 59);
 
-    // 1. جدول الوظائف والعمليات (Master Jobs)
     const filteredJobs = getFilteredJobsData();
     const jobsTbody = document.getElementById('detailedReportBody');
     const jobsBadge = document.getElementById('detailedJobsBadge');
@@ -347,7 +344,6 @@ function generateDetailedReportData() {
         }
     }
 
-    // 2. جدول إيجار الشاحنات الخاصة (Private Truck Rentals)
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     const filteredRentals = rentals.filter(r => {
         if (!r.date) return true;
