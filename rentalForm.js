@@ -6,14 +6,28 @@ const RENTAL_STORAGE_KEY = 'movepro_private_truck_rentals';
 
 function loadPrivateTruckRentals() {
     const saved = localStorage.getItem(RENTAL_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+        return JSON.parse(saved);
+    }
+    
+    if (typeof initialRentals !== 'undefined') {
+        localStorage.setItem(RENTAL_STORAGE_KEY, JSON.stringify(initialRentals));
+        return initialRentals;
+    }
+    
+    return [];
 }
+
+
 
 function savePrivateTruckRentals(data) {
     localStorage.setItem(RENTAL_STORAGE_KEY, JSON.stringify(data));
 }
 
 let privateTruckRentals = loadPrivateTruckRentals();
+
+
+
 
 // Render Tab Screen
 // 1. دالة عرض تبويب التأجير بالكامل
