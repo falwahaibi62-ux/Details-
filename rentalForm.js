@@ -5,13 +5,14 @@
 const RENTAL_STORAGE_KEY = 'movepro_private_truck_rentals';
 
 function loadPrivateTruckRentals() {
-    const saved = localStorage.getItem(RENTAL_STORAGE_KEY);
+    const saved = localStorage.getItem('movepro_private_truck_rentals');
     if (saved) {
         return JSON.parse(saved);
     }
     
+    // جلب البيانات الأولية من الملف إذا كان متوفراً
     if (typeof initialRentals !== 'undefined') {
-        localStorage.setItem(RENTAL_STORAGE_KEY, JSON.stringify(initialRentals));
+        localStorage.setItem('movepro_private_truck_rentals', JSON.stringify(initialRentals));
         return initialRentals;
     }
     
