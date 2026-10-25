@@ -74,9 +74,9 @@ function renderPrivateTruckRentalTab() {
 
 
 function generateRentalRowsHTML() {
-    const rentals = loadRentalsData(); 
+    const rentals = loadPrivateTruckRentals(); 
 
-    if (rentals.length === 0) {
+    if (!rentals || rentals.length === 0) {
         return `<tr><td colspan="7" class="text-center py-6 text-slate-400">No rental records found</td></tr>`;
     }
 
@@ -99,8 +99,6 @@ function generateRentalRowsHTML() {
         </tr>
     `).join('');
 }
-
-
 
 
 function deleteRentalRecord(index) {
