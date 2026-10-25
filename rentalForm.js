@@ -71,9 +71,12 @@ function renderPrivateTruckRentalTab() {
     `;
 }
 
+
+
+
 // 2. دالة توليد صفوف الجدول وأزرار التعديل والحذف
 function generateRentalRowsHTML() {
-    const rentals = JSON.parse(localStorage.getItem('moveProRentals')) || [];
+    const rentals = loadRentalsData(); // استخدام الدالة الجديدة لجلب البيانات
 
     if (rentals.length === 0) {
         return `<tr><td colspan="7" class="text-center py-6 text-slate-400">No rental records found</td></tr>`;
@@ -88,11 +91,9 @@ function generateRentalRowsHTML() {
             <td class="p-3.5">${item.paidBy || '-'}</td>
             <td class="p-3.5">${item.truckLabel || '-'}</td>
             <td class="p-3.5 text-center space-x-1">
-                <!-- زر التعديل -->
                 <button onclick="editRentalRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Edit">
                     <i class="fa-solid fa-pen-to-square text-xs"></i>
                 </button>
-                <!-- زر الحذف -->
                 <button onclick="deleteRentalRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Delete">
                     <i class="fa-solid fa-trash text-xs"></i>
                 </button>
@@ -100,6 +101,10 @@ function generateRentalRowsHTML() {
         </tr>
     `).join('');
 }
+
+
+
+
 function deleteRentalRecord(index) {
     if (!confirm('Are you sure you want to delete this rental record?')) {
         return;
