@@ -292,19 +292,40 @@
         </div>
     </div>
 </div>
-   <!-- TAB 2: RENTALS -->
+
+
+    
+ <!-- تبويب إيجار الشاحنات (Tab Rentals) -->
 <div id="tab-rentals" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
+    
+    <div class="flex justify-between items-center">
+        <div>
+            <h2 class="text-xl font-bold text-slate-800">Truck Rentals Management</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Manage and track all truck rental records and details.</p>
+        </div>
+    </div>
+
+    <!-- جدول البيانات مغلف بحاوية تضمن التناسق وعدم الخروج عن الحدود -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
+                        <th class="p-3 font-semibold">Date</th>
+                        <th class="p-3 font-semibold">Type</th>
+                        <th class="p-3 font-semibold">Truck Label</th>
+                        <th class="p-3 font-semibold">Days</th>
+                        <th class="p-3 font-semibold">Paid By</th>
+                        <th class="p-3 font-semibold">Amount</th>
+                        <th class="p-3 text-right font-semibold">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="rentalTableBody" class="divide-y divide-slate-100">
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-            <td class="px-4 py-3 text-right space-x-1">
-    <!-- زر التعديل -->
-    <button onclick="editRentalRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Edit">
-        <i class="fa-solid fa-pen-to-square text-xs"></i>
-    </button>
-    <!-- زر الحذف -->
-    <button onclick="deleteRentalRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Delete">
-        <i class="fa-solid fa-trash text-xs"></i>
-    </button>
-</td>
 
 <!-- TAB 3: WAREHOUSE -->
 <div id="tab-warehouse" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
