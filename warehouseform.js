@@ -48,9 +48,16 @@ function generateWarehouseRowsHTML() {
             <td class="p-3.5 font-bold text-emerald-600">$${parseFloat(item.amount || 0).toLocaleString()}</td>
             <td class="p-3.5"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 text-[10px] font-bold">${item.paymentType || '-'}</span></td>
             <td class="p-3.5 text-slate-600">${item.details || '-'}</td>
-            <td class="p-3.5 text-center">
-                <button onclick="deleteWarehouseRecord(${index})" class="p-1.5 text-slate-400 hover:text-red-600 transition" title="Delete Record">
-                    <i class="fa-solid fa-trash-can"></i>
+            
+            <!-- عمود الإجراءات مضافاً إليه زر التعديل والحذف -->
+            <td class="p-3.5 text-center space-x-1">
+                <!-- زر التعديل -->
+                <button onclick="editWarehouseRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Edit Record">
+                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                </button>
+                <!-- زر الحذف -->
+                <button onclick="deleteWarehouseRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Delete Record">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
                 </button>
             </td>
         </tr>
@@ -95,7 +102,6 @@ function renderWarehouseTab() {
         </div>
     `;
 }
-
 function deleteWarehouseRecord(index) {
     if (!confirm('Are you sure you want to delete this warehouse record?')) return;
 
