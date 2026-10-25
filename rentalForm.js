@@ -16,6 +16,7 @@ function savePrivateTruckRentals(data) {
 let privateTruckRentals = loadPrivateTruckRentals();
 
 // Render Tab Screen
+// 1. دالة عرض تبويب التأجير بالكامل
 function renderPrivateTruckRentalTab() {
     const container = document.getElementById('tab-rentals');
     if (!container) return;
@@ -56,35 +57,35 @@ function renderPrivateTruckRentalTab() {
     `;
 }
 
+// 2. دالة توليد صفوف الجدول وأزرار التعديل والحذف
 function generateRentalRowsHTML() {
-    if (privateTruckRentals.length === 0) {
-        return `
-            <tr>
-                <td colspan="7" class="p-12 text-center text-slate-400 text-xs">
-                    <i class="fa-solid fa-truck-ramp-box text-3xl mb-2 block text-slate-300"></i>
-                    No private truck rental records found. Click "Add New Rental" to create one.
-                </td>
-            </tr>
-        `;
+    const rentals = JSON.parse(localStorage.getItem('moveProRentals')) || [];
+
+    if (rentals.length === 0) {
+        return `<tr><td colspan="7" class="text-center py-6 text-slate-400">No rental records found</td></tr>`;
     }
 
-    return privateTruckRentals.map((item, index) => `
-        <tr class="hover:bg-slate-50/80 transition">
-            <td class="p-3.5 font-medium text-slate-800">${item.date || '-'}</td>
-            <td class="p-3.5"><span class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg font-semibold text-[11px]">${item.days || 0} Days</span></td>
-            <td class="p-3.5 font-bold text-emerald-600">$${parseFloat(item.amount || 0).toLocaleString()}</td>
-            <td class="p-3.5"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 text-[10px] font-bold">${item.paymentType || '-'}</span></td>
-            <td class="p-3.5 text-slate-600">${item.paidBy || '-'}</td>
-            <td class="p-3.5 text-slate-600">${item.truckLabel || '-'}</td>
-            <td class="p-3.5 text-center">
-                <button onclick="deleteRentalRecord(${index})" class="p-1.5 text-slate-400 hover:text-red-600 transition" title="Delete Record">
-                    <i class="fa-solid fa-trash-can"></i>
+    return rentals.map((item, index) => `
+        <tr class="hover:bg-slate-50 transition">
+            <td class="p-3.5">${item.date || '-'}</td>
+            <td class="p-3.5">${item.days || 0} Days</td>
+            <td class="p-3.5 text-emerald-700 font-semibold">$${item.amount || 0}</td>
+            <td class="p-3.5"><span class="px-2 py-1 bg-slate-100 text-slate-700 rounded-md text-[10px] font-medium">${item.paymentType || '-'}</span></td>
+            <td class="p-3.5">${item.paidBy || '-'}</td>
+            <td class="p-3.5">${item.truckLabel || '-'}</td>
+            <td class="p-3.5 text-center space-x-1">
+                <!-- زر التعديل -->
+                <button onclick="editRentalRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Edit">
+                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                </button>
+                <!-- زر الحذف -->
+                <button onclick="deleteRentalRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Delete">
+                    <i class="fa-solid fa-trash text-xs"></i>
                 </button>
             </td>
         </tr>
     `).join('');
 }
-
 function deleteRentalRecord(index) {
     if (!confirm('Are you sure you want to delete this rental record?')) {
         return;
