@@ -102,6 +102,25 @@ function renderWarehouseTab() {
         </div>
     `;
 }
+
+
+function editWarehouseRecord(id) {
+    const record = warehouseRecords.find(r => r.id === id);
+    if (!record) return;
+
+    document.getElementById('warehouseRecordId').value = record.id;
+    document.getElementById('warehouseDate').value = record.date || '';
+    document.getElementById('warehouseItem').value = record.serviceItem || record.item || '';
+    document.getElementById('warehouseAmount').value = record.amount || '';
+    document.getElementById('warehousePaymentType').value = record.paymentType || 'Cash';
+    document.getElementById('warehouseDetails').value = record.details || '';
+
+    const modal = document.getElementById('warehouseModal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+
+
 function deleteWarehouseRecord(index) {
     if (!confirm('Are you sure you want to delete this warehouse record?')) return;
 
