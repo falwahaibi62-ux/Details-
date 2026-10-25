@@ -10,7 +10,6 @@ function loadPrivateTruckRentals() {
         return JSON.parse(saved);
     }
     
-    // جلب البيانات الأولية من الملف إذا كان متوفراً
     if (typeof initialRentals !== 'undefined') {
         localStorage.setItem('movepro_private_truck_rentals', JSON.stringify(initialRentals));
         return initialRentals;
@@ -31,7 +30,6 @@ let privateTruckRentals = loadPrivateTruckRentals();
 
 
 // Render Tab Screen
-// 1. دالة عرض تبويب التأجير بالكامل
 function renderPrivateTruckRentalTab() {
     const container = document.getElementById('tab-rentals');
     if (!container) return;
@@ -75,9 +73,8 @@ function renderPrivateTruckRentalTab() {
 
 
 
-// 2. دالة توليد صفوف الجدول وأزرار التعديل والحذف
 function generateRentalRowsHTML() {
-    const rentals = loadRentalsData(); // استخدام الدالة الجديدة لجلب البيانات
+    const rentals = loadRentalsData(); 
 
     if (rentals.length === 0) {
         return `<tr><td colspan="7" class="text-center py-6 text-slate-400">No rental records found</td></tr>`;
@@ -243,6 +240,9 @@ function adjustRentalNumber(elementId, step) {
 function handlePrivateTruckSubmit(event) {
     event.preventDefault();
 
+    const indexField = document.getElementById('editRentalIndex');
+    const index = indexField ? indexField.value : '-1';
+
     const newRecord = {
         date: document.getElementById('rentalDate').value,
         days: document.getElementById('rentalDays').value,
@@ -252,9 +252,15 @@ function handlePrivateTruckSubmit(event) {
         truckLabel: document.getElementById('rentalTruckLabel').value
     };
 
-    privateTruckRentals.unshift(newRecord);
-    savePrivateTruckRentals(privateTruckRentals);
+    let rentals = loadPrivateTruckRentals();
 
+    if (index === '-1' || index === '' || index === undefined) {
+        rentals.push(newRecord); 
+    } else {
+        rentals[index] = newRecord; 
+    }
+
+    localStorage.setItem('movepro_private_truck_rentals', JSON.stringify(rentals));
     closePrivateTruckModal();
     renderPrivateTruckRentalTab();
 }
