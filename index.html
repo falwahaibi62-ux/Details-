@@ -297,10 +297,31 @@
    <!-- TAB 2: RENTALS -->
 <div id="tab-rentals" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
 </div>
+            <td class="px-4 py-3 text-right space-x-1">
+    <!-- زر التعديل -->
+    <button onclick="editRentalRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Edit">
+        <i class="fa-solid fa-pen-to-square text-xs"></i>
+    </button>
+    <!-- زر الحذف -->
+    <button onclick="deleteRentalRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Delete">
+        <i class="fa-solid fa-trash text-xs"></i>
+    </button>
+</td>
 
 <!-- TAB 3: WAREHOUSE -->
 <div id="tab-warehouse" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
 </div>
+            <td class="px-4 py-3 text-right space-x-1">
+    <!-- زر التعديل -->
+    <button onclick="editWarehouseRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Edit">
+        <i class="fa-solid fa-pen-to-square text-xs"></i>
+    </button>
+    <!-- زر الحذف -->
+    <button onclick="deleteWarehouseRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Delete">
+        <i class="fa-solid fa-trash text-xs"></i>
+    </button>
+</td>
+            
 
     <!-- TAB 4: USERS -->
     <div id="tab-users" class="hidden space-y-6 w-full p-6 overflow-y-auto flex-1">
