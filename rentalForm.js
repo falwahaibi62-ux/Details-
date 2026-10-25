@@ -101,6 +101,33 @@ function generateRentalRowsHTML() {
 }
 
 
+function editRentalRecord(index) {
+    const rentals = loadPrivateTruckRentals();
+    const item = rentals[index];
+    if (!item) return;
+
+    openPrivateTruckModal();
+
+    const indexField = document.getElementById('editRentalIndex');
+    if (indexField) {
+        indexField.value = index;
+    }
+
+    const setFieldValue = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value;
+    };
+
+    setFieldValue('rentalDate', item.date || '');
+    setFieldValue('rentalDays', item.days || 0);
+    setFieldValue('rentalAmount', item.amount || 0);
+    setFieldValue('rentalPaymentType', item.paymentType || '');
+    setFieldValue('rentalPaidBy', item.paidBy || '');
+    setFieldValue('rentalTruckLabel', item.truckLabel || '');
+}
+
+
+
 function deleteRentalRecord(index) {
     if (!confirm('Are you sure you want to delete this rental record?')) {
         return;
