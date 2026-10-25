@@ -186,9 +186,9 @@ function renderPrivateTruckModal() {
                     <button type="button" onclick="closePrivateTruckModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition border border-slate-200">Cancel</button>
                     <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition">Save</button>
                 </div>
-                 <form id="privateTruckForm"...>
-                 <input type="hidden" id="editRentalIndex" value="-1">
+                <input type="hidden" id="editRentalIndex" value="-1">
                  </form>
+                
         </div>
     `;
 }
