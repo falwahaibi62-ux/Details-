@@ -133,25 +133,36 @@ function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('crudTableBody');
     if(!tbody) return;
     
+    if (!dataToRender || dataToRender.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-4 text-slate-400 text-xs">No dispatches found</td></tr>`;
+        return;
+    }
+    
     tbody.innerHTML = dataToRender.map((item) => {
         const foremanDisplay = (!item.foreman || item.foreman.trim() === '') 
             ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
             : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
         
         let actions = `<span class="text-xs text-slate-400">-</span>`;
-        if (currentUserRole === 'Admin') {
+        if (typeof currentUserRole !== 'undefined' && currentUserRole === 'Admin') {
             actions = `
                 <button onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
                 <button onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg" title="Move to Recycle Bin"><i class="fa-solid fa-trash-can"></i></button>
             `;
-        } else if (currentUserRole === 'Member') {
-            actions = `<span class="text-xs text-slate-400">-</span>`; 
         }
 
         const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
         const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
         const helpersVal = (item.helpers && item.helpers !== '-') ? item.helpers : '-';
         const driversVal = (item.drivers && item.drivers !== '-') ? item.drivers : '-'; 
+
+        const formatPaymentDisplay = (paymentField) => {
+            if (!paymentField || paymentField === '-') return '-';
+            if (Array.isArray(paymentField)) {
+                return paymentField.map(p => `${p.amount || ''} (${p.method || 'Cash'})`).join(', ') || '-';
+            }
+            return paymentField;
+        };
 
         return `
             <tr class="hover:bg-slate-50 transition border-b border-slate-150">
@@ -162,8 +173,8 @@ function renderJobsCRUD(dataToRender) {
                 <td class="p-3 text-purple-700 font-semibold text-xs">${helpersVal}</td>
                 <td class="p-3 text-blue-700 font-semibold text-xs">${driversVal}</td> 
                 <td class="p-3 text-emerald-600 font-bold text-xs">${item.total || '-'}</td>
-                <td class="p-3 text-slate-600 text-xs">${item.pu || '-'}</td>
-                <td class="p-3 text-slate-600 text-xs">${item.dest || '-'}</td>
+                <td class="p-3 text-slate-600 text-xs">${formatPaymentDisplay(item.pu)}</td>
+                <td class="p-3 text-slate-600 text-xs">${formatPaymentDisplay(item.dest)}</td>
                 <td class="p-3 text-emerald-700 font-semibold text-xs">${dieselVal}</td>
                 <td class="p-3 text-indigo-700 font-semibold text-xs">${hotelVal}</td>
                 <td class="p-3 text-center">${actions}</td>
@@ -171,6 +182,7 @@ function renderJobsCRUD(dataToRender) {
         `;
     }).join('');
 }
+window.renderJobsCRUD = renderJobsCRUD;
 
 
 
