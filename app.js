@@ -212,15 +212,17 @@ function openAddModal() {
 window.openAddModal = openAddModal;
 
 function closeModal() {
-    const modal = document.getElementById('jobModal');
+    const modal = document.getElementById('jobModal') || document.getElementById('addModal') || document.querySelector('.modal');
+    
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         modal.style.display = 'none'; 
         console.log("Modal closed successfully!");
+    } else {
+        console.error("Modal element not found for closing!");
     }
 }
-
 
 function saveJob(event) {
     const isEditing = Boolean(window.currentEditingJobNo);
