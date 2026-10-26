@@ -918,8 +918,13 @@ function emptyTrashBin() {
 
 window.onload = () => {
     if (typeof loadMasterJobs === 'function') {
-        masterJobs = loadMasterJobs();
+        window.masterJobs = loadMasterJobs() || [];
     }
+    
+    if (!window.masterJobs) {
+        window.masterJobs = [];  
+    }
+
     if (typeof loadTruckRentals === 'function') {
         loadTruckRentals();
     }
@@ -931,20 +936,17 @@ window.onload = () => {
     checkPermissions();
     renderUsers();
     populateYearFilter();
-    filterJobsTable();
-    updateDashboardAnalytics();
     renderTrashBin();
 
-    if (!window.masterJobs) {
-        window.masterJobs = [];  
-    }
-    
     if (typeof filterJobsTable === 'function') {
         filterJobsTable();
     } else if (typeof renderJobsCRUD === 'function') {
         renderJobsCRUD(window.masterJobs);
     }
+
+    if (typeof updateDashboardAnalytics === 'function') {
+        updateDashboardAnalytics();
+    }
 };
-            
 
         
