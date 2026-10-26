@@ -953,17 +953,14 @@ window.onload = () => {
         updateDashboardAnalytics();
     }
 
-    // ربط زر Add New Job بالشكل الصحيح والنهائي
-    const buttons = document.querySelectorAll('button');
-    buttons.forEach(btn => {
-        if (btn.textContent.includes('Add New Job') && !btn.hasAttribute('data-bound')) {
-            btn.setAttribute('data-bound', 'true');
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (typeof openAddModal === 'function') {
-                    openAddModal();
-                } else {
-                    console.error("openAddModal function is not defined!");
+   document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (btn && btn.textContent.includes('Add New Job')) {
+        e.preventDefault();
+        if (typeof openAddModal === 'function') {
+            openAddModal();
+        } else {
+            console.error("openAddModal function is not defined!");
                 }
             });
         }
