@@ -951,18 +951,16 @@ window.onload = () => {
         updateDashboardAnalytics();
     }
 
-  const buttons = document.querySelectorAll('button');
+    const buttons = document.querySelectorAll('button');
     buttons.forEach(btn => {
         if (btn.textContent.includes('Add New Job') && !btn.hasAttribute('data-bound')) {
             btn.setAttribute('data-bound', 'true');
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                
                 const jobModal = document.getElementById('jobModal') || document.querySelector('.modal') || document.querySelector('[id*="modal"]');
                 if (jobModal) {
                     jobModal.classList.remove('hidden');
                     jobModal.style.display = 'block';
-                    
                     const editIndexInput = document.getElementById('editIndex');
                     if (editIndexInput) editIndexInput.value = '';
                 } else {
@@ -971,5 +969,5 @@ window.onload = () => {
             });
         }
     });
-
+}; 
         
