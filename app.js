@@ -949,11 +949,12 @@ window.onload = () => {
         renderJobsCRUD(window.masterJobs);
     }
 
-    if (typeof updateDashboardAnalytics === 'function') {
+  if (typeof updateDashboardAnalytics === 'function') {
         updateDashboardAnalytics();
     }
+};
 
-   document.addEventListener('click', (e) => {
+document.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
     if (btn && btn.textContent.includes('Add New Job')) {
         e.preventDefault();
@@ -961,8 +962,6 @@ window.onload = () => {
             openAddModal();
         } else {
             console.error("openAddModal function is not defined!");
-                }
-            });
         }
-    });
-};
+    }
+});
