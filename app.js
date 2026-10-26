@@ -76,7 +76,7 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
         return;
     }
 
-    const rowId = 'payment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    const rowId = 'payment_' + Date.now + '_' + Math.random().toString(36).substr(2, 4);
     const rowDiv = document.createElement('div');
     rowDiv.className = 'flex items-center gap-2 payment-row mt-2';
     rowDiv.id = rowId;
