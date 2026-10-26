@@ -970,4 +970,14 @@ document.addEventListener('click', (e) => {
             console.error("openAddModal function is not defined!");
         }
     }
+if (btn.textContent.includes('Add Payment')) {
+        e.preventDefault();
+        const section = btn.closest('div.border-t');
+        if (section) {
+            const container = section.querySelector('div[id$="Container"]');
+            if (container && typeof addPaymentRow === 'function') {
+                addPaymentRow(container.id);
+            }
+        }
+    
 });
