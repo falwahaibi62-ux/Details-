@@ -3,7 +3,20 @@ function updateDashboardAnalytics() {
 
     let totalRev = 0;
     const routeRevenueMap = {};
-    const paymentMethodMap = { Cash: 0, Zelle: 0, PS: 0, BS: 0, Others: 0 };
+    
+    // تحديث وتوسيع خريطة طرق الدفع لتشمل كافة الطرق المعتمدة
+    const paymentMethodMap = { 
+        Cash: 0, 
+        Zelle: 0, 
+        Cheque: 0, 
+        PMO: 0, 
+        BC: 0, 
+        PC: 0, 
+        CC: 0, 
+        WT: 0, 
+        Others: 0 
+    };
+    
     const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     masterJobs.forEach(job => {
@@ -21,13 +34,19 @@ function updateDashboardAnalytics() {
             routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
         }
 
+        // دالة محسنة لاستخراج وفحص طرق الدفع بدقة لكل المدفوعات النصية
         const extractMethods = (text) => {
             if (!text || text === '-') return;
             const lower = text.toLowerCase();
+            
             if (lower.includes('cash')) paymentMethodMap.Cash++;
             else if (lower.includes('zelle')) paymentMethodMap.Zelle++;
-            else if (lower.includes('ps')) paymentMethodMap.PS++;
-            else if (lower.includes('bs')) paymentMethodMap.BS++;
+            else if (lower.includes('cheque')) paymentMethodMap.Cheque++;
+            else if (lower.includes('pmo')) paymentMethodMap.PMO++;
+            else if (lower.includes('bc')) paymentMethodMap.BC++;
+            else if (lower.includes('pc')) paymentMethodMap.PC++;
+            else if (lower.includes('cc')) paymentMethodMap.CC++;
+            else if (lower.includes('wt')) paymentMethodMap.WT++;
             else paymentMethodMap.Others++;
         };
 
@@ -68,3 +87,4 @@ function updateDashboardAnalytics() {
         renderDashboardCharts(monthlyRev, paymentMethodMap);
     }
 }
+window.updateDashboardAnalytics = updateDashboardAnalytics;
