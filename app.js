@@ -190,7 +190,6 @@ function globalSearchFilter() {
 
 
 function openAddModal() {
-
     if (typeof renderJobModal === 'function') {
         renderJobModal();
     }
@@ -200,15 +199,16 @@ function openAddModal() {
         modal.classList.add('flex');
         modal.style.display = 'flex'; 
         
-        
         const jobForm = document.getElementById('jobForm');
         if (jobForm) jobForm.reset();
         
         const editIndex = document.getElementById('editIndex');
-        if (editIndex) editIndex.value = '-1';
+        if (editIndex) editIndex.value = '-1'; 
+
+        const modalTitle = document.getElementById('modalTitle');
+        if (modalTitle) modalTitle.innerText = "Add New Dispatch";
     }
 }
-
 window.openAddModal = openAddModal;
 
 function closeModal() {
@@ -268,7 +268,6 @@ function saveJob(e) {
         }
     }
 
-    // Currency Sanitizer Helper
     const formatCurrency = (val) => {
         if (!val || val === '-') return '-';
         if (val.startsWith('$')) return val;
@@ -330,7 +329,6 @@ function saveJob(e) {
         hotel: hotelFormatted
     };
 
-    // Save/Update logic using jobNo instead of unstable array indexes
     if (isEditing) {
         // Find by jobNo or fallback to index if stored index is a valid jobNo match
         const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
