@@ -100,6 +100,8 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
 
     container.appendChild(rowDiv);
 }
+window.addPaymentRow = addPaymentRow;
+
 
 function removePaymentRow(rowId) {
     const row = document.getElementById(rowId);
