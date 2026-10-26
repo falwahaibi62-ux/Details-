@@ -956,25 +956,31 @@ window.onload = () => {
     }
 };
 
-document.addEventListener('click', (e) => {
+document.addEventListener('click', function(e) {
     const btn = e.target.closest('button');
-    if (btn && btn.textContent.includes('Add New Job')) {
+    if (!btn) return;
+
+    if (btn.textContent.includes('Cancel') || btn.querySelector('.fa-xmark')) {
         e.preventDefault();
-        if (typeof openAddModal === 'function') {
-            openAddModal();
-        } else {
-            console.error("openAddModal function is not defined!");
+        if (typeof closeModal === 'function') {
+            closeModal();
         }
+        return;
     }
-if (btn.textContent.includes('Add Payment')) {
+
+    if (btn.textContent.includes('Add Payment')) {
         e.preventDefault();
-        const section = btn.closest('div.border-t');
-        if (section) {
-            const container = section.querySelector('div[id$="Container"]');
-            if (container && typeof addPaymentRow === 'function') {
-                addPaymentRow(container.id);
+        const section = btn.closest('.border-t');
+        const container = section ? section.querySelector('div[id$="Container"]') : null;
+        
+        if (container && typeof addPaymentRow === 'function') {
+            addPaymentRow(container.id);
+        } else {
+            const allContainers = document.querySelectorAll('#puContainer, #destContainer');
+            if (allContainers.length >= 2) {
+                const isPu = btn.closest('div').textContent.includes('P.U');
+                addPaymentRow(isPu ? 'puContainer' : 'destContainer');
             }
         }
-     }
-    
+    }
 });
