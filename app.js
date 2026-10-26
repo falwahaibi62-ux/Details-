@@ -190,26 +190,29 @@ function globalSearchFilter() {
 
 
 function openAddModal() {
-    if (typeof renderJobModal === 'function') {
-        renderJobModal();
-    }
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        modal.style.display = 'flex'; 
+        modal.classList.add('flex'); 
+        modal.style.display = 'block';
         
         const jobForm = document.getElementById('jobForm');
         if (jobForm) jobForm.reset();
         
         const editIndex = document.getElementById('editIndex');
-        if (editIndex) editIndex.value = '-1'; 
-
+        if (editIndex) editIndex.value = '';
+        
         const modalTitle = document.getElementById('modalTitle');
-        if (modalTitle) modalTitle.innerText = "Add New Dispatch";
+        if (modalTitle) modalTitle.innerText = 'Add New Job';
+        
+        console.log("Add Modal opened successfully!");
+    } else {
+        console.error("Element with id 'jobModal' not found in the DOM!");
     }
 }
+
 window.openAddModal = openAddModal;
+
 
 function closeModal() {
     const modal = document.getElementById('jobModal');
