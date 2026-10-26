@@ -209,10 +209,13 @@ function globalSearchFilter() {
 function openAddModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
+        // نقل الـ modal برمجياً إلى نهاية الـ body لضمان ظهوره فوق جميع العناصر دون قيود
+        document.body.appendChild(modal);
+        
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        // استخدام setProperty مع important لفرض الظهور وتجاوز أي ملف CSS معارض
         modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '99999', 'important');
         modal.style.opacity = '1';
         modal.style.visibility = 'visible';
     } else {
@@ -231,7 +234,6 @@ function openAddModal() {
     console.log("Add Modal opened successfully!");
 }
 window.openAddModal = openAddModal;
-
 
 function closeModal() {
     const modal = document.getElementById('jobModal');
