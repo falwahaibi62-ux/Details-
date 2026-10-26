@@ -1020,10 +1020,12 @@ window.onload = () => {
     }
 };
 
+// مستمع آمن ومخصص فقط لأزرار المدفوعات والإلغاء داخل النوافذ المنبثقة
 document.addEventListener('click', function(e) {
     const btn = e.target.closest('button');
     if (!btn) return;
 
+    // استثناء زر Add New Job الرئيسي تماماً لكي يعمل بشكل طبيعي دون أي اعتراض
     if (btn.textContent.includes('Add New Job')) {
         return; 
     }
@@ -1031,6 +1033,7 @@ document.addEventListener('click', function(e) {
     const btnText = btn.textContent.trim();
     const btnHtml = btn.innerHTML;
 
+    // معالجة أزرار الإلغاء وإغلاق النوافذ
     if (btnText === 'Cancel' || btn.getAttribute('onclick')?.includes('closeModal') || btn.querySelector('.fa-xmark')) {
         e.preventDefault();
         if (typeof closeModal === 'function') {
@@ -1039,6 +1042,7 @@ document.addEventListener('click', function(e) {
         return;
     }
 
+    // معالجة أزرار إضافة المدفوعات
     const isAddPaymentBtn = btnText.includes('Payment') || btnHtml.includes('Add Payment') || btnText.includes('+ Add');
     
     if (isAddPaymentBtn) {
