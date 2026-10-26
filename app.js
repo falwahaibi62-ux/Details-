@@ -979,5 +979,6 @@ if (btn.textContent.includes('Add Payment')) {
                 addPaymentRow(container.id);
             }
         }
+     }
     
 });
