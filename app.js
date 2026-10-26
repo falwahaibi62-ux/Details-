@@ -285,6 +285,7 @@ function saveJob(event) {
 }
 
 window.saveJob = saveJob;
+const jobNoVal = document.getElementById('jobNo')?.value || '';
     const dateInput = document.getElementById('jobDate');
     const dateRaw = dateInput ? dateInput.value : '';
     let dateVal = dateRaw;
