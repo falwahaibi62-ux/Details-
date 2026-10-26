@@ -222,13 +222,9 @@ function closeModal() {
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
-        modal.style.display = 'none'; 
-        console.log("Modal closed successfully!");
-    } else {
-        console.error("Modal element not found!");
     }
 }
-
+window.closeModal = closeModal;
 
 function saveJob(event) {
     const isEditing = Boolean(window.currentEditingJobNo);
