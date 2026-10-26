@@ -35,10 +35,10 @@ function filterJobsTable() {
     if (countText) {
         countText.innerText = `Showing ${filtered.length} of ${masterJobs.length} records`;
     }
-
     // Render the filtered records into the CRUD table view
     renderJobsCRUD(filtered);
 }
+window.masterJobs = window.masterJobs || [];
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
     if(!container) return;
