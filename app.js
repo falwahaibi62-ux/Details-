@@ -950,6 +950,23 @@ window.onload = () => {
     if (typeof updateDashboardAnalytics === 'function') {
         updateDashboardAnalytics();
     }
+
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(btn => {
+        if (btn.textContent.includes('Add New Job') && !btn.hasAttribute('data-bound')) {
+            btn.setAttribute('data-bound', 'true');
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof openJobModal === 'function') {
+                    openJobModal(false); // وضع إضافة جديدة
+                } else if (typeof openModal === 'function') {
+                    openModal();
+                } else {
+                    console.error("دالة فتح النافذة غير معرفة!");
+                }
+            });
+        }
+    });
 };
 
         
