@@ -368,23 +368,21 @@ const jobNoVal = document.getElementById('jobNo')?.value || '';
         hotel: hotelFormatted
     };
 
-   if (isEditing) {
-        const editIndex = parseInt(document.getElementById('editIndex')?.value, 10);
-        
-        if (!isNaN(editIndex) && editIndex >= 0 && editIndex < window.masterJobs.length) {
-            window.masterJobs[editIndex] = jobData;
-        } else {
-            const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
-            if (targetIndex !== -1) {
-                window.masterJobs[targetIndex] = jobData;
-            } else {
-                window.masterJobs.unshift(jobData);
-            }
-        }
-    } else {
-        window.masterJobs.unshift(jobData);
-    }
+    const editIndexInput = document.getElementById('editIndex');
+    const editIndex = parseInt(editIndexInput?.value, 10);
+    const isEditing = !isNaN(editIndex) && editIndex >= 0 && editIndex < window.masterJobs.length;
 
+
+  if (isEditing) {
+        window.masterJobs[editIndex] = jobData;
+    } else {
+        const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
+        if (targetIndex !== -1) {
+            window.masterJobs[targetIndex] = jobData;
+        } else {
+            window.masterJobs.unshift(jobData);
+        }
+    }
     // Persistence & UI Refresh
     if (typeof saveMasterJobs === 'function') saveMasterJobs(window.masterJobs);
     if (typeof closeModal === 'function') closeModal();
