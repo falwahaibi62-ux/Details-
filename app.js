@@ -100,7 +100,6 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
 
     container.appendChild(rowDiv);
 }
-window.addPaymentRow = addPaymentRow;
 
 function removePaymentRow(rowId) {
     const row = document.getElementById(rowId);
@@ -125,6 +124,8 @@ function extractPaymentsFromContainer(containerId) {
     return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
 
 }
+window.addPaymentRow = addPaymentRow;
+
 
 // Function to render the jobs CRUD table using unique jobNo for safe actions
 function renderJobsCRUD(dataToRender) {
