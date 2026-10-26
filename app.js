@@ -960,7 +960,7 @@ window.onload = () => {
         renderJobsCRUD(window.masterJobs);
     }
 
-  if (typeof updateDashboardAnalytics === 'function') {
+    if (typeof updateDashboardAnalytics === 'function') {
         updateDashboardAnalytics();
     }
 };
@@ -969,7 +969,9 @@ document.addEventListener('click', function(e) {
     const btn = e.target.closest('button');
     if (!btn) return;
 
-    if (btn.textContent.includes('Cancel') || btn.querySelector('.fa-xmark')) {
+    const btnText = btn.textContent.trim();
+
+    if (btnText.includes('Cancel') || btn.querySelector('.fa-xmark')) {
         e.preventDefault();
         if (typeof closeModal === 'function') {
             closeModal();
@@ -977,19 +979,28 @@ document.addEventListener('click', function(e) {
         return;
     }
 
-    if (btn.textContent.includes('Add Payment')) {
+    if (btnText.includes('Add Payment') || btn.innerHTML.includes('Add Payment')) {
         e.preventDefault();
-        const section = btn.closest('.border-t');
-        const container = section ? section.querySelector('div[id$="Container"]') : null;
         
-        if (container && typeof addPaymentRow === 'function') {
-            addPaymentRow(container.id);
-        } else {
-            const allContainers = document.querySelectorAll('#puContainer, #destContainer');
-            if (allContainers.length >= 2) {
-                const isPu = btn.closest('div').textContent.includes('P.U');
-                addPaymentRow(isPu ? 'puContainer' : 'destContainer');
+        const section = btn.closest('.border-t');
+        let containerId = null;
+
+        if (section) {
+            const containerDiv = section.querySelector('div[id$="Container"]');
+            if (containerDiv) {
+                containerId = containerDiv.id;
             }
+        }
+
+        if (!containerId) {
+            const parentText = btn.closest('div')?.textContent || '';
+            containerId = parentText.includes('P.U') ? 'puContainer' : 'destContainer';
+        }
+
+        if (typeof addPaymentRow === 'function' && containerId) {
+            addPaymentRow(containerId);
+        } else {
+            console.error("Could not find payment container or addPaymentRow function is missing.");
         }
     }
 });
