@@ -1024,10 +1024,14 @@ document.addEventListener('click', function(e) {
     const btn = e.target.closest('button');
     if (!btn) return;
 
+    if (btn.textContent.includes('Add New Job')) {
+        return; 
+    }
+
     const btnText = btn.textContent.trim();
     const btnHtml = btn.innerHTML;
 
-    if (btnText.includes('Cancel') || btn.querySelector('.fa-xmark')) {
+    if (btnText === 'Cancel' || btn.getAttribute('onclick')?.includes('closeModal') || btn.querySelector('.fa-xmark')) {
         e.preventDefault();
         if (typeof closeModal === 'function') {
             closeModal();
@@ -1035,7 +1039,7 @@ document.addEventListener('click', function(e) {
         return;
     }
 
-    const isAddPaymentBtn = btnText.includes('Payment') || btnHtml.includes('Add Payment') || btn.textContent.includes('+ Add');
+    const isAddPaymentBtn = btnText.includes('Payment') || btnHtml.includes('Add Payment') || btnText.includes('+ Add');
     
     if (isAddPaymentBtn) {
         e.preventDefault();
