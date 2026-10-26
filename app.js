@@ -223,6 +223,7 @@ function closeModal() {
 
 
 function saveJob(event) {
+    const isEditing = Boolean(window.currentEditingJobNo);
     if (event) event.preventDefault();
 
     const jobNoInput = document.getElementById('jobNo');
