@@ -4,7 +4,6 @@ function updateDashboardAnalytics() {
     let totalRev = 0;
     const routeRevenueMap = {};
     
-    // تحديث وتوسيع خريطة طرق الدفع لتشمل كافة الطرق المعتمدة
     const paymentMethodMap = { 
         Cash: 0, 
         Zelle: 0, 
@@ -34,7 +33,6 @@ function updateDashboardAnalytics() {
             routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
         }
 
-        // دالة محسنة لاستخراج وفحص طرق الدفع بدقة لكل المدفوعات النصية
         const extractMethods = (text) => {
             if (!text || text === '-') return;
             const lower = text.toLowerCase();
