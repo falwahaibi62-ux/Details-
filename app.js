@@ -957,17 +957,17 @@ window.onload = () => {
             btn.setAttribute('data-bound', 'true');
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const jobModal = document.getElementById('jobModal') || document.querySelector('.modal') || document.querySelector('[id*="modal"]');
-                if (jobModal) {
-                    jobModal.classList.remove('hidden');
-                    jobModal.style.display = 'block';
-                    const editIndexInput = document.getElementById('editIndex');
-                    if (editIndexInput) editIndexInput.value = '';
+              const buttons = document.querySelectorAll('button');
+    buttons.forEach(btn => {
+        if (btn.textContent.includes('Add New Job') && !btn.hasAttribute('data-bound')) {
+            btn.setAttribute('data-bound', 'true');
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof openAddModal === 'function') {
+                    openAddModal();
                 } else {
-                    console.error("Modal element not found in the DOM!");
+                    console.error("openAddModal function is not defined!");
                 }
             });
         }
     });
-}; 
-        
