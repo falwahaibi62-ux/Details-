@@ -194,7 +194,7 @@ function openAddModal() {
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex'); 
-        modal.style.display = 'block';
+        modal.style.display = 'flex'; 
         
         const jobForm = document.getElementById('jobForm');
         if (jobForm) jobForm.reset();
@@ -210,7 +210,6 @@ function openAddModal() {
         console.error("Element with id 'jobModal' not found in the DOM!");
     }
 }
-
 window.openAddModal = openAddModal;
 
 
