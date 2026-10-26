@@ -528,7 +528,19 @@ function updateDashboardAnalytics() {
 
     let totalRev = 0;
     const routeRevenueMap = {};
-    const paymentMethodMap = { Cash: 0, Zelle: 0, PS: 0, BS: 0, Others: 0 };
+    
+    const paymentMethodMap = { 
+        Cash: 0, 
+        Zelle: 0, 
+        Cheque: 0, 
+        PMO: 0, 
+        BC: 0, 
+        PC: 0, 
+        CC: 0, 
+        WT: 0, 
+        Others: 0 
+    };
+    
     const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     masterJobs.forEach(job => {
@@ -546,13 +558,19 @@ function updateDashboardAnalytics() {
             routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
         }
 
+        // دالة استخراج وفحص طرق الدفع بدقة لكل نصوص المدفوعات
         const extractMethods = (text) => {
             if (!text || text === '-') return;
             const lower = text.toLowerCase();
+            
             if (lower.includes('cash')) paymentMethodMap.Cash++;
             else if (lower.includes('zelle')) paymentMethodMap.Zelle++;
-            else if (lower.includes('ps')) paymentMethodMap.PS++;
-            else if (lower.includes('bs')) paymentMethodMap.BS++;
+            else if (lower.includes('cheque')) paymentMethodMap.Cheque++;
+            else if (lower.includes('pmo')) paymentMethodMap.PMO++;
+            else if (lower.includes('bc')) paymentMethodMap.BC++;
+            else if (lower.includes('pc')) paymentMethodMap.PC++;
+            else if (lower.includes('cc')) paymentMethodMap.CC++;
+            else if (lower.includes('wt')) paymentMethodMap.WT++;
             else paymentMethodMap.Others++;
         };
 
@@ -589,13 +607,15 @@ function updateDashboardAnalytics() {
         `).join('');
     }
 
-    renderDashboardCharts(monthlyRev, paymentMethodMap);
+    if (typeof renderDashboardCharts === 'function') {
+        renderDashboardCharts(monthlyRev, paymentMethodMap);
+    }
 }
 
 function renderDashboardCharts(monthlyData, paymentData) {
     const ctxRevenue = document.getElementById('revenueChart');
     if (ctxRevenue) {
-        if (revenueChartInstance) revenueChartInstance.destroy();
+        if (typeof revenueChartInstance !== 'undefined' && revenueChartInstance) revenueChartInstance.destroy();
         revenueChartInstance = new Chart(ctxRevenue, {
             type: 'bar',
             data: {
@@ -622,14 +642,28 @@ function renderDashboardCharts(monthlyData, paymentData) {
 
     const ctxPayment = document.getElementById('paymentMixChart');
     if (ctxPayment) {
-        if (paymentMixChartInstance) paymentMixChartInstance.destroy();
+        if (typeof paymentMixChartInstance !== 'undefined' && paymentMixChartInstance) paymentMixChartInstance.destroy();
+        
+        // مصفوفة ألوان موسعة ومتناسقة تغطي جميع طرق الدفع الـ 9
+        const paymentColors = [
+            '#10b981', // Cash - أخضر
+            '#3b82f6', // Zelle - أزرق
+            '#8b5cf6', // Cheque - بنفسجي
+            '#f59e0b', // PMO - برتقالي
+            '#06b6d4', // BC - سماوي
+            '#ec4899', // PC - وردي
+            '#6366f1', // CC - أزرق نيلي
+            '#84cc16', // WT - أخضر ليموني
+            '#64748b'  // Others - رمادي
+        ];
+
         paymentMixChartInstance = new Chart(ctxPayment, {
             type: 'doughnut',
             data: {
                 labels: Object.keys(paymentData),
                 datasets: [{
                     data: Object.values(paymentData),
-                    backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#64748b'],
+                    backgroundColor: paymentColors,
                     borderWidth: 2,
                     borderColor: '#ffffff'
                 }]
@@ -645,6 +679,11 @@ function renderDashboardCharts(monthlyData, paymentData) {
         });
     }
 }
+window.renderDashboardCharts = renderDashboardCharts;
+
+
+
+
 
 function switchTab(tab) {
     if (typeof closeModal === 'function') {
