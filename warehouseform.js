@@ -105,6 +105,11 @@ function renderWarehouseTab() {
 
 
 function editWarehouseRecord(index) {
+
+    if (typeof renderWarehouseModal === 'function') {
+        renderWarehouseModal();
+    }
+    
     const record = warehouseRecords[index]; 
     if (!record) return;
 
