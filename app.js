@@ -972,6 +972,7 @@ document.addEventListener('click', function(e) {
     if (!btn) return;
 
     const btnText = btn.textContent.trim();
+    const btnHtml = btn.innerHTML;
 
     if (btnText.includes('Cancel') || btn.querySelector('.fa-xmark')) {
         e.preventDefault();
@@ -981,10 +982,12 @@ document.addEventListener('click', function(e) {
         return;
     }
 
-    if (btnText.includes('Add Payment') || btn.innerHTML.includes('Add Payment')) {
+    const isAddPaymentBtn = btnText.includes('Payment') || btnHtml.includes('Add Payment') || btn.textContent.includes('+ Add');
+    
+    if (isAddPaymentBtn) {
         e.preventDefault();
         
-        const section = btn.closest('.border-t');
+        const section = btn.closest('.border-t') || btn.closest('div.mb-4') || btn.parentElement;
         let containerId = null;
 
         if (section) {
@@ -995,14 +998,23 @@ document.addEventListener('click', function(e) {
         }
 
         if (!containerId) {
-            const parentText = btn.closest('div')?.textContent || '';
-            containerId = parentText.includes('P.U') ? 'puContainer' : 'destContainer';
+            const rowWrapper = btn.closest('div');
+            const rowText = rowWrapper ? rowWrapper.textContent : '';
+            if (rowText.includes('P.U')) {
+                containerId = 'puContainer';
+            } else if (rowText.includes('Destination') || rowText.includes('Balance')) {
+                containerId = 'destContainer';
+            } else {
+                const allAddBtns = Array.from(document.querySelectorAll('button')).filter(b => b.textContent.includes('Payment'));
+                const btnIndex = allAddBtns.indexOf(btn);
+                containerId = (btnIndex === 0) ? 'puContainer' : 'destContainer';
+            }
         }
 
         if (typeof addPaymentRow === 'function' && containerId) {
             addPaymentRow(containerId);
         } else {
-            console.error("Could not find payment container or addPaymentRow function is missing.");
+            console.error("Target container ID not found or addPaymentRow is missing. Container ID was:", containerId);
         }
     }
 });
