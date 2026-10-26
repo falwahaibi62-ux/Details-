@@ -368,13 +368,18 @@ const jobNoVal = document.getElementById('jobNo')?.value || '';
         hotel: hotelFormatted
     };
 
-    if (isEditing) {
-        // Find by jobNo or fallback to index if stored index is a valid jobNo match
-        const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
-        if (targetIndex !== -1) {
-            window.masterJobs[targetIndex] = jobData;
+   if (isEditing) {
+        const editIndex = parseInt(document.getElementById('editIndex')?.value, 10);
+        
+        if (!isNaN(editIndex) && editIndex >= 0 && editIndex < window.masterJobs.length) {
+            window.masterJobs[editIndex] = jobData;
         } else {
-            window.masterJobs.unshift(jobData);
+            const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
+            if (targetIndex !== -1) {
+                window.masterJobs[targetIndex] = jobData;
+            } else {
+                window.masterJobs.unshift(jobData);
+            }
         }
     } else {
         window.masterJobs.unshift(jobData);
