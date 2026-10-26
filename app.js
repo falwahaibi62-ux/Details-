@@ -71,18 +71,19 @@ function checkPermissions() {
 
 function addPaymentRow(containerId, amount = '', method = 'Cash') {
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) {
+        console.error("Container not found:", containerId);
+        return;
+    }
 
     const rowId = 'payment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-
     const rowDiv = document.createElement('div');
-    rowDiv.className = 'flex items-center gap-2 payment-row'; // <-- أضفنا payment-row هنا
+    rowDiv.className = 'flex items-center gap-2 payment-row mt-2';
     rowDiv.id = rowId;
 
     rowDiv.innerHTML = `
         <input type="text" placeholder="Amount (e.g. 500)" value="${amount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
-        
-        <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
+        <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
             <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
             <option value="Zelle" ${method === 'Zelle' ? 'selected' : ''}>Zelle</option>
             <option value="Cheque" ${method === 'Cheque' ? 'selected' : ''}>Cheque</option>
@@ -91,15 +92,16 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
             <option value="PC" ${method === 'PC' ? 'selected' : ''}>PC</option>
             <option value="CC" ${method === 'CC' ? 'selected' : ''}>CC</option>
             <option value="WT" ${method === 'WT' ? 'selected' : ''}>WT</option>
+            <option value="Others" ${method === 'Others' ? 'selected' : ''}>Others</option>
         </select>
-
-        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:text-red-700 text-sm font-bold px-1">
+        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer">
             <i class="fa-solid fa-xmark"></i>
         </button>
     `;
 
     container.appendChild(rowDiv);
 }
+window.addPaymentRow = addPaymentRow;
 
 
 function removePaymentRow(rowId) {
