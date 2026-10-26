@@ -951,13 +951,8 @@ window.onload = () => {
         updateDashboardAnalytics();
     }
 
+    // ربط زر Add New Job بالشكل الصحيح والنهائي
     const buttons = document.querySelectorAll('button');
-    buttons.forEach(btn => {
-        if (btn.textContent.includes('Add New Job') && !btn.hasAttribute('data-bound')) {
-            btn.setAttribute('data-bound', 'true');
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-              const buttons = document.querySelectorAll('button');
     buttons.forEach(btn => {
         if (btn.textContent.includes('Add New Job') && !btn.hasAttribute('data-bound')) {
             btn.setAttribute('data-bound', 'true');
@@ -971,3 +966,4 @@ window.onload = () => {
             });
         }
     });
+};
