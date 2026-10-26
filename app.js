@@ -205,6 +205,8 @@ function openAddModal() {
     }
 }
 
+window.openAddModal = openAddModal;
+
 function closeModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
@@ -435,6 +437,8 @@ function editJob(param) {
         modal.classList.add('flex');
     }
 }
+
+window.editJob = editJob;
 
 // Function to delete/move a specific dispatch record to the Recycle Bin safely using jobNo
 function deleteJob(jobNo) {
