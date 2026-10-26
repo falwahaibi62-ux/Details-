@@ -211,7 +211,9 @@ function openAddModal() {
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        modal.style.display = 'flex'; 
+        modal.style.display = 'flex';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
     }
 
     const jobForm = document.getElementById('jobForm');
@@ -223,10 +225,9 @@ function openAddModal() {
     const modalTitle = document.getElementById('modalTitle');
     if (modalTitle) modalTitle.innerText = 'Add New Job';
 
-    console.log("Add Model opened successfully!");
+    console.log("Add Modal opened successfully!");
 }
 window.openAddModal = openAddModal;
-
 function closeModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
