@@ -104,13 +104,18 @@ function renderWarehouseTab() {
 }
 
 
-function editWarehouseRecord(id) {
-    const record = warehouseRecords.find(r => r.id === id);
+function editWarehouseRecord(index) {
+    const record = warehouseRecords[index]; 
     if (!record) return;
 
-    document.getElementById('warehouseRecordId').value = record.id;
+    const idField = document.getElementById('warehouseRecordId');
+    if (idField) idField.value = record.id || index;  
+
     document.getElementById('warehouseDate').value = record.date || '';
-    document.getElementById('warehouseItem').value = record.serviceItem || record.item || '';
+    
+    const itemInput = document.getElementById('warehouseItem') || document.getElementById('warehouseServices');
+    if (itemInput) itemInput.value = record.services || record.serviceItem || record.item || '';
+
     document.getElementById('warehouseAmount').value = record.amount || '';
     document.getElementById('warehousePaymentType').value = record.paymentType || 'Cash';
     document.getElementById('warehouseDetails').value = record.details || '';
@@ -119,6 +124,7 @@ function editWarehouseRecord(id) {
     if (modal) modal.classList.remove('hidden');
 }
 
+window.editWarehouseRecord = editWarehouseRecord;
 
 
 function deleteWarehouseRecord(index) {
