@@ -925,6 +925,7 @@ window.onload = () => {
     if (typeof loadWarehouseRecords === 'function') {
         warehouseRecords = loadWarehouseRecords();
     }
+    
     currentUserRole = 'Admin';
     checkPermissions();
     renderUsers();
@@ -933,11 +934,8 @@ window.onload = () => {
     updateDashboardAnalytics();
     renderTrashBin();
 
-  
-
-document.addEventListener("DOMContentLoaded", function () {
     if (!window.masterJobs) {
-        window.masterJobs = []; 
+        window.masterJobs = [];  
     }
     
     if (typeof filterJobsTable === 'function') {
@@ -945,17 +943,7 @@ document.addEventListener("DOMContentLoaded", function () {
     } else if (typeof renderJobsCRUD === 'function') {
         renderJobsCRUD(window.masterJobs);
     }
-});
+};
             
 
-            const modal = document.getElementById('jobModal');
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                modal.style.display = 'none';
-                modal.offsetHeight; 
-                modal.style.display = 'flex';
-            }
-        }
-    });
-};
+        
