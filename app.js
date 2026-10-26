@@ -211,9 +211,12 @@ function openAddModal() {
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        modal.style.display = 'flex';
+        // استخدام setProperty مع important لفرض الظهور وتجاوز أي ملف CSS معارض
+        modal.style.setProperty('display', 'flex', 'important');
         modal.style.opacity = '1';
         modal.style.visibility = 'visible';
+    } else {
+        console.error("Element with id 'jobModal' not found!");
     }
 
     const jobForm = document.getElementById('jobForm');
@@ -228,6 +231,8 @@ function openAddModal() {
     console.log("Add Modal opened successfully!");
 }
 window.openAddModal = openAddModal;
+
+
 function closeModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
