@@ -70,13 +70,15 @@ function checkPermissions() {
 }
 
 function addPaymentRow(containerId, amount = '', method = 'Cash') {
+    console.log("addPaymentRow called with containerId:", containerId);
+    
     const container = document.getElementById(containerId);
     if (!container) {
-        console.error("Container not found:", containerId);
+        console.error("Container NOT found in DOM:", containerId);
         return;
     }
 
-    const rowId = 'payment_' + Date.now + '_' + Math.random().toString(36).substr(2, 4);
+    const rowId = 'payment_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
     const rowDiv = document.createElement('div');
     rowDiv.className = 'flex items-center gap-2 payment-row mt-2';
     rowDiv.id = rowId;
@@ -100,9 +102,9 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
     `;
 
     container.appendChild(rowDiv);
+    console.log("Payment row added successfully to:", containerId);
 }
 window.addPaymentRow = addPaymentRow;
-
 
 function removePaymentRow(rowId) {
     const row = document.getElementById(rowId);
