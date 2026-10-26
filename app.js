@@ -385,7 +385,7 @@ window.saveJob = saveJob;
     if (typeof populateYearFilter === 'function') populateYearFilter();
     if (typeof filterJobsTable === 'function') filterJobsTable();
     if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
-}
+
 
 
 function editJob(param) {
