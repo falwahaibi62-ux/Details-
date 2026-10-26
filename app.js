@@ -210,32 +210,29 @@ function openAddModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.remove('hidden');
-        modal.classList.add('flex'); 
+        modal.classList.add('flex');
         modal.style.display = 'flex'; 
-        
-        const jobForm = document.getElementById('jobForm');
-        if (jobForm) jobForm.reset();
-        
-        const editIndex = document.getElementById('editIndex');
-        if (editIndex) editIndex.value = '';
-        
-        const modalTitle = document.getElementById('modalTitle');
-        if (modalTitle) modalTitle.innerText = 'Add New Job';
-        
-        console.log("Add Modal opened successfully!");
-    } else {
-        console.error("Element with id 'jobModal' not found in the DOM!");
     }
+
+    const jobForm = document.getElementById('jobForm');
+    if (jobForm) jobForm.reset();
+
+    const editIndex = document.getElementById('editIndex');
+    if (editIndex) editIndex.value = '';
+
+    const modalTitle = document.getElementById('modalTitle');
+    if (modalTitle) modalTitle.innerText = 'Add New Job';
+
+    console.log("Add Model opened successfully!");
 }
 window.openAddModal = openAddModal;
-
 
 function closeModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
-        modal.style.display = 'none'; 
+        modal.style.display = 'none';
     }
 }
 window.closeModal = closeModal;
