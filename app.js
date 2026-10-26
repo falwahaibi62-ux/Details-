@@ -349,6 +349,11 @@ function saveJob(e) {
 
 
 function editJob(param) {
+
+    if (typeof renderJobModal === 'function') {
+        renderJobModal();
+    }
+    
     let index = param;
     if (typeof param === 'string' || isNaN(param)) {
         index = masterJobs.findIndex(j => j.jobNo == param);
