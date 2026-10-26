@@ -190,6 +190,10 @@ function globalSearchFilter() {
 
 
 function openAddModal() {
+
+    if (typeof renderJobModal === 'function') {
+        renderJobModal();
+    }
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.remove('hidden');
