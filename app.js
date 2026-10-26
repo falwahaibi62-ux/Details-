@@ -484,6 +484,38 @@ function editJob(param) {
         }
     }
 
+    const dieselAmount = document.getElementById('dieselAmount');
+    const dieselMethod = document.getElementById('dieselMethod');
+    if (j.diesel) {
+        const parts = j.diesel.split(' ');
+        if (dieselAmount) dieselAmount.value = parts[0] || '';
+        if (dieselMethod && parts[1]) dieselMethod.value = parts[1];
+    } else {
+        if (dieselAmount) dieselAmount.value = '';
+    }
+
+    const hotelAmount = document.getElementById('hotelAmount');
+    const hotelMethod = document.getElementById('hotelMethod');
+    if (j.hotel) {
+        const parts = j.hotel.split(' ');
+        if (hotelAmount) hotelAmount.value = parts[0] || '';
+        if (hotelMethod && parts[1]) hotelMethod.value = parts[1];
+    } else {
+        if (hotelAmount) hotelAmount.value = '';
+    }
+
+    const puContainer = document.getElementById('puContainer');
+    const destContainer = document.getElementById('destContainer');
+    if (puContainer) puContainer.innerHTML = '';
+    if (destContainer) destContainer.innerHTML = '';
+
+    if (j.puPayments && Array.isArray(j.puPayments)) {
+        j.puPayments.forEach(p => addPaymentRow('puContainer', p.amount, p.method));
+    }
+    if (j.destPayments && Array.isArray(j.destPayments)) {
+        j.destPayments.forEach(p => addPaymentRow('destContainer', p.amount, p.method));
+    }
+
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.remove('hidden');
