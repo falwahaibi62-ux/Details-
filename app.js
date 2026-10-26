@@ -934,12 +934,18 @@ window.onload = () => {
     renderTrashBin();
 
   
-    document.addEventListener('click', function(event) {
-        const addBtn = event.target.closest('#addJobBtn');
-        if (addBtn) {
-            event.preventDefault();
-            event.stopPropagation();
-            
+
+document.addEventListener("DOMContentLoaded", function () {
+    if (!window.masterJobs) {
+        window.masterJobs = []; 
+    }
+    
+    if (typeof filterJobsTable === 'function') {
+        filterJobsTable();
+    } else if (typeof renderJobsCRUD === 'function') {
+        renderJobsCRUD(window.masterJobs);
+    }
+});
             
 
             const modal = document.getElementById('jobModal');
