@@ -229,10 +229,10 @@
             <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
             <p class="text-xs text-slate-500">Filter records by Month and Year</p>
         </div>
-        <button onclick="openAddModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center shadow-sm transition">
-            <i class="fa-solid fa-plus mr-1.5"></i>
-            <span>Add New Job</span>
-        </button>
+       <button type="button" onclick="console.log('Button clicked!'); if(typeof openAddModal === 'function') { openAddModal(); } else { alert('openAddModal function is not defined!'); }" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center shadow-sm transition cursor-pointer">
+    <i class="fa-solid fa-plus mr-1.5"></i>
+    <span>Add New Job</span>
+</button>
     </div>
 </div>
     
