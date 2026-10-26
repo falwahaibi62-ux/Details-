@@ -239,7 +239,7 @@ function saveJob(event) {
  // Check for duplicate jobNo if it's a new entry
     const editIndexInput = document.getElementById('editIndex');
     const existingIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
-    const isEditing = editIndexInput && editIndexInput.value !== "" && editIndexInput.value !== "-1";
+     isEditing = editIndexInput && editIndexInput.value !== "" && editIndexInput.value !== "-1";
 
     if (!isEditing && existingIndex !== -1) {
         alert(`Job Number "${jobNoVal}" already exists. Please use a unique Job Number.`);
