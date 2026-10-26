@@ -539,45 +539,7 @@
     </div>        
 
 
-   <!-- MODAL -->
-<div id="jobModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-auto">
-        <h3 id="modalTitle" class="font-bold text-slate-900 text-base border-b pb-3">Add New Job</h3>
-        <form id="jobForm" onsubmit="saveJob(event)" class="space-y-3 text-xs">
-            <input type="hidden" id="editIndex" value="-1">
-            
-            <div>
-                <label class="block font-semibold text-slate-700 mb-1">Date</label>
-                <input type="date" id="jobDate" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 bg-white">
-            </div>
-            
-            <div>
-                <label class="block font-semibold text-slate-700 mb-1">Job No</label>
-                <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="G4648193">
-            </div>
-            
-            <div>
-                <label class="block font-semibold text-slate-700 mb-1">Route (From → To)</label>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="routeFrom" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="From (e.g. NC)">
-                    <span class="text-slate-400 font-bold text-sm px-1">→</span>
-                    <input type="text" id="routeTo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="To (e.g. NV)">
-                </div>
-            </div>
-            
-            <div>
-                <label class="block font-semibold text-slate-700 mb-1">Foreman Name</label>
-                <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="no name">
-            </div>
-
-            <!-- Modal Action Buttons -->
-            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-4">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition">Save Job</button>
-            </div>
-        </form>
-    </div>
-</div>
+ 
                 
                 <!-- Helpers Cost Section -->
                 <div class="border-t border-slate-200 pt-3 space-y-2">
@@ -683,5 +645,45 @@
 <script src="warehouseform.js"></script>
 <script src="reports.js"></script>
 <script src="app.js"></script>
+
+    <!-- MODAL -->
+<div id="jobModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-auto">
+        <h3 id="modalTitle" class="font-bold text-slate-900 text-base border-b pb-3">Add New Job</h3>
+        <form id="jobForm" onsubmit="saveJob(event)" class="space-y-3 text-xs">
+            <input type="hidden" id="editIndex" value="-1">
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Date</label>
+                <input type="date" id="jobDate" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 bg-white">
+            </div>
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Job No</label>
+                <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="G4648193">
+            </div>
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Route (From → To)</label>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="routeFrom" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="From (e.g. NC)">
+                    <span class="text-slate-400 font-bold text-sm px-1">→</span>
+                    <input type="text" id="routeTo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="To (e.g. NV)">
+                </div>
+            </div>
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Foreman Name</label>
+                <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="no name">
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-4">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition">Save Job</button>
+            </div>
+        </form>
+    </div>
+</div>
 </body>
 </html>
