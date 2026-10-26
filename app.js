@@ -222,8 +222,8 @@ function closeModal() {
 }
 
 
-function saveJob(e) {
-    e.preventDefault();
+function saveJob(event) {
+    if (event) event.preventDefault();
 
     const jobNoInput = document.getElementById('jobNo');
     if (!jobNoInput || !jobNoInput.value.trim()) {
@@ -246,7 +246,45 @@ function saveJob(e) {
         return;
     }
 
-    // Safe Date Parsing
+    const jobData = {
+        date: document.getElementById('jobDate')?.value || '',
+        jobNo: jobNoVal,
+        route: document.getElementById('jobRoute')?.value || '',
+        foreman: document.getElementById('jobForeman')?.value || '',
+        helpers: document.getElementById('jobHelpers')?.value || '-',
+        drivers: document.getElementById('jobDrivers')?.value || '-',
+        total: document.getElementById('jobTotal')?.value || '-',
+        pu: document.getElementById('jobPu')?.value || '-',
+        dest: document.getElementById('jobDest')?.value || '-',
+        diesel: document.getElementById('jobDiesel')?.value || '-',
+        hotel: document.getElementById('jobHotel')?.value || '-'
+    };
+
+    if (isEditing) {
+        const targetJobNo = editIndexInput.value;
+        const indexToEdit = window.masterJobs.findIndex(j => j.jobNo === targetJobNo);
+        
+        if (indexToEdit !== -1) {
+            window.masterJobs[indexToEdit] = { ...window.masterJobs[indexToEdit], ...jobData };
+        }
+    } else {
+        window.masterJobs.unshift(jobData);
+    }
+
+    // 4. إغلاق النافذة المنبثقة (Modal)
+    const modal = document.getElementById('jobModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.style.display = 'none';
+    }
+
+    if (typeof renderJobsCRUD === 'function') {
+        renderJobsCRUD(window.masterJobs);
+    }
+}
+
+window.saveJob = saveJob;
     const dateInput = document.getElementById('jobDate');
     const dateRaw = dateInput ? dateInput.value : '';
     let dateVal = dateRaw;
