@@ -222,12 +222,12 @@ function closeModal() {
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        modal.style.display = 'none'; 
     }
 }
 window.closeModal = closeModal;
 
 function saveJob(event) {
-    const isEditing = Boolean(window.currentEditingJobNo);
     if (event) event.preventDefault();
 
     const jobNoInput = document.getElementById('jobNo');
@@ -240,56 +240,17 @@ function saveJob(event) {
     const jobNoVal = jobNoInput.value.trim();
     if (!window.masterJobs) window.masterJobs = [];
 
- // Check for duplicate jobNo if it's a new entry
     const editIndexInput = document.getElementById('editIndex');
-    const existingIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
-     isEditing = editIndexInput && editIndexInput.value !== "" && editIndexInput.value !== "-1";
+    const editIndex = editIndexInput ? parseInt(editIndexInput.value, 10) : -1;
+    const isEditing = !isNaN(editIndex) && editIndex >= 0 && editIndex < window.masterJobs.length;
 
+    const existingIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
     if (!isEditing && existingIndex !== -1) {
         alert(`Job Number "${jobNoVal}" already exists. Please use a unique Job Number.`);
         jobNoInput.focus();
         return;
     }
-    const jobData = {
-        date: document.getElementById('jobDate')?.value || '',
-        jobNo: jobNoVal,
-        route: document.getElementById('jobRoute')?.value || '',
-        foreman: document.getElementById('jobForeman')?.value || '',
-        helpers: document.getElementById('jobHelpers')?.value || '-',
-        drivers: document.getElementById('jobDrivers')?.value || '-',
-        total: document.getElementById('jobTotal')?.value || '-',
-        pu: document.getElementById('jobPu')?.value || '-',
-        dest: document.getElementById('jobDest')?.value || '-',
-        diesel: document.getElementById('jobDiesel')?.value || '-',
-        hotel: document.getElementById('jobHotel')?.value || '-'
-    };
 
-    if (isEditing) {
-        const targetJobNo = editIndexInput.value;
-        const indexToEdit = window.masterJobs.findIndex(j => j.jobNo === targetJobNo);
-        
-        if (indexToEdit !== -1) {
-            window.masterJobs[indexToEdit] = { ...window.masterJobs[indexToEdit], ...jobData };
-        }
-    } else {
-        window.masterJobs.unshift(jobData);
-    }
-
-    // 4. إغلاق النافذة المنبثقة (Modal)
-    const modal = document.getElementById('jobModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        modal.style.display = 'none';
-    }
-
-    if (typeof renderJobsCRUD === 'function') {
-        renderJobsCRUD(window.masterJobs);
-    }
-}
-
-window.saveJob = saveJob;
-const jobNoVal = document.getElementById('jobNo')?.value || '';
     const dateInput = document.getElementById('jobDate');
     const dateRaw = dateInput ? dateInput.value : '';
     let dateVal = dateRaw;
@@ -307,7 +268,7 @@ const jobNoVal = document.getElementById('jobNo')?.value || '';
             const p = dateRaw.split('/');
             monthVal = parseInt(p[0]) || monthVal;
             yearVal = parseInt(p[2]) || yearVal;
-            dateVal = dateRaw; // Already US format
+            dateVal = dateRaw;
         }
     }
 
@@ -327,6 +288,26 @@ const jobNoVal = document.getElementById('jobNo')?.value || '';
 
     const puFormatted = typeof extractPaymentsFromContainer === 'function' ? extractPaymentsFromContainer('puContainer') : '-';
     const destFormatted = typeof extractPaymentsFromContainer === 'function' ? extractPaymentsFromContainer('destContainer') : '-';
+
+    const puPayments = [];
+    const puContainerEl = document.getElementById('puContainer');
+    if (puContainerEl) {
+        puContainerEl.querySelectorAll('.payment-row').forEach(row => {
+            const amt = row.querySelector('.payment-amount')?.value.trim() || '';
+            const mth = row.querySelector('.payment-method')?.value || 'Cash';
+            if (amt) puPayments.push({ amount: amt, method: mth });
+        });
+    }
+
+    const destPayments = [];
+    const destContainerEl = document.getElementById('destContainer');
+    if (destContainerEl) {
+        destContainerEl.querySelectorAll('.payment-row').forEach(row => {
+            const amt = row.querySelector('.payment-amount')?.value.trim() || '';
+            const mth = row.querySelector('.payment-method')?.value || 'Cash';
+            if (amt) destPayments.push({ amount: amt, method: mth });
+        });
+    }
 
     let dieselRaw = document.getElementById('dieselAmount') ? document.getElementById('dieselAmount').value.trim() : '';
     const dieselMethod = document.getElementById('dieselMethod') ? document.getElementById('dieselMethod').value : '';
@@ -368,16 +349,13 @@ const jobNoVal = document.getElementById('jobNo')?.value || '';
         driversNum: driversCostVal,     
         pu: puFormatted,
         dest: destFormatted,
+        puPayments: puPayments,     
+        destPayments: destPayments,   
         diesel: dieselFormatted,
         hotel: hotelFormatted
     };
 
-    const editIndexInput = document.getElementById('editIndex');
-    const editIndex = parseInt(editIndexInput?.value, 10);
-    const isEditing = !isNaN(editIndex) && editIndex >= 0 && editIndex < window.masterJobs.length;
-
-
-  if (isEditing) {
+    if (isEditing) {
         window.masterJobs[editIndex] = jobData;
     } else {
         const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
@@ -387,15 +365,14 @@ const jobNoVal = document.getElementById('jobNo')?.value || '';
             window.masterJobs.unshift(jobData);
         }
     }
-    // Persistence & UI Refresh
+
     if (typeof saveMasterJobs === 'function') saveMasterJobs(window.masterJobs);
     if (typeof closeModal === 'function') closeModal();
     if (typeof populateYearFilter === 'function') populateYearFilter();
     if (typeof filterJobsTable === 'function') filterJobsTable();
     if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
-
-
-
+}
+window.saveJob = saveJob;
 function editJob(param) {
 
     if (typeof renderJobModal === 'function') {
