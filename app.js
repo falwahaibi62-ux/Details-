@@ -958,11 +958,11 @@ window.onload = () => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (typeof openJobModal === 'function') {
-                    openJobModal(false); // وضع إضافة جديدة
+                    openJobModal(false); 
                 } else if (typeof openModal === 'function') {
                     openModal();
                 } else {
-                    console.error("دالة فتح النافذة غير معرفة!");
+                    console.error("Not defined!");
                 }
             });
         }
