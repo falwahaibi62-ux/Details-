@@ -89,67 +89,180 @@
 
     <!-- TAB 1: ADVANCED DASHBOARD & CHARTS -->
     <div id="tab-dashboard" class="space-y-6 w-full flex flex-col">
-        <!-- محتوى الداشبورد والكاردز -->
+        <!-- 1. بطاقات الـ KPI العلوية -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-600 bg-white shadow-sm">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Lifetime Revenue</p>
+                        <h3 id="dashTotalRevenue" class="text-2xl font-black text-slate-900 mt-1">$0</h3>
+                    </div>
+                    <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><i class="fa-solid fa-wallet text-base"></i></div>
+                </div>
+                <p id="dashCompletedJobsText" class="text-[11px] text-emerald-600 font-semibold mt-2"><i class="fa-solid fa-truck-check mr-1"></i>0 Active Dispatches</p>
+            </div>
+            
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-blue-600 bg-white shadow-sm">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Avg. Job Value</p>
+                        <h3 id="dashAvgJobValue" class="text-2xl font-black text-blue-600 mt-1">$0</h3>
+                    </div>
+                    <div class="p-2 bg-blue-50 text-blue-600 rounded-xl"><i class="fa-solid fa-chart-line text-base"></i></div>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-2">Optimal Freight Yield Ratio</p>
+            </div>
+
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-purple-600 bg-white shadow-sm">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">P.U Collection Rate</p>
+                        <h3 id="dashPuRate" class="text-2xl font-black text-purple-600 mt-1">100%</h3>
+                    </div>
+                    <div class="p-2 bg-purple-50 text-purple-600 rounded-xl"><i class="fa-solid fa-hand-holding-dollar text-base"></i></div>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-2">Upfront Liquidity Performance</p>
+            </div>
+
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-amber-500 bg-white shadow-sm">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Destination Receivables</p>
+                        <h3 id="dashDestReceivables" class="text-2xl font-black text-amber-600 mt-1">Active</h3>
+                    </div>
+                    <div class="p-2 bg-amber-50 text-amber-600 rounded-xl"><i class="fa-solid fa-clock-rotate-left text-base"></i></div>
+                </div>
+                <p class="text-[11px] text-amber-700 font-semibold mt-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Settlement Tracking</p>
+            </div>
+        </div>
+
+        <!-- 2.chart-->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm lg:col-span-2 space-y-4">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-chart-column text-emerald-600 mr-2"></i>Monthly Revenue & Volume Trend</h3>
+                        <p class="text-[11px] text-slate-400">Real-time performance distribution derived from active ledger</p>
+                    </div>
+                    <span class="text-[11px] bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg">Real-Time Data</span>
+                </div>
+                <div class="h-64 relative">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm space-y-4">
+                <div class="border-b pb-3">
+                    <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-pie-chart text-emerald-600 mr-2"></i>Payment Channels Mix</h3>
+                    <p class="text-[11px] text-slate-400">Distribution of Cash, Zelle, PS, BS</p>
+                </div>
+                <div class="h-64 relative flex items-center justify-center">
+                    <canvas id="paymentMixChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- TAB 2: OPERATIONS LEDGER (CRUD) -->
     <div id="tab-jobs" class="hidden flex-col flex-1 space-y-6 w-full">
-        <!-- هنا تضعين محتوى جدول الـ CRUD الخاص بملف app.js بالكامل -->
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-            <!-- أزرار الفلاتر والبحث والجدول الخاص بالوظائف -->
+        <!-- 1. رأس الشاشة وزر الإضافة -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h2 class="text-sm font-bold text-slate-900">Operations & Logistics Management</h2>
+                <p class="text-[11px] text-slate-400">Filter records by Month and Year</p>
+            </div>
+            <button onclick="openAddModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-plus"></i> Add New Job
+            </button>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">Filter Month:</label>
+                    <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs bg-white">
+                        <option value="ALL">All Months</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">Filter Year:</label>
+                    <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs bg-white">
+                        <option value="ALL">All Years</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <span id="filteredCountText" class="text-xs font-semibold text-slate-600">Showing records</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
+            <div class="overflow-x-auto flex-1">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50 text-[11px] text-slate-500 uppercase border-b border-slate-200">
+                        <tr>
+                            <th class="p-3">Date</th>
+                            <th class="p-3">Job No</th>
+                            <th class="p-3">Route (From → To)</th>
+                            <th class="p-3">Foreman</th>
+                            <th class="p-3">Helpers</th>
+                            <th class="p-3">Drivers</th>
+                            <th class="p-3">Total</th>
+                            <th class="p-3">P.U Payments</th>
+                            <th class="p-3">Destination / Balance</th>
+                            <th class="p-3">Diesel</th>
+                            <th class="p-3">Hotel</th>
+                            <th class="p-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobsTableBody" class="divide-y divide-slate-100 text-xs text-slate-700">
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- TAB 3: USERS & ROLES -->
     <div id="tab-users" class="hidden flex-col flex-1 space-y-6 w-full">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-sm font-bold text-slate-900 mb-2">Users & Roles Management</h2>
+            <p class="text-xs text-slate-500">Manage system users, permissions, and security roles.</p>
+        </div>
     </div>
 
     <!-- TAB 4: OFFICIAL PDF REPORT -->
     <div id="tab-reports" class="hidden flex-col flex-1 space-y-6 w-full">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-sm font-bold text-slate-900 mb-2">Official PDF Reports</h2>
+            <p class="text-xs text-slate-500">Generate and export certified operational reports.</p>
+        </div>
     </div>
 
     <!-- TAB 5: RECYCLE BIN -->
     <div id="tab-trash" class="hidden flex-col flex-1 space-y-6 w-full">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-sm font-bold text-slate-900 mb-2">Recycle Bin</h2>
+            <p class="text-xs text-slate-500">Restore or permanently delete removed operation records.</p>
+        </div>
     </div>
 
     <!-- TAB 6: PRIVATE TRUCK RENTAL -->
     <div id="tab-rentals" class="hidden flex-col flex-1 space-y-6 w-full">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-sm font-bold text-slate-900 mb-2">Private Truck Rental</h2>
+            <p class="text-xs text-slate-500">Manage external fleet allocations and lease telemetry.</p>
+        </div>
     </div>
 
     <!-- TAB 7: WAREHOUSE -->
     <div id="tab-warehouse" class="hidden flex-col flex-1 space-y-6 w-full">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-sm font-bold text-slate-900 mb-2">Warehouse & Inventory</h2>
+            <p class="text-xs text-slate-500">Track equipment, gear, and supplies stock levels.</p>
+        </div>
     </div>
 
 </main>
-
-                <!-- Charts & Advanced Telemetry -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm lg:col-span-2 space-y-4">
-                        <div class="flex justify-between items-center border-b pb-3">
-                            <div>
-                                <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-chart-column text-emerald-600 mr-2"></i>Monthly Revenue & Volume Trend</h3>
-                                <p class="text-[11px] text-slate-400">Real-time performance distribution derived from active ledger</p>
-                            </div>
-                            <span class="text-[11px] bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg">Real-Time Data</span>
-                        </div>
-                        <div class="h-64 relative">
-                            <canvas id="revenueChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm space-y-4">
-                        <div class="border-b pb-3">
-                            <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-pie-chart text-emerald-600 mr-2"></i>Payment Channels Mix</h3>
-                            <p class="text-[11px] text-slate-400">Distribution of Cash, Zelle, PS, BS</p>
-                        </div>
-                        <div class="h-64 relative flex items-center justify-center">
-                            <canvas id="paymentMixChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Business Intelligence & Decision Recommendations -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm space-y-4">
