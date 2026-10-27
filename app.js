@@ -119,9 +119,23 @@ window.checkPermissions = checkPermissions;
 // ==========================================
 // 3. PAYMENT ROWS MANAGEMENT
 // ==========================================
+// ==========================================
+// 3. PAYMENT ROWS MANAGEMENT (Fixed for destContainer)
+// ==========================================
 function addPaymentRow(containerId, amount = '', method = 'Cash') {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+    // دعم آمن لكلا الاسمين destContainer أو destContextContainer
+    let container = document.getElementById(containerId);
+    if (!container && containerId === 'destContextContainer') {
+        container = document.getElementById('destContainer');
+    }
+    if (!container && containerId === 'destContainer') {
+        container = document.getElementById('destContextContainer');
+    }
+    
+    if (!container) {
+        console.error("Payment container not found:", containerId);
+        return;
+    }
 
     const rowId = 'payment_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
     const rowDiv = document.createElement('div');
@@ -156,7 +170,10 @@ function removePaymentRow(rowId) {
 window.removePaymentRow = removePaymentRow;
 
 function extractPaymentsFromContainer(containerId) {
-    const container = document.getElementById(containerId);
+    let container = document.getElementById(containerId);
+    if (!container && containerId === 'destContextContainer') container = document.getElementById('destContainer');
+    if (!container && containerId === 'destContainer') container = document.getElementById('destContextContainer');
+
     if (!container) return '-';
 
     const rows = container.querySelectorAll('.payment-row');
