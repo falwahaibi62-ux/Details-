@@ -5,7 +5,11 @@ function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
     if (!yearSelect) return;
 
-    const uniqueYears = [...new Set(masterJobs.map(item => item.year))].filter(y => y).sort((a, b) => b - a);
+    if (!window.masterJobs || !Array.isArray(window.masterJobs)) {
+        window.masterJobs = [];
+    }
+
+    const uniqueYears = [...new Set(window.masterJobs.map(item => item.year))].filter(y => y).sort((a, b) => b - a);
     const currentSelected = yearSelect.value;
 
     let optionsHTML = `<option value="ALL">All Years</option>`;
@@ -18,15 +22,14 @@ function populateYearFilter() {
 
 // Function to filter the master jobs ledger based on selected month and year filters
 function filterJobsTable() {
-    const jobsTab = document.getElementById('tab-jobs');
-    if (!jobsTab || jobsTab.classList.contains('hidden')) {
-        return; 
+    if (!window.masterJobs || !Array.isArray(window.masterJobs)) {
+        window.masterJobs = [];
     }
 
     const monthVal = document.getElementById('filterMonth')?.value || 'ALL';
     const yearVal = document.getElementById('filterYear')?.value || 'ALL';
 
-    let filtered = masterJobs.filter(job => {
+    let filtered = window.masterJobs.filter(job => {
         const matchesMonth = (monthVal === 'ALL') || (job.month && job.month.toString() === monthVal);
         const matchesYear = (yearVal === 'ALL') || (job.year && job.year.toString() === yearVal);
         return matchesMonth && matchesYear;
@@ -34,15 +37,11 @@ function filterJobsTable() {
 
     const countText = document.getElementById('filteredCountText');
     if (countText) {
-        countText.innerText = `Showing ${filtered.length} of ${masterJobs.length} records`;
+        countText.innerText = `Showing ${filtered.length} of ${window.masterJobs.length} records`;
     }
     
-    if (typeof renderJobsCRUD === 'function') {
-        renderJobsCRUD(filtered);
-    }
+    renderJobsCRUD(filtered);
 }
-
-window.masterJobs = window.masterJobs || [];
 window.filterJobsTable = filterJobsTable;
 
 function renderUsers() {
@@ -100,7 +99,7 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
             <option value="WT" ${method === 'WT' ? 'selected' : ''}>WT</option>
             <option value="Others" ${method === 'Others' ? 'selected' : ''}>Others</option>
         </select>
-        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer">
+        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer" title="Remove">
             <i class="fa-solid fa-xmark"></i>
         </button>
     `;
@@ -108,11 +107,6 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
     container.appendChild(rowDiv);
 }
 window.addPaymentRow = addPaymentRow;
-
-function removePaymentRow(rowId) {
-    const row = document.getElementById(rowId);
-    if (row) row.remove();
-}
 
 function extractPaymentsFromContainer(containerId) {
     const container = document.getElementById(containerId);
@@ -122,27 +116,28 @@ function extractPaymentsFromContainer(containerId) {
     const paymentsList = [];
 
     rows.forEach(row => {
-        const amt = row.querySelector('.payment-amount').value.trim();
-        const mth = row.querySelector('.payment-method').value;
-        if (amt !== '') {
-            paymentsList.push(`${amt} ${mth}`);
+        const amtInput = row.querySelector('.payment-amount');
+        const mthSelect = row.querySelector('.payment-method');
+        if (amtInput && amtInput.value.trim() !== '') {
+            paymentsList.push(`${amtInput.value.trim()} ${mthSelect ? mthSelect.value : 'Cash'}`);
         }
     });
 
     return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
 }
 
-// Function to render the jobs CRUD table using unique jobNo for safe actions
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('crudTableBody');
     if (!tbody) return;
     
-    if (!dataToRender || dataToRender.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-4 text-slate-400 text-xs">No dispatches found</td></tr>`;
+    const records = dataToRender || window.masterJobs || [];
+
+    if (!records || records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-slate-400 text-xs">No dispatches found</td></tr>`;
         return;
     }
     
-    tbody.innerHTML = dataToRender.map((item) => {
+    tbody.innerHTML = records.map((item, index) => {
         const foremanDisplay = (!item.foreman || item.foreman.trim() === '') 
             ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
             : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
@@ -150,8 +145,8 @@ function renderJobsCRUD(dataToRender) {
         let actions = `<span class="text-xs text-slate-400">-</span>`;
         if (typeof currentUserRole !== 'undefined' && currentUserRole === 'Admin') {
             actions = `
-                <button onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg" title="Move to Recycle Bin"><i class="fa-solid fa-trash-can"></i></button>
+                <button onclick="editJob(${index})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1 cursor-pointer" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Move to Recycle Bin"><i class="fa-solid fa-trash-can"></i></button>
             `;
         }
 
@@ -159,14 +154,6 @@ function renderJobsCRUD(dataToRender) {
         const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
         const helpersVal = (item.helpers && item.helpers !== '-') ? item.helpers : '-';
         const driversVal = (item.drivers && item.drivers !== '-') ? item.drivers : '-'; 
-
-        const formatPaymentDisplay = (paymentField) => {
-            if (!paymentField || paymentField === '-') return '-';
-            if (Array.isArray(paymentField)) {
-                return paymentField.map(p => `${p.amount || ''} (${p.method || 'Cash'})`).join(', ') || '-';
-            }
-            return paymentField;
-        };
 
         return `
             <tr class="hover:bg-slate-50 transition border-b border-slate-150">
@@ -177,8 +164,8 @@ function renderJobsCRUD(dataToRender) {
                 <td class="p-3 text-purple-700 font-semibold text-xs">${helpersVal}</td>
                 <td class="p-3 text-blue-700 font-semibold text-xs">${driversVal}</td> 
                 <td class="p-3 text-emerald-600 font-bold text-xs">${item.total || '-'}</td>
-                <td class="p-3 text-slate-600 text-xs">${formatPaymentDisplay(item.pu)}</td>
-                <td class="p-3 text-slate-600 text-xs">${formatPaymentDisplay(item.dest)}</td>
+                <td class="p-3 text-slate-600 text-xs">${item.pu || '-'}</td>
+                <td class="p-3 text-slate-600 text-xs">${item.dest || '-'}</td>
                 <td class="p-3 text-emerald-700 font-semibold text-xs">${dieselVal}</td>
                 <td class="p-3 text-indigo-700 font-semibold text-xs">${hotelVal}</td>
                 <td class="p-3 text-center">${actions}</td>
@@ -194,7 +181,7 @@ function globalSearchFilter() {
         filterJobsTable();
         return;
     }
-    let filtered = masterJobs.filter(item => 
+    let filtered = window.masterJobs.filter(item => 
        String(item.jobNo || '').toLowerCase().includes(query) || 
        String(item.route || '').toLowerCase().includes(query) || 
        String(item.foreman || '').toLowerCase().includes(query)
@@ -211,15 +198,12 @@ window.globalSearchFilter = globalSearchFilter;
 function openAddModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
-        document.body.appendChild(modal);
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         modal.style.setProperty('display', 'flex', 'important');
         modal.style.setProperty('z-index', '99999', 'important');
         modal.style.opacity = '1';
         modal.style.visibility = 'visible';
-    } else {
-        console.error("Element with id 'jobModal' not found!");
     }
 
     const jobForm = document.getElementById('jobForm');
@@ -230,6 +214,11 @@ function openAddModal() {
 
     const modalTitle = document.getElementById('modalTitle');
     if (modalTitle) modalTitle.innerText = 'Add New Job';
+
+    const puContainer = document.getElementById('puContainer');
+    const destContainer = document.getElementById('destContainer');
+    if (puContainer) puContainer.innerHTML = '';
+    if (destContainer) destContainer.innerHTML = '';
 }
 window.openAddModal = openAddModal;
 
@@ -260,13 +249,6 @@ function saveJob(event) {
     const editIndex = editIndexInput ? parseInt(editIndexInput.value, 10) : -1;
     const isEditing = !isNaN(editIndex) && editIndex >= 0 && editIndex < window.masterJobs.length;
 
-    const existingIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
-    if (!isEditing && existingIndex !== -1) {
-        alert(`Job Number "${jobNoVal}" already exists. Please use a unique Job Number.`);
-        jobNoInput.focus();
-        return;
-    }
-
     const dateInput = document.getElementById('jobDate');
     const dateRaw = dateInput ? dateInput.value : '';
     let dateVal = dateRaw;
@@ -279,19 +261,14 @@ function saveJob(event) {
             yearVal = parseInt(p[0]) || yearVal;
             monthVal = parseInt(p[1]) || monthVal;
             const dayVal = parseInt(p[2]) || 1;
-            dateVal = `${String(monthVal).padStart(2, '0')}/${String(dayVal).padStart(2, '0')}/${yearVal}`;
-        } else if (dateRaw.includes('/')) {
-            const p = dateRaw.split('/');
-            monthVal = parseInt(p[0]) || monthVal;
-            yearVal = parseInt(p[2]) || yearVal;
-            dateVal = dateRaw;
+            dateVal = `${monthVal}/${dayVal}/${yearVal}`;
         }
     }
 
     const formatCurrency = (val) => {
         if (!val || val === '-') return '-';
-        if (val.startsWith('$')) return val;
-        let num = parseFloat(val.replace(/[^0-9.]/g, ''));
+        if (String(val).startsWith('$')) return val;
+        let num = parseFloat(String(val).replace(/[^0-9.]/g, ''));
         return isNaN(num) ? val : '$' + num.toLocaleString('en-US');
     };
 
@@ -305,51 +282,13 @@ function saveJob(event) {
     const puFormatted = extractPaymentsFromContainer('puContainer');
     const destFormatted = extractPaymentsFromContainer('destContainer');
 
-    const puPayments = [];
-    const puContainerEl = document.getElementById('puContainer');
-    if (puContainerEl) {
-        puContainerEl.querySelectorAll('.payment-row').forEach(row => {
-            const amt = row.querySelector('.payment-amount')?.value.trim() || '';
-            const mth = row.querySelector('.payment-method')?.value || 'Cash';
-            if (amt) puPayments.push({ amount: amt, method: mth });
-        });
-    }
-
-    const destPayments = [];
-    const destContainerEl = document.getElementById('destContainer');
-    if (destContainerEl) {
-        destContainerEl.querySelectorAll('.payment-row').forEach(row => {
-            const amt = row.querySelector('.payment-amount')?.value.trim() || '';
-            const mth = row.querySelector('.payment-method')?.value || 'Cash';
-            if (amt) destPayments.push({ amount: amt, method: mth });
-        });
-    }
-
     let dieselRaw = document.getElementById('dieselAmount') ? document.getElementById('dieselAmount').value.trim() : '';
     const dieselMethod = document.getElementById('dieselMethod') ? document.getElementById('dieselMethod').value : '';
-    const dieselFormatted = dieselRaw ? `${formatCurrency(dieselRaw)} ${dieselMethod}`.trim() : '-';
+    const dieselFormatted = dieselRaw ? `${dieselRaw} ${dieselMethod}`.trim() : '-';
 
     let hotelRaw = document.getElementById('hotelAmount') ? document.getElementById('hotelAmount').value.trim() : '';
     const hotelMethod = document.getElementById('hotelMethod') ? document.getElementById('hotelMethod').value : '';
-    const hotelFormatted = hotelRaw ? `${formatCurrency(hotelRaw)} ${hotelMethod}`.trim() : '-';
-
-    const helpersSelect = document.getElementById('helpersCost');
-    let helpersFormatted = '-';
-    let helpersCostVal = 0;
-    if (helpersSelect && helpersSelect.selectedIndex !== -1) {
-        helpersCostVal = parseFloat(helpersSelect.value) || 0;
-        const selectedText = helpersSelect.options[helpersSelect.selectedIndex].text;
-        helpersFormatted = helpersCostVal > 0 ? selectedText : '-';
-    }
-
-    const driversSelect = document.getElementById('driversCost');
-    let driversFormatted = '-';
-    let driversCostVal = 0;
-    if (driversSelect && driversSelect.selectedIndex !== -1) {
-        driversCostVal = parseFloat(driversSelect.value) || 0;
-        const selectedText = driversSelect.options[driversSelect.selectedIndex].text;
-        driversFormatted = driversCostVal > 0 ? selectedText : '-';
-    }
+    const hotelFormatted = hotelRaw ? `${hotelRaw} ${hotelMethod}`.trim() : '-';
 
     const jobData = {
         date: dateVal,
@@ -358,15 +297,11 @@ function saveJob(event) {
         jobNo: jobNoVal,
         route: routeVal,
         foreman: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
+        helpers: document.getElementById('helpersCost')?.value || '0',
+        drivers: document.getElementById('driversCost')?.value || '-',
         total: totalFormatted,
-        helpers: helpersFormatted,        
-        helpersNum: helpersCostVal, 
-        drivers: driversFormatted,        
-        driversNum: driversCostVal,     
         pu: puFormatted,
         dest: destFormatted,
-        puPayments: puPayments,     
-        destPayments: destPayments,   
         diesel: dieselFormatted,
         hotel: hotelFormatted
     };
@@ -374,12 +309,7 @@ function saveJob(event) {
     if (isEditing) {
         window.masterJobs[editIndex] = jobData;
     } else {
-        const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
-        if (targetIndex !== -1) {
-            window.masterJobs[targetIndex] = jobData;
-        } else {
-            window.masterJobs.unshift(jobData);
-        }
+        window.masterJobs.unshift(jobData);
     }
 
     if (typeof saveMasterJobs === 'function') saveMasterJobs(window.masterJobs);
@@ -390,145 +320,44 @@ function saveJob(event) {
 }
 window.saveJob = saveJob;
 
-function editJob(param) {
-    if (typeof renderJobModal === 'function') {
-        renderJobModal();
-    }
+function editJob(index) {
+    if (!window.masterJobs || !window.masterJobs[index]) return;
+    const j = window.masterJobs[index];
     
-    let index = param;
-    if (typeof param === 'string' || isNaN(param)) {
-        index = masterJobs.findIndex(j => j.jobNo == param);
-    } else {
-        index = parseInt(param);
-    }
+    openAddModal();
 
-    if (!masterJobs || index < 0 || !masterJobs[index]) {
-        console.error("Job record not found for:", param);
-        alert("Could not load the record for editing. Please refresh the table.");
-        return;
-    }
-
-    const j = masterJobs[index];
-    
     const modalTitle = document.getElementById('modalTitle');
     if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
     
     const editIndex = document.getElementById('editIndex');
     if (editIndex) editIndex.value = index;
-    
-    const dateInput = document.getElementById('jobDate');
-    if (dateInput) {
-        if (j.date && j.date.includes('/')) {
-            const parts = j.date.split('/');
-            if (parts.length === 3) {
-                const mm = parts[0].padStart(2, '0');
-                const dd = parts[1].padStart(2, '0');
-                const yyyy = parts[2];
-                dateInput.value = `${yyyy}-${mm}-${dd}`;
-            } else {
-                dateInput.value = j.date;
-            }
-        } else {
-            dateInput.value = j.date || '';
-        }
-    }
 
     const jobNoInput = document.getElementById('jobNo');
     if (jobNoInput) jobNoInput.value = j.jobNo || '';
-
-    const routeFrom = document.getElementById('routeFrom');
-    const routeTo = document.getElementById('routeTo');
-    if (j.route && j.route.includes('→')) {
-        const parts = j.route.split('→');
-        if (routeFrom) routeFrom.value = parts[0].trim();
-        if (routeTo) routeTo.value = parts[1].trim();
-    } else {
-        if (routeFrom) routeFrom.value = j.route || '';
-        if (routeTo) routeTo.value = '';
-    }
 
     const jobForeman = document.getElementById('jobForeman');
     if (jobForeman) jobForeman.value = j.foreman || '';
 
     const jobTotal = document.getElementById('jobTotal');
     if (jobTotal) jobTotal.value = j.total || '';
-
-    const helpersSelect = document.getElementById('helpersCost');
-    if (helpersSelect) {
-        if (j.helpersNum !== undefined && j.helpersNum !== null) {
-            helpersSelect.value = j.helpersNum;
-        } else if (j.helpers && j.helpers !== '-') {
-            const num = parseFloat(j.helpers.replace(/[^0-9.]/g, '')) || 0;
-            helpersSelect.value = num;
-        } else {
-            helpersSelect.value = '0';
-        }
-    }
-
-    const driversSelect = document.getElementById('driversCost');
-    if (driversSelect) {
-        if (j.driversNum !== undefined && j.driversNum !== null) {
-            driversSelect.value = j.driversNum;
-        } else if (j.drivers && j.drivers !== '-') {
-            const num = parseFloat(j.drivers.replace(/[^0-9.]/g, '')) || 0;
-            driversSelect.value = num;
-        } else {
-            driversSelect.value = '0';
-        }
-    }
-
-    const dieselAmount = document.getElementById('dieselAmount');
-    const dieselMethod = document.getElementById('dieselMethod');
-    if (j.diesel) {
-        const parts = j.diesel.split(' ');
-        if (dieselAmount) dieselAmount.value = parts[0] || '';
-        if (dieselMethod && parts[1]) dieselMethod.value = parts[1];
-    } else {
-        if (dieselAmount) dieselAmount.value = '';
-    }
-
-    const hotelAmount = document.getElementById('hotelAmount');
-    const hotelMethod = document.getElementById('hotelMethod');
-    if (j.hotel) {
-        const parts = j.hotel.split(' ');
-        if (hotelAmount) hotelAmount.value = parts[0] || '';
-        if (hotelMethod && parts[1]) hotelMethod.value = parts[1];
-    } else {
-        if (hotelAmount) hotelAmount.value = '';
-    }
-
-    const puContainer = document.getElementById('puContainer');
-    const destContainer = document.getElementById('destContainer');
-    if (puContainer) puContainer.innerHTML = '';
-    if (destContainer) destContainer.innerHTML = '';
-
-    if (j.puPayments && Array.isArray(j.puPayments)) {
-        j.puPayments.forEach(p => addPaymentRow('puContainer', p.amount, p.method));
-    }
-    if (j.destPayments && Array.isArray(j.destPayments)) {
-        j.destPayments.forEach(p => addPaymentRow('destContainer', p.amount, p.method));
-    }
-
-    openAddModal();
 }
 window.editJob = editJob;
 
 function deleteJob(jobNo) {
     if (!confirm('Are you sure you want to move this dispatch to Recycle Bin?')) return;
 
-    const jobIndex = masterJobs.findIndex(j => j.jobNo === jobNo);
+    const jobIndex = window.masterJobs.findIndex(j => j.jobNo === jobNo);
 
     if (jobIndex !== -1) {
-        const deletedJob = masterJobs.splice(jobIndex, 1)[0];
+        const deletedJob = window.masterJobs.splice(jobIndex, 1)[0];
         window.masterTrash = window.masterTrash || [];
         window.masterTrash.push(deletedJob);
 
-        saveMasterJobs(masterJobs);
+        if (typeof saveMasterJobs === 'function') saveMasterJobs(window.masterJobs);
         if (typeof saveTrashBin === 'function') saveTrashBin(window.masterTrash);
 
         filterJobsTable();
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
-        if (typeof renderTrashBin === 'function') renderTrashBin();
     }
 }
 window.deleteJob = deleteJob;
@@ -565,7 +394,7 @@ function switchTab(tab) {
     }
 
     if (tab === 'dashboard') {
-        if (typeof updateDashboardAnalytics === 'function') setTimeout(updateDashboardAnalytics, 100);
+        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
     } else if (tab === 'jobs') {
         filterJobsTable();
     } else if (tab === 'trash') {
@@ -580,194 +409,30 @@ function switchTab(tab) {
 }
 window.switchTab = switchTab;
 
-// Unified Recycle Bin Render Function
-function renderTrashBin() {
-    const tbody = document.getElementById('trashTableBody');
-    if (!tbody) return;
-
-    const TRASH_KEY = 'movepro_trash_bin';
-    let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
-
-    if (trashBin.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="p-12 text-center text-slate-400 text-xs">
-                    <i class="fa-solid fa-trash text-3xl mb-2 block text-slate-300"></i>
-                    Recycle Bin is empty.
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    tbody.innerHTML = trashBin.map((item, index) => {
-        if (item.recordType === 'rental') {
-            return `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                    <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
-                    <td class="p-3 text-xs"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded font-bold text-[10px]">Rental</span></td>
-                    <td class="p-3 text-slate-800 font-bold text-xs">${item.truckLabel || 'Truck Rental'}</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.days || 0} Days</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.paidBy || '-'}</td>
-                    <td class="p-3 text-purple-700 text-xs">-</td>
-                    <td class="p-3 text-blue-700 text-xs">-</td>
-                    <td class="p-3 text-emerald-600 font-bold text-xs">$${parseFloat(item.amount || 0).toLocaleString()}</td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition cursor-pointer" title="Restore">
-                            <i class="fa-solid fa-rotate-left"></i> Restore
-                        </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition cursor-pointer" title="Delete Permanently">
-                            <i class="fa-solid fa-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>
-            `;
-        } else if (item.recordType === 'warehouse') {
-            return `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                    <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
-                    <td class="p-3 text-xs"><span class="px-2 py-0.5 bg-amber-50 text-amber-700 rounded font-bold text-[10px]">Warehouse</span></td>
-                    <td class="p-3 text-slate-800 font-bold text-xs">${item.services || 'Warehouse Service'}</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.details || '-'}</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.paymentType || '-'}</td>
-                    <td class="p-3 text-purple-700 text-xs">-</td>
-                    <td class="p-3 text-blue-700 text-xs">-</td>
-                    <td class="p-3 text-emerald-600 font-bold text-xs">$${parseFloat(item.amount || 0).toLocaleString()}</td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition cursor-pointer" title="Restore">
-                            <i class="fa-solid fa-rotate-left"></i> Restore
-                        </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition cursor-pointer" title="Delete Permanently">
-                            <i class="fa-solid fa-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>
-            `;
-        } else {
-            return `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                    <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
-                    <td class="p-3 text-xs"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-bold text-[10px]">Job</span></td>
-                    <td class="p-3 text-slate-800 font-bold text-xs">${item.jobNo || '-'}</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.route || '-'}</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.foreman || '-'}</td>
-                    <td class="p-3 text-purple-700 font-semibold text-xs">${item.helpers || '-'}</td>
-                    <td class="p-3 text-blue-700 font-semibold text-xs">${item.drivers || '-'}</td>
-                    <td class="p-3 text-emerald-600 font-bold text-xs">${item.total || '-'}</td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition cursor-pointer" title="Restore">
-                            <i class="fa-solid fa-rotate-left"></i> Restore
-                        </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition cursor-pointer" title="Delete Permanently">
-                            <i class="fa-solid fa-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }
-    }).join('');
-}
-window.renderTrashBin = renderTrashBin;
-
-function restoreTrashItem(index) {
-    const TRASH_KEY = 'movepro_trash_bin';
-    let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
-    
-    if (index < 0 || index >= trashBin.length) return;
-
-    const trashItem = trashBin.splice(index, 1)[0];
-    if (!trashItem) return;
-
-    const { recordType, deletedAt, ...restoredItem } = trashItem;
-
-    if (recordType === 'rental') {
-        let rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-        rentals.unshift(restoredItem);
-        localStorage.setItem('movepro_private_truck_rentals', JSON.stringify(rentals));
-    } else if (recordType === 'warehouse') {
-        let warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-        warehouse.unshift(restoredItem);
-        localStorage.setItem('movepro_warehouse_records', JSON.stringify(warehouse));
-    } else {
-        let jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
-        jobs.unshift(restoredItem);
-        localStorage.setItem('movePro_masterJobs', JSON.stringify(jobs));
-    }
-
-    localStorage.setItem(TRASH_KEY, JSON.stringify(trashBin));
-
-    renderTrashBin();
-    filterJobsTable();
-    if (typeof renderPrivateTruckRentalTab === 'function') renderPrivateTruckRentalTab();
-    if (typeof renderWarehouseTab === 'function') renderWarehouseTab();
-    if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
-}
-window.restoreTrashItem = restoreTrashItem;
-
-function permanentDeleteTrashItem(index) {
-    if (!confirm('Are you sure you want to permanently delete this record?')) return;
-
-    const TRASH_KEY = 'movepro_trash_bin';
-    let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
-    
-    if (index >= 0 && index < trashBin.length) {
-        trashBin.splice(index, 1);
-        localStorage.setItem(TRASH_KEY, JSON.stringify(trashBin));
-        renderTrashBin();
-    }
-}
-window.permanentDeleteTrashItem = permanentDeleteTrashItem;
-
-function emptyTrashBin() {
-    if (!confirm('Are you sure you want to empty the Recycle Bin? All records will be lost permanently.')) {
-        return;
-    }
-    localStorage.removeItem('movepro_trash_bin');
-    renderTrashBin();
-}
-window.emptyTrashBin = emptyTrashBin;
-
 /**
  * Initial Application Load & State Setup
  */
 window.onload = () => {
     try {
         if (typeof loadMasterJobs === 'function') {
-            window.masterJobs = loadMasterJobs() || [];
-        }
-        
-        if (!Array.isArray(window.masterJobs)) {
-            window.masterJobs = [];  
+            window.masterJobs = loadMasterJobs() || window.masterJobs || [];
+        } else if (!window.masterJobs) {
+            window.masterJobs = [];
         }
 
-        if (typeof loadTruckRentals === 'function') {
-            loadTruckRentals();
-        }
-        
-        if (typeof loadWarehouseRecords === 'function') {
-            window.warehouseRecords = loadWarehouseRecords() || [];
-        }
-        
         window.currentUserRole = 'Admin';
         
-        if (typeof checkPermissions === 'function') checkPermissions();
-        if (typeof renderUsers === 'function') renderUsers();
-        if (typeof populateYearFilter === 'function') populateYearFilter();
-        if (typeof renderTrashBin === 'function') renderTrashBin();
-
-        if (typeof filterJobsTable === 'function') {
-            filterJobsTable();
-        } else if (typeof renderJobsCRUD === 'function') {
-            renderJobsCRUD(window.masterJobs);
-        }
+        checkPermissions();
+        renderUsers();
+        populateYearFilter();
+        
+        filterJobsTable();
 
         if (typeof updateDashboardAnalytics === 'function') {
             updateDashboardAnalytics();
         }
         
-        if (typeof switchTab === 'function') {
-            switchTab('dashboard');
-        }
+        switchTab('dashboard');
 
     } catch (error) {
         console.error("An error occurred during window.onload execution:", error);
@@ -781,52 +446,30 @@ document.addEventListener('click', function(e) {
     const btn = e.target.closest('button');
     if (!btn) return;
 
-    if (btn.textContent.includes('Add New Job')) {
-        return; 
-    }
-
+    // منع تداخل زر إغلاق المودال مع أزرار الإضافة
     const btnText = btn.textContent.trim();
-    const btnHtml = btn.innerHTML;
-
     if (btnText === 'Cancel' || btn.getAttribute('onclick')?.includes('closeModal') || btn.querySelector('.fa-xmark')) {
-        e.preventDefault();
-        if (typeof closeModal === 'function') closeModal();
-        return;
+        if (btn.closest('#jobModal')) {
+            e.preventDefault();
+            closeModal();
+            return;
+        }
     }
 
-    const isAddPaymentBtn = btnText.includes('Payment') || btnHtml.includes('Add Payment') || btnText.includes('+ Add');
-    
-    if (isAddPaymentBtn) {
+    // التحقق الدقيق لزر إضافة المدفوعات وتوجيهه الحاويات الصحيحة حصراً
+    if (btnText.includes('Add Payment') || btn.innerHTML.includes('Add Payment') || btnText === '+ Add Payment') {
         e.preventDefault();
         
-        const section = btn.closest('.border-t') || btn.closest('div.mb-4') || btn.parentElement;
-        let containerId = null;
+        // معرفة هل الزر خاص بـ P.U أو Destination عبر البحث في الأب المباشر
+        const parentSection = btn.closest('div.space-y-2') || btn.parentElement;
+        let targetContainerId = null;
 
-        if (section) {
-            const containerDiv = section.querySelector('div[id$="Container"]');
-            if (containerDiv) {
-                containerId = containerDiv.id;
-            }
-        }
-
-        if (!containerId) {
-            const rowWrapper = btn.closest('div');
-            const rowText = rowWrapper ? rowWrapper.textContent : '';
-            if (rowText.includes('P.U')) {
-                containerId = 'puContainer';
-            } else if (rowText.includes('Destination') || rowText.includes('Balance')) {
-                containerId = 'destContainer';
-            } else {
-                const allAddBtns = Array.from(document.querySelectorAll('button')).filter(b => b.textContent.includes('Payment'));
-                const btnIndex = allAddBtns.indexOf(btn);
-                containerId = (btnIndex === 0) ? 'puContainer' : 'destContainer';
-            }
-        }
-
-        if (containerId && typeof addPaymentRow === 'function') {
-            addPaymentRow(containerId);
+        if (parentSection && parentSection.textContent.includes('Destination')) {
+            targetContainerId = 'destContainer';
         } else {
-            console.error("Target container ID not found or addPaymentRow is missing. Container ID was:", containerId);
+            targetContainerId = 'puContainer';
         }
+
+        addPaymentRow(targetContainerId);
     }
 });
