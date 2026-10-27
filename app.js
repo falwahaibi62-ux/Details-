@@ -43,12 +43,14 @@ function filterJobsTable() {
         renderJobsCRUD(filtered);
     }
 }
+
 window.masterJobs = window.masterJobs || [];
 window.filterJobsTable = filterJobsTable;
+
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
-    if(!container) return;
-    if(typeof systemUsers === 'undefined') return;
+    if (!container) return;
+    if (typeof systemUsers === 'undefined') return;
     container.innerHTML = systemUsers.map(u => `
         <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border text-xs">
             <div>
@@ -69,15 +71,13 @@ function renderUsers() {
 function checkPermissions() {
     const addBtn = document.getElementById('addJobBtn');
     if (currentUserRole === 'Viewer') {
-        if(addBtn) addBtn.style.display = 'none';
+        if (addBtn) addBtn.style.display = 'none';
     } else {
-        if(addBtn) addBtn.style.display = 'flex';
+        if (addBtn) addBtn.style.display = 'flex';
     }
 }
 
 function addPaymentRow(containerId, amount = '', method = 'Cash') {
-    console.log("addPaymentRow called with containerId:", containerId);
-    
     const container = document.getElementById(containerId);
     if (!container) {
         console.error("Container NOT found in DOM:", containerId);
@@ -108,7 +108,6 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
     `;
 
     container.appendChild(rowDiv);
-    console.log("Payment row added successfully to:", containerId);
 }
 window.addPaymentRow = addPaymentRow;
 
@@ -133,15 +132,12 @@ function extractPaymentsFromContainer(containerId) {
     });
 
     return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
-
 }
-window.addPaymentRow = addPaymentRow;
-
 
 // Function to render the jobs CRUD table using unique jobNo for safe actions
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('crudTableBody');
-    if(!tbody) return;
+    if (!tbody) return;
     
     if (!dataToRender || dataToRender.length === 0) {
         tbody.innerHTML = `<tr><td colspan="12" class="text-center p-4 text-slate-400 text-xs">No dispatches found</td></tr>`;
@@ -194,10 +190,8 @@ function renderJobsCRUD(dataToRender) {
 }
 window.renderJobsCRUD = renderJobsCRUD;
 
-
-
 function globalSearchFilter() {
-    const query = document.getElementById('globalSearch').value.toLowerCase();
+    const query = document.getElementById('globalSearch')?.value.toLowerCase() || '';
     if (!query) {
         filterJobsTable();
         return;
@@ -207,21 +201,19 @@ function globalSearchFilter() {
        String(item.route || '').toLowerCase().includes(query) || 
        String(item.foreman || '').toLowerCase().includes(query)
     );
-   switchTab('jobs');
+    switchTab('jobs');
     renderJobsCRUD(filtered);
     const countText = document.getElementById('filteredCountText');
-    if(countText) {
+    if (countText) {
         countText.innerText = `Search results: ${filtered.length} records`;
     }
 }
-
+window.globalSearchFilter = globalSearchFilter;
 
 function openAddModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
-        // نقل الـ modal برمجياً إلى نهاية الـ body لضمان ظهوره فوق جميع العناصر دون قيود
         document.body.appendChild(modal);
-        
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         modal.style.setProperty('display', 'flex', 'important');
@@ -240,8 +232,6 @@ function openAddModal() {
 
     const modalTitle = document.getElementById('modalTitle');
     if (modalTitle) modalTitle.innerText = 'Add New Job';
-
-    console.log("Add Modal opened successfully!");
 }
 window.openAddModal = openAddModal;
 
@@ -250,7 +240,7 @@ function closeModal() {
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
-        modal.style.display = 'none';
+        modal.style.setProperty('display', 'none', 'important');
     }
 }
 window.closeModal = closeModal;
@@ -314,8 +304,8 @@ function saveJob(event) {
     const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
     const routeVal = (fromVal || toVal) ? `${fromVal} → ${toVal}` : '-';
 
-    const puFormatted = typeof extractPaymentsFromContainer === 'function' ? extractPaymentsFromContainer('puContainer') : '-';
-    const destFormatted = typeof extractPaymentsFromContainer === 'function' ? extractPaymentsFromContainer('destContainer') : '-';
+    const puFormatted = extractPaymentsFromContainer('puContainer');
+    const destFormatted = extractPaymentsFromContainer('destContainer');
 
     const puPayments = [];
     const puContainerEl = document.getElementById('puContainer');
@@ -395,14 +385,14 @@ function saveJob(event) {
     }
 
     if (typeof saveMasterJobs === 'function') saveMasterJobs(window.masterJobs);
-    if (typeof closeModal === 'function') closeModal();
-    if (typeof populateYearFilter === 'function') populateYearFilter();
-    if (typeof filterJobsTable === 'function') filterJobsTable();
-    if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
+    closeModal();
+    populateYearFilter();
+    filterJobsTable();
+    updateDashboardAnalytics();
 }
 window.saveJob = saveJob;
-function editJob(param) {
 
+function editJob(param) {
     if (typeof renderJobModal === 'function') {
         renderJobModal();
     }
@@ -521,16 +511,10 @@ function editJob(param) {
         j.destPayments.forEach(p => addPaymentRow('destContainer', p.amount, p.method));
     }
 
-    const modal = document.getElementById('jobModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
+    openAddModal();
 }
-
 window.editJob = editJob;
 
-// Function to delete/move a specific dispatch record to the Recycle Bin safely using jobNo
 function deleteJob(jobNo) {
     if (!confirm('Are you sure you want to move this dispatch to Recycle Bin?')) return;
 
@@ -538,6 +522,7 @@ function deleteJob(jobNo) {
 
     if (jobIndex !== -1) {
         const deletedJob = masterJobs.splice(jobIndex, 1)[0];
+        window.masterTrash = window.masterTrash || [];
         window.masterTrash.push(deletedJob);
 
         saveMasterJobs(masterJobs);
@@ -545,9 +530,10 @@ function deleteJob(jobNo) {
 
         filterJobsTable();
         updateDashboardAnalytics();
-        if (typeof renderTrashBin === 'function') renderTrashBin();
+        renderTrashBin();
     }
 }
+window.deleteJob = deleteJob;
 
 function updateDashboardAnalytics() {
     if (!masterJobs || masterJobs.length === 0) return;
@@ -584,7 +570,6 @@ function updateDashboardAnalytics() {
             routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
         }
 
-        // دالة استخراج وفحص طرق الدفع بدقة لكل نصوص المدفوعات
         const extractMethods = (text) => {
             if (!text || text === '-') return;
             const lower = text.toLowerCase();
@@ -637,6 +622,7 @@ function updateDashboardAnalytics() {
         renderDashboardCharts(monthlyRev, paymentMethodMap);
     }
 }
+window.updateDashboardAnalytics = updateDashboardAnalytics;
 
 function renderDashboardCharts(monthlyData, paymentData) {
     const ctxRevenue = document.getElementById('revenueChart');
@@ -670,17 +656,9 @@ function renderDashboardCharts(monthlyData, paymentData) {
     if (ctxPayment) {
         if (typeof paymentMixChartInstance !== 'undefined' && paymentMixChartInstance) paymentMixChartInstance.destroy();
         
-        // مصفوفة ألوان موسعة ومتناسقة تغطي جميع طرق الدفع الـ 9
         const paymentColors = [
-            '#10b981', // Cash - أخضر
-            '#3b82f6', // Zelle - أزرق
-            '#8b5cf6', // Cheque - بنفسجي
-            '#f59e0b', // PMO - برتقالي
-            '#06b6d4', // BC - سماوي
-            '#ec4899', // PC - وردي
-            '#6366f1', // CC - أزرق نيلي
-            '#84cc16', // WT - أخضر ليموني
-            '#64748b'  // Others - رمادي
+            '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', 
+            '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b'
         ];
 
         paymentMixChartInstance = new Chart(ctxPayment, {
@@ -707,18 +685,11 @@ function renderDashboardCharts(monthlyData, paymentData) {
 }
 window.renderDashboardCharts = renderDashboardCharts;
 
-
-
-
-
 function switchTab(tab) {
-    if (typeof closeModal === 'function') {
-        closeModal();
-    }
+    closeModal();
 
     const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse'];
     
-    // إخفاء جميع التبويبات تماماً وفرض إخفائها بـ important
     tabs.forEach(t => {
         const tabEl = document.getElementById(`tab-${t}`);
         const navEl = document.getElementById(`nav-${t}`);
@@ -745,154 +716,23 @@ function switchTab(tab) {
         activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
     }
 
-    const exportBtn = document.getElementById('exportPdfBtn');
-    if (exportBtn) {
-        if (tab === 'reports') { 
-            exportBtn.classList.remove('hidden');
-            exportBtn.classList.add('flex');
-            exportBtn.style.setProperty('display', 'flex', 'important');
-        } else {
-            exportBtn.classList.add('hidden');
-            exportBtn.classList.remove('flex');
-            exportBtn.style.setProperty('display', 'none', 'important');
-        }
-    }
-
     if (tab === 'dashboard') {
-        if (typeof updateDashboardAnalytics === 'function') setTimeout(updateDashboardAnalytics, 100);
+        setTimeout(updateDashboardAnalytics, 100);
     } else if (tab === 'jobs') {
-        if (typeof filterJobsTable === 'function') filterJobsTable();
+        filterJobsTable();
     } else if (tab === 'trash') {
-        if (typeof renderTrashBin === 'function') renderTrashBin();
-    } else if (tab === 'rentals') {
-        if (typeof renderPrivateTruckRentalTab === 'function') renderPrivateTruckRentalTab();
-    } else if (tab === 'warehouse') {
-        if (typeof renderWarehouseTab === 'function') renderWarehouseTab();
-    } else if (tab === 'reports') {
-        if (typeof renderReportsTab === 'function') renderReportsTab();
+        renderTrashBin();
+    } else if (tab === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
+        renderPrivateTruckRentalTab();
+    } else if (tab === 'warehouse' && typeof renderWarehouseTab === 'function') {
+        renderWarehouseTab();
+    } else if (tab === 'reports' && typeof renderReportsTab === 'function') {
+        renderReportsTab();
     }
 }
 window.switchTab = switchTab;
-// Function to render the Recycle Bin table view
-function renderTrashBin() {
-    const tbody = document.getElementById('trashTableBody');
-    if (!tbody) return;
 
-    const TRASH_KEY = 'movepro_trash_bin';
-    let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
-
-    if (trashBin.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="p-12 text-center text-slate-400 text-xs">
-                    <i class="fa-solid fa-trash text-3xl mb-2 block text-slate-300"></i>
-                    Recycle Bin is empty.
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    tbody.innerHTML = trashBin.map((item, index) => {
-        if (item.recordType === 'rental') {
-            return `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                    <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
-                    <td class="p-3 text-xs"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded font-bold text-[10px]">Rental</span></td>
-                    <td class="p-3 text-slate-800 font-bold text-xs">${item.truckLabel || 'Truck Rental'}</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.days || 0} Days</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.paidBy || '-'}</td>
-                    <td class="p-3 text-purple-700 text-xs">-</td>
-                    <td class="p-3 text-blue-700 text-xs">-</td>
-                    <td class="p-3 text-emerald-600 font-bold text-xs">$${parseFloat(item.amount || 0).toLocaleString()}</td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition" title="Restore">
-                            <i class="fa-solid fa-rotate-left"></i> Restore
-                        </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition" title="Delete Permanently">
-                            <i class="fa-solid fa-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>
-            `;
-        } else if (item.recordType === 'warehouse') {
-            return `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                    <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
-                    <td class="p-3 text-xs"><span class="px-2 py-0.5 bg-amber-50 text-amber-700 rounded font-bold text-[10px]">Warehouse</span></td>
-                    <td class="p-3 text-slate-800 font-bold text-xs">${item.services || '-'}</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.paymentType || '-'}</td>
-                    <td class="p-3 text-slate-600 text-xs" colspan="3">${item.details || '-'}</td>
-                    <td class="p-3 text-emerald-600 font-bold text-xs">$${parseFloat(item.amount || 0).toLocaleString()}</td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition" title="Restore">
-                            <i class="fa-solid fa-rotate-left"></i> Restore
-                        </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition" title="Delete Permanently">
-                            <i class="fa-solid fa-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>
-            `;
-        } else {
-            return `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                    <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
-                    <td class="p-3 text-xs"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-bold text-[10px]">Job</span></td>
-                    <td class="p-3 text-slate-800 font-bold text-xs">${item.jobNo || '-'}</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.route || '-'}</td>
-                    <td class="p-3 text-slate-600 text-xs">${item.foreman || '-'}</td>
-                    <td class="p-3 text-purple-700 font-semibold text-xs">${item.helpers || '-'}</td>
-                    <td class="p-3 text-blue-700 font-semibold text-xs">${item.drivers || '-'}</td>
-                    <td class="p-3 text-emerald-600 font-bold text-xs">${item.total || '-'}</td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition" title="Restore">
-                            <i class="fa-solid fa-rotate-left"></i> Restore
-                        </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition" title="Delete Permanently">
-                            <i class="fa-solid fa-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }
-    }).join('');
-}
-// Function to restore a job from Recycle Bin back to master jobs ledger
-function restoreTrashItem(index) {
-    const TRASH_KEY = 'movepro_trash_bin';
-    let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
-    
-    if (index < 0 || index >= trashBin.length) return;
-
-    const trashItem = trashBin.splice(index, 1)[0];
-    if (!trashItem) return;
-
-    const { recordType, deletedAt, ...restoredItem } = trashItem;
-
-    if (recordType === 'rental') {
-        let rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-        rentals.unshift(restoredItem);
-        localStorage.setItem('movepro_private_truck_rentals', JSON.stringify(rentals));
-    } else if (recordType === 'warehouse') {
-        let warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-        warehouse.unshift(restoredItem);
-        localStorage.setItem('movepro_warehouse_records', JSON.stringify(warehouse));
-    } else {
-        let jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
-        jobs.unshift(restoredItem);
-        localStorage.setItem('movePro_masterJobs', JSON.stringify(jobs));
-    }
-
-    localStorage.setItem(TRASH_KEY, JSON.stringify(trashBin));
-
-    renderTrashBin();
-    if (typeof filterJobsTable === 'function') filterJobsTable();
-    if (typeof renderPrivateTruckRentalTab === 'function') renderPrivateTruckRentalTab();
-    if (typeof renderWarehouseTab === 'function') renderWarehouseTab();
-    if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
-}
-// Unified Restore Function for warehouse and Jobs and Rentals
+// Unified Recycle Bin Render Function
 function renderTrashBin() {
     const tbody = document.getElementById('trashTableBody');
     if (!tbody) return;
@@ -979,7 +819,43 @@ function renderTrashBin() {
         }
     }).join('');
 }
-// Unified Permanent Delete Function
+window.renderTrashBin = renderTrashBin;
+
+function restoreTrashItem(index) {
+    const TRASH_KEY = 'movepro_trash_bin';
+    let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
+    
+    if (index < 0 || index >= trashBin.length) return;
+
+    const trashItem = trashBin.splice(index, 1)[0];
+    if (!trashItem) return;
+
+    const { recordType, deletedAt, ...restoredItem } = trashItem;
+
+    if (recordType === 'rental') {
+        let rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+        rentals.unshift(restoredItem);
+        localStorage.setItem('movepro_private_truck_rentals', JSON.stringify(rentals));
+    } else if (recordType === 'warehouse') {
+        let warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+        warehouse.unshift(restoredItem);
+        localStorage.setItem('movepro_warehouse_records', JSON.stringify(warehouse));
+    } else {
+        let jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
+        jobs.unshift(restoredItem);
+        localStorage.setItem('movePro_masterJobs', JSON.stringify(jobs));
+    }
+
+    localStorage.setItem(TRASH_KEY, JSON.stringify(trashBin));
+
+    renderTrashBin();
+    filterJobsTable();
+    if (typeof renderPrivateTruckRentalTab === 'function') renderPrivateTruckRentalTab();
+    if (typeof renderWarehouseTab === 'function') renderWarehouseTab();
+    updateDashboardAnalytics();
+}
+window.restoreTrashItem = restoreTrashItem;
+
 function permanentDeleteTrashItem(index) {
     if (!confirm('Are you sure you want to permanently delete this record?')) return;
 
@@ -992,24 +868,22 @@ function permanentDeleteTrashItem(index) {
         renderTrashBin();
     }
 }
+window.permanentDeleteTrashItem = permanentDeleteTrashItem;
 
-// Empty Entire Recycle Bin
 function emptyTrashBin() {
     if (!confirm('Are you sure you want to empty the Recycle Bin? All records will be lost permanently.')) {
         return;
     }
-    
     localStorage.removeItem('movepro_trash_bin');
-    
     renderTrashBin();
 }
+window.emptyTrashBin = emptyTrashBin;
 
 /**
  * Initial Application Load & State Setup
  */
 window.onload = () => {
     try {
-        // 1. Safe loading of Master Jobs data
         if (typeof loadMasterJobs === 'function') {
             window.masterJobs = loadMasterJobs() || [];
         }
@@ -1018,7 +892,6 @@ window.onload = () => {
             window.masterJobs = [];  
         }
 
-        // 2. Safe loading of subsidiary modules
         if (typeof loadTruckRentals === 'function') {
             loadTruckRentals();
         }
@@ -1027,31 +900,21 @@ window.onload = () => {
             window.warehouseRecords = loadWarehouseRecords() || [];
         }
         
-        // 3. Permissions and UI filters initialization
         window.currentUserRole = 'Admin';
         
-        if (typeof checkPermissions === 'function') checkPermissions();
-        if (typeof renderUsers === 'function') renderUsers();
-        if (typeof populateYearFilter === 'function') populateYearFilter();
-        if (typeof renderTrashBin === 'function') renderTrashBin();
+        checkPermissions();
+        renderUsers();
+        populateYearFilter();
+        renderTrashBin();
 
-        // 4. Render main data tables and analytics
         if (typeof filterJobsTable === 'function') {
             filterJobsTable();
         } else if (typeof renderJobsCRUD === 'function') {
             renderJobsCRUD(window.masterJobs);
         }
 
-        if (typeof updateDashboardAnalytics === 'function') {
-            updateDashboardAnalytics();
-        }
-
-        // 5. Force initial isolated tab view (Dashboard) to prevent overlapping layout corruption
-        if (typeof switchTab === 'function') {
-            switchTab('dashboard');
-        } else {
-            console.warn("Warning: switchTab function is not defined yet.");
-        }
+        updateDashboardAnalytics();
+        switchTab('dashboard');
 
     } catch (error) {
         console.error("An error occurred during window.onload execution:", error);
@@ -1065,7 +928,6 @@ document.addEventListener('click', function(e) {
     const btn = e.target.closest('button');
     if (!btn) return;
 
-    // Skip handling for the Add New Job button (handled by specific onclick attributes)
     if (btn.textContent.includes('Add New Job')) {
         return; 
     }
@@ -1073,16 +935,12 @@ document.addEventListener('click', function(e) {
     const btnText = btn.textContent.trim();
     const btnHtml = btn.innerHTML;
 
-    // Handle Modal Closing Actions
     if (btnText === 'Cancel' || btn.getAttribute('onclick')?.includes('closeModal') || btn.querySelector('.fa-xmark')) {
         e.preventDefault();
-        if (typeof closeModal === 'function') {
-            closeModal();
-        }
+        closeModal();
         return;
     }
 
-    // Handle Dynamic Payment Row Additions
     const isAddPaymentBtn = btnText.includes('Payment') || btnHtml.includes('Add Payment') || btnText.includes('+ Add');
     
     if (isAddPaymentBtn) {
@@ -1112,7 +970,7 @@ document.addEventListener('click', function(e) {
             }
         }
 
-        if (typeof addPaymentRow === 'function' && containerId) {
+        if (containerId) {
             addPaymentRow(containerId);
         } else {
             console.error("Target container ID not found or addPaymentRow is missing. Container ID was:", containerId);
