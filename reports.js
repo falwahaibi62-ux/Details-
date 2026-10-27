@@ -1,3 +1,7 @@
+/**
+ * MovePro - Financial & Operations Reports Module
+ */
+
 function switchReportMode(mode) {
     const summaryView = document.getElementById('summaryReportView');
     const detailedView = document.getElementById('detailedReportView');
@@ -9,17 +13,18 @@ function switchReportMode(mode) {
     if (mode === 'summary') {
         summaryView.classList.remove('hidden');
         detailedView.classList.add('hidden');
-        if (btnSummary) btnSummary.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition';
-        if (btnDetailed) btnDetailed.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
+        if (btnSummary) btnSummary.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer';
+        if (btnDetailed) btnDetailed.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer';
         generateSummaryReportData();
     } else {
         summaryView.classList.add('hidden');
         detailedView.classList.remove('hidden');
-        if (btnDetailed) btnDetailed.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition';
-        if (btnSummary) btnSummary.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
+        if (btnDetailed) btnDetailed.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer';
+        if (btnSummary) btnSummary.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer';
         generateDetailedReportData();
     }
 }
+window.switchReportMode = switchReportMode;
 
 function parseCurrency(val) {
     if (!val) return 0;
@@ -30,13 +35,17 @@ function parseCurrency(val) {
 }
 
 function applyReportFilters() {
-    const isSummaryActive = !document.getElementById('summaryReportView').classList.contains('hidden');
+    const summaryView = document.getElementById('summaryReportView');
+    if (!summaryView) return;
+    
+    const isSummaryActive = !summaryView.classList.contains('hidden');
     if (isSummaryActive) {
         generateSummaryReportData();
     } else {
         generateDetailedReportData();
     }
 }
+window.applyReportFilters = applyReportFilters;
 
 function resetReportFilters() {
     const startEl = document.getElementById('filterStartDate');
@@ -51,6 +60,7 @@ function resetReportFilters() {
 
     applyReportFilters();
 }
+window.resetReportFilters = resetReportFilters;
 
 function getFilteredJobsData() {
     const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
@@ -80,7 +90,7 @@ function getFilteredJobsData() {
         }
 
         if (paymentVal !== 'all') {
-            const paymentField = String(j.paymentType || j.puPayment || '').toLowerCase();
+            const paymentField = String(j.paymentType || j.pu || j.dest || '').toLowerCase();
             if (!paymentField.includes(paymentVal)) return false;
         }
 
@@ -108,14 +118,14 @@ function generateOfficialSummaryTable(filteredJobs) {
     let sumTotalAfterDeposit = 0;
 
     filteredJobs.forEach(item => {
-        sumForeman10 += parseCurrency(item.foreman || item.foreman10 || item.foremanFee);
-        sumHelpers += parseCurrency(item.helpers || item.helpersCost);
-        sumDrivers += parseCurrency(item.drivers || item.driversCost);
-        sumCashDiesel += parseCurrency(item.diesel || item.cashDiesel || item.dieselCost);
-        sumTotalAfterDeposit += parseCurrency(item.total || item.totalAfterDeposit || item.amount);
+        sumForeman10 += parseCurrency(item.foremanFee || item.foreman);
+        sumHelpers += parseCurrency(item.helpersNum || item.helpers);
+        sumDrivers += parseCurrency(item.driversNum || item.drivers);
+        sumCashDiesel += parseCurrency(item.diesel);
+        sumTotalAfterDeposit += parseCurrency(item.total);
 
-        const puStr = String(item.puPayment || item.paymentType || '').toLowerCase();
-        const puVal = parseCurrency(item.puPayment || item.paymentAmount);
+        const puStr = String(item.pu || '').toLowerCase();
+        const puVal = parseCurrency(item.pu);
         
         if (puStr.includes('cash')) {
             sumCashPu += puVal;
@@ -125,8 +135,8 @@ function generateOfficialSummaryTable(filteredJobs) {
             sumZellePu += puVal;
         }
 
-        const destStr = String(item.destBalance || item.destPayment || '').toLowerCase();
-        const destVal = parseCurrency(item.destBalance || item.destPayment);
+        const destStr = String(item.dest || '').toLowerCase();
+        const destVal = parseCurrency(item.dest);
 
         if (destStr.includes('cash')) {
             sumCashDest += destVal;
@@ -163,7 +173,7 @@ function generateOfficialSummaryTable(filteredJobs) {
                 <table class="w-full text-left border-collapse text-[11px]">
                     <thead>
                         <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">Foreman 10%</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">Foreman</th>
                             <th class="p-2.5 border-r border-slate-200/60 text-center">Helpers</th>
                             <th class="p-2.5 border-r border-slate-200/60 text-center">Drivers</th>
                             <th class="p-2.5 border-r border-slate-200/60 text-center text-amber-700 bg-amber-50/50">Cash Diesel</th>
@@ -198,6 +208,7 @@ function generateOfficialSummaryTable(filteredJobs) {
         </div>
     `;
 }
+
 function generateSummaryReportData() {
     const filteredJobs = getFilteredJobsData();
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
@@ -309,6 +320,7 @@ function generateSummaryReportData() {
         `;
     }
 }
+window.generateSummaryReportData = generateSummaryReportData;
 
 function generateDetailedReportData() {
     const startDateVal = document.getElementById('filterStartDate')?.value;
@@ -325,18 +337,18 @@ function generateDetailedReportData() {
     if (jobsBadge) jobsBadge.innerText = `${filteredJobs.length} Jobs`;
     if (jobsTbody) {
         if (filteredJobs.length === 0) {
-            jobsTbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No job records found for selected period.</td></tr>`;
+            jobsTbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400 text-xs">No job records found for selected period.</td></tr>`;
         } else {
             jobsTbody.innerHTML = filteredJobs.map(item => `
-                <tr class="hover:bg-slate-50 transition">
-                    <td class="p-3 border">${item.date || '-'}</td>
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                    <td class="p-3 border font-medium">${item.date || '-'}</td>
                     <td class="p-3 border font-semibold text-slate-800">${item.jobNo || '-'}</td>
-                    <td class="p-3 border">${item.from || '-'} → ${item.to || '-'}</td>
+                    <td class="p-3 border">${item.route || '-'}</td>
                     <td class="p-3 border">${item.foreman || '-'}</td>
                     <td class="p-3 border">${item.helpers || '-'}</td>
                     <td class="p-3 border">${item.drivers || '-'}</td>
-                    <td class="p-3 border font-bold text-emerald-600">$${parseCurrency(item.total).toLocaleString()}</td>
-                    <td class="p-3 border">${item.puPayment || '-'}</td>
+                    <td class="p-3 border font-bold text-emerald-600">${item.total || '$0'}</td>
+                    <td class="p-3 border">${item.pu || '-'}</td>
                 </tr>
             `).join('');
         }
@@ -357,14 +369,14 @@ function generateDetailedReportData() {
     if (rentalsBadge) rentalsBadge.innerText = `${filteredRentals.length} Records`;
     if (rentalsTbody) {
         if (filteredRentals.length === 0) {
-            rentalsTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No truck rental records found for selected period.</td></tr>`;
+            rentalsTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">No truck rental records found for selected period.</td></tr>`;
         } else {
             rentalsTbody.innerHTML = filteredRentals.map(r => `
-                <tr class="hover:bg-slate-50 transition">
-                    <td class="p-3 border">${r.date || '-'}</td>
-                    <td class="p-3 border font-semibold text-slate-800">${r.vendor || r.truckNo || 'Rental Truck'}</td>
-                    <td class="p-3 border">${r.description || r.notes || '-'}</td>
-                    <td class="p-3 border">${r.paymentType || r.paymentMethod || 'Cash'}</td>
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                    <td class="p-3 border font-medium">${r.date || '-'}</td>
+                    <td class="p-3 border font-semibold text-slate-800">${r.truckLabel || 'Truck Rental'}</td>
+                    <td class="p-3 border">${r.paidBy || '-'}</td>
+                    <td class="p-3 border">${r.paymentType || 'Cash'}</td>
                     <td class="p-3 border text-right font-bold text-amber-600">$${parseCurrency(r.amount).toLocaleString()}</td>
                 </tr>
             `).join('');
@@ -386,20 +398,21 @@ function generateDetailedReportData() {
     if (warehouseBadge) warehouseBadge.innerText = `${filteredWarehouse.length} Records`;
     if (warehouseTbody) {
         if (filteredWarehouse.length === 0) {
-            warehouseTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No warehouse records found for selected period.</td></tr>`;
+            warehouseTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">No warehouse records found for selected period.</td></tr>`;
         } else {
             warehouseTbody.innerHTML = filteredWarehouse.map(w => `
-                <tr class="hover:bg-slate-50 transition">
-                    <td class="p-3 border">${w.date || '-'}</td>
-                    <td class="p-3 border font-semibold text-slate-800">${w.category || w.type || 'Warehouse Expense'}</td>
-                    <td class="p-3 border">${w.description || w.facility || '-'}</td>
-                    <td class="p-3 border">${w.paymentType || w.paymentMethod || 'Cash'}</td>
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                    <td class="p-3 border font-medium">${w.date || '-'}</td>
+                    <td class="p-3 border font-semibold text-slate-800">${w.services || 'Warehouse Expense'}</td>
+                    <td class="p-3 border">${w.details || '-'}</td>
+                    <td class="p-3 border">${w.paymentType || 'Cash'}</td>
                     <td class="p-3 border text-right font-bold text-purple-600">$${parseCurrency(w.amount).toLocaleString()}</td>
                 </tr>
             `).join('');
         }
     }
 }
+window.generateDetailedReportData = generateDetailedReportData;
 
 function exportOfficialPDF() {
     const reportElement = document.getElementById('summaryReportView') || document.getElementById('tab-reports');
@@ -448,9 +461,3 @@ function exportOfficialPDF() {
     `;
 
     printWindow.document.write(htmlContent);
-    printWindow.document.close();
-}
-
-function renderReportsTab() {
-    switchReportMode('summary');
-}
