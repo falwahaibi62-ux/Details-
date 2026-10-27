@@ -1,14 +1,31 @@
 let currentUserRole = 'Admin';
 let currentLoggedInUser = null;
+let revenueChartInstance = null;
+let paymentMixChartInstance = null;
+
+// ==========================================
+// 1. DATA INITIALIZATION & STORAGE SYNC
+// ==========================================
+function initMasterJobsData() {
+    let stored = localStorage.getItem('movePro_masterJobs');
+    if (!stored || JSON.parse(stored).length === 0) {
+        if (typeof window.masterJobs !== 'undefined' && Array.isArray(window.masterJobs) && window.masterJobs.length > 0) {
+            localStorage.setItem('movePro_masterJobs', JSON.stringify(window.masterJobs));
+        }
+    }
+    window.masterJobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || window.masterJobs || [];
+}
+
+function saveMasterJobsData(jobs) {
+    window.masterJobs = jobs;
+    localStorage.setItem('movePro_masterJobs', JSON.stringify(jobs));
+}
 
 function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
     if (!yearSelect) return;
 
-    if (!window.masterJobs || !Array.isArray(window.masterJobs)) {
-        window.masterJobs = [];
-    }
-
+    initMasterJobsData();
     const uniqueYears = [...new Set(window.masterJobs.map(item => item.year))].filter(y => y).sort((a, b) => b - a);
     const currentSelected = yearSelect.value;
 
@@ -20,11 +37,15 @@ function populateYearFilter() {
     yearSelect.innerHTML = optionsHTML;
 }
 
-// Function to filter the master jobs ledger based on selected month and year filters
+// ==========================================
+// 2. CRUD TABLE & FILTERING
+// ==========================================
 function filterJobsTable() {
-    if (!window.masterJobs || !Array.isArray(window.masterJobs)) {
-        window.masterJobs = [];
-    }
+    const jobsTab = document.getElementById('tab-jobs');
+    // إذا لم يكن تبويب الـ jobs نشطاً، نكتفي بالخروج لتجنب أخطاء DOM
+    if (!jobsTab) return;
+
+    initMasterJobsData();
 
     const monthVal = document.getElementById('filterMonth')?.value || 'ALL';
     const yearVal = document.getElementById('filterYear')?.value || 'ALL';
@@ -44,88 +65,6 @@ function filterJobsTable() {
 }
 window.filterJobsTable = filterJobsTable;
 
-function renderUsers() {
-    const container = document.getElementById('usersListContainer');
-    if (!container) return;
-    if (typeof systemUsers === 'undefined') return;
-    container.innerHTML = systemUsers.map(u => `
-        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border text-xs">
-            <div>
-                <p class="font-bold text-slate-900 text-sm">${u.name}</p>
-                <p class="text-slate-500">${u.email}</p>
-            </div>
-            <div class="flex items-center space-x-3">
-                <select class="p-2 border rounded-lg font-semibold bg-white" disabled>
-                    <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>Admin</option>
-                    <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>Member</option>
-                    <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>Viewer</option>
-                </select>
-            </div>
-        </div>
-    `).join('');
-}
-
-function checkPermissions() {
-    const addBtn = document.getElementById('addJobBtn');
-    if (currentUserRole === 'Viewer') {
-        if (addBtn) addBtn.style.display = 'none';
-    } else {
-        if (addBtn) addBtn.style.display = 'flex';
-    }
-}
-
-function addPaymentRow(containerId, amount = '', method = 'Cash') {
-    const container = document.getElementById(containerId);
-    if (!container) {
-        console.error("Container NOT found in DOM:", containerId);
-        return;
-    }
-
-    const rowId = 'payment_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-    const rowDiv = document.createElement('div');
-    rowDiv.className = 'flex items-center gap-2 payment-row mt-2';
-    rowDiv.id = rowId;
-
-    rowDiv.innerHTML = `
-        <input type="text" placeholder="Amount (e.g. 500)" value="${amount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
-        <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
-            <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
-            <option value="Zelle" ${method === 'Zelle' ? 'selected' : ''}>Zelle</option>
-            <option value="Cheque" ${method === 'Cheque' ? 'selected' : ''}>Cheque</option>
-            <option value="PMO" ${method === 'PMO' ? 'selected' : ''}>PMO</option>
-            <option value="BC" ${method === 'BC' ? 'selected' : ''}>BC</option>
-            <option value="PC" ${method === 'PC' ? 'selected' : ''}>PC</option>
-            <option value="CC" ${method === 'CC' ? 'selected' : ''}>CC</option>
-            <option value="WT" ${method === 'WT' ? 'selected' : ''}>WT</option>
-            <option value="Others" ${method === 'Others' ? 'selected' : ''}>Others</option>
-        </select>
-        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer" title="Remove">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    `;
-
-    container.appendChild(rowDiv);
-}
-window.addPaymentRow = addPaymentRow;
-
-function extractPaymentsFromContainer(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return '-';
-
-    const rows = container.querySelectorAll('.payment-row');
-    const paymentsList = [];
-
-    rows.forEach(row => {
-        const amtInput = row.querySelector('.payment-amount');
-        const mthSelect = row.querySelector('.payment-method');
-        if (amtInput && amtInput.value.trim() !== '') {
-            paymentsList.push(`${amtInput.value.trim()} ${mthSelect ? mthSelect.value : 'Cash'}`);
-        }
-    });
-
-    return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
-}
-
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('crudTableBody');
     if (!tbody) return;
@@ -133,7 +72,7 @@ function renderJobsCRUD(dataToRender) {
     const records = dataToRender || window.masterJobs || [];
 
     if (!records || records.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-slate-400 text-xs">No dispatches found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-slate-400 text-xs font-semibold">No dispatches found</td></tr>`;
         return;
     }
     
@@ -175,26 +114,70 @@ function renderJobsCRUD(dataToRender) {
 }
 window.renderJobsCRUD = renderJobsCRUD;
 
-function globalSearchFilter() {
-    const query = document.getElementById('globalSearch')?.value.toLowerCase() || '';
-    if (!query) {
-        filterJobsTable();
+// ==========================================
+// 3. PAYMENT ROWS MANAGEMENT (FIXED)
+// ==========================================
+function addPaymentRow(containerId, amount = '', method = 'Cash') {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error("Container NOT found in DOM:", containerId);
         return;
     }
-    let filtered = window.masterJobs.filter(item => 
-       String(item.jobNo || '').toLowerCase().includes(query) || 
-       String(item.route || '').toLowerCase().includes(query) || 
-       String(item.foreman || '').toLowerCase().includes(query)
-    );
-    switchTab('jobs');
-    renderJobsCRUD(filtered);
-    const countText = document.getElementById('filteredCountText');
-    if (countText) {
-        countText.innerText = `Search results: ${filtered.length} records`;
-    }
-}
-window.globalSearchFilter = globalSearchFilter;
 
+    const rowId = 'payment_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'flex items-center gap-2 payment-row mt-2';
+    rowDiv.id = rowId;
+
+    rowDiv.innerHTML = `
+        <input type="text" placeholder="Amount (e.g. 500)" value="${amount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
+        <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
+            <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
+            <option value="Zelle" ${method === 'Zelle' ? 'selected' : ''}>Zelle</option>
+            <option value="Cheque" ${method === 'Cheque' ? 'selected' : ''}>Cheque</option>
+            <option value="PMO" ${method === 'PMO' ? 'selected' : ''}>PMO</option>
+            <option value="BC" ${method === 'BC' ? 'selected' : ''}>BC</option>
+            <option value="PC" ${method === 'PC' ? 'selected' : ''}>PC</option>
+            <option value="CC" ${method === 'CC' ? 'selected' : ''}>CC</option>
+            <option value="WT" ${method === 'WT' ? 'selected' : ''}>WT</option>
+            <option value="Others" ${method === 'Others' ? 'selected' : ''}>Others</option>
+        </select>
+        <button type="button" onclick="removePaymentRow('${rowId}')" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer delete-payment-btn" title="Remove">
+            <i class="fa-solid fa-xmark pointer-events-none"></i>
+        </button>
+    `;
+
+    container.appendChild(rowDiv);
+}
+window.addPaymentRow = addPaymentRow;
+
+function removePaymentRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) row.remove();
+}
+window.removePaymentRow = removePaymentRow;
+
+function extractPaymentsFromContainer(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return '-';
+
+    const rows = container.querySelectorAll('.payment-row');
+    const paymentsList = [];
+
+    rows.forEach(row => {
+        const amt = row.querySelector('.payment-amount')?.value.trim() || '';
+        const mth = row.querySelector('.payment-method')?.value || 'Cash';
+        if (amt !== '') {
+            paymentsList.push(`${amt} ${mth}`);
+        }
+    });
+
+    return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
+}
+
+// ==========================================
+// 4. MODAL & JOB ACTIONS (ADD / EDIT / DELETE)
+// ==========================================
 function openAddModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
@@ -215,6 +198,7 @@ function openAddModal() {
     const modalTitle = document.getElementById('modalTitle');
     if (modalTitle) modalTitle.innerText = 'Add New Job';
 
+    // تنظيف حاويات المدفوعات عند الفتح لمنع أي تكرار سابق
     const puContainer = document.getElementById('puContainer');
     const destContainer = document.getElementById('destContainer');
     if (puContainer) puContainer.innerHTML = '';
@@ -242,8 +226,8 @@ function saveJob(event) {
         return;
     }
 
+    initMasterJobsData();
     const jobNoVal = jobNoInput.value.trim();
-    if (!window.masterJobs) window.masterJobs = [];
 
     const editIndexInput = document.getElementById('editIndex');
     const editIndex = editIndexInput ? parseInt(editIndexInput.value, 10) : -1;
@@ -312,7 +296,7 @@ function saveJob(event) {
         window.masterJobs.unshift(jobData);
     }
 
-    if (typeof saveMasterJobs === 'function') saveMasterJobs(window.masterJobs);
+    saveMasterJobsData(window.masterJobs);
     closeModal();
     populateYearFilter();
     filterJobsTable();
@@ -321,6 +305,7 @@ function saveJob(event) {
 window.saveJob = saveJob;
 
 function editJob(index) {
+    initMasterJobsData();
     if (!window.masterJobs || !window.masterJobs[index]) return;
     const j = window.masterJobs[index];
     
@@ -346,15 +331,16 @@ window.editJob = editJob;
 function deleteJob(jobNo) {
     if (!confirm('Are you sure you want to move this dispatch to Recycle Bin?')) return;
 
+    initMasterJobsData();
     const jobIndex = window.masterJobs.findIndex(j => j.jobNo === jobNo);
 
     if (jobIndex !== -1) {
         const deletedJob = window.masterJobs.splice(jobIndex, 1)[0];
-        window.masterTrash = window.masterTrash || [];
+        window.masterTrash = JSON.parse(localStorage.getItem('movepro_trash_bin')) || [];
         window.masterTrash.push(deletedJob);
 
-        if (typeof saveMasterJobs === 'function') saveMasterJobs(window.masterJobs);
-        if (typeof saveTrashBin === 'function') saveTrashBin(window.masterTrash);
+        saveMasterJobsData(window.masterJobs);
+        localStorage.setItem('movepro_trash_bin', JSON.stringify(window.masterTrash));
 
         filterJobsTable();
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
@@ -362,6 +348,9 @@ function deleteJob(jobNo) {
 }
 window.deleteJob = deleteJob;
 
+// ==========================================
+// 5. NAVIGATION & TABS
+// ==========================================
 function switchTab(tab) {
     closeModal();
 
@@ -397,8 +386,8 @@ function switchTab(tab) {
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
     } else if (tab === 'jobs') {
         filterJobsTable();
-    } else if (tab === 'trash') {
-        if (typeof renderTrashBin === 'function') renderTrashBin();
+    } else if (tab === 'trash' && typeof renderTrashBin === 'function') {
+        renderTrashBin();
     } else if (tab === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
         renderPrivateTruckRentalTab();
     } else if (tab === 'warehouse' && typeof renderWarehouseTab === 'function') {
@@ -409,23 +398,18 @@ function switchTab(tab) {
 }
 window.switchTab = switchTab;
 
-/**
- * Initial Application Load & State Setup
- */
+// ==========================================
+// 6. INITIALIZATION & SECURED EVENT DELEGATION
+// ==========================================
 window.onload = () => {
     try {
-        if (typeof loadMasterJobs === 'function') {
-            window.masterJobs = loadMasterJobs() || window.masterJobs || [];
-        } else if (!window.masterJobs) {
-            window.masterJobs = [];
-        }
-
+        initMasterJobsData();
         window.currentUserRole = 'Admin';
         
-        checkPermissions();
-        renderUsers();
-        populateYearFilter();
+        if (typeof checkPermissions === 'function') checkPermissions();
+        if (typeof renderUsers === 'function') renderUsers();
         
+        populateYearFilter();
         filterJobsTable();
 
         if (typeof updateDashboardAnalytics === 'function') {
@@ -440,36 +424,39 @@ window.onload = () => {
 };
 
 /**
- * Global Event Delegation for Dynamic Buttons & Modals
+ * Global Event Delegation (Fixed to separate Modal Close from Payment Row Delete)
  */
 document.addEventListener('click', function(e) {
     const btn = e.target.closest('button');
     if (!btn) return;
 
-    // منع تداخل زر إغلاق المودال مع أزرار الإضافة
-    const btnText = btn.textContent.trim();
-    if (btnText === 'Cancel' || btn.getAttribute('onclick')?.includes('closeModal') || btn.querySelector('.fa-xmark')) {
-        if (btn.closest('#jobModal')) {
-            e.preventDefault();
-            closeModal();
-            return;
-        }
+    // 1. معالجة زر الإغلاق للنافذة المنبثقة (Modal Cancel / Close)
+    const isCancelBtn = btn.textContent.trim() === 'Cancel' || 
+                        btn.getAttribute('onclick')?.includes('closeModal') || 
+                        (btn.querySelector('.fa-xmark') && !btn.closest('.payment-row') && !btn.classList.contains('delete-payment-btn'));
+
+    if (isCancelBtn && btn.closest('#jobModal')) {
+        e.preventDefault();
+        closeModal();
+        return;
     }
 
-    // التحقق الدقيق لزر إضافة المدفوعات وتوجيهه الحاويات الصحيحة حصراً
-    if (btnText.includes('Add Payment') || btn.innerHTML.includes('Add Payment') || btnText === '+ Add Payment') {
+    // 2. معالجة زر إضافة صف دفع جديد (Add Payment)
+    const btnText = btn.textContent.trim();
+    const isAddPaymentBtn = btnText.includes('Add Payment') || btn.innerHTML.includes('Add Payment') || btnText === '+ Add Payment';
+    
+    if (isAddPaymentBtn) {
         e.preventDefault();
+        e.stopPropagation();
         
-        // معرفة هل الزر خاص بـ P.U أو Destination عبر البحث في الأب المباشر
         const parentSection = btn.closest('div.space-y-2') || btn.parentElement;
-        let targetContainerId = null;
+        let targetContainerId = 'puContainer';
 
-        if (parentSection && parentSection.textContent.includes('Destination')) {
+        if (parentSection && (parentSection.textContent.includes('Destination') || parentSection.textContent.includes('Balance'))) {
             targetContainerId = 'destContainer';
-        } else {
-            targetContainerId = 'puContainer';
         }
 
         addPaymentRow(targetContainerId);
+        return;
     }
 });
