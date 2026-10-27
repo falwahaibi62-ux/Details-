@@ -1,5 +1,5 @@
 /**
- * MovePro - Application Core Logic & Operations (Production Safe & Error Free)
+ * MovePro - Application Core Logic & Operations (Complete & Fully Restored)
  */
 
 if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
@@ -63,8 +63,8 @@ function filterJobsTable() {
     const yearVal = document.getElementById('filterYear')?.value || 'ALL';
 
     let filtered = window.masterJobs.filter(job => {
-        const matchesMonth = (monthVal === 'ALL') || (job.month && job.month.toString() === monthVal);
-        const matchesYear = (yearVal === 'ALL') || (job.year && job.year.toString() === yearVal);
+        const matchesMonth = (monthVal === 'ALL' || monthVal === 'All Months') || (job.month && job.month.toString() === monthVal);
+        const matchesYear = (yearVal === 'ALL' || yearVal === 'All Years') || (job.year && job.year.toString() === yearVal);
         return matchesMonth && matchesYear;
     });
 
@@ -73,9 +73,7 @@ function filterJobsTable() {
         countText.innerText = `Showing ${filtered.length} of ${window.masterJobs.length} records`;
     }
     
-    if (typeof renderJobsCRUD === 'function') {
-        renderJobsCRUD(filtered);
-    }
+    renderJobsCRUD(filtered);
 }
 window.filterJobsTable = filterJobsTable;
 
@@ -112,11 +110,14 @@ function checkPermissions() {
 window.checkPermissions = checkPermissions;
 
 // ==========================================
-// 3. RENDERING CRUD TABLE
+// 3. RENDERING CRUD TABLE (Matched to Columns)
 // ==========================================
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('crudTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error("Target element 'crudTableBody' not found in DOM!");
+        return;
+    }
     
     const records = dataToRender || window.masterJobs || [];
 
@@ -161,7 +162,7 @@ function renderJobsCRUD(dataToRender) {
 window.renderJobsCRUD = renderJobsCRUD;
 
 // ==========================================
-// 4. NAVIGATION & TABS (Fixed & Safe)
+// 4. NAVIGATION & TABS
 // ==========================================
 function switchTab(tabName) {
     try {
@@ -213,7 +214,7 @@ function switchTab(tabName) {
 window.switchTab = switchTab;
 
 // ==========================================
-// 5. DASHBOARD ANALYTICS
+// 5. DASHBOARD ANALYTICS & CHARTS
 // ==========================================
 function updateDashboardAnalytics() {
     try {
@@ -222,6 +223,7 @@ function updateDashboardAnalytics() {
 
         let totalRev = 0;
         const routeRevenueMap = {};
+        const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0 };
         const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
         window.masterJobs.forEach(job => {
@@ -250,11 +252,72 @@ function updateDashboardAnalytics() {
 
         const avgEl = document.getElementById('dashAvgJobValue');
         if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
+
+        renderDashboardCharts(monthlyRev, paymentMethodMap);
     } catch (e) {
         console.error("Error updating dashboard analytics:", e);
     }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
+
+function renderDashboardCharts(monthlyData, paymentData) {
+    try {
+        const ctxRevenue = document.getElementById('revenueChart');
+        if (ctxRevenue && typeof Chart !== 'undefined') {
+            if (window.revenueChartInstance) window.revenueChartInstance.destroy();
+            window.revenueChartInstance = new Chart(ctxRevenue, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Monthly Revenue ($)',
+                        data: monthlyData,
+                        backgroundColor: 'rgba(5, 150, 105, 0.85)',
+                        borderRadius: 8,
+                        hoverBackgroundColor: '#047857'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        const ctxPayment = document.getElementById('paymentMixChart');
+        if (ctxPayment && typeof Chart !== 'undefined') {
+            if (window.paymentMixChartInstance) window.paymentMixChartInstance.destroy();
+            const paymentColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b'];
+
+            window.paymentMixChartInstance = new Chart(ctxPayment, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(paymentData),
+                    datasets: [{
+                        data: Object.values(paymentData),
+                        backgroundColor: paymentColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+                    cutout: '65%'
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Error rendering charts:", e);
+    }
+}
+window.renderDashboardCharts = renderDashboardCharts;
 
 // ==========================================
 // 6. INITIALIZATION
@@ -269,6 +332,7 @@ window.addEventListener('DOMContentLoaded', () => {
         populateYearFilter();
         
         updateDashboardAnalytics();
+        filterJobsTable();
         switchTab('dashboard');
     } catch (error) {
         console.error("Initialization error on DOMContentLoaded:", error);
