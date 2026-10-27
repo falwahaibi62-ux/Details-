@@ -1,7 +1,5 @@
 let currentUserRole = 'Admin';
 let currentLoggedInUser = null;
-let revenueChartInstance = null;
-let paymentMixChartInstance = null;
 
 function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
@@ -388,7 +386,7 @@ function saveJob(event) {
     closeModal();
     populateYearFilter();
     filterJobsTable();
-    updateDashboardAnalytics();
+    if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 }
 window.saveJob = saveJob;
 
@@ -526,164 +524,14 @@ function deleteJob(jobNo) {
         window.masterTrash.push(deletedJob);
 
         saveMasterJobs(masterJobs);
-        saveTrashBin(window.masterTrash);
+        if (typeof saveTrashBin === 'function') saveTrashBin(window.masterTrash);
 
         filterJobsTable();
-        updateDashboardAnalytics();
-        renderTrashBin();
+        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
+        if (typeof renderTrashBin === 'function') renderTrashBin();
     }
 }
 window.deleteJob = deleteJob;
-
-function updateDashboardAnalytics() {
-    if (!masterJobs || masterJobs.length === 0) return;
-
-    let totalRev = 0;
-    const routeRevenueMap = {};
-    
-    const paymentMethodMap = { 
-        Cash: 0, 
-        Zelle: 0, 
-        Cheque: 0, 
-        PMO: 0, 
-        BC: 0, 
-        PC: 0, 
-        CC: 0, 
-        WT: 0, 
-        Others: 0 
-    };
-    
-    const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-    masterJobs.forEach(job => {
-        let amt = 0;
-        if (job.total) {
-            amt = parseFloat(job.total.replace(/[^0-9.]/g, '')) || 0;
-        }
-        totalRev += amt;
-
-        if (job.month && job.month >= 1 && job.month <= 12) {
-            monthlyRev[job.month - 1] += amt;
-        }
-
-        if (job.route) {
-            routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
-        }
-
-        const extractMethods = (text) => {
-            if (!text || text === '-') return;
-            const lower = text.toLowerCase();
-            
-            if (lower.includes('cash')) paymentMethodMap.Cash++;
-            else if (lower.includes('zelle')) paymentMethodMap.Zelle++;
-            else if (lower.includes('cheque')) paymentMethodMap.Cheque++;
-            else if (lower.includes('pmo')) paymentMethodMap.PMO++;
-            else if (lower.includes('bc')) paymentMethodMap.BC++;
-            else if (lower.includes('pc')) paymentMethodMap.PC++;
-            else if (lower.includes('cc')) paymentMethodMap.CC++;
-            else if (lower.includes('wt')) paymentMethodMap.WT++;
-            else paymentMethodMap.Others++;
-        };
-
-        extractMethods(job.pu);
-        extractMethods(job.dest);
-    });
-
-    const completedJobsCount = masterJobs.length;
-    const avgJobVal = completedJobsCount > 0 ? (totalRev / completedJobsCount) : 0;
-
-    const revEl = document.getElementById('dashTotalRevenue');
-    if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
-
-    const jobsTextEl = document.getElementById('dashCompletedJobsText');
-    if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${completedJobsCount} Active Dispatches`;
-
-    const avgEl = document.getElementById('dashAvgJobValue');
-    if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
-
-    const topCorridorsContainer = document.getElementById('topCorridorsContainer');
-    if (topCorridorsContainer) {
-        const sortedRoutes = Object.entries(routeRevenueMap)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 4);
-
-        topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
-            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border">
-                <div class="flex items-center space-x-2">
-                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
-                    <span class="font-bold text-emerald-800">${route}</span>
-                </div>
-                <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
-            </div>
-        `).join('');
-    }
-
-    if (typeof renderDashboardCharts === 'function') {
-        renderDashboardCharts(monthlyRev, paymentMethodMap);
-    }
-}
-window.updateDashboardAnalytics = updateDashboardAnalytics;
-
-function renderDashboardCharts(monthlyData, paymentData) {
-    const ctxRevenue = document.getElementById('revenueChart');
-    if (ctxRevenue) {
-        if (typeof revenueChartInstance !== 'undefined' && revenueChartInstance) revenueChartInstance.destroy();
-        revenueChartInstance = new Chart(ctxRevenue, {
-            type: 'bar',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [{
-                    label: 'Monthly Revenue ($)',
-                    data: monthlyData,
-                    backgroundColor: 'rgba(5, 150, 105, 0.85)',
-                    borderRadius: 8,
-                    hoverBackgroundColor: '#047857'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-                }
-            }
-        });
-    }
-
-    const ctxPayment = document.getElementById('paymentMixChart');
-    if (ctxPayment) {
-        if (typeof paymentMixChartInstance !== 'undefined' && paymentMixChartInstance) paymentMixChartInstance.destroy();
-        
-        const paymentColors = [
-            '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', 
-            '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b'
-        ];
-
-        paymentMixChartInstance = new Chart(ctxPayment, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(paymentData),
-                datasets: [{
-                    data: Object.values(paymentData),
-                    backgroundColor: paymentColors,
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
-                },
-                cutout: '65%'
-            }
-        });
-    }
-}
-window.renderDashboardCharts = renderDashboardCharts;
 
 function switchTab(tab) {
     closeModal();
@@ -717,11 +565,11 @@ function switchTab(tab) {
     }
 
     if (tab === 'dashboard') {
-        setTimeout(updateDashboardAnalytics, 100);
+        if (typeof updateDashboardAnalytics === 'function') setTimeout(updateDashboardAnalytics, 100);
     } else if (tab === 'jobs') {
         filterJobsTable();
     } else if (tab === 'trash') {
-        renderTrashBin();
+        if (typeof renderTrashBin === 'function') renderTrashBin();
     } else if (tab === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
         renderPrivateTruckRentalTab();
     } else if (tab === 'warehouse' && typeof renderWarehouseTab === 'function') {
@@ -765,10 +613,10 @@ function renderTrashBin() {
                     <td class="p-3 text-blue-700 text-xs">-</td>
                     <td class="p-3 text-emerald-600 font-bold text-xs">$${parseFloat(item.amount || 0).toLocaleString()}</td>
                     <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition" title="Restore">
+                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition cursor-pointer" title="Restore">
                             <i class="fa-solid fa-rotate-left"></i> Restore
                         </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition" title="Delete Permanently">
+                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition cursor-pointer" title="Delete Permanently">
                             <i class="fa-solid fa-trash"></i> Delete
                         </button>
                     </td>
@@ -786,10 +634,10 @@ function renderTrashBin() {
                     <td class="p-3 text-blue-700 text-xs">-</td>
                     <td class="p-3 text-emerald-600 font-bold text-xs">$${parseFloat(item.amount || 0).toLocaleString()}</td>
                     <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition" title="Restore">
+                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition cursor-pointer" title="Restore">
                             <i class="fa-solid fa-rotate-left"></i> Restore
                         </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition" title="Delete Permanently">
+                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition cursor-pointer" title="Delete Permanently">
                             <i class="fa-solid fa-trash"></i> Delete
                         </button>
                     </td>
@@ -807,10 +655,10 @@ function renderTrashBin() {
                     <td class="p-3 text-blue-700 font-semibold text-xs">${item.drivers || '-'}</td>
                     <td class="p-3 text-emerald-600 font-bold text-xs">${item.total || '-'}</td>
                     <td class="p-3 text-center space-x-2">
-                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition" title="Restore">
+                        <button onclick="restoreTrashItem(${index})" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold transition cursor-pointer" title="Restore">
                             <i class="fa-solid fa-rotate-left"></i> Restore
                         </button>
-                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition" title="Delete Permanently">
+                        <button onclick="permanentDeleteTrashItem(${index})" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition cursor-pointer" title="Delete Permanently">
                             <i class="fa-solid fa-trash"></i> Delete
                         </button>
                     </td>
@@ -852,7 +700,7 @@ function restoreTrashItem(index) {
     filterJobsTable();
     if (typeof renderPrivateTruckRentalTab === 'function') renderPrivateTruckRentalTab();
     if (typeof renderWarehouseTab === 'function') renderWarehouseTab();
-    updateDashboardAnalytics();
+    if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 }
 window.restoreTrashItem = restoreTrashItem;
 
@@ -902,10 +750,10 @@ window.onload = () => {
         
         window.currentUserRole = 'Admin';
         
-        checkPermissions();
-        renderUsers();
-        populateYearFilter();
-        renderTrashBin();
+        if (typeof checkPermissions === 'function') checkPermissions();
+        if (typeof renderUsers === 'function') renderUsers();
+        if (typeof populateYearFilter === 'function') populateYearFilter();
+        if (typeof renderTrashBin === 'function') renderTrashBin();
 
         if (typeof filterJobsTable === 'function') {
             filterJobsTable();
@@ -913,8 +761,13 @@ window.onload = () => {
             renderJobsCRUD(window.masterJobs);
         }
 
-        updateDashboardAnalytics();
-        switchTab('dashboard');
+        if (typeof updateDashboardAnalytics === 'function') {
+            updateDashboardAnalytics();
+        }
+        
+        if (typeof switchTab === 'function') {
+            switchTab('dashboard');
+        }
 
     } catch (error) {
         console.error("An error occurred during window.onload execution:", error);
@@ -937,7 +790,7 @@ document.addEventListener('click', function(e) {
 
     if (btnText === 'Cancel' || btn.getAttribute('onclick')?.includes('closeModal') || btn.querySelector('.fa-xmark')) {
         e.preventDefault();
-        closeModal();
+        if (typeof closeModal === 'function') closeModal();
         return;
     }
 
@@ -970,7 +823,7 @@ document.addEventListener('click', function(e) {
             }
         }
 
-        if (containerId) {
+        if (containerId && typeof addPaymentRow === 'function') {
             addPaymentRow(containerId);
         } else {
             console.error("Target container ID not found or addPaymentRow is missing. Container ID was:", containerId);
