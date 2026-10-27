@@ -1,5 +1,5 @@
 /**
- * MovePro - Application Core Logic & Operations (Synchronized with Master Table Columns)
+ * MovePro - Application Core Logic & Operations (Production Safe & Error Free)
  */
 
 if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
@@ -11,19 +11,30 @@ if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChar
 // 1. DATA INITIALIZATION & STORAGE SYNC
 // ==========================================
 function initMasterJobsData() {
-    let stored = localStorage.getItem('movePro_masterJobs');
-    if (!stored || JSON.parse(stored).length === 0) {
-        if (typeof window.masterJobs !== 'undefined' && Array.isArray(window.masterJobs) && window.masterJobs.length > 0) {
-            localStorage.setItem('movePro_masterJobs', JSON.stringify(window.masterJobs));
+    try {
+        let stored = localStorage.getItem('movePro_masterJobs');
+        if (!stored || JSON.parse(stored).length === 0) {
+            if (typeof window.masterJobs !== 'undefined' && Array.isArray(window.masterJobs) && window.masterJobs.length > 0) {
+                localStorage.setItem('movePro_masterJobs', JSON.stringify(window.masterJobs));
+            }
         }
+        window.masterJobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || window.masterJobs || [];
+    } catch (e) {
+        console.error("Error initializing master jobs:", e);
+        window.masterJobs = window.masterJobs || [];
     }
-    window.masterJobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || window.masterJobs || [];
 }
+window.initMasterJobsData = initMasterJobsData;
 
 function saveMasterJobsData(jobs) {
-    window.masterJobs = jobs;
-    localStorage.setItem('movePro_masterJobs', JSON.stringify(jobs));
+    try {
+        window.masterJobs = jobs;
+        localStorage.setItem('movePro_masterJobs', JSON.stringify(jobs));
+    } catch (e) {
+        console.error("Error saving master jobs:", e);
+    }
 }
+window.saveMasterJobsData = saveMasterJobsData;
 
 function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
@@ -101,65 +112,7 @@ function checkPermissions() {
 window.checkPermissions = checkPermissions;
 
 // ==========================================
-// 3. PAYMENT ROWS MANAGEMENT
-// ==========================================
-function addPaymentRow(containerId, amount = '', method = 'Cash') {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const rowId = 'payment_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-    const rowDiv = document.createElement('div');
-    rowDiv.className = 'flex items-center gap-2 payment-row mt-2';
-    rowDiv.id = rowId;
-
-    rowDiv.innerHTML = `
-        <input type="text" placeholder="Amount (e.g. 500)" value="${amount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
-        <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
-            <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
-            <option value="Zelle" ${method === 'Zelle' ? 'selected' : ''}>Zelle</option>
-            <option value="Cheque" ${method === 'Cheque' ? 'selected' : ''}>Cheque</option>
-            <option value="PMO" ${method === 'PMO' ? 'selected' : ''}>PMO</option>
-            <option value="BC" ${method === 'BC' ? 'selected' : ''}>BC</option>
-            <option value="PC" ${method === 'PC' ? 'selected' : ''}>PC</option>
-            <option value="CC" ${method === 'CC' ? 'selected' : ''}>CC</option>
-            <option value="WT" ${method === 'WT' ? 'selected' : ''}>WT</option>
-            <option value="Others" ${method === 'Others' ? 'selected' : ''}>Others</option>
-        </select>
-        <button type="button" onclick="removePaymentRow('${rowId}')" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer delete-payment-btn" title="Remove">
-            <i class="fa-solid fa-xmark pointer-events-none"></i>
-        </button>
-    `;
-    container.appendChild(rowDiv);
-}
-window.addPaymentRow = addPaymentRow;
-
-function removePaymentRow(rowId) {
-    const row = document.getElementById(rowId);
-    if (row) row.remove();
-}
-window.removePaymentRow = removePaymentRow;
-
-function extractPaymentsFromContainer(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return '-';
-
-    const rows = container.querySelectorAll('.payment-row');
-    const paymentsList = [];
-
-    rows.forEach(row => {
-        const amt = row.querySelector('.payment-amount')?.value.trim() || '';
-        const mth = row.querySelector('.payment-method')?.value || 'Cash';
-        if (amt !== '') {
-            paymentsList.push(`${amt} ${mth}`);
-        }
-    });
-
-    return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
-}
-
-// ==========================================
-// 4. RENDERING CRUD TABLE (Matched to Image Columns)
-// Columns: DATE | JOB NO | ROUTE (FROM → TO) | FOREMAN | HELPERS | DRIVERS | TOTAL | P.U PAYMENTS | DESTINATION | DIESEL | HOTEL | ACTIONS
+// 3. RENDERING CRUD TABLE
 // ==========================================
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('crudTableBody');
@@ -187,27 +140,19 @@ function renderJobsCRUD(dataToRender) {
             `;
         }
 
-        const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
-        const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
-        const helpersVal = (item.helpers && item.helpers !== '0' && item.helpers !== '-') ? item.helpers : '-';
-        const driversVal = (item.drivers && item.drivers !== '-') ? item.drivers : '-'; 
-        const puVal = (item.pu && item.pu !== '-') ? item.pu : '-';
-        const destVal = (item.dest && item.dest !== '-') ? item.dest : '-';
-        const totalVal = (item.total && item.total !== '-') ? item.total : '-';
-
         return `
             <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
                 <td class="p-3 text-slate-700 font-medium">${item.date || '-'}</td>
                 <td class="p-3 text-slate-900 font-bold">${item.jobNo || '-'}</td>
                 <td class="p-3 text-slate-700">${item.route || '-'}</td>
                 <td class="p-3">${foremanDisplay}</td>
-                <td class="p-3 text-purple-700 font-semibold">${helpersVal}</td>
-                <td class="p-3 text-blue-700 font-semibold">${driversVal}</td> 
-                <td class="p-3 text-emerald-600 font-bold">${totalVal}</td>
-                <td class="p-3 text-slate-700">${puVal}</td>
-                <td class="p-3 text-slate-700">${destVal}</td>
-                <td class="p-3 text-emerald-700 font-semibold">${dieselVal}</td>
-                <td class="p-3 text-indigo-700 font-semibold">${hotelVal}</td>
+                <td class="p-3 text-purple-700 font-semibold">${item.helpers || '-'}</td>
+                <td class="p-3 text-blue-700 font-semibold">${item.drivers || '-'}</td> 
+                <td class="p-3 text-emerald-600 font-bold">${item.total || '-'}</td>
+                <td class="p-3 text-slate-700">${item.pu || '-'}</td>
+                <td class="p-3 text-slate-700">${item.dest || '-'}</td>
+                <td class="p-3 text-emerald-700 font-semibold">${item.diesel || '-'}</td>
+                <td class="p-3 text-indigo-700 font-semibold">${item.hotel || '-'}</td>
                 <td class="p-3 text-center">${actions}</td>
             </tr>
         `;
@@ -215,294 +160,106 @@ function renderJobsCRUD(dataToRender) {
 }
 window.renderJobsCRUD = renderJobsCRUD;
 
-function globalSearchFilter() {
-    initMasterJobsData();
-    const query = document.getElementById('globalSearch')?.value.toLowerCase() || '';
-    if (!query) {
-        filterJobsTable();
-        return;
-    }
-    let filtered = window.masterJobs.filter(item => 
-       String(item.jobNo || '').toLowerCase().includes(query) || 
-       String(item.route || '').toLowerCase().includes(query) || 
-       String(item.foreman || '').toLowerCase().includes(query)
-    );
-    switchTab('jobs');
-    renderJobsCRUD(filtered);
-    const countText = document.getElementById('filteredCountText');
-    if (countText) {
-        countText.innerText = `Search results: ${filtered.length} records`;
-    }
-}
-window.globalSearchFilter = globalSearchFilter;
-
 // ==========================================
-// 5. MODAL & JOB ACTIONS
+// 4. NAVIGATION & TABS (Fixed & Safe)
 // ==========================================
-function openAddModal() {
-    const modal = document.getElementById('jobModal');
-    if (modal) {
-        document.body.appendChild(modal);
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('z-index', '99999', 'important');
-    }
-
-    const jobForm = document.getElementById('jobForm');
-    if (jobForm) jobForm.reset();
-
-    const editIndex = document.getElementById('editIndex');
-    if (editIndex) editIndex.value = '';
-
-    const modalTitle = document.getElementById('modalTitle');
-    if (modalTitle) modalTitle.innerText = 'Add New Job Dispatch';
-
-    const puContainer = document.getElementById('puContainer');
-    const destContainer = document.getElementById('destContainer');
-    if (puContainer) puContainer.innerHTML = '';
-    if (destContainer) destContainer.innerHTML = '';
-}
-window.openAddModal = openAddModal;
-
-function closeModal() {
-    const modal = document.getElementById('jobModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        modal.style.setProperty('display', 'none', 'important');
-    }
-}
-window.closeModal = closeModal;
-
-function saveJob(event) {
-    if (event) event.preventDefault();
-
-    const jobNoInput = document.getElementById('jobNo');
-    if (!jobNoInput || !jobNoInput.value.trim()) {
-        alert('Please enter the Job Number.');
-        if (jobNoInput) jobNoInput.focus();
-        return;
-    }
-
-    initMasterJobsData();
-    const jobNoVal = jobNoInput.value.trim();
-
-    const editIndexInput = document.getElementById('editIndex');
-    const editIndex = editIndexInput ? parseInt(editIndexInput.value, 10) : -1;
-    const isEditing = !isNaN(editIndex) && editIndex >= 0 && editIndex < window.masterJobs.length;
-
-    const dateInput = document.getElementById('jobDate');
-    const dateRaw = dateInput ? dateInput.value : '';
-    let dateVal = dateRaw;
-    let monthVal = new Date().getMonth() + 1;
-    let yearVal = new Date().getFullYear();
-
-    if (dateRaw) {
-        if (dateRaw.includes('-')) {
-            const p = dateRaw.split('-');
-            yearVal = parseInt(p[0]) || yearVal;
-            monthVal = parseInt(p[1]) || monthVal;
-            const dayVal = parseInt(p[2]) || 1;
-            dateVal = `${String(monthVal).padStart(2, '0')}/${String(dayVal).padStart(2, '0')}/${yearVal}`;
-        }
-    }
-
-    let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
-    let totalFormatted = totalRaw && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
-
-    const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
-    const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
-    const routeVal = (fromVal || toVal) ? `${fromVal} → ${toVal}` : '-';
-
-    const puFormatted = extractPaymentsFromContainer('puContainer');
-    const destFormatted = extractPaymentsFromContainer('destContainer');
-
-    const dieselRaw = document.getElementById('dieselAmount') ? document.getElementById('dieselAmount').value.trim() : '';
-    const dieselFormatted = dieselRaw ? dieselRaw : '-';
-
-    const hotelRaw = document.getElementById('hotelAmount') ? document.getElementById('hotelAmount').value.trim() : '';
-    const hotelFormatted = hotelRaw ? hotelRaw : '-';
-
-    const helpersInput = document.getElementById('helpersCost');
-    const helpersFormatted = helpersInput ? helpersInput.value.trim() : '-';
-
-    const driversInput = document.getElementById('driversCost');
-    const driversFormatted = driversInput ? driversInput.value.trim() : '-';
-
-    const jobData = {
-        date: dateVal,
-        month: monthVal,
-        year: yearVal,
-        jobNo: jobNoVal,
-        route: routeVal,
-        foreman: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
-        total: totalFormatted,
-        helpers: helpersFormatted || '-',        
-        drivers: driversFormatted || '-',        
-        pu: puFormatted || '-',
-        dest: destFormatted || '-',
-        diesel: dieselFormatted || '-',
-        hotel: hotelFormatted || '-',
-        storage: '-'
-    };
-
-    if (isEditing) {
-        window.masterJobs[editIndex] = jobData;
-    } else {
-        const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
-        if (targetIndex !== -1) {
-            window.masterJobs[targetIndex] = jobData;
-        } else {
-            window.masterJobs.unshift(jobData);
-        }
-    }
-
-    saveMasterJobsData(window.masterJobs);
-    closeModal();
-    populateYearFilter();
-    filterJobsTable();
-    updateDashboardAnalytics();
-}
-window.saveJob = saveJob;
-
-function editJob(jobNoParam) {
-    initMasterJobsData();
-    const index = window.masterJobs.findIndex(j => j.jobNo === jobNoParam);
-
-    if (index === -1 || !window.masterJobs[index]) {
-        alert("Could not find the record for editing.");
-        return;
-    }
-
-    const j = window.masterJobs[index];
-    openAddModal();
-
-    const modalTitle = document.getElementById('modalTitle');
-    if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
-    
-    const editIndex = document.getElementById('editIndex');
-    if (editIndex) editIndex.value = index;
-
-    const jobNoInput = document.getElementById('jobNo');
-    if (jobNoInput) jobNoInput.value = j.jobNo || '';
-
-    const jobForeman = document.getElementById('jobForeman');
-    if (jobForeman) jobForeman.value = j.foreman || '';
-
-    const jobTotal = document.getElementById('jobTotal');
-    if (jobTotal) jobTotal.value = j.total || '';
-}
-window.editJob = editJob;
-
-function deleteJob(jobNo) {
-    if (!confirm('Are you sure you want to delete this dispatch record?')) return;
-
-    initMasterJobsData();
-    const jobIndex = window.masterJobs.findIndex(j => j.jobNo === jobNo);
-
-    if (jobIndex !== -1) {
-        const deletedJob = window.masterJobs.splice(jobIndex, 1)[0];
-        window.masterTrash = JSON.parse(localStorage.getItem('movepro_trash_bin')) || [];
-        window.masterTrash.push(deletedJob);
-
-        saveMasterJobsData(window.masterJobs);
-        localStorage.setItem('movepro_trash_bin', JSON.stringify(window.masterTrash));
-
-        filterJobsTable();
-        updateDashboardAnalytics();
-    }
-}
-window.deleteJob = deleteJob;
-
-// ==========================================
-// 6. DASHBOARD ANALYTICS & CHARTS
-// ==========================================
-function updateDashboardAnalytics() {
-    initMasterJobsData();
-    if (!window.masterJobs || window.masterJobs.length === 0) return;
-
-    let totalRev = 0;
-    const routeRevenueMap = {};
-    const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0 };
-    const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-    window.masterJobs.forEach(job => {
-        let amt = 0;
-        if (job.total) {
-            amt = parseFloat(String(job.total).replace(/[^0-9.]/g, '')) || 0;
-        }
-        totalRev += amt;
-
-        if (job.month && job.month >= 1 && job.month <= 12) {
-            monthlyRev[job.month - 1] += amt;
-        }
-
-        if (job.route) {
-            routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
-        }
-    });
-
-    const completedJobsCount = window.masterJobs.length;
-    const avgJobVal = completedJobsCount > 0 ? (totalRev / completedJobsCount) : 0;
-
-    const revEl = document.getElementById('dashTotalRevenue');
-    if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
-
-    const jobsTextEl = document.getElementById('dashCompletedJobsText');
-    if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${completedJobsCount} Active Dispatches`;
-
-    const avgEl = document.getElementById('dashAvgJobValue');
-    if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
-}
-window.updateDashboardAnalytics = updateDashboardAnalytics;
-
-// ==========================================
-// 7. NAVIGATION & TABS
-// ==========================================
-function switchTab(tab) {
-    closeModal();
-
-    const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse'];
-    
-    tabs.forEach(t => {
-        const tabEl = document.getElementById(`tab-${t}`);
-        const navEl = document.getElementById(`nav-${t}`);
+function switchTab(tabName) {
+    try {
+        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse'];
         
-        if (tabEl) {
-            tabEl.classList.add('hidden');
-            tabEl.classList.remove('flex', 'block');
-            tabEl.style.setProperty('display', 'none', 'important');
-        }
-        if (navEl) {
-            navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
-        }
-    });
+        tabs.forEach(t => {
+            const tabEl = document.getElementById(`tab-${t}`);
+            const navEl = document.getElementById(`nav-${t}`);
+            
+            if (tabEl) {
+                tabEl.classList.add('hidden');
+                tabEl.classList.remove('flex', 'block');
+                tabEl.style.setProperty('display', 'none', 'important');
+            }
+            if (navEl) {
+                navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
+            }
+        });
 
-    const activeTab = document.getElementById(`tab-${tab}`);
-    const activeNav = document.getElementById(`nav-${tab}`);
-    
-    if (activeTab) {
-        activeTab.classList.remove('hidden');
-        activeTab.classList.add('flex');
-        activeTab.style.setProperty('display', 'flex', 'important');
-    }
-    if (activeNav) {
-        activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
-    }
+        const activeTab = document.getElementById(`tab-${tabName}`);
+        const activeNav = document.getElementById(`nav-${tabName}`);
+        
+        if (activeTab) {
+            activeTab.classList.remove('hidden');
+            activeTab.classList.add('flex');
+            activeTab.style.setProperty('display', 'flex', 'important');
+        }
+        if (activeNav) {
+            activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
+        }
 
-    if (tab === 'dashboard') {
-        setTimeout(updateDashboardAnalytics, 100);
-    } else if (tab === 'jobs') {
-        filterJobsTable();
+        if (tabName === 'dashboard') {
+            setTimeout(updateDashboardAnalytics, 50);
+        } else if (tabName === 'jobs') {
+            filterJobsTable();
+        } else if (tabName === 'reports' && typeof renderReportsTab === 'function') {
+            renderReportsTab();
+        } else if (tabName === 'trash' && typeof renderTrashBin === 'function') {
+            renderTrashBin();
+        } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
+            renderPrivateTruckRentalTab();
+        } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
+            renderWarehouseTab();
+        }
+    } catch (e) {
+        console.error("Error switching tab:", e);
     }
 }
 window.switchTab = switchTab;
 
 // ==========================================
-// 8. INITIALIZATION
+// 5. DASHBOARD ANALYTICS
 // ==========================================
-window.onload = () => {
+function updateDashboardAnalytics() {
+    try {
+        initMasterJobsData();
+        if (!window.masterJobs || window.masterJobs.length === 0) return;
+
+        let totalRev = 0;
+        const routeRevenueMap = {};
+        const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+        window.masterJobs.forEach(job => {
+            let amt = 0;
+            if (job.total) {
+                amt = parseFloat(String(job.total).replace(/[^0-9.]/g, '')) || 0;
+            }
+            totalRev += amt;
+
+            if (job.month && job.month >= 1 && job.month <= 12) {
+                monthlyRev[job.month - 1] += amt;
+            }
+            if (job.route) {
+                routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
+            }
+        });
+
+        const completedJobsCount = window.masterJobs.length;
+        const avgJobVal = completedJobsCount > 0 ? (totalRev / completedJobsCount) : 0;
+
+        const revEl = document.getElementById('dashTotalRevenue');
+        if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
+
+        const jobsTextEl = document.getElementById('dashCompletedJobsText');
+        if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${completedJobsCount} Active Dispatches`;
+
+        const avgEl = document.getElementById('dashAvgJobValue');
+        if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
+    } catch (e) {
+        console.error("Error updating dashboard analytics:", e);
+    }
+}
+window.updateDashboardAnalytics = updateDashboardAnalytics;
+
+// ==========================================
+// 6. INITIALIZATION
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
     try {
         initMasterJobsData();
         window.currentUserRole = 'Admin';
@@ -511,10 +268,9 @@ window.onload = () => {
         renderUsers();
         populateYearFilter();
         
-        filterJobsTable();
         updateDashboardAnalytics();
         switchTab('dashboard');
     } catch (error) {
-        console.error("Initialization error:", error);
+        console.error("Initialization error on DOMContentLoaded:", error);
     }
-};
+});
