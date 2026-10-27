@@ -1004,47 +1004,68 @@ function emptyTrashBin() {
     renderTrashBin();
 }
 
+/**
+ * Initial Application Load & State Setup
+ */
 window.onload = () => {
-    if (typeof loadMasterJobs === 'function') {
-        window.masterJobs = loadMasterJobs() || [];
-    }
-    
-    if (!window.masterJobs) {
-        window.masterJobs = [];  
-    }
+    try {
+        // 1. Safe loading of Master Jobs data
+        if (typeof loadMasterJobs === 'function') {
+            window.masterJobs = loadMasterJobs() || [];
+        }
+        
+        if (!Array.isArray(window.masterJobs)) {
+            window.masterJobs = [];  
+        }
 
-    if (typeof loadTruckRentals === 'function') {
-        loadTruckRentals();
-    }
-    if (typeof loadWarehouseRecords === 'function') {
-        warehouseRecords = loadWarehouseRecords();
-    }
-    
-    currentUserRole = 'Admin';
-    checkPermissions();
-    renderUsers();
-    populateYearFilter();
-    renderTrashBin();
+        // 2. Safe loading of subsidiary modules
+        if (typeof loadTruckRentals === 'function') {
+            loadTruckRentals();
+        }
+        
+        if (typeof loadWarehouseRecords === 'function') {
+            window.warehouseRecords = loadWarehouseRecords() || [];
+        }
+        
+        // 3. Permissions and UI filters initialization
+        window.currentUserRole = 'Admin';
+        
+        if (typeof checkPermissions === 'function') checkPermissions();
+        if (typeof renderUsers === 'function') renderUsers();
+        if (typeof populateYearFilter === 'function') populateYearFilter();
+        if (typeof renderTrashBin === 'function') renderTrashBin();
 
-    if (typeof filterJobsTable === 'function') {
-        filterJobsTable();
-    } else if (typeof renderJobsCRUD === 'function') {
-        renderJobsCRUD(window.masterJobs);
-    }
+        // 4. Render main data tables and analytics
+        if (typeof filterJobsTable === 'function') {
+            filterJobsTable();
+        } else if (typeof renderJobsCRUD === 'function') {
+            renderJobsCRUD(window.masterJobs);
+        }
 
-    if (typeof updateDashboardAnalytics === 'function') {
-        updateDashboardAnalytics();
-    }
-    if (typeof switchTab === 'function') {
-        switchTab('dashboard');
-    }
+        if (typeof updateDashboardAnalytics === 'function') {
+            updateDashboardAnalytics();
+        }
 
+        // 5. Force initial isolated tab view (Dashboard) to prevent overlapping layout corruption
+        if (typeof switchTab === 'function') {
+            switchTab('dashboard');
+        } else {
+            console.warn("Warning: switchTab function is not defined yet.");
+        }
+
+    } catch (error) {
+        console.error("An error occurred during window.onload execution:", error);
+    }
 };
 
+/**
+ * Global Event Delegation for Dynamic Buttons & Modals
+ */
 document.addEventListener('click', function(e) {
     const btn = e.target.closest('button');
     if (!btn) return;
 
+    // Skip handling for the Add New Job button (handled by specific onclick attributes)
     if (btn.textContent.includes('Add New Job')) {
         return; 
     }
@@ -1052,6 +1073,7 @@ document.addEventListener('click', function(e) {
     const btnText = btn.textContent.trim();
     const btnHtml = btn.innerHTML;
 
+    // Handle Modal Closing Actions
     if (btnText === 'Cancel' || btn.getAttribute('onclick')?.includes('closeModal') || btn.querySelector('.fa-xmark')) {
         e.preventDefault();
         if (typeof closeModal === 'function') {
@@ -1060,6 +1082,7 @@ document.addEventListener('click', function(e) {
         return;
     }
 
+    // Handle Dynamic Payment Row Additions
     const isAddPaymentBtn = btnText.includes('Payment') || btnHtml.includes('Add Payment') || btnText.includes('+ Add');
     
     if (isAddPaymentBtn) {
