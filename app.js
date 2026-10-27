@@ -191,7 +191,7 @@ function extractPaymentsFromContainer(containerId) {
 }
 
 // ==========================================
-// 4. HELPERS FORMATTER (Matches Drivers Format)
+// 4. HELPERS FORMATTER 
 // ==========================================
 function parseHelpersDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
@@ -201,7 +201,6 @@ function parseHelpersDisplay(val) {
     let num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
     if (isNaN(num) || num === 0) return '-';
 
-    // خريطة التنسيقات القياسية المعروفة
     const helpersMap = {
         100: "1/2 (100)",
         200: "1 (200)",
@@ -216,7 +215,18 @@ function parseHelpersDisplay(val) {
 
     if (helpersMap[num]) return helpersMap[num];
 
-    return `1 (${num})`;  
+    let label = "1";
+    if (num <= 120) label = "1/2";
+    else if (num <= 220) label = "1";
+    else if (num <= 325) label = "1-1 1/2";
+    else if (num <= 450) label = "2";
+    else if (num <= 550) label = "2-1 1/2";
+    else if (num <= 680) label = "3";
+    else if (num <= 820) label = "3-1 1/2";
+    else if (num <= 950) label = "4";
+    else label = "4-1 1/2";
+
+    return `${label} (${num})`;
 }
 // ==========================================
 // 5. RENDERING CRUD TABLE
