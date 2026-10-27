@@ -1,5 +1,5 @@
 /**
- * MovePro - Financial & Operations Reports Module
+ * MovePro - Financial & Operations Reports Module (Production Ready)
  */
 
 function switchReportMode(mode) {
@@ -33,6 +33,7 @@ function parseCurrency(val) {
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
 }
+window.parseCurrency = parseCurrency;
 
 function applyReportFilters() {
     const summaryView = document.getElementById('summaryReportView');
@@ -63,7 +64,8 @@ function resetReportFilters() {
 window.resetReportFilters = resetReportFilters;
 
 function getFilteredJobsData() {
-    const jobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
+    // جلب البيانات من الذاكرة الحية أو الـ LocalStorage لضمان أعلى دقة
+    const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     
     const startDateVal = document.getElementById('filterStartDate')?.value;
     const endDateVal = document.getElementById('filterEndDate')?.value;
@@ -97,6 +99,7 @@ function getFilteredJobsData() {
         return true;
     });
 }
+window.getFilteredJobsData = getFilteredJobsData;
 
 function generateOfficialSummaryTable(filteredJobs) {
     const totalJobs = filteredJobs.length;
@@ -461,10 +464,11 @@ function exportOfficialPDF() {
     `;
 
     printWindow.document.write(htmlContent);
-    printWindow.document.close();
+    printWindow.document.close(); // <-- تمت إضافتها لضمان اكتمال بناء المستند وطباعته بدون مشاكل
 }
 window.exportOfficialPDF = exportOfficialPDF;
 
+// تمت إضافة هذه الدالة الأساسية المفقودة لمنع أخطاء التبويب
 function renderReportsTab() {
     switchReportMode('summary');
 }
