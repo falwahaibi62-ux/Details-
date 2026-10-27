@@ -461,3 +461,11 @@ function exportOfficialPDF() {
     `;
 
     printWindow.document.write(htmlContent);
+    printWindow.document.close();
+}
+window.exportOfficialPDF = exportOfficialPDF;
+
+function renderReportsTab() {
+    switchReportMode('summary');
+}
+window.renderReportsTab = renderReportsTab;
