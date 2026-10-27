@@ -1,33 +1,32 @@
 /**
- * Private Truck Rental Module
+ * Private Truck Rental Module - MovePro
  */
 
 const RENTAL_STORAGE_KEY = 'movepro_private_truck_rentals';
 
 function loadPrivateTruckRentals() {
-    const saved = localStorage.getItem('movepro_private_truck_rentals');
+    const saved = localStorage.getItem(RENTAL_STORAGE_KEY);
     if (saved) {
-        return JSON.parse(saved);
+        try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e) {
+            console.error('Error parsing rentals:', e);
+        }
     }
     
-    if (typeof initialRentals !== 'undefined') {
-        localStorage.setItem('movepro_private_truck_rentals', JSON.stringify(initialRentals));
+    if (typeof initialRentals !== 'undefined' && Array.isArray(initialRentals)) {
+        localStorage.setItem(RENTAL_STORAGE_KEY, JSON.stringify(initialRentals));
         return initialRentals;
     }
     
     return [];
 }
-
-
+window.loadPrivateTruckRentals = loadPrivateTestRentals = loadPrivateTruckRentals;
 
 function savePrivateTruckRentals(data) {
     localStorage.setItem(RENTAL_STORAGE_KEY, JSON.stringify(data));
 }
-
-let privateTruckRentals = loadPrivateTruckRentals();
-
-
-
 
 // Render Tab Screen
 function renderPrivateTruckRentalTab() {
@@ -35,19 +34,19 @@ function renderPrivateTruckRentalTab() {
     if (!container) return;
 
     container.innerHTML = `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-xs mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs mb-6">
             <div>
-                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
                     <i class="fa-solid fa-truck-moving text-indigo-600"></i> Private Truck Rental Management
                 </h2>
                 <p class="text-xs text-slate-500 mt-0.5">Manage and track private truck rental transactions and records</p>
             </div>
-            <button onclick="openPrivateTruckModal()" class="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition">
+            <button onclick="openPrivateTruckModal()" class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer">
                 <i class="fa-solid fa-plus"></i> Add New Rental
             </button>
         </div>
 
-        <div class="glass-panel rounded-2xl overflow-hidden border border-slate-200/80 bg-white shadow-xs">
+        <div class="glass-panel rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-xs">
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-xs min-w-[900px] border-collapse">
                     <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
@@ -69,37 +68,35 @@ function renderPrivateTruckRentalTab() {
         </div>
     `;
 }
-
-
-
+window.renderPrivateTruckRentalTab = renderPrivateTruckRentalTab;
 
 function generateRentalRowsHTML() {
     const rentals = loadPrivateTruckRentals(); 
 
     if (!rentals || rentals.length === 0) {
-        return `<tr><td colspan="7" class="text-center py-6 text-slate-400">No rental records found</td></tr>`;
+        return `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No rental records found</td></tr>`;
     }
 
     return rentals.map((item, index) => `
-        <tr class="hover:bg-slate-50 transition">
-            <td class="p-3.5">${item.date || '-'}</td>
-            <td class="p-3.5">${item.days || 0} Days</td>
-            <td class="p-3.5 text-emerald-700 font-semibold">$${item.amount || 0}</td>
-            <td class="p-3.5"><span class="px-2 py-1 bg-slate-100 text-slate-700 rounded-md text-[10px] font-medium">${item.paymentType || '-'}</span></td>
-            <td class="p-3.5">${item.paidBy || '-'}</td>
-            <td class="p-3.5">${item.truckLabel || '-'}</td>
+        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="p-3.5 font-medium text-slate-800">${item.date || '-'}</td>
+            <td class="p-3.5 text-slate-600">${item.days || 0} Days</td>
+            <td class="p-3.5 text-emerald-700 font-bold">$${parseFloat(item.amount || 0).toLocaleString()}</td>
+            <td class="p-3.5"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">${item.paymentType || '-'}</span></td>
+            <td class="p-3.5 text-slate-600">${item.paidBy || '-'}</td>
+            <td class="p-3.5 text-slate-600">${item.truckLabel || '-'}</td>
             <td class="p-3.5 text-center space-x-1">
-                <button onclick="editRentalRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Edit">
+                <button onclick="editRentalRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer" title="Edit">
                     <i class="fa-solid fa-pen-to-square text-xs"></i>
                 </button>
-                <button onclick="deleteRentalRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Delete">
+                <button onclick="deleteRentalRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition cursor-pointer" title="Delete">
                     <i class="fa-solid fa-trash text-xs"></i>
                 </button>
             </td>
         </tr>
     `).join('');
 }
-
+window.generateRentalRowsHTML = generateRentalRowsHTML;
 
 function editRentalRecord(index) {
     const rentals = loadPrivateTruckRentals();
@@ -109,9 +106,10 @@ function editRentalRecord(index) {
     openPrivateTruckModal();
 
     const indexField = document.getElementById('editRentalIndex');
-    if (indexField) {
-        indexField.value = index;
-    }
+    if (indexField) indexField.value = index;
+
+    const modalTitle = document.getElementById('rentalModalTitle');
+    if (modalTitle) modalTitle.innerText = 'Edit Private Truck Rental';
 
     const setFieldValue = (id, value) => {
         const el = document.getElementById(id);
@@ -125,16 +123,16 @@ function editRentalRecord(index) {
     setFieldValue('rentalPaidBy', item.paidBy || '');
     setFieldValue('rentalTruckLabel', item.truckLabel || '');
 }
-
-
+window.editRentalRecord = editRentalRecord;
 
 function deleteRentalRecord(index) {
     if (!confirm('Are you sure you want to delete this rental record?')) {
         return;
     }
 
-    const deletedItem = privateTruckRentals.splice(index, 1)[0];
-    savePrivateTruckRentals(privateTruckRentals);
+    let rentals = loadPrivateTruckRentals();
+    const deletedItem = rentals.splice(index, 1)[0];
+    savePrivateTruckRentals(rentals);
 
     const TRASH_KEY = 'movepro_trash_bin';
     let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
@@ -152,9 +150,13 @@ function deleteRentalRecord(index) {
     if (typeof renderTrashBin === 'function') {
         renderTrashBin();
     }
+    if (typeof updateDashboardAnalytics === 'function') {
+        updateDashboardAnalytics();
+    }
 }
+window.deleteRentalRecord = deleteRentalRecord;
 
-// Render Modal Form (Hidden by default using 'hidden' class)
+// Render Modal Form
 function renderPrivateTruckModal() {
     let modalContainer = document.getElementById('privateTruckModal');
     if (!modalContainer) {
@@ -167,42 +169,43 @@ function renderPrivateTruckModal() {
     modalContainer.innerHTML = `
         <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 transform transition-all">
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-truck-moving text-indigo-600"></i> Private Truck Rental Form
+                <h3 id="rentalModalTitle" class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-truck-moving text-indigo-600"></i> Add Private Truck Rental
                 </h3>
-                <button onclick="closePrivateTruckModal()" class="text-slate-400 hover:text-slate-600 transition p-1">
+                <button onclick="closePrivateTruckModal()" class="text-slate-400 hover:text-slate-600 transition p-1 cursor-pointer">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <form id="privateTruckForm" onsubmit="handlePrivateTruckSubmit(event)" class="p-6 space-y-4">
+            <form id="privateTruckForm" onsubmit="handlePrivateTruckSubmit(event)" class="p-6 space-y-4 text-xs">
+                <input type="hidden" id="editRentalIndex" value="-1">
+
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Date <span class="text-red-500">*</span></label>
-                    <input type="date" id="rentalDate" required class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                    <label class="block font-semibold text-slate-700 mb-1">Date <span class="text-red-500">*</span></label>
+                    <input type="date" id="rentalDate" required class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">No of days <span class="text-red-500">*</span></label>
+                    <label class="block font-semibold text-slate-700 mb-1">No of days <span class="text-red-500">*</span></label>
                     <div class="flex items-center">
-                        <button type="button" onclick="adjustRentalNumber('rentalDays', -1)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-l-xl border border-r-0 border-slate-200 transition text-xs font-bold">-</button>
-                        <input type="number" id="rentalDays" value="0" min="0" required class="w-full px-3 py-2.5 text-xs text-center bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
-                        <button type="button" onclick="adjustRentalNumber('rentalDays', 1)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-r-xl border border-l-0 border-slate-200 transition text-xs font-bold">+</button>
+                        <button type="button" onclick="adjustRentalNumber('rentalDays', -1)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-l-xl border border-r-0 border-slate-200 transition font-bold cursor-pointer">-</button>
+                        <input type="number" id="rentalDays" value="0" min="0" required class="w-full py-2.5 text-center bg-white border border-slate-200 focus:outline-none transition text-slate-700">
+                        <button type="button" onclick="adjustRentalNumber('rentalDays', 1)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-r-xl border border-l-0 border-slate-200 transition font-bold cursor-pointer">+</button>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Amount <span class="text-red-500">*</span></label>
+                    <label class="block font-semibold text-slate-700 mb-1">Amount <span class="text-red-500">*</span></label>
                     <div class="flex items-center">
-                        <button type="button" onclick="adjustRentalNumber('rentalAmount', -10)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-l-xl border border-r-0 border-slate-200 transition text-xs font-bold">-</button>
-                        <input type="number" id="rentalAmount" value="0" min="0" step="0.01" required class="w-full px-3 py-2.5 text-xs text-center bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
-                        <button type="button" onclick="adjustRentalNumber('rentalAmount', 10)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-r-xl border border-l-0 border-slate-200 transition text-xs font-bold">+</button>
+                        <button type="button" onclick="adjustRentalNumber('rentalAmount', -10)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-l-xl border border-r-0 border-slate-200 transition font-bold cursor-pointer">-</button>
+                        <input type="number" id="rentalAmount" value="0" min="0" step="0.01" required class="w-full py-2.5 text-center bg-white border border-slate-200 focus:outline-none transition text-slate-700">
+                        <button type="button" onclick="adjustRentalNumber('rentalAmount', 10)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-r-xl border border-l-0 border-slate-200 transition font-bold cursor-pointer">+</button>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Payment type</label>
-                    <select id="rentalPaymentType" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
-                        <option value="" disabled selected>Select payment method</option>
+                    <label class="block font-semibold text-slate-700 mb-1">Payment type</label>
+                    <select id="rentalPaymentType" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
                         <option value="Cash">Cash</option>
                         <option value="Zelle">Zelle</option>
                         <option value="Cheque">Cheque</option>
@@ -211,26 +214,25 @@ function renderPrivateTruckModal() {
                         <option value="PC">PC</option>
                         <option value="CC">CC</option>
                         <option value="WT">WT</option>
+                        <option value="Others">Others</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Paid By</label>
-                    <input type="text" id="rentalPaidBy" placeholder="Enter Payer Name" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                    <label class="block font-semibold text-slate-700 mb-1">Paid By</label>
+                    <input type="text" id="rentalPaidBy" placeholder="Enter Payer Name" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Truck_Label</label>
-                    <input type="text" id="rentalTruckLabel" placeholder="days paid by" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition text-slate-700">
+                    <label class="block font-semibold text-slate-700 mb-1">Truck Label</label>
+                    <input type="text" id="rentalTruckLabel" placeholder="e.g. Truck #5" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="closePrivateTruckModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition border border-slate-200">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition">Save</button>
+                    <button type="button" onclick="closePrivateTruckModal()" class="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition border border-slate-200 cursor-pointer">Cancel</button>
+                    <button type="submit" class="px-5 py-2 font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition cursor-pointer">Save Record</button>
                 </div>
-                <input type="hidden" id="editRentalIndex" value="-1">
-                 </form>
-                
+            </form>
         </div>
     `;
 }
@@ -238,19 +240,32 @@ function renderPrivateTruckModal() {
 function openPrivateTruckModal() {
     renderPrivateTruckModal();
     const modal = document.getElementById('privateTruckModal');
+    const form = document.getElementById('privateTruckForm');
+    const titleEl = document.getElementById('rentalModalTitle');
+    const indexField = document.getElementById('editRentalIndex');
+
+    if (form && (!indexField || indexField.value === '-1')) {
+        form.reset();
+        if (titleEl) titleEl.innerText = 'Add Private Truck Rental';
+    }
+
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        modal.style.setProperty('display', 'flex', 'important');
     }
 }
+window.openPrivateTruckModal = openPrivateTruckModal;
 
 function closePrivateTruckModal() {
     const modal = document.getElementById('privateTruckModal');
     if (modal) {
         modal.classList.remove('flex');
         modal.classList.add('hidden');
+        modal.style.setProperty('display', 'none', 'important');
     }
 }
+window.closePrivateTruckModal = closePrivateTruckModal;
 
 function adjustRentalNumber(elementId, step) {
     const input = document.getElementById(elementId);
@@ -261,31 +276,37 @@ function adjustRentalNumber(elementId, step) {
         input.value = newValue;
     }
 }
+window.adjustRentalNumber = adjustRentalNumber;
 
 function handlePrivateTruckSubmit(event) {
     event.preventDefault();
 
     const indexField = document.getElementById('editRentalIndex');
-    const index = indexField ? indexField.value : '-1';
+    const index = indexField ? parseInt(indexField.value, 10) : -1;
 
     const newRecord = {
         date: document.getElementById('rentalDate').value,
-        days: document.getElementById('rentalDays').value,
-        amount: document.getElementById('rentalAmount').value,
+        days: parseFloat(document.getElementById('rentalDays').value) || 0,
+        amount: parseFloat(document.getElementById('rentalAmount').value) || 0,
         paymentType: document.getElementById('rentalPaymentType').value,
-        paidBy: document.getElementById('rentalPaidBy').value,
-        truckLabel: document.getElementById('rentalTruckLabel').value
+        paidBy: document.getElementById('rentalPaidBy').value.trim(),
+        truckLabel: document.getElementById('rentalTruckLabel').value.trim()
     };
 
     let rentals = loadPrivateTruckRentals();
 
-    if (index === '-1' || index === '' || index === undefined) {
-        rentals.push(newRecord); 
+    if (index >= 0 && index < rentals.length) {
+        rentals[index] = newRecord; // تحديث السجل القائم
     } else {
-        rentals[index] = newRecord; 
+        rentals.unshift(newRecord); // إضافة سجل جديد في المقدمة
     }
 
-    localStorage.setItem('movepro_private_truck_rentals', JSON.stringify(rentals));
+    savePrivateTruckRentals(rentals);
     closePrivateTruckModal();
     renderPrivateTruckRentalTab();
+    
+    if (typeof updateDashboardAnalytics === 'function') {
+        updateDashboardAnalytics();
+    }
 }
+window.handlePrivateTruckSubmit = handlePrivateTruckSubmit;
