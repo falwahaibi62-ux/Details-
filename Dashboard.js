@@ -1,5 +1,22 @@
+/**
+ * MovePro - Dashboard & Analytics Module
+ */
+
+// Global Chart Instances
+let revenueChartInstance = null;
+let paymentMixChartInstance = null;
+
 function updateDashboardAnalytics() {
-    if (!window.masterJobs || masterJobs.length === 0) return;
+    if (!window.masterJobs || !Array.isArray(window.masterJobs) || window.masterJobs.length === 0) {
+        // إعادة تعيين القيم الافتراضية إذا كانت البيانات فارغة
+        const revEl = document.getElementById('dashTotalRevenue');
+        if (revEl) revEl.innerText = '$0';
+        const jobsTextEl = document.getElementById('dashCompletedJobsText');
+        if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>0 Active Dispatches`;
+        const avgEl = document.getElementById('dashAvgJobValue');
+        if (avgEl) avgEl.innerText = '$0';
+        return;
+    }
 
     let totalRev = 0;
     const routeRevenueMap = {};
@@ -21,7 +38,7 @@ function updateDashboardAnalytics() {
     masterJobs.forEach(job => {
         let amt = 0;
         if (job.total) {
-            amt = parseFloat(job.total.replace(/[^0-9.]/g, '')) || 0;
+            amt = parseFloat(String(job.total).replace(/[^0-9.]/g, '')) || 0;
         }
         totalRev += amt;
 
@@ -29,13 +46,13 @@ function updateDashboardAnalytics() {
             monthlyRev[job.month - 1] += amt;
         }
 
-        if (job.route) {
+        if (job.route && job.route !== '-') {
             routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
         }
 
         const extractMethods = (text) => {
             if (!text || text === '-') return;
-            const lower = text.toLowerCase();
+            const lower = String(text).toLowerCase();
             
             if (lower.includes('cash')) paymentMethodMap.Cash++;
             else if (lower.includes('zelle')) paymentMethodMap.Zelle++;
@@ -55,6 +72,7 @@ function updateDashboardAnalytics() {
     const completedJobsCount = masterJobs.length;
     const avgJobVal = completedJobsCount > 0 ? (totalRev / completedJobsCount) : 0;
 
+    // تحديث بطاقات الـ KPI
     const revEl = document.getElementById('dashTotalRevenue');
     if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
@@ -64,25 +82,98 @@ function updateDashboardAnalytics() {
     const avgEl = document.getElementById('dashAvgJobValue');
     if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
 
+    // تحديث ممرات الإيرادات العليا
     const topCorridorsContainer = document.getElementById('topCorridorsContainer');
     if (topCorridorsContainer) {
         const sortedRoutes = Object.entries(routeRevenueMap)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 4);
 
-        topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
-            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border">
-                <div class="flex items-center space-x-2">
-                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
-                    <span class="font-bold text-emerald-800">${route}</span>
+        if (sortedRoutes.length === 0) {
+            topCorridorsContainer.innerHTML = `<p class="text-slate-400 text-xs">No route data available</p>`;
+        } else {
+            topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
+                        <span class="font-bold text-emerald-800">${route}</span>
+                    </div>
+                    <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
                 </div>
-                <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
-            </div>
-        `).join('');
+            `).join('');
+        }
     }
 
+    // استدعاء رسم المخططات
     if (typeof renderDashboardCharts === 'function') {
         renderDashboardCharts(monthlyRev, paymentMethodMap);
     }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
+
+function renderDashboardCharts(monthlyData, paymentData) {
+    // 1. مخطط الإيرادات الشهرية (Bar Chart)
+    const ctxRevenue = document.getElementById('revenueChart');
+    if (ctxRevenue) {
+        if (revenueChartInstance) {
+            revenueChartInstance.destroy();
+        }
+        revenueChartInstance = new Chart(ctxRevenue, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Monthly Revenue ($)',
+                    data: monthlyData,
+                    backgroundColor: 'rgba(5, 150, 105, 0.85)',
+                    borderRadius: 8,
+                    hoverBackgroundColor: '#047857'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+    }
+
+    // 2. مخطط قنوات الدفع (Doughnut Chart)
+    const ctxPayment = document.getElementById('paymentMixChart');
+    if (ctxPayment) {
+        if (paymentMixChartInstance) {
+            paymentMixChartInstance.destroy();
+        }
+        
+        const paymentColors = [
+            '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', 
+            '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b'
+        ];
+
+        paymentMixChartInstance = new Chart(ctxPayment, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(paymentData),
+                datasets: [{
+                    data: Object.values(paymentData),
+                    backgroundColor: paymentColors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                },
+                cutout: '65%'
+            }
+        });
+    }
+}
+window.renderDashboardCharts = renderDashboardCharts;
