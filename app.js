@@ -59,14 +59,22 @@ window.populateYearFilter = populateYearFilter;
 function filterJobsTable() {
     initMasterJobsData();
 
-    const monthVal = document.getElementById('filterMonth')?.value || 'ALL';
-    const yearVal = document.getElementById('filterYear')?.value || 'ALL';
+    const monthEl = document.getElementById('filterMonth');
+    const yearEl = document.getElementById('filterYear');
+    
+    const monthVal = monthEl ? monthEl.value : 'ALL';
+    const yearVal = yearEl ? yearEl.value : 'ALL';
 
-    let filtered = window.masterJobs.filter(job => {
-        const matchesMonth = (monthVal === 'ALL' || monthVal === 'All Months') || (job.month && job.month.toString() === monthVal);
-        const matchesYear = (yearVal === 'ALL' || yearVal === 'All Years') || (job.year && job.year.toString() === yearVal);
-        return matchesMonth && matchesYear;
-    });
+    let filtered = window.masterJobs;
+
+    // تطبيق الفلترة فقط إذا قام المستخدم بتغييرها عن الخيار الافتراضي
+    if (monthVal && monthVal !== 'ALL' && monthVal !== 'All Months') {
+        filtered = filtered.filter(job => job.month && job.month.toString() === monthVal);
+    }
+    
+    if (yearVal && yearVal !== 'ALL' && yearVal !== 'All Years') {
+        filtered = filtered.filter(job => job.year && job.year.toString() === yearVal);
+    }
 
     const countText = document.getElementById('filteredCountText');
     if (countText) {
