@@ -184,6 +184,7 @@ function parseHelpersDisplay(val) {
     let num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
     if (isNaN(num) || num === 0) return '-';
 
+    // خريطة التنسيقات القياسية المعروفة
     const helpersMap = {
         100: "1/2 (100)",
         200: "1 (200)",
@@ -197,9 +198,9 @@ function parseHelpersDisplay(val) {
     };
 
     if (helpersMap[num]) return helpersMap[num];
-    return `${strVal} ($${num.toLocaleString('en-US')})`;
-}
 
+    return `1 (${num})`;  
+}
 // ==========================================
 // 5. RENDERING CRUD TABLE
 // ==========================================
