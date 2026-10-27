@@ -1,5 +1,5 @@
 /**
- * MovePro - Application Core Logic & Operations (Production Safe)
+ * MovePro - Application Core Logic & Operations (Fully Synchronized & Production Safe)
  */
 
 if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
@@ -243,7 +243,7 @@ function globalSearchFilter() {
 window.globalSearchFilter = globalSearchFilter;
 
 // ==========================================
-// 5. MODAL & JOB ACTIONS
+// 5. MODAL & JOB ACTIONS (SAFE ID-BASED EDIT)
 // ==========================================
 function openAddModal() {
     const modal = document.getElementById('jobModal');
@@ -418,17 +418,12 @@ function saveJob(event) {
 }
 window.saveJob = saveJob;
 
-function editJob(param) {
+function editJob(jobNoParam) {
     initMasterJobsData();
-    let index = param;
-    if (typeof param === 'string' || isNaN(param)) {
-        index = window.masterJobs.findIndex(j => j.jobNo == param);
-    } else {
-        index = parseInt(param);
-    }
+    const index = window.masterJobs.findIndex(j => j.jobNo === jobNoParam);
 
-    if (!window.masterJobs || index < 0 || !window.masterJobs[index]) {
-        alert("Could not load the record for editing.");
+    if (index === -1 || !window.masterJobs[index]) {
+        alert("Could not find the record for editing.");
         return;
     }
 
