@@ -712,15 +712,18 @@ function switchTab(tab) {
 
     const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse'];
     
+    // إخفاء جميع التبويبات تماماً وفرض إخفائها بـ important
     tabs.forEach(t => {
         const tabEl = document.getElementById(`tab-${t}`);
         const navEl = document.getElementById(`nav-${t}`);
         
         if (tabEl) {
-            tabEl.classList.add('hidden'); 
+            tabEl.classList.add('hidden');
+            tabEl.classList.remove('flex', 'block');
+            tabEl.style.setProperty('display', 'none', 'important');
         }
         if (navEl) {
-            navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition';
+            navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
         }
     });
 
@@ -728,10 +731,12 @@ function switchTab(tab) {
     const activeNav = document.getElementById(`nav-${tab}`);
     
     if (activeTab) {
-        activeTab.classList.remove('hidden'); 
+        activeTab.classList.remove('hidden');
+        activeTab.classList.add('flex');
+        activeTab.style.setProperty('display', 'flex', 'important');
     }
     if (activeNav) {
-        activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition';
+        activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
     }
 
     const exportBtn = document.getElementById('exportPdfBtn');
@@ -739,29 +744,29 @@ function switchTab(tab) {
         if (tab === 'reports') { 
             exportBtn.classList.remove('hidden');
             exportBtn.classList.add('flex');
+            exportBtn.style.setProperty('display', 'flex', 'important');
         } else {
             exportBtn.classList.add('hidden');
             exportBtn.classList.remove('flex');
+            exportBtn.style.setProperty('display', 'none', 'important');
         }
     }
 
     if (tab === 'dashboard') {
-        setTimeout(updateDashboardAnalytics, 100);
+        if (typeof updateDashboardAnalytics === 'function') setTimeout(updateDashboardAnalytics, 100);
     } else if (tab === 'jobs') {
-        filterJobsTable();
+        if (typeof filterJobsTable === 'function') filterJobsTable();
     } else if (tab === 'trash') {
-        renderTrashBin();
+        if (typeof renderTrashBin === 'function') renderTrashBin();
     } else if (tab === 'rentals') {
-        renderPrivateTruckRentalTab();
+        if (typeof renderPrivateTruckRentalTab === 'function') renderPrivateTruckRentalTab();
     } else if (tab === 'warehouse') {
-        renderWarehouseTab();
+        if (typeof renderWarehouseTab === 'function') renderWarehouseTab();
     } else if (tab === 'reports') {
-        if (typeof renderReportsTab === 'function') {
-            renderReportsTab();
-        }
+        if (typeof renderReportsTab === 'function') renderReportsTab();
     }
 }
-
+window.switchTab = switchTab;
 // Function to render the Recycle Bin table view
 function renderTrashBin() {
     const tbody = document.getElementById('trashTableBody');
