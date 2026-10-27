@@ -1,5 +1,5 @@
 /**
- * MovePro - Application Core Logic & Operations (Fully Synchronized & Production Safe)
+ * MovePro - Application Core Logic & Operations (Synchronized with Master Table Columns)
  */
 
 if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
@@ -105,10 +105,7 @@ window.checkPermissions = checkPermissions;
 // ==========================================
 function addPaymentRow(containerId, amount = '', method = 'Cash') {
     const container = document.getElementById(containerId);
-    if (!container) {
-        console.error("Container NOT found in DOM:", containerId);
-        return;
-    }
+    if (!container) return;
 
     const rowId = 'payment_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
     const rowDiv = document.createElement('div');
@@ -132,7 +129,6 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
             <i class="fa-solid fa-xmark pointer-events-none"></i>
         </button>
     `;
-
     container.appendChild(rowDiv);
 }
 window.addPaymentRow = addPaymentRow;
@@ -162,7 +158,8 @@ function extractPaymentsFromContainer(containerId) {
 }
 
 // ==========================================
-// 4. RENDERING CRUD TABLE
+// 4. RENDERING CRUD TABLE (Matched to Image Columns)
+// Columns: DATE | JOB NO | ROUTE (FROM → TO) | FOREMAN | HELPERS | DRIVERS | TOTAL | P.U PAYMENTS | DESTINATION | DIESEL | HOTEL | ACTIONS
 // ==========================================
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('crudTableBody');
@@ -171,49 +168,46 @@ function renderJobsCRUD(dataToRender) {
     const records = dataToRender || window.masterJobs || [];
 
     if (!records || records.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-4 text-slate-400 text-xs">No dispatches found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-slate-400 text-xs">No dispatch records found</td></tr>`;
         return;
     }
     
     tbody.innerHTML = records.map((item) => {
         const foremanDisplay = (!item.foreman || item.foreman.trim() === '') 
-            ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">no name</span>` 
-            : `<span class="bg-slate-100 text-slate-900 px-2.5 py-1 rounded font-bold">${item.foreman}</span>`;
+            ? `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px]">-</span>` 
+            : `<span class="bg-amber-50 text-amber-800 px-2.5 py-1 rounded font-bold text-xs">${item.foreman}</span>`;
         
         let actions = `<span class="text-xs text-slate-400">-</span>`;
         if (window.currentUserRole === 'Admin') {
             actions = `
-                <button onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg mr-1 cursor-pointer" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Move to Recycle Bin"><i class="fa-solid fa-trash-can"></i></button>
+                <div class="flex items-center space-x-1">
+                    <button onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
             `;
         }
 
         const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
         const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
-        const helpersVal = (item.helpers && item.helpers !== '-') ? item.helpers : '-';
+        const helpersVal = (item.helpers && item.helpers !== '0' && item.helpers !== '-') ? item.helpers : '-';
         const driversVal = (item.drivers && item.drivers !== '-') ? item.drivers : '-'; 
-
-        const formatPaymentDisplay = (paymentField) => {
-            if (!paymentField || paymentField === '-') return '-';
-            if (Array.isArray(paymentField)) {
-                return paymentField.map(p => `${p.amount || ''} (${p.method || 'Cash'})`).join(', ') || '-';
-            }
-            return paymentField;
-        };
+        const puVal = (item.pu && item.pu !== '-') ? item.pu : '-';
+        const destVal = (item.dest && item.dest !== '-') ? item.dest : '-';
+        const totalVal = (item.total && item.total !== '-') ? item.total : '-';
 
         return `
-            <tr class="hover:bg-slate-50 transition border-b border-slate-150">
-                <td class="p-3 text-slate-700 font-medium text-xs">${item.date || '-'}</td>
-                <td class="p-3 text-slate-700 font-bold text-xs">${item.jobNo || '-'}</td>
-                <td class="p-3 text-slate-600 text-xs">${item.route || '-'}</td>
-                <td class="p-3 text-xs">${foremanDisplay}</td>
-                <td class="p-3 text-purple-700 font-semibold text-xs">${helpersVal}</td>
-                <td class="p-3 text-blue-700 font-semibold text-xs">${driversVal}</td> 
-                <td class="p-3 text-emerald-600 font-bold text-xs">${item.total || '-'}</td>
-                <td class="p-3 text-slate-600 text-xs">${formatPaymentDisplay(item.pu)}</td>
-                <td class="p-3 text-slate-600 text-xs">${formatPaymentDisplay(item.dest)}</td>
-                <td class="p-3 text-emerald-700 font-semibold text-xs">${dieselVal}</td>
-                <td class="p-3 text-indigo-700 font-semibold text-xs">${hotelVal}</td>
+            <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
+                <td class="p-3 text-slate-700 font-medium">${item.date || '-'}</td>
+                <td class="p-3 text-slate-900 font-bold">${item.jobNo || '-'}</td>
+                <td class="p-3 text-slate-700">${item.route || '-'}</td>
+                <td class="p-3">${foremanDisplay}</td>
+                <td class="p-3 text-purple-700 font-semibold">${helpersVal}</td>
+                <td class="p-3 text-blue-700 font-semibold">${driversVal}</td> 
+                <td class="p-3 text-emerald-600 font-bold">${totalVal}</td>
+                <td class="p-3 text-slate-700">${puVal}</td>
+                <td class="p-3 text-slate-700">${destVal}</td>
+                <td class="p-3 text-emerald-700 font-semibold">${dieselVal}</td>
+                <td class="p-3 text-indigo-700 font-semibold">${hotelVal}</td>
                 <td class="p-3 text-center">${actions}</td>
             </tr>
         `;
@@ -243,7 +237,7 @@ function globalSearchFilter() {
 window.globalSearchFilter = globalSearchFilter;
 
 // ==========================================
-// 5. MODAL & JOB ACTIONS (SAFE ID-BASED EDIT)
+// 5. MODAL & JOB ACTIONS
 // ==========================================
 function openAddModal() {
     const modal = document.getElementById('jobModal');
@@ -253,8 +247,6 @@ function openAddModal() {
         modal.classList.add('flex');
         modal.style.setProperty('display', 'flex', 'important');
         modal.style.setProperty('z-index', '99999', 'important');
-        modal.style.opacity = '1';
-        modal.style.visibility = 'visible';
     }
 
     const jobForm = document.getElementById('jobForm');
@@ -264,7 +256,7 @@ function openAddModal() {
     if (editIndex) editIndex.value = '';
 
     const modalTitle = document.getElementById('modalTitle');
-    if (modalTitle) modalTitle.innerText = 'Add New Job';
+    if (modalTitle) modalTitle.innerText = 'Add New Job Dispatch';
 
     const puContainer = document.getElementById('puContainer');
     const destContainer = document.getElementById('destContainer');
@@ -316,15 +308,8 @@ function saveJob(event) {
         }
     }
 
-    const formatCurrency = (val) => {
-        if (!val || val === '-') return '-';
-        if (String(val).startsWith('$')) return val;
-        let num = parseFloat(String(val).replace(/[^0-9.]/g, ''));
-        return isNaN(num) ? val : '$' + num.toLocaleString('en-US');
-    };
-
-    let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '';
-    let totalFormatted = formatCurrency(totalRaw);
+    let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
+    let totalFormatted = totalRaw && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
 
     const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
     const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
@@ -333,51 +318,17 @@ function saveJob(event) {
     const puFormatted = extractPaymentsFromContainer('puContainer');
     const destFormatted = extractPaymentsFromContainer('destContainer');
 
-    const puPayments = [];
-    const puContainerEl = document.getElementById('puContainer');
-    if (puContainerEl) {
-        puContainerEl.querySelectorAll('.payment-row').forEach(row => {
-            const amt = row.querySelector('.payment-amount')?.value.trim() || '';
-            const mth = row.querySelector('.payment-method')?.value || 'Cash';
-            if (amt) puPayments.push({ amount: amt, method: mth });
-        });
-    }
+    const dieselRaw = document.getElementById('dieselAmount') ? document.getElementById('dieselAmount').value.trim() : '';
+    const dieselFormatted = dieselRaw ? dieselRaw : '-';
 
-    const destPayments = [];
-    const destContainerEl = document.getElementById('destContainer');
-    if (destContainerEl) {
-        destContainerEl.querySelectorAll('.payment-row').forEach(row => {
-            const amt = row.querySelector('.payment-amount')?.value.trim() || '';
-            const mth = row.querySelector('.payment-method')?.value || 'Cash';
-            if (amt) destPayments.push({ amount: amt, method: mth });
-        });
-    }
+    const hotelRaw = document.getElementById('hotelAmount') ? document.getElementById('hotelAmount').value.trim() : '';
+    const hotelFormatted = hotelRaw ? hotelRaw : '-';
 
-    let dieselRaw = document.getElementById('dieselAmount') ? document.getElementById('dieselAmount').value.trim() : '';
-    const dieselMethod = document.getElementById('dieselMethod') ? document.getElementById('dieselMethod').value : '';
-    const dieselFormatted = dieselRaw ? `${formatCurrency(dieselRaw)} ${dieselMethod}`.trim() : '-';
+    const helpersInput = document.getElementById('helpersCost');
+    const helpersFormatted = helpersInput ? helpersInput.value.trim() : '-';
 
-    let hotelRaw = document.getElementById('hotelAmount') ? document.getElementById('hotelAmount').value.trim() : '';
-    const hotelMethod = document.getElementById('hotelMethod') ? document.getElementById('hotelMethod').value : '';
-    const hotelFormatted = hotelRaw ? `${formatCurrency(hotelRaw)} ${hotelMethod}`.trim() : '-';
-
-    const helpersSelect = document.getElementById('helpersCost');
-    let helpersFormatted = '-';
-    let helpersCostVal = 0;
-    if (helpersSelect && helpersSelect.selectedIndex !== -1) {
-        helpersCostVal = parseFloat(helpersSelect.value) || 0;
-        const selectedText = helpersSelect.options[helpersSelect.selectedIndex].text;
-        helpersFormatted = helpersCostVal > 0 ? selectedText : '-';
-    }
-
-    const driversSelect = document.getElementById('driversCost');
-    let driversFormatted = '-';
-    let driversCostVal = 0;
-    if (driversSelect && driversSelect.selectedIndex !== -1) {
-        driversCostVal = parseFloat(driversSelect.value) || 0;
-        const selectedText = driversSelect.options[driversSelect.selectedIndex].text;
-        driversFormatted = driversCostVal > 0 ? selectedText : '-';
-    }
+    const driversInput = document.getElementById('driversCost');
+    const driversFormatted = driversInput ? driversInput.value.trim() : '-';
 
     const jobData = {
         date: dateVal,
@@ -387,16 +338,13 @@ function saveJob(event) {
         route: routeVal,
         foreman: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
         total: totalFormatted,
-        helpers: helpersFormatted,        
-        helpersNum: helpersCostVal, 
-        drivers: driversFormatted,        
-        driversNum: driversCostVal,     
-        pu: puFormatted,
-        dest: destFormatted,
-        puPayments: puPayments,     
-        destPayments: destPayments,   
-        diesel: dieselFormatted,
-        hotel: hotelFormatted
+        helpers: helpersFormatted || '-',        
+        drivers: driversFormatted || '-',        
+        pu: puFormatted || '-',
+        dest: destFormatted || '-',
+        diesel: dieselFormatted || '-',
+        hotel: hotelFormatted || '-',
+        storage: '-'
     };
 
     if (isEditing) {
@@ -444,18 +392,11 @@ function editJob(jobNoParam) {
 
     const jobTotal = document.getElementById('jobTotal');
     if (jobTotal) jobTotal.value = j.total || '';
-
-    if (j.puPayments && Array.isArray(j.puPayments)) {
-        j.puPayments.forEach(p => addPaymentRow('puContainer', p.amount, p.method));
-    }
-    if (j.destPayments && Array.isArray(j.destPayments)) {
-        j.destPayments.forEach(p => addPaymentRow('destContainer', p.amount, p.method));
-    }
 }
 window.editJob = editJob;
 
 function deleteJob(jobNo) {
-    if (!confirm('Are you sure you want to move this dispatch to Recycle Bin?')) return;
+    if (!confirm('Are you sure you want to delete this dispatch record?')) return;
 
     initMasterJobsData();
     const jobIndex = window.masterJobs.findIndex(j => j.jobNo === jobNo);
@@ -470,7 +411,6 @@ function deleteJob(jobNo) {
 
         filterJobsTable();
         updateDashboardAnalytics();
-        if (typeof renderTrashBin === 'function') renderTrashBin();
     }
 }
 window.deleteJob = deleteJob;
@@ -501,23 +441,6 @@ function updateDashboardAnalytics() {
         if (job.route) {
             routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
         }
-
-        const extractMethods = (text) => {
-            if (!text || text === '-') return;
-            const lower = text.toLowerCase();
-            if (lower.includes('cash')) paymentMethodMap.Cash++;
-            else if (lower.includes('zelle')) paymentMethodMap.Zelle++;
-            else if (lower.includes('cheque')) paymentMethodMap.Cheque++;
-            else if (lower.includes('pmo')) paymentMethodMap.PMO++;
-            else if (lower.includes('bc')) paymentMethodMap.BC++;
-            else if (lower.includes('pc')) paymentMethodMap.PC++;
-            else if (lower.includes('cc')) paymentMethodMap.CC++;
-            else if (lower.includes('wt')) paymentMethodMap.WT++;
-            else paymentMethodMap.Others++;
-        };
-
-        extractMethods(job.pu);
-        extractMethods(job.dest);
     });
 
     const completedJobsCount = window.masterJobs.length;
@@ -531,81 +454,8 @@ function updateDashboardAnalytics() {
 
     const avgEl = document.getElementById('dashAvgJobValue');
     if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
-
-    const topCorridorsContainer = document.getElementById('topCorridorsContainer');
-    if (topCorridorsContainer) {
-        const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
-        topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
-            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border">
-                <div class="flex items-center space-x-2">
-                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
-                    <span class="font-bold text-emerald-800">${route}</span>
-                </div>
-                <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
-            </div>
-        `).join('');
-    }
-
-    if (typeof renderDashboardCharts === 'function') {
-        renderDashboardCharts(monthlyRev, paymentMethodMap);
-    }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
-
-function renderDashboardCharts(monthlyData, paymentData) {
-    const ctxRevenue = document.getElementById('revenueChart');
-    if (ctxRevenue) {
-        if (window.revenueChartInstance) window.revenueChartInstance.destroy();
-        window.revenueChartInstance = new Chart(ctxRevenue, {
-            type: 'bar',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [{
-                    label: 'Monthly Revenue ($)',
-                    data: monthlyData,
-                    backgroundColor: 'rgba(5, 150, 105, 0.85)',
-                    borderRadius: 8,
-                    hoverBackgroundColor: '#047857'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-                }
-            }
-        });
-    }
-
-    const ctxPayment = document.getElementById('paymentMixChart');
-    if (ctxPayment) {
-        if (window.paymentMixChartInstance) window.paymentMixChartInstance.destroy();
-        const paymentColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b'];
-
-        window.paymentMixChartInstance = new Chart(ctxPayment, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(paymentData),
-                datasets: [{
-                    data: Object.values(paymentData),
-                    backgroundColor: paymentColors,
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
-                cutout: '65%'
-            }
-        });
-    }
-}
-window.renderDashboardCharts = renderDashboardCharts;
 
 // ==========================================
 // 7. NAVIGATION & TABS
@@ -645,20 +495,12 @@ function switchTab(tab) {
         setTimeout(updateDashboardAnalytics, 100);
     } else if (tab === 'jobs') {
         filterJobsTable();
-    } else if (tab === 'trash' && typeof renderTrashBin === 'function') {
-        renderTrashBin();
-    } else if (tab === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
-        renderPrivateTruckRentalTab();
-    } else if (tab === 'warehouse' && typeof renderWarehouseTab === 'function') {
-        renderWarehouseTab();
-    } else if (tab === 'reports' && typeof renderReportsTab === 'function') {
-        renderReportsTab();
     }
 }
 window.switchTab = switchTab;
 
 // ==========================================
-// 8. INITIALIZATION & EVENT DELEGATION
+// 8. INITIALIZATION
 // ==========================================
 window.onload = () => {
     try {
@@ -669,43 +511,10 @@ window.onload = () => {
         renderUsers();
         populateYearFilter();
         
-        if (typeof renderTrashBin === 'function') renderTrashBin();
-
         filterJobsTable();
         updateDashboardAnalytics();
         switchTab('dashboard');
-
     } catch (error) {
-        console.error("An error occurred during window.onload execution:", error);
+        console.error("Initialization error:", error);
     }
 };
-
-document.addEventListener('click', function(e) {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-
-    const btnText = btn.textContent.trim();
-    const isCancelBtn = btnText === 'Cancel' || btn.getAttribute('onclick')?.includes('closeModal') || (btn.querySelector('.fa-xmark') && !btn.closest('.payment-row') && !btn.classList.contains('delete-payment-btn'));
-
-    if (isCancelBtn && btn.closest('#jobModal')) {
-        e.preventDefault();
-        closeModal();
-        return;
-    }
-
-    const isAddPaymentBtn = btnText.includes('Payment') || btn.innerHTML.includes('Add Payment') || btnText.includes('+ Add');
-    if (isAddPaymentBtn) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const parentSection = btn.closest('div.space-y-2') || btn.parentElement;
-        let targetContainerId = 'puContainer';
-
-        if (parentSection && (parentSection.textContent.includes('Destination') || parentSection.textContent.includes('Balance'))) {
-            targetContainerId = 'destContainer';
-        }
-
-        addPaymentRow(targetContainerId);
-        return;
-    }
-});
