@@ -1,5 +1,5 @@
 /**
- * MovePro - Application Core Logic & Operations (Complete & Fully Restored)
+ * MovePro - Ultimate Enterprise Final Application Core Logic (Synchronized with HTML)
  */
 
 if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
@@ -67,7 +67,6 @@ function filterJobsTable() {
 
     let filtered = window.masterJobs;
 
-    // تطبيق الفلترة فقط إذا قام المستخدم بتغييرها عن الخيار الافتراضي
     if (monthVal && monthVal !== 'ALL' && monthVal !== 'All Months') {
         filtered = filtered.filter(job => job.month && job.month.toString() === monthVal);
     }
@@ -118,12 +117,69 @@ function checkPermissions() {
 window.checkPermissions = checkPermissions;
 
 // ==========================================
-// 3. RENDERING CRUD TABLE (Matched to Columns)
+// 3. PAYMENT ROWS MANAGEMENT
+// ==========================================
+function addPaymentRow(containerId, amount = '', method = 'Cash') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const rowId = 'payment_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'flex items-center gap-2 payment-row mt-2';
+    rowDiv.id = rowId;
+
+    rowDiv.innerHTML = `
+        <input type="text" placeholder="Amount (e.g. 500)" value="${amount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
+        <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
+            <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
+            <option value="Zelle" ${method === 'Zelle' ? 'selected' : ''}>Zelle</option>
+            <option value="Cheque" ${method === 'Cheque' ? 'selected' : ''}>Cheque</option>
+            <option value="PMO" ${method === 'PMO' ? 'selected' : ''}>PMO</option>
+            <option value="BC" ${method === 'BC' ? 'selected' : ''}>BC</option>
+            <option value="PC" ${method === 'PC' ? 'selected' : ''}>PC</option>
+            <option value="CC" ${method === 'CC' ? 'selected' : ''}>CC</option>
+            <option value="WT" ${method === 'WT' ? 'selected' : ''}>WT</option>
+            <option value="Others" ${method === 'Others' ? 'selected' : ''}>Others</option>
+        </select>
+        <button type="button" onclick="removePaymentRow('${rowId}')" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer delete-payment-btn" title="Remove">
+            <i class="fa-solid fa-xmark pointer-events-none"></i>
+        </button>
+    `;
+    container.appendChild(rowDiv);
+}
+window.addPaymentRow = addPaymentRow;
+
+function removePaymentRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) row.remove();
+}
+window.removePaymentRow = removePaymentRow;
+
+function extractPaymentsFromContainer(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return '-';
+
+    const rows = container.querySelectorAll('.payment-row');
+    const paymentsList = [];
+
+    rows.forEach(row => {
+        const amt = row.querySelector('.payment-amount')?.value.trim() || '';
+        const mth = row.querySelector('.payment-method')?.value || 'Cash';
+        if (amt !== '') {
+            paymentsList.push(`${amt} ${mth}`);
+        }
+    });
+
+    return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
+}
+
+// ==========================================
+// 4. RENDERING CRUD TABLE (Matched to HTML jobsTableBody)
 // ==========================================
 function renderJobsCRUD(dataToRender) {
-    const tbody = document.getElementById('crudTableBody');
+    const tbody = document.getElementById('jobsTableBody');
     if (!tbody) {
-        console.error("Target element 'crudTableBody' not found in DOM!");
+        console.error("Target element 'jobsTableBody' not found in DOM!");
         return;
     }
     
@@ -142,12 +198,20 @@ function renderJobsCRUD(dataToRender) {
         let actions = `<span class="text-xs text-slate-400">-</span>`;
         if (window.currentUserRole === 'Admin') {
             actions = `
-                <div class="flex items-center space-x-1">
+                <div class="flex items-center space-x-1 justify-center">
                     <button onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
                     <button onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             `;
         }
+
+        const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
+        const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
+        const helpersVal = (item.helpers && item.helpers !== '0' && item.helpers !== '-') ? item.helpers : '-';
+        const driversVal = (item.drivers && item.drivers !== '-') ? item.drivers : '-'; 
+        const puVal = (item.pu && item.pu !== '-') ? item.pu : '-';
+        const destVal = (item.dest && item.dest !== '-') ? item.dest : '-';
+        const totalVal = (item.total && item.total !== '-') ? item.total : '-';
 
         return `
             <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
@@ -155,13 +219,13 @@ function renderJobsCRUD(dataToRender) {
                 <td class="p-3 text-slate-900 font-bold">${item.jobNo || '-'}</td>
                 <td class="p-3 text-slate-700">${item.route || '-'}</td>
                 <td class="p-3">${foremanDisplay}</td>
-                <td class="p-3 text-purple-700 font-semibold">${item.helpers || '-'}</td>
-                <td class="p-3 text-blue-700 font-semibold">${item.drivers || '-'}</td> 
-                <td class="p-3 text-emerald-600 font-bold">${item.total || '-'}</td>
-                <td class="p-3 text-slate-700">${item.pu || '-'}</td>
-                <td class="p-3 text-slate-700">${item.dest || '-'}</td>
-                <td class="p-3 text-emerald-700 font-semibold">${item.diesel || '-'}</td>
-                <td class="p-3 text-indigo-700 font-semibold">${item.hotel || '-'}</td>
+                <td class="p-3 text-purple-700 font-semibold">${helpersVal}</td>
+                <td class="p-3 text-blue-700 font-semibold">${driversVal}</td> 
+                <td class="p-3 text-emerald-600 font-bold">${totalVal}</td>
+                <td class="p-3 text-slate-700">${puVal}</td>
+                <td class="p-3 text-slate-700">${destVal}</td>
+                <td class="p-3 text-emerald-700 font-semibold">${dieselVal}</td>
+                <td class="p-3 text-indigo-700 font-semibold">${hotelVal}</td>
                 <td class="p-3 text-center">${actions}</td>
             </tr>
         `;
@@ -170,59 +234,187 @@ function renderJobsCRUD(dataToRender) {
 window.renderJobsCRUD = renderJobsCRUD;
 
 // ==========================================
-// 4. NAVIGATION & TABS
+// 5. MODAL & JOB ACTIONS
 // ==========================================
-function switchTab(tabName) {
-    try {
-        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse'];
-        
-        tabs.forEach(t => {
-            const tabEl = document.getElementById(`tab-${t}`);
-            const navEl = document.getElementById(`nav-${t}`);
-            
-            if (tabEl) {
-                tabEl.classList.add('hidden');
-                tabEl.classList.remove('flex', 'block');
-                tabEl.style.setProperty('display', 'none', 'important');
-            }
-            if (navEl) {
-                navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
-            }
-        });
+function openAddModal() {
+    const modal = document.getElementById('jobModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '99999', 'important');
+    }
 
-        const activeTab = document.getElementById(`tab-${tabName}`);
-        const activeNav = document.getElementById(`nav-${tabName}`);
-        
-        if (activeTab) {
-            activeTab.classList.remove('hidden');
-            activeTab.classList.add('flex');
-            activeTab.style.setProperty('display', 'flex', 'important');
-        }
-        if (activeNav) {
-            activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
-        }
+    const jobForm = document.getElementById('jobForm');
+    if (jobForm) jobForm.reset();
 
-        if (tabName === 'dashboard') {
-            setTimeout(updateDashboardAnalytics, 50);
-        } else if (tabName === 'jobs') {
-            filterJobsTable();
-        } else if (tabName === 'reports' && typeof renderReportsTab === 'function') {
-            renderReportsTab();
-        } else if (tabName === 'trash' && typeof renderTrashBin === 'function') {
-            renderTrashBin();
-        } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
-            renderPrivateTruckRentalTab();
-        } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
-            renderWarehouseTab();
-        }
-    } catch (e) {
-        console.error("Error switching tab:", e);
+    const editIndex = document.getElementById('editIndex');
+    if (editIndex) editIndex.value = '';
+
+    const modalTitle = document.getElementById('modalTitle');
+    if (modalTitle) modalTitle.innerText = 'Add New Job Dispatch';
+
+    const puContainer = document.getElementById('puContainer');
+    const destContainer = document.getElementById('destContainer');
+    if (puContainer) puContainer.innerHTML = '';
+    if (destContainer) destContainer.innerHTML = '';
+}
+window.openAddModal = openAddModal;
+
+function closeModal() {
+    const modal = document.getElementById('jobModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.style.setProperty('display', 'none', 'important');
     }
 }
-window.switchTab = switchTab;
+window.closeModal = closeModal;
+
+function saveJob(event) {
+    if (event) event.preventDefault();
+
+    const jobNoInput = document.getElementById('jobNo');
+    if (!jobNoInput || !jobNoInput.value.trim()) {
+        alert('Please enter the Job Number.');
+        if (jobNoInput) jobNoInput.focus();
+        return;
+    }
+
+    initMasterJobsData();
+    const jobNoVal = jobNoInput.value.trim();
+
+    const editIndexInput = document.getElementById('editIndex');
+    const editIndex = editIndexInput ? parseInt(editIndexInput.value, 10) : -1;
+    const isEditing = !isNaN(editIndex) && editIndex >= 0 && editIndex < window.masterJobs.length;
+
+    const dateInput = document.getElementById('jobDate');
+    const dateRaw = dateInput ? dateInput.value : '';
+    let dateVal = dateRaw;
+    let monthVal = new Date().getMonth() + 1;
+    let yearVal = new Date().getFullYear();
+
+    if (dateRaw) {
+        if (dateRaw.includes('-')) {
+            const p = dateRaw.split('-');
+            yearVal = parseInt(p[0]) || yearVal;
+            monthVal = parseInt(p[1]) || monthVal;
+            const dayVal = parseInt(p[2]) || 1;
+            dateVal = `${String(monthVal).padStart(2, '0')}/${String(dayVal).padStart(2, '0')}/${yearVal}`;
+        }
+    }
+
+    let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
+    let totalFormatted = totalRaw && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
+
+    const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
+    const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
+    const routeVal = (fromVal || toVal) ? `${fromVal} → ${toVal}` : '-';
+
+    const puFormatted = extractPaymentsFromContainer('puContainer');
+    const destFormatted = extractPaymentsFromContainer('destContainer');
+
+    const dieselRaw = document.getElementById('dieselAmount') ? document.getElementById('dieselAmount').value.trim() : '';
+    const dieselMethod = document.getElementById('dieselMethod') ? document.getElementById('dieselMethod').value : 'Cash';
+    const dieselFormatted = dieselRaw ? `${dieselRaw} ${dieselMethod}` : '-';
+
+    const hotelRaw = document.getElementById('hotelAmount') ? document.getElementById('hotelAmount').value.trim() : '';
+    const hotelMethod = document.getElementById('hotelMethod') ? document.getElementById('hotelMethod').value : 'Cash';
+    const hotelFormatted = hotelRaw ? `${hotelRaw} ${hotelMethod}` : '-';
+
+    const helpersSelect = document.getElementById('helpersCost');
+    const helpersFormatted = helpersSelect && helpersSelect.selectedIndex > 0 ? helpersSelect.options[helpersSelect.selectedIndex].text : '-';
+
+    const driversSelect = document.getElementById('driversCost');
+    const driversFormatted = driversSelect && driversSelect.selectedIndex > 0 ? driversSelect.options[driversSelect.selectedIndex].text : '-';
+
+    const jobData = {
+        date: dateVal,
+        month: monthVal,
+        year: yearVal,
+        jobNo: jobNoVal,
+        route: routeVal,
+        foreman: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
+        total: totalFormatted,
+        helpers: helpersFormatted,        
+        drivers: driversFormatted,        
+        pu: puFormatted,
+        dest: destFormatted,
+        diesel: dieselFormatted,
+        hotel: hotelFormatted,
+        storage: '-'
+    };
+
+    if (isEditing) {
+        window.masterJobs[editIndex] = jobData;
+    } else {
+        const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
+        if (targetIndex !== -1) {
+            window.masterJobs[targetIndex] = jobData;
+        } else {
+            window.masterJobs.unshift(jobData);
+        }
+    }
+
+    saveMasterJobsData(window.masterJobs);
+    closeModal();
+    populateYearFilter();
+    filterJobsTable();
+    updateDashboardAnalytics();
+}
+window.saveJob = saveJob;
+
+function editJob(jobNoParam) {
+    initMasterJobsData();
+    const index = window.masterJobs.findIndex(j => j.jobNo === jobNoParam);
+
+    if (index === -1 || !window.masterJobs[index]) {
+        alert("Could not find the record for editing.");
+        return;
+    }
+
+    const j = window.masterJobs[index];
+    openAddModal();
+
+    const modalTitle = document.getElementById('modalTitle');
+    if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
+    
+    const editIndex = document.getElementById('editIndex');
+    if (editIndex) editIndex.value = index;
+
+    const jobNoInput = document.getElementById('jobNo');
+    if (jobNoInput) jobNoInput.value = j.jobNo || '';
+
+    const jobForeman = document.getElementById('jobForeman');
+    if (jobForeman) jobForeman.value = j.foreman || '';
+
+    const jobTotal = document.getElementById('jobTotal');
+    if (jobTotal) jobTotal.value = j.total || '';
+}
+window.editJob = editJob;
+
+function deleteJob(jobNo) {
+    if (!confirm('Are you sure you want to delete this dispatch record?')) return;
+
+    initMasterJobsData();
+    const jobIndex = window.masterJobs.findIndex(j => j.jobNo === jobNo);
+
+    if (jobIndex !== -1) {
+        const deletedJob = window.masterJobs.splice(jobIndex, 1)[0];
+        window.masterTrash = JSON.parse(localStorage.getItem('movepro_trash_bin')) || [];
+        window.masterTrash.push(deletedJob);
+
+        saveMasterJobsData(window.masterJobs);
+        localStorage.setItem('movepro_trash_bin', JSON.stringify(window.masterTrash));
+
+        filterJobsTable();
+        updateDashboardAnalytics();
+    }
+}
+window.deleteJob = deleteJob;
 
 // ==========================================
-// 5. DASHBOARD ANALYTICS & CHARTS
+// 6. DASHBOARD ANALYTICS & CHARTS
 // ==========================================
 function updateDashboardAnalytics() {
     try {
@@ -260,6 +452,21 @@ function updateDashboardAnalytics() {
 
         const avgEl = document.getElementById('dashAvgJobValue');
         if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
+
+        // Render Top Corridors
+        const topCorridorsContainer = document.getElementById('topCorridorsContainer');
+        if (topCorridorsContainer) {
+            const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
+            topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
+                        <span class="font-bold text-emerald-800">${route}</span>
+                    </div>
+                    <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
+                </div>
+            `).join('');
+        }
 
         renderDashboardCharts(monthlyRev, paymentMethodMap);
     } catch (e) {
@@ -328,7 +535,61 @@ function renderDashboardCharts(monthlyData, paymentData) {
 window.renderDashboardCharts = renderDashboardCharts;
 
 // ==========================================
-// 6. INITIALIZATION
+// 7. NAVIGATION & TABS
+// ==========================================
+function switchTab(tabName) {
+    try {
+        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse'];
+        
+        tabs.forEach(t => {
+            const tabEl = document.getElementById(`tab-${t}`);
+            const navEl = document.getElementById(`nav-${t}`) || document.getElementById(`nav-${t}-btn`);
+            
+            if (tabEl) {
+                tabEl.classList.add('hidden');
+                tabEl.classList.remove('flex', 'block');
+                tabEl.style.setProperty('display', 'none', 'important');
+            }
+            if (navEl) {
+                navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
+            }
+        });
+
+        const activeTab = document.getElementById(`tab-${tabName}`);
+        const activeNav = document.getElementById(`nav-${tabName}`) || document.getElementById(`nav-${tabName}-btn`);
+        
+        if (activeTab) {
+            activeTab.classList.remove('hidden');
+            activeTab.classList.add('flex');
+            activeTab.style.setProperty('display', 'flex', 'important');
+        }
+        if (activeNav) {
+            activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
+        }
+
+        if (tabName === 'dashboard') {
+            setTimeout(updateDashboardAnalytics, 50);
+        } else if (tabName === 'jobs') {
+            filterJobsTable();
+        } else if (tabName === 'reports' && typeof renderReportsTab === 'function') {
+            renderReportsTab();
+        } else if (tabName === 'trash' && typeof renderTrashBin === 'function') {
+            renderTrashBin();
+        } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
+            renderPrivateTruckRentalTab();
+        } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
+            renderWarehouseTab();
+        } else if (tabName === 'users') {
+            renderUsers();
+        }
+    } catch (e) {
+        console.error("Error switching tab:", e);
+    }
+}
+window.switchTab = switchTab;
+
+// ==========================================
+// 8. INITIALIZATION
 // ==========================================
 window.addEventListener('DOMContentLoaded', () => {
     try {
