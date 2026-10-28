@@ -123,9 +123,7 @@ function generateOfficialSummaryTable(filteredJobs) {
         const totalVal = parseCurrency(item.total);
         sumTotalAfterDeposit += totalVal;
 
-        // الحسبة التلقائية اللحظية لـ Foreman 10%
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-
         sumHelpers += parseCurrency(item.helpers);
         sumDrivers += parseCurrency(item.drivers);
 
@@ -449,13 +447,35 @@ function generateDetailedReportData() {
 window.generateDetailedReportData = generateDetailedReportData;
 
 /**
- * MovePro - Professional PDF Generation Engine
- * Synchronized with Master PDF Layout (Detailed Ledger + Financial Summary)
+ * MovePro - Professional PDF Generation Engine (Includes Jobs, Rentals, and Warehouse)
  */
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
+    const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+    const warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+
     const startDateVal = document.getElementById('filterStartDate')?.value || '12/05/2026';
     const endDateVal = document.getElementById('filterEndDate')?.value || '19/10/2026';
+
+    const startDate = startDateVal ? new Date(startDateVal) : null;
+    const endDate = endDateVal ? new Date(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59);
+
+    const filteredRentals = rentals.filter(r => {
+        if (!r.date) return true;
+        const rDate = new Date(r.date);
+        if (startDate && rDate < startDate) return false;
+        if (endDate && rDate > endDate) return false;
+        return true;
+    });
+
+    const filteredWarehouse = warehouse.filter(w => {
+        if (!w.date) return true;
+        const wDate = new Date(w.date);
+        if (startDate && wDate < startDate) return false;
+        if (endDate && wDate > endDate) return false;
+        return true;
+    });
 
     let sumForeman10 = 0, sumHelpers = 0, sumDrivers = 0, sumCashDiesel = 0;
     let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
@@ -507,7 +527,7 @@ function exportOfficialPDF() {
             <style>
                 @page { size: A4 landscape; margin: 8mm; }
                 body { font-family: system-ui, -apple-system, sans-serif; color: #1e293b; background: #fff; padding: 10px; }
-                .table-pdf { width: 100%; border-collapse: collapse; font-size: 10px; }
+                .table-pdf { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 15px; }
                 .table-pdf th { background-color: #f1f5f9; color: #334155; font-weight: 700; border: 1px solid #cbd5e1; padding: 5px; text-align: center; }
                 .table-pdf td { border: 1px solid #e2e8f0; padding: 5px; text-align: center; }
                 .page-break { page-break-before: always; }
@@ -516,7 +536,7 @@ function exportOfficialPDF() {
         </head>
         <body>
             <div class="text-center mb-4 border-b pb-3">
-                <h1 class="text-xl font-bold text-emerald-800">Total Cash & PMO Report</h1>
+                <h1 class="text-xl font-bold text-emerald-800">Total Cash, PMO & Expenses Report</h1>
                 <p class="text-xs font-semibold text-rose-800 mt-1">From Date: <span class="text-slate-800">${startDateVal}</span> &nbsp;&nbsp;|&nbsp;&nbsp; To Date: <span class="text-slate-800">${endDateVal}</span></p>
             </div>
 
@@ -561,7 +581,7 @@ function exportOfficialPDF() {
             <div class="page-break"></div>
 
             <div class="mt-4">
-                <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Detailed Dispatch Operations Ledger (${jobs.length} Records)</h3>
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">1. Detailed Dispatch Operations Ledger (${jobs.length} Records)</h3>
                 <table class="table-pdf">
                     <thead>
                         <tr>
@@ -601,6 +621,58 @@ function exportOfficialPDF() {
                                 </tr>
                             `;
                         }).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6">
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">2. Private Truck Rental Ledger (${filteredRentals.length} Records)</h3>
+                <table class="table-pdf">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Vendor / Truck No</th>
+                            <th>Description / Notes</th>
+                            <th>Payment Method</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredRentals.length === 0 ? `<tr><td colspan="5">No truck rental records found.</td></tr>` : filteredRentals.map(r => `
+                            <tr>
+                                <td>${r.date || '-'}</td>
+                                <td class="font-bold">${r.truckLabel || 'Truck Rental'}</td>
+                                <td>${r.paidBy || '-'}</td>
+                                <td>${r.paymentType || 'Cash'}</td>
+                                <td style="text-align: right;" class="font-bold text-amber-600">$${parseCurrency(r.amount).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6">
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">3. Warehouse & Other Expenses Ledger (${filteredWarehouse.length} Records)</h3>
+                <table class="table-pdf">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category / Type</th>
+                            <th>Description / Facility</th>
+                            <th>Payment Method</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredWarehouse.length === 0 ? `<tr><td colspan="5">No warehouse records found.</td></tr>` : filteredWarehouse.map(w => `
+                            <tr>
+                                <td>${w.date || '-'}</td>
+                                <td class="font-bold">${w.services || 'Warehouse Expense'}</td>
+                                <td>${w.details || '-'}</td>
+                                <td>${w.paymentType || 'Cash'}</td>
+                                <td style="text-align: right;" class="font-bold text-purple-600">$${parseCurrency(w.amount).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
                     </tbody>
                 </table>
             </div>
