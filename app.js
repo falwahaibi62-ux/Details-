@@ -191,14 +191,17 @@ function extractPaymentsFromContainer(containerId) {
 }
 
 // ==========================================
-// HELPERS FORMATTER (Clean & Safe)
+// HELPERS & DRIVERS STRICT MAPPERS
 // ==========================================
+
 function parseHelpersDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
     let strVal = String(val).trim();
-    
     if (strVal.includes('(')) return strVal;
     
+    let num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
+    if (isNaN(num) || num === 0) return '-';
+
     const helpersMap = {
         100: "1/2 (100)",
         200: "1 (200)",
@@ -211,20 +214,30 @@ function parseHelpersDisplay(val) {
         1000: "4-1 1/2 (1000)"
     };
 
-    if (helpersMap[strVal]) {
-        return helpersMap[strVal];
-    }
+    return helpersMap[num] || '-';
+}
 
+function parseDriversDisplay(val) {
+    if (!val || val === '-' || val === '0' || val === 0) return '-';
+    let strVal = String(val).trim();
+    if (strVal.includes('(')) return strVal;
+    
     let num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
     if (isNaN(num) || num === 0) return '-';
 
-    if (helpersMap[num]) {
-        return helpersMap[num];
-    }
+    const driversMap = {
+        112.5: "1/2 (112.5)",
+        225: "1 (225)",
+        337: "1-1 1/2 (337)",
+        450: "2 (450)",
+        675: "2-1 1/2 (675)"
+    };
 
-    return strVal;
+    return driversMap[num] || '-';
 }
+
 window.parseHelpersDisplay = parseHelpersDisplay;
+window.parseDriversDisplay = parseDriversDisplay;
 // ==========================================
 // 5. RENDERING CRUD TABLE
 // ==========================================
