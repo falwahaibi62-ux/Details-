@@ -191,17 +191,14 @@ function extractPaymentsFromContainer(containerId) {
 }
 
 // ==========================================
-// HELPERS FORMATTER (Precise & Safe without false estimations)
+// HELPERS FORMATTER (Clean & Safe)
 // ==========================================
 function parseHelpersDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
     let strVal = String(val).trim();
+    
     if (strVal.includes('(')) return strVal;
     
-    let num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
-    if (isNaN(num) || num === 0) return '-';
-
-    // خريطة الأسعار القياسية الثابتة المطابقة للقائمة المنسدلة
     const helpersMap = {
         100: "1/2 (100)",
         200: "1 (200)",
@@ -214,11 +211,18 @@ function parseHelpersDisplay(val) {
         1000: "4-1 1/2 (1000)"
     };
 
-    // إذا كانت مطابقة للقائمة القياسية، نعرضها كما هي
-    if (helpersMap[num]) return helpersMap[num];
+    if (helpersMap[strVal]) {
+        return helpersMap[strVal];
+    }
 
-    // للقيم الفعلية الأخرى، نعرضها بالصيغة القياسية مع تكلفتها الدقيقة دون استنتاج وهمي للأيام
-    return `1 (${num})`;
+    let num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
+    if (isNaN(num) || num === 0) return '-';
+
+    if (helpersMap[num]) {
+        return helpersMap[num];
+    }
+
+    return strVal;
 }
 window.parseHelpersDisplay = parseHelpersDisplay;
 // ==========================================
