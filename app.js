@@ -637,10 +637,11 @@ window.renderDashboardCharts = renderDashboardCharts;
 // ==========================================
 function switchTab(tabName) {
     try {
-        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse'];
+        // قائمة شاملة لكافة التبويبات والشاشات في النظام لمنع أي تداخل
+        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
         
         tabs.forEach(t => {
-            const tabEl = document.getElementById(`tab-${t}`);
+            const tabEl = document.getElementById(`tab-${t}`) || document.getElementById(`${t}-view`);
             const navEl = document.getElementById(`nav-${t}`) || document.getElementById(`nav-${t}-btn`);
             
             if (tabEl) {
@@ -653,7 +654,8 @@ function switchTab(tabName) {
             }
         });
 
-        const activeTab = document.getElementById(`tab-${tabName}`);
+        // البحث الشامل عن التبويب النشط
+        const activeTab = document.getElementById(`tab-${tabName}`) || document.getElementById(`${tabName}-view`);
         const activeNav = document.getElementById(`nav-${tabName}`) || document.getElementById(`nav-${tabName}-btn`);
         
         if (activeTab) {
@@ -665,6 +667,7 @@ function switchTab(tabName) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
+        // توجيه الأحداث والدوال الخاصة بكل شاشة
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
@@ -685,7 +688,6 @@ function switchTab(tabName) {
     }
 }
 window.switchTab = switchTab;
-
 // ==========================================
 // 9. INITIALIZATION
 // ==========================================
