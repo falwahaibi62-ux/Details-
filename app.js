@@ -235,7 +235,7 @@ window.parseHelpersDisplay = parseHelpersDisplay;
 window.parseDriversDisplay = parseDriversDisplay;
 
 // ==========================================
-// 5. RENDERING CRUD TABLE (Synchronized with 13 Columns)
+// 5. RENDERING CRUD TABLE (Synchronized with 13 Columns & Dynamic Foreman 10%)
 // ==========================================
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('jobsTableBody');
@@ -273,7 +273,9 @@ function renderJobsCRUD(dataToRender) {
         const puVal = (item.pu && item.pu !== '-') ? item.pu : '-';
         const destVal = (item.dest && item.dest !== '-') ? item.dest : '-';
         const totalVal = (item.total && item.total !== '-') ? item.total : '-';
-        const foreman10Val = (item.foreman10 && item.foreman10 !== '-') ? item.foreman10 : '-';
+
+        let totalNum = parseFloat(String(totalVal).replace(/[^0-9.]/g, '')) || 0;
+        let foreman10Val = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
 
         return `
             <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
@@ -295,7 +297,6 @@ function renderJobsCRUD(dataToRender) {
     }).join('');
 }
 window.renderJobsCRUD = renderJobsCRUD;
-
 // ==========================================
 // 6. MODAL & JOB ACTIONS
 // ==========================================
