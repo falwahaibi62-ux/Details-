@@ -119,11 +119,7 @@ window.checkPermissions = checkPermissions;
 // ==========================================
 // 3. PAYMENT ROWS MANAGEMENT
 // ==========================================
-// ==========================================
-// 3. PAYMENT ROWS MANAGEMENT (Fixed for destContainer)
-// ==========================================
 function addPaymentRow(containerId, amount = '', method = 'Cash') {
-    // دعم آمن لكلا الاسمين destContainer أو destContextContainer
     let container = document.getElementById(containerId);
     if (!container && containerId === 'destContextContainer') {
         container = document.getElementById('destContainer');
@@ -191,9 +187,8 @@ function extractPaymentsFromContainer(containerId) {
 }
 
 // ==========================================
-// HELPERS & DRIVERS STRICT MAPPERS
+// 4. HELPERS & DRIVERS STRICT MAPPERS
 // ==========================================
-
 function parseHelpersDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
     let strVal = String(val).trim();
@@ -238,8 +233,9 @@ function parseDriversDisplay(val) {
 
 window.parseHelpersDisplay = parseHelpersDisplay;
 window.parseDriversDisplay = parseDriversDisplay;
+
 // ==========================================
-// 5. RENDERING CRUD TABLE
+// 5. RENDERING CRUD TABLE (Synchronized with 13 Columns)
 // ==========================================
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('jobsTableBody');
@@ -251,7 +247,7 @@ function renderJobsCRUD(dataToRender) {
     const records = dataToRender || window.masterJobs || [];
 
     if (!records || records.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-slate-400 text-xs">No dispatch records found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" class="text-center p-6 text-slate-400 text-xs">No dispatch records found</td></tr>`;
         return;
     }
     
@@ -273,10 +269,11 @@ function renderJobsCRUD(dataToRender) {
         const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
         const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
         const helpersVal = parseHelpersDisplay(item.helpers);
-        const driversVal = (item.drivers && item.drivers !== '-') ? item.drivers : '-'; 
+        const driversVal = parseDriversDisplay(item.drivers); 
         const puVal = (item.pu && item.pu !== '-') ? item.pu : '-';
         const destVal = (item.dest && item.dest !== '-') ? item.dest : '-';
         const totalVal = (item.total && item.total !== '-') ? item.total : '-';
+        const foreman10Val = (item.foreman10 && item.foreman10 !== '-') ? item.foreman10 : '-';
 
         return `
             <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
@@ -284,6 +281,7 @@ function renderJobsCRUD(dataToRender) {
                 <td class="p-3 text-slate-900 font-bold">${item.jobNo || '-'}</td>
                 <td class="p-3 text-slate-700">${item.route || '-'}</td>
                 <td class="p-3">${foremanDisplay}</td>
+                <td class="p-3 text-emerald-800 font-bold">${foreman10Val}</td>
                 <td class="p-3 text-purple-700 font-semibold">${helpersVal}</td>
                 <td class="p-3 text-blue-700 font-semibold">${driversVal}</td> 
                 <td class="p-3 text-emerald-600 font-bold">${totalVal}</td>
@@ -372,6 +370,10 @@ function saveJob(event) {
     let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
     let totalFormatted = totalRaw && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
 
+    // حساب نسبة الـ Foreman 10% تلقائياً كـ 10% من المبالغ الإجمالية إذا توفر الرقم
+    let totalNum = parseFloat(String(totalFormatted).replace(/[^0-9.]/g, '')) || 0;
+    let foreman10Val = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+
     const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
     const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
     const routeVal = (fromVal || toVal) ? `${fromVal} → ${toVal}` : '-';
@@ -400,6 +402,7 @@ function saveJob(event) {
         jobNo: jobNoVal,
         route: routeVal,
         foreman: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
+        foreman10: foreman10Val,
         total: totalFormatted,
         helpers: helpersFormatted,        
         drivers: driversFormatted,        
@@ -505,21 +508,8 @@ function updateDashboardAnalytics() {
                 routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
             }
 
-            // تحليل واستخراج طرق الدفع لملء الرسم الدائري
             [job.pu, job.dest].forEach(payStr => {
                 if (payStr && payStr !== '-') {
-                    // البحث عن الكلمات المفتاحية لطرق الدفع داخل السلسلة النصية
-                    Object.keys(paymentMethodMap).forEach(method => {
-                        if (payStr.toUpperCase().includes(method.toUpperCase())) {
-                            let extractedAmt = parseFloat(payStr.replace(/[^0-9.]/g, '')) || 0;
-                            // إذا وجدنا رقماً ضمن النص، نعتبره للمنهج أو نقوم بزيادة العداد
-                            if (extractedAmt > 0 && payStr.toUpperCase().indexOf(method.toUpperCase()) !== -1) {
-                                // لتجنب مضاعفة الرقم إذا وجد عدة طرق، نأخذ القيمة التقريبية أو جزءاً منها
-                            }
-                        }
-                    });
-                    
-                    // تحليل أدق استناداً للكلمات
                     if (payStr.toUpperCase().includes('CASH')) paymentMethodMap.Cash += 1;
                     if (payStr.toUpperCase().includes('ZELLE')) paymentMethodMap.Zelle += 1;
                     if (payStr.toUpperCase().includes('CHEQUE') || payStr.toUpperCase().includes('CK')) paymentMethodMap.Cheque += 1;
@@ -532,7 +522,6 @@ function updateDashboardAnalytics() {
             });
         });
 
-        // إذا كانت قيم الدفع فارغة تماماً، نعطيهم قيماً افتراضية لكي يظهر الرسم الدائري بوضوح
         const totalPaymentsCount = Object.values(paymentMethodMap).reduce((a, b) => a + b, 0);
         if (totalPaymentsCount === 0) {
             paymentMethodMap.Cash = 120;
@@ -558,7 +547,6 @@ function updateDashboardAnalytics() {
         const avgEl = document.getElementById('dashAvgJobValue');
         if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
 
-        // Render Top Corridors
         const topCorridorsContainer = document.getElementById('topCorridorsContainer');
         if (topCorridorsContainer) {
             const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
