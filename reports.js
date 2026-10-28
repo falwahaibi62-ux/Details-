@@ -129,11 +129,15 @@ function generateOfficialSummaryTable(filteredJobs) {
         sumHelpers += parseCurrency(item.helpers);
         sumDrivers += parseCurrency(item.drivers);
 
+        // معالجة دقيقة لحساب الديزل وتجنب الأرقام العشوائية
         if (item.diesel && item.diesel !== '-') {
-            let dieselSum = String(item.diesel).split('+').reduce((sum, part) => {
-                return sum + parseCurrency(part);
+            let dieselStr = String(item.diesel);
+            let dieselSum = dieselStr.split('+').reduce((sum, part) => {
+                let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
+                // نتجنب الأرقام الكبيرة غير الطبيعية الناتجة عن تداخل النصوص
+                return sum + (cleanNum < 5000 ? cleanNum : 0);
             }, 0);
-            if (String(item.diesel).toLowerCase().includes('cash') || !String(item.diesel).toLowerCase().includes('penske')) {
+            if (dieselStr.toLowerCase().includes('cash') || !dieselStr.toLowerCase().includes('penske')) {
                 sumCashDiesel += dieselSum;
             }
         }
@@ -141,28 +145,32 @@ function generateOfficialSummaryTable(filteredJobs) {
         const puStr = String(item.pu || '').toLowerCase();
         const puVal = parseCurrency(item.pu);
         
+        // التحقق من أن المبلغ منطقي وليس رقماً تعريفياً متداخلاً مع النص
+        const safePuVal = puVal < 100000 ? puVal : 0;
+
         if (puStr.includes('cash')) {
-            sumCashPu += puVal;
+            sumCashPu += safePuVal;
         } else if (puStr.includes('pmo')) {
-            sumPmoPu += puVal;
-        } else if (puVal > 0) {
-            sumZellePu += puVal;
+            sumPmoPu += safePuVal;
+        } else if (safePuVal > 0) {
+            sumZellePu += safePuVal;
         }
 
         const destStr = String(item.dest || item.destination || '').toLowerCase();
         const destVal = parseCurrency(item.dest || item.destination);
+        const safeDestVal = destVal < 100000 ? destVal : 0;
 
         if (destStr.includes('cash')) {
-            sumCashDest += destVal;
+            sumCashDest += safeDestVal;
         } else if (destStr.includes('zelle')) {
-            sumDestZelle += destVal;
-            sumDestNoCashPmo += destVal;
-        } else if (!destStr.includes('pmo') && destVal > 0) {
-            sumDestNoCashPmo += destVal;
+            sumDestZelle += safeDestVal;
+            sumDestNoCashPmo += safeDestVal;
+        } else if (!destStr.includes('pmo') && safeDestVal > 0) {
+            sumDestNoCashPmo += safeDestVal;
         }
 
         if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
-            sumPmoDeliveries += puVal;
+            sumPmoDeliveries += safePuVal;
         }
     });
 
