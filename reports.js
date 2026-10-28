@@ -123,7 +123,7 @@ function generateOfficialSummaryTable(filteredJobs) {
         const totalVal = parseCurrency(item.total);
         sumTotalAfterDeposit += totalVal;
 
-        // الحسبة التلقائية اللحظية لـ Foreman 10% (10% من إجمالي الـ Total)
+        // الحسبة التلقائية اللحظية لـ Foreman 10%
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
 
         sumHelpers += parseCurrency(item.helpers);
@@ -141,32 +141,32 @@ function generateOfficialSummaryTable(filteredJobs) {
         }
 
         const puStr = String(item.pu || '').toLowerCase();
-        const puVal = parseCurrency(item.pu);
-        const safePuVal = puVal < 100000 ? puVal : 0;
+        const rawPuVal = parseCurrency(item.pu);
+        const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
 
         if (puStr.includes('cash')) {
-            sumCashPu += safePuVal;
+            sumCashPu += puVal;
         } else if (puStr.includes('pmo')) {
-            sumPmoPu += safePuVal;
-        } else if (safePuVal > 0) {
-            sumZellePu += safePuVal;
+            sumPmoPu += puVal;
+        } else if (puVal > 0) {
+            sumZellePu += puVal;
         }
 
         const destStr = String(item.dest || item.destination || '').toLowerCase();
-        const destVal = parseCurrency(item.dest || item.destination);
-        const safeDestVal = destVal < 100000 ? destVal : 0;
+        const rawDestVal = parseCurrency(item.dest || item.destination);
+        const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
 
         if (destStr.includes('cash')) {
-            sumCashDest += safeDestVal;
+            sumCashDest += destVal;
         } else if (destStr.includes('zelle')) {
-            sumDestZelle += safeDestVal;
-            sumDestNoCashPmo += safeDestVal;
-        } else if (!destStr.includes('pmo') && safeDestVal > 0) {
-            sumDestNoCashPmo += safeDestVal;
+            sumDestZelle += destVal;
+            sumDestNoCashPmo += destVal;
+        } else if (!destStr.includes('pmo') && destVal > 0) {
+            sumDestNoCashPmo += destVal;
         }
 
         if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
-            sumPmoDeliveries += safePuVal;
+            sumPmoDeliveries += puVal;
         }
     });
 
@@ -365,7 +365,6 @@ function generateDetailedReportData() {
                 const dieselVal = item.diesel || '-';
                 const hotelVal = item.hotel || '-';
 
-                // معالجة عرض Helpers ليكون نصياً تفصيلياً بنفس أسلوب Drivers
                 const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(item.helpers) : (item.helpers || '-');
                 const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(item.drivers) : (item.drivers || '-');
 
@@ -470,20 +469,23 @@ function exportOfficialPDF() {
         sumDrivers += parseCurrency(item.drivers);
 
         if (item.diesel && item.diesel !== '-') {
-            let dieselSum = String(item.diesel).split('+').reduce((s, p) => s + parseCurrency(p), 0);
-            if (String(item.diesel).toLowerCase().includes('cash') || !String(item.diesel).toLowerCase().includes('penske')) {
+            let dieselStr = String(item.diesel);
+            let dieselSum = dieselStr.split('+').reduce((s, p) => s + parseCurrency(p), 0);
+            if (dieselStr.toLowerCase().includes('cash') || !dieselStr.toLowerCase().includes('penske')) {
                 sumCashDiesel += dieselSum;
             }
         }
 
         const puStr = String(item.pu || '').toLowerCase();
-        const puVal = parseCurrency(item.pu);
+        const rawPuVal = parseCurrency(item.pu);
+        const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
         if (puStr.includes('cash')) sumCashPu += puVal;
         else if (puStr.includes('pmo')) sumPmoPu += puVal;
         else if (puVal > 0) sumZellePu += puVal;
 
         const destStr = String(item.dest || item.destination || '').toLowerCase();
-        const destVal = parseCurrency(item.dest || item.destination);
+        const rawDestVal = parseCurrency(item.dest || item.destination);
+        const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
         if (destStr.includes('cash')) sumCashDest += destVal;
         else if (destStr.includes('zelle')) { sumDestZelle += destVal; sumDestNoCashPmo += destVal; }
         else if (!destStr.includes('pmo') && destVal > 0) sumDestNoCashPmo += destVal;
