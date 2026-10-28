@@ -28,8 +28,13 @@ const initialWarehouseRecords = [
     { date: "9/28/2026", services: "Warehouse Labor", amount: 700, paymentType: "Cash", details: "Warehouse labor and handling" },
     { date: "9/29/2026", services: "Materials", amount: 312, paymentType: "Cash", details: "Warehouse materials" },
     { date: "10/9/2026", services: "Warehouse Labor", amount: 700, paymentType: "Cash", details: "Warehouse labor and handling" },
-    { date: "10/16/2026", services: "Warehouse", amount: 700, paymentType: "Cash", details: "Warehouse services" }
+    { date: "10/16/2026", services: "Warehouse", amount: 700, paymentType: "Cash", details: "Warehouse services" },
+    { date: "10/22/2026", services: "Warehouse Labor", amount: 700, paymentType: "Cash", details: "Warehouse labor and handling" },
+    { date: "10/25/2026", services: "Materials", amount: 450, paymentType: "Cash", details: "Warehouse supplies and materials" }
 ];
+
 if (!localStorage.getItem('movepro_warehouse_records')) {
+    localStorage.setItem('movepro_warehouse_records', JSON.stringify(initialWarehouseRecords));
+} else {
     localStorage.setItem('movepro_warehouse_records', JSON.stringify(initialWarehouseRecords));
 }
