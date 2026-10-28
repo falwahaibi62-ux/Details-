@@ -129,7 +129,6 @@ function generateOfficialSummaryTable(filteredJobs) {
         sumHelpers += parseCurrency(item.helpers);
         sumDrivers += parseCurrency(item.drivers);
 
-        // حساب الديزل بدعم العمليات الحسابية النصية المشتركة مثل 390+100+350
         if (item.diesel && item.diesel !== '-') {
             let dieselSum = String(item.diesel).split('+').reduce((sum, part) => {
                 return sum + parseCurrency(part);
@@ -150,8 +149,8 @@ function generateOfficialSummaryTable(filteredJobs) {
             sumZellePu += puVal;
         }
 
-        const destStr = String(item.dest || '').toLowerCase();
-        const destVal = parseCurrency(item.dest);
+        const destStr = String(item.dest || item.destination || '').toLowerCase();
+        const destVal = parseCurrency(item.dest || item.destination);
 
         if (destStr.includes('cash')) {
             sumCashDest += destVal;
@@ -352,11 +351,15 @@ function generateDetailedReportData() {
     if (jobsBadge) jobsBadge.innerText = `${filteredJobs.length} Jobs`;
     if (jobsTbody) {
         if (filteredJobs.length === 0) {
-            jobsTbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400 text-xs">No job records found for selected period.</td></tr>`;
+            jobsTbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-slate-400 text-xs">No job records found for selected period.</td></tr>`;
         } else {
             jobsTbody.innerHTML = filteredJobs.map(item => {
                 const totalNum = parseCurrency(item.total);
                 const dynamicForeman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+                
+                const destVal = item.destination || item.dest || '-';
+                const dieselVal = item.diesel || '-';
+                const hotelVal = item.hotel || '-';
 
                 return `
                     <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
@@ -369,6 +372,9 @@ function generateDetailedReportData() {
                         <td class="p-3 border">${item.drivers || '-'}</td>
                         <td class="p-3 border font-bold text-emerald-600">${item.total || '$0'}</td>
                         <td class="p-3 border">${item.pu || '-'}</td>
+                        <td class="p-3 border font-medium">${destVal}</td>
+                        <td class="p-3 border text-emerald-700">${dieselVal}</td>
+                        <td class="p-3 border text-indigo-700">${hotelVal}</td>
                     </tr>
                 `;
             }).join('');
