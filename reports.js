@@ -450,12 +450,21 @@ function generateDetailedReportData() {
 window.generateDetailedReportData = generateDetailedReportData;
 
 function exportOfficialPDF() {
-    const reportElement = document.getElementById('summaryReportView') || document.getElementById('tab-reports');
+    const summaryView = document.getElementById('summaryReportView');
+    const detailedView = document.getElementById('detailedReportView');
     
-    if (!reportElement) {
+    // تحديد ما إذا كان التقرير النشط هو الملخص أو التفصيلي
+    const isSummaryActive = summaryView && !summaryView.classList.contains('hidden');
+    const activeReportElement = isSummaryActive ? summaryView : detailedView;
+
+    if (!activeReportElement) {
         alert('Report section not found');
         return;
     }
+
+    // جلب قيم التواريخ المدخلة من قبل المستخدم
+    const startDate = document.getElementById('filterStartDate')?.value || 'البداية';
+    const endDate = document.getElementById('filterEndDate')?.value || 'النهاية';
 
     const printWindow = window.open('', '_blank');
     
@@ -474,22 +483,23 @@ function exportOfficialPDF() {
             <div class="border-b border-slate-200 pb-4 mb-6 flex justify-between items-center">
                 <div>
                     <h1 class="text-xl font-bold text-slate-900">MovePro Enterprise - Executive Financial Report</h1>
-                    <p class="text-xs text-slate-500">Generated on: ${new Date().toLocaleDateString('en-US', { dateStyle: 'full' })}</p>
+                    <p class="text-xs text-slate-600 mt-1"><strong>Period Filter:</strong> From [ ${startDate} ] To [ ${endDate} ]</p>
+                    <p class="text-xs text-slate-400">Generated on: ${new Date().toLocaleDateString('en-US', { dateStyle: 'full' })}</p>
                 </div>
                 <div class="text-right">
-                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">OFFICIAL EXECUTIVE REPORT</span>
+                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">OFFICIAL REPORT</span>
                 </div>
             </div>
             
             <div>
-                ${reportElement.innerHTML}
+                ${activeReportElement.innerHTML}
             </div>
 
             <script>
                 setTimeout(() => {
                     window.print();
                     window.close();
-                }, 500);
+                }, 600);
             <\/script>
         </body>
         </html>
@@ -499,7 +509,6 @@ function exportOfficialPDF() {
     printWindow.document.close();
 }
 window.exportOfficialPDF = exportOfficialPDF;
-
 function renderReportsTab() {
     switchReportMode('summary');
 }
