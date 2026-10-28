@@ -1,5 +1,5 @@
 /**
- * MovePro - Financial & Operations Reports Module (Production Ready)
+ * MovePro - Financial & Operations Reports Module (Production Ready & Synchronized)
  */
 
 function switchReportMode(mode) {
@@ -64,7 +64,6 @@ function resetReportFilters() {
 window.resetReportFilters = resetReportFilters;
 
 function getFilteredJobsData() {
-    // جلب البيانات من الذاكرة الحية أو الـ LocalStorage لضمان أعلى دقة
     const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     
     const startDateVal = document.getElementById('filterStartDate')?.value;
@@ -121,11 +120,24 @@ function generateOfficialSummaryTable(filteredJobs) {
     let sumTotalAfterDeposit = 0;
 
     filteredJobs.forEach(item => {
-        sumForeman10 += parseCurrency(item.foremanFee || item.foreman);
-        sumHelpers += parseCurrency(item.helpersNum || item.helpers);
-        sumDrivers += parseCurrency(item.driversNum || item.drivers);
-        sumCashDiesel += parseCurrency(item.diesel);
-        sumTotalAfterDeposit += parseCurrency(item.total);
+        const totalVal = parseCurrency(item.total);
+        sumTotalAfterDeposit += totalVal;
+
+        // الحسبة التلقائية اللحظية لـ Foreman 10% (10% من إجمالي الـ Total)
+        sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
+
+        sumHelpers += parseCurrency(item.helpers);
+        sumDrivers += parseCurrency(item.drivers);
+
+        // حساب الديزل بدعم العمليات الحسابية النصية المشتركة مثل 390+100+350
+        if (item.diesel && item.diesel !== '-') {
+            let dieselSum = String(item.diesel).split('+').reduce((sum, part) => {
+                return sum + parseCurrency(part);
+            }, 0);
+            if (String(item.diesel).toLowerCase().includes('cash') || !String(item.diesel).toLowerCase().includes('penske')) {
+                sumCashDiesel += dieselSum;
+            }
+        }
 
         const puStr = String(item.pu || '').toLowerCase();
         const puVal = parseCurrency(item.pu);
@@ -192,7 +204,7 @@ function generateOfficialSummaryTable(filteredJobs) {
                     </thead>
                     <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="p-2.5 border-r text-center">$${sumForeman10.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center">$${sumForeman10.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                             <td class="p-2.5 border-r text-center">$${sumHelpers.toLocaleString()}</td>
                             <td class="p-2.5 border-r text-center">$${sumDrivers.toLocaleString()}</td>
                             <td class="p-2.5 border-r text-center text-amber-700 font-bold bg-amber-50/20">$${sumCashDiesel.toLocaleString()}</td>
@@ -340,20 +352,26 @@ function generateDetailedReportData() {
     if (jobsBadge) jobsBadge.innerText = `${filteredJobs.length} Jobs`;
     if (jobsTbody) {
         if (filteredJobs.length === 0) {
-            jobsTbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400 text-xs">No job records found for selected period.</td></tr>`;
+            jobsTbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400 text-xs">No job records found for selected period.</td></tr>`;
         } else {
-            jobsTbody.innerHTML = filteredJobs.map(item => `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                    <td class="p-3 border font-medium">${item.date || '-'}</td>
-                    <td class="p-3 border font-semibold text-slate-800">${item.jobNo || '-'}</td>
-                    <td class="p-3 border">${item.route || '-'}</td>
-                    <td class="p-3 border">${item.foreman || '-'}</td>
-                    <td class="p-3 border">${item.helpers || '-'}</td>
-                    <td class="p-3 border">${item.drivers || '-'}</td>
-                    <td class="p-3 border font-bold text-emerald-600">${item.total || '$0'}</td>
-                    <td class="p-3 border">${item.pu || '-'}</td>
-                </tr>
-            `).join('');
+            jobsTbody.innerHTML = filteredJobs.map(item => {
+                const totalNum = parseCurrency(item.total);
+                const dynamicForeman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+
+                return `
+                    <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
+                        <td class="p-3 border font-medium">${item.date || '-'}</td>
+                        <td class="p-3 border font-semibold text-slate-800">${item.jobNo || '-'}</td>
+                        <td class="p-3 border">${item.route || '-'}</td>
+                        <td class="p-3 border">${item.foreman || '-'}</td>
+                        <td class="p-3 border font-bold text-emerald-800">${dynamicForeman10}</td>
+                        <td class="p-3 border">${item.helpers || '-'}</td>
+                        <td class="p-3 border">${item.drivers || '-'}</td>
+                        <td class="p-3 border font-bold text-emerald-600">${item.total || '$0'}</td>
+                        <td class="p-3 border">${item.pu || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
         }
     }
 
@@ -464,11 +482,10 @@ function exportOfficialPDF() {
     `;
 
     printWindow.document.write(htmlContent);
-    printWindow.document.close(); // <-- تمت إضافتها لضمان اكتمال بناء المستند وطباعته بدون مشاكل
+    printWindow.document.close();
 }
 window.exportOfficialPDF = exportOfficialPDF;
 
-// تمت إضافة هذه الدالة الأساسية المفقودة لمنع أخطاء التبويب
 function renderReportsTab() {
     switchReportMode('summary');
 }
