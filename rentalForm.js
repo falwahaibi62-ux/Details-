@@ -310,7 +310,6 @@ function handlePrivateTruckSubmit(event) {
         amount: parseFloat(document.getElementById('rentalAmount').value) || 0,
         paymentType: document.getElementById('rentalPaymentType').value,
         paidBy: document.getElementById('rentalPaidBy').value.trim(),
-    vals: document.getElementById('rentalTruckLabel').value.trim(),
         truckLabel: document.getElementById('rentalTruckLabel').value.trim()
     };
 
