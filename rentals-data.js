@@ -1,10 +1,6 @@
-/**
- * MovePro - Rentals Data Manager & Sync
- */
+const RENTAL_STORAGE_KEY = 'movepro_private_truck_rentals';
 
-const RENTALS_STORAGE_KEY = 'movepro_private_truck_rentals';
-
-const initialRentals = [
+const forcedInitialRentals = [
     { date: "6/24/2026", days: 24, amount: 6000, paymentType: "Cheque", paidBy: "Sharef", truckLabel: "24 days rental paid by Sharef" },
     { date: "7/9/2026", days: 13, amount: 3250, paymentType: "Cash", paidBy: "Abu Essa", truckLabel: "13 days rental paid to Abu Essa" },
     { date: "7/20/2026", days: 8, amount: 1860, paymentType: "Cash", paidBy: "Penski", truckLabel: "8 days rental paid by Penski" },
@@ -21,6 +17,19 @@ const initialRentals = [
     { date: "10/24/2026", days: 2, amount: 1250, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "2 days U-Haul rental" }
 ];
 
-localStorage.setItem(RENTALS_STORAGE_KEY, JSON.stringify(initialRentals));
-
-window.initialRentals = initialRentals;
+function loadPrivateTruckRentals() {
+    let saved = localStorage.getItem(RENTAL_STORAGE_KEY);
+    if (!saved || JSON.parse(saved).length < forcedInitialRentals.length) {
+        localStorage.setItem(RENTAL_STORAGE_KEY, JSON.stringify(forcedInitialRentals));
+        return forcedInitialRentals;
+    }
+    
+    try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (e) {
+        console.error('Error parsing rentals:', e);
+    }
+    
+    return forcedInitialRentals;
+}
