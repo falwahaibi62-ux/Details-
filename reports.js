@@ -450,56 +450,76 @@ function generateDetailedReportData() {
 window.generateDetailedReportData = generateDetailedReportData;
 
 function exportOfficialPDF() {
+    // 1. توليد وتحديث بيانات التقريرين لضمان جلب أحدث الفلاتر والبيانات
+    generateSummaryReportData();
+    generateDetailedReportData();
+
     const summaryView = document.getElementById('summaryReportView');
     const detailedView = document.getElementById('detailedReportView');
-    
-    // تحديد ما إذا كان التقرير النشط هو الملخص أو التفصيلي
-    const isSummaryActive = summaryView && !summaryView.classList.contains('hidden');
-    const activeReportElement = isSummaryActive ? summaryView : detailedView;
 
-    if (!activeReportElement) {
-        alert('Report section not found');
+    if (!summaryView || !detailedView) {
+        alert('Report views not found in DOM');
         return;
     }
 
-    // جلب قيم التواريخ المدخلة من قبل المستخدم
-    const startDate = document.getElementById('filterStartDate')?.value || 'البداية';
-    const endDate = document.getElementById('filterEndDate')?.value || 'النهاية';
+    // 2. قراءة التواريخ المحددة في الفلتر
+    const startDate = document.getElementById('filterStartDate')?.value || 'First Record';
+    const endDate = document.getElementById('filterEndDate')?.value || 'Latest Record';
 
     const printWindow = window.open('', '_blank');
     
     const htmlContent = `
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
-            <title>MovePro Executive - Financial & Operations Report</title>
+            <meta charset="UTF-8">
+            <title>MovePro Executive - Comprehensive Financial & Operations Report</title>
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
-                body { font-family: system-ui, -apple-system, sans-serif; padding: 25px; color: #1e293b; background: #fff; }
-                @page { size: A4 landscape; margin: 10mm; }
+                body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; color: #1e293b; background: #fff; }
+                @page { size: A4 landscape; margin: 8mm; }
+                .page-break { page-break-before: always; margin-top: 2rem; }
+                /* إظهار العناصر المخفية في الواجهة لتظهر في ملف الـ PDF */
+                .hidden { display: block !important; }
             </style>
         </head>
         <body>
+            <!-- رأس التقرير الرئيسي -->
             <div class="border-b border-slate-200 pb-4 mb-6 flex justify-between items-center">
                 <div>
-                    <h1 class="text-xl font-bold text-slate-900">MovePro Enterprise - Executive Financial Report</h1>
-                    <p class="text-xs text-slate-600 mt-1"><strong>Period Filter:</strong> From [ ${startDate} ] To [ ${endDate} ]</p>
-                    <p class="text-xs text-slate-400">Generated on: ${new Date().toLocaleDateString('en-US', { dateStyle: 'full' })}</p>
+                    <h1 class="text-xl font-bold text-slate-900">MovePro Enterprise - Master Financial & Operations Report</h1>
+                    <p class="text-xs text-slate-600 mt-1"><strong>Selected Period:</strong> From [ ${startDate} ] To [ ${endDate} ]</p>
+                    <p class="text-[11px] text-slate-400">Generated on: ${new Date().toLocaleDateString('en-US', { dateStyle: 'full' })}</p>
                 </div>
                 <div class="text-right">
-                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">OFFICIAL REPORT</span>
+                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">OFFICIAL COMPREHENSIVE REPORT</span>
                 </div>
             </div>
             
-            <div>
-                ${activeReportElement.innerHTML}
+            <!-- القسم الأول: التقرير الملخص المالي -->
+            <div class="mb-8">
+                <h2 class="text-sm font-bold text-emerald-800 bg-emerald-50 p-2 rounded-lg mb-4 border border-emerald-100">Section 1: Executive Summary & Period Breakdown</h2>
+                <div>
+                    ${summaryView.innerHTML}
+                </div>
+            </div>
+
+            <!-- الفاصل الصريح لطباعة الصفحة الثانية -->
+            <div class="page-break"></div>
+
+            <!-- القسم الثاني: التقرير التفصيلي -->
+            <div class="mt-6">
+                <h2 class="text-sm font-bold text-slate-800 bg-slate-100 p-2 rounded-lg mb-4 border border-slate-200">Section 2: Detailed Dispatch Operations Ledger</h2>
+                <div>
+                    ${detailedView.innerHTML}
+                </div>
             </div>
 
             <script>
                 setTimeout(() => {
                     window.print();
                     window.close();
-                }, 600);
+                }, 700);
             <\/script>
         </body>
         </html>
