@@ -367,12 +367,13 @@ function saveJob(event) {
         }
     }
 
-    let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
-    let totalFormatted = totalRaw && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
+   let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
+let totalFormatted = totalRaw && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
 
-    // حساب نسبة الـ Foreman 10% تلقائياً كـ 10% من المبالغ الإجمالية إذا توفر الرقم
-    let totalNum = parseFloat(String(totalFormatted).replace(/[^0-9.]/g, '')) || 0;
-    let foreman10Val = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+// Shallaggii of-umaa (Automatic calculation) kaffaltii Foreman 10%
+let totalNum = parseFloat(String(totalFormatted).replace(/[^0-9.]/g, '')) || 0;
+    
+let foreman10Val = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
 
     const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
     const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
