@@ -129,12 +129,10 @@ function generateOfficialSummaryTable(filteredJobs) {
         sumHelpers += parseCurrency(item.helpers);
         sumDrivers += parseCurrency(item.drivers);
 
-        // معالجة دقيقة لحساب الديزل وتجنب الأرقام العشوائية
         if (item.diesel && item.diesel !== '-') {
             let dieselStr = String(item.diesel);
             let dieselSum = dieselStr.split('+').reduce((sum, part) => {
                 let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
-                // نتجنب الأرقام الكبيرة غير الطبيعية الناتجة عن تداخل النصوص
                 return sum + (cleanNum < 5000 ? cleanNum : 0);
             }, 0);
             if (dieselStr.toLowerCase().includes('cash') || !dieselStr.toLowerCase().includes('penske')) {
@@ -144,8 +142,6 @@ function generateOfficialSummaryTable(filteredJobs) {
 
         const puStr = String(item.pu || '').toLowerCase();
         const puVal = parseCurrency(item.pu);
-        
-        // التحقق من أن المبلغ منطقي وليس رقماً تعريفياً متداخلاً مع النص
         const safePuVal = puVal < 100000 ? puVal : 0;
 
         if (puStr.includes('cash')) {
@@ -369,6 +365,10 @@ function generateDetailedReportData() {
                 const dieselVal = item.diesel || '-';
                 const hotelVal = item.hotel || '-';
 
+                // معالجة عرض Helpers ليكون نصياً تفصيلياً بنفس أسلوب Drivers
+                const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(item.helpers) : (item.helpers || '-');
+                const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(item.drivers) : (item.drivers || '-');
+
                 return `
                     <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
                         <td class="p-3 border font-medium">${item.date || '-'}</td>
@@ -376,8 +376,8 @@ function generateDetailedReportData() {
                         <td class="p-3 border">${item.route || '-'}</td>
                         <td class="p-3 border">${item.foreman || '-'}</td>
                         <td class="p-3 border font-bold text-emerald-800">${dynamicForeman10}</td>
-                        <td class="p-3 border">${item.helpers || '-'}</td>
-                        <td class="p-3 border">${item.drivers || '-'}</td>
+                        <td class="p-3 border text-purple-700 font-semibold">${helpersDisplay}</td>
+                        <td class="p-3 border text-blue-700 font-semibold">${driversDisplay}</td>
                         <td class="p-3 border font-bold text-emerald-600">${item.total || '$0'}</td>
                         <td class="p-3 border">${item.pu || '-'}</td>
                         <td class="p-3 border font-medium">${destVal}</td>
@@ -455,9 +455,6 @@ window.generateDetailedReportData = generateDetailedReportData;
  */
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
-    const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-    const warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-
     const startDateVal = document.getElementById('filterStartDate')?.value || '12/05/2026';
     const endDateVal = document.getElementById('filterEndDate')?.value || '19/10/2026';
 
@@ -583,6 +580,9 @@ function exportOfficialPDF() {
                         ${jobs.map(j => {
                             const totalNum = parseCurrency(j.total);
                             const foreman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+                            const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers) : (j.helpers || '-');
+                            const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers) : (j.drivers || '-');
+
                             return `
                                 <tr>
                                     <td>${j.date || '-'}</td>
@@ -591,8 +591,8 @@ function exportOfficialPDF() {
                                     <td>${j.route ? j.route.split('→')[1] || '-' : '-'}</td>
                                     <td>${j.foreman || '-'}</td>
                                     <td class="font-bold text-emerald-700">${foreman10}</td>
-                                    <td>${j.helpers || '-'}</td>
-                                    <td>${j.drivers || '-'}</td>
+                                    <td>${helpersDisplay}</td>
+                                    <td>${driversDisplay}</td>
                                     <td class="font-bold text-emerald-600">${j.total || '$0'}</td>
                                     <td>${j.pu || '-'}</td>
                                     <td>${j.dest || j.destination || '-'}</td>
@@ -618,7 +618,6 @@ function exportOfficialPDF() {
     printWindow.document.close();
 }
 window.exportOfficialPDF = exportOfficialPDF;
-
 
 function renderReportsTab() {
     switchReportMode('summary');
