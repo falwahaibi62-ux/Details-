@@ -449,22 +449,52 @@ function generateDetailedReportData() {
 }
 window.generateDetailedReportData = generateDetailedReportData;
 
+/**
+ * MovePro - Professional PDF Generation Engine
+ * Synchronized with Master PDF Layout (Detailed Ledger + Financial Summary)
+ */
 function exportOfficialPDF() {
-    // 1. توليد وتحديث بيانات التقريرين لضمان جلب أحدث الفلاتر والبيانات
-    generateSummaryReportData();
-    generateDetailedReportData();
+    const jobs = getFilteredJobsData();
+    const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+    const warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
 
-    const summaryView = document.getElementById('summaryReportView');
-    const detailedView = document.getElementById('detailedReportView');
+    const startDateVal = document.getElementById('filterStartDate')?.value || '12/05/2026';
+    const endDateVal = document.getElementById('filterEndDate')?.value || '19/10/2026';
 
-    if (!summaryView || !detailedView) {
-        alert('Report views not found in DOM');
-        return;
-    }
+    let sumForeman10 = 0, sumHelpers = 0, sumDrivers = 0, sumCashDiesel = 0;
+    let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
+    let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
 
-    // 2. قراءة التواريخ المحددة في الفلتر
-    const startDate = document.getElementById('filterStartDate')?.value || 'First Record';
-    const endDate = document.getElementById('filterEndDate')?.value || 'Latest Record';
+    jobs.forEach(item => {
+        const totalVal = parseCurrency(item.total);
+        sumTotalAfterDeposit += totalVal;
+        sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
+        sumHelpers += parseCurrency(item.helpers);
+        sumDrivers += parseCurrency(item.drivers);
+
+        if (item.diesel && item.diesel !== '-') {
+            let dieselSum = String(item.diesel).split('+').reduce((s, p) => s + parseCurrency(p), 0);
+            if (String(item.diesel).toLowerCase().includes('cash') || !String(item.diesel).toLowerCase().includes('penske')) {
+                sumCashDiesel += dieselSum;
+            }
+        }
+
+        const puStr = String(item.pu || '').toLowerCase();
+        const puVal = parseCurrency(item.pu);
+        if (puStr.includes('cash')) sumCashPu += puVal;
+        else if (puStr.includes('pmo')) sumPmoPu += puVal;
+        else if (puVal > 0) sumZellePu += puVal;
+
+        const destStr = String(item.dest || item.destination || '').toLowerCase();
+        const destVal = parseCurrency(item.dest || item.destination);
+        if (destStr.includes('cash')) sumCashDest += destVal;
+        else if (destStr.includes('zelle')) { sumDestZelle += destVal; sumDestNoCashPmo += destVal; }
+        else if (!destStr.includes('pmo') && destVal > 0) sumDestNoCashPmo += destVal;
+
+        if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
+            sumPmoDeliveries += puVal;
+        }
+    });
 
     const printWindow = window.open('', '_blank');
     
@@ -473,53 +503,112 @@ function exportOfficialPDF() {
         <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <title>MovePro Executive - Comprehensive Financial & Operations Report</title>
+            <title>MovePro Executive Financial Report</title>
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
-                body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; color: #1e293b; background: #fff; }
                 @page { size: A4 landscape; margin: 8mm; }
-                .page-break { page-break-before: always; margin-top: 2rem; }
-                /* إظهار العناصر المخفية في الواجهة لتظهر في ملف الـ PDF */
-                .hidden { display: block !important; }
+                body { font-family: system-ui, -apple-system, sans-serif; color: #1e293b; background: #fff; padding: 10px; }
+                .table-pdf { width: 100%; border-collapse: collapse; font-size: 10px; }
+                .table-pdf th { background-color: #f1f5f9; color: #334155; font-weight: 700; border: 1px solid #cbd5e1; padding: 5px; text-align: center; }
+                .table-pdf td { border: 1px solid #e2e8f0; padding: 5px; text-align: center; }
+                .page-break { page-break-before: always; }
+                .summary-header { background-color: #d6c3b3; color: #3f2e21; font-weight: bold; }
             </style>
         </head>
         <body>
-            <!-- رأس التقرير الرئيسي -->
-            <div class="border-b border-slate-200 pb-4 mb-6 flex justify-between items-center">
-                <div>
-                    <h1 class="text-xl font-bold text-slate-900">MovePro Enterprise - Master Financial & Operations Report</h1>
-                    <p class="text-xs text-slate-600 mt-1"><strong>Selected Period:</strong> From [ ${startDate} ] To [ ${endDate} ]</p>
-                    <p class="text-[11px] text-slate-400">Generated on: ${new Date().toLocaleDateString('en-US', { dateStyle: 'full' })}</p>
-                </div>
-                <div class="text-right">
-                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">OFFICIAL COMPREHENSIVE REPORT</span>
-                </div>
-            </div>
-            
-            <!-- القسم الأول: التقرير الملخص المالي -->
-            <div class="mb-8">
-                <h2 class="text-sm font-bold text-emerald-800 bg-emerald-50 p-2 rounded-lg mb-4 border border-emerald-100">Section 1: Executive Summary & Period Breakdown</h2>
-                <div>
-                    ${summaryView.innerHTML}
-                </div>
+            <div class="text-center mb-4 border-b pb-3">
+                <h1 class="text-xl font-bold text-emerald-800">Total Cash & PMO Report</h1>
+                <p class="text-xs font-semibold text-rose-800 mt-1">From Date: <span class="text-slate-800">${startDateVal}</span> &nbsp;&nbsp;|&nbsp;&nbsp; To Date: <span class="text-slate-800">${endDateVal}</span></p>
             </div>
 
-            <!-- الفاصل الصريح لطباعة الصفحة الثانية -->
+            <div class="mb-6">
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Executive Financial Summary</h3>
+                <table class="table-pdf">
+                    <thead>
+                        <tr class="summary-header">
+                            <th>Total Foreman 10%</th>
+                            <th>Total Helpers</th>
+                            <th>Total Drivers</th>
+                            <th>Total Cash Diesel</th>
+                            <th>Total Cash PU Payment</th>
+                            <th>Total Cash Dest-Balance</th>
+                            <th>Total PMO PU Payment</th>
+                            <th>Total PU without Cash & PMO</th>
+                            <th>Total Balance without Cash & PMO</th>
+                            <th>Total PMO Deliveries</th>
+                            <th>Total Dest-Balance Zelle</th>
+                            <th class="bg-emerald-700 text-white">Total after Deposit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="font-bold text-slate-800">
+                            <td>$${sumForeman10.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td>$${sumHelpers.toLocaleString()}</td>
+                            <td>$${sumDrivers.toLocaleString()}</td>
+                            <td>$${sumCashDiesel.toLocaleString()}</td>
+                            <td>$${sumCashPu.toLocaleString()}</td>
+                            <td>$${sumCashDest.toLocaleString()}</td>
+                            <td>$${sumPmoPu.toLocaleString()}</td>
+                            <td>$${sumZellePu.toLocaleString()}</td>
+                            <td>$${sumDestNoCashPmo.toLocaleString()}</td>
+                            <td>$${sumPmoDeliveries.toLocaleString()}</td>
+                            <td>$${sumDestZelle.toLocaleString()}</td>
+                            <td class="bg-emerald-50 text-emerald-900 font-extrabold">$${sumTotalAfterDeposit.toLocaleString()}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
             <div class="page-break"></div>
 
-            <!-- القسم الثاني: التقرير التفصيلي -->
-            <div class="mt-6">
-                <h2 class="text-sm font-bold text-slate-800 bg-slate-100 p-2 rounded-lg mb-4 border border-slate-200">Section 2: Detailed Dispatch Operations Ledger</h2>
-                <div>
-                    ${detailedView.innerHTML}
-                </div>
+            <div class="mt-4">
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Detailed Dispatch Operations Ledger (${jobs.length} Records)</h3>
+                <table class="table-pdf">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Job No</th>
+                            <th>From State</th>
+                            <th>To State</th>
+                            <th>Foreman Name</th>
+                            <th>Foreman 10%</th>
+                            <th>Helpers</th>
+                            <th>Drivers</th>
+                            <th>Total After Deposit</th>
+                            <th>P.U Payment</th>
+                            <th>Dest Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${jobs.map(j => {
+                            const totalNum = parseCurrency(j.total);
+                            const foreman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+                            return `
+                                <tr>
+                                    <td>${j.date || '-'}</td>
+                                    <td class="font-bold">${j.jobNo || '-'}</td>
+                                    <td>${j.route ? j.route.split('→')[0] : '-'}</td>
+                                    <td>${j.route ? j.route.split('→')[1] || '-' : '-'}</td>
+                                    <td>${j.foreman || '-'}</td>
+                                    <td class="font-bold text-emerald-700">${foreman10}</td>
+                                    <td>${j.helpers || '-'}</td>
+                                    <td>${j.drivers || '-'}</td>
+                                    <td class="font-bold text-emerald-600">${j.total || '$0'}</td>
+                                    <td>${j.pu || '-'}</td>
+                                    <td>${j.dest || j.destination || '-'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
             </div>
 
             <script>
-                setTimeout(() => {
-                    window.print();
-                    window.close();
-                }, 700);
+                window.onload = function() {
+                    setTimeout(() => {
+                        window.print();
+                    }, 500);
+                }
             <\/script>
         </body>
         </html>
@@ -529,6 +618,8 @@ function exportOfficialPDF() {
     printWindow.document.close();
 }
 window.exportOfficialPDF = exportOfficialPDF;
+
+
 function renderReportsTab() {
     switchReportMode('summary');
 }
