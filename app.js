@@ -271,7 +271,10 @@ function renderJobsCRUD(dataToRender) {
         const helpersVal = parseHelpersDisplay(item.helpers);
         const driversVal = parseDriversDisplay(item.drivers); 
         const puVal = (item.pu && item.pu !== '-') ? item.pu : '-';
-        const destVal = (item.dest && item.dest !== '-') ? item.dest : '-';
+        
+        const rawDest = item.destination || item.dest;
+        const destVal = (rawDest && rawDest !== '-') ? rawDest : '-';
+        
         const totalVal = (item.total && item.total !== '-') ? item.total : '-';
 
         let totalNum = parseFloat(String(totalVal).replace(/[^0-9.]/g, '')) || 0;
