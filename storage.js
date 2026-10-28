@@ -10,20 +10,26 @@ const WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
 
 // --- Master Jobs Management ---
 function loadMasterJobs() {
-    if (window.masterJobs && Array.isArray(window.masterJobs) && window.masterJobs.length > 0) {
-        saveMasterJobs(window.masterJobs);
-        return window.masterJobs;
-    }
-
+    // التحقق المباشر من التخزين المحلي أولاً لضمان جلب أحدث التحديثات
     const savedJobs = localStorage.getItem(STORAGE_KEY);
     if (savedJobs) {
         try {
             const parsed = JSON.parse(savedJobs);
-            if (Array.isArray(parsed)) return parsed;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                window.masterJobs = parsed;
+                return parsed;
+            }
         } catch (e) {
             console.error('Error parsing stored jobs:', e);
         }
     }
+    
+    // إذا لم يوجد في التخزين، يتم الاعتماد على الكائن العام أو مصفوفة فارغة
+    if (window.masterJobs && Array.isArray(window.masterJobs) && window.masterJobs.length > 0) {
+        saveMasterJobs(window.masterJobs);
+        return window.masterJobs;
+    }
+    
     return [];
 }
 
@@ -36,7 +42,7 @@ function saveMasterJobs(jobsArray) {
 window.masterJobs = loadMasterJobs();
 
 
-// --- Trash Bin Management (Merged duplicates into a single clean function) ---
+// --- Trash Bin Management ---
 function loadTrashBin() {
     const saved = localStorage.getItem(TRASH_STORAGE_KEY);
     if (saved) {
@@ -55,10 +61,7 @@ function saveTrashBin(trashData) {
     localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trashData));
 }
 
-// Alias for compatibility if called anywhere else
 const saveTrash = saveTrashBin;
-
-// Initialize Trash State
 window.masterTrash = loadTrashBin();
 
 
@@ -93,7 +96,6 @@ function loadWarehouseRecords() {
         }
     }
     
-    // Default initial records if storage is empty
     const initialWarehouseRecords = [
         { date: "2026-06-04", services: "Flooring", amount: 2200, paymentType: "Cash", details: "Flooring installation and materials" },
         { date: "2026-06-05", services: "Palettes", amount: 2000, paymentType: "Cash", details: "Warehouse palettes purchase" },
