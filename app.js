@@ -8,8 +8,37 @@ if (typeof window.revenueChartInstance === 'undefined') window.revenueChartInsta
 if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChartInstance = null;
 
 // ==========================================
-// 1. DATA INITIALIZATION & STORAGE SYNC
+// 1. DATA INITIALIZATION & STORAGE SYNC (Sorted Newest to Oldest)
 // ==========================================
+function formatJobDateForInput(dateStr) {
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        let month = parts[0].padStart(2, '0');
+        let day = parts[1].padStart(2, '0');
+        let year = parts[2];
+        return `${year}-${month}-${day}`;
+    }
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    return dateStr;
+}
+
+function formatJobDateToSlash(dateStr) {
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [year, month, day] = dateStr.split('-');
+        return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
+    }
+    return dateStr;
+}
+
 function initMasterJobsData() {
     try {
         let stored = localStorage.getItem('movePro_masterJobs');
@@ -19,6 +48,13 @@ function initMasterJobsData() {
             }
         }
         window.masterJobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || window.masterJobs || [];
+        
+        // ترتيب السجلات تلقائياً من الأحدث للأقدم
+        window.masterJobs.sort((a, b) => {
+            const dateA = new Date(a.date || 0);
+            const dateB = new Date(b.date || 0);
+            return dateB - dateA;
+        });
     } catch (e) {
         console.error("Error initializing master jobs:", e);
         window.masterJobs = window.masterJobs || [];
@@ -28,6 +64,11 @@ window.initMasterJobsData = initMasterJobsData;
 
 function saveMasterJobsData(jobs) {
     try {
+        jobs.sort((a, b) => {
+            const dateA = new Date(a.date || 0);
+            const dateB = new Date(b.date || 0);
+            return dateB - dateA;
+        });
         window.masterJobs = jobs;
         localStorage.setItem('movePro_masterJobs', JSON.stringify(jobs));
     } catch (e) {
@@ -235,7 +276,7 @@ window.parseHelpersDisplay = parseHelpersDisplay;
 window.parseDriversDisplay = parseDriversDisplay;
 
 // ==========================================
-// 5. RENDERING CRUD TABLE (Synchronized with 13 Columns & Dynamic Foreman 10%)
+// 5. RENDERING CRUD TABLE
 // ==========================================
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('jobsTableBody');
@@ -260,8 +301,8 @@ function renderJobsCRUD(dataToRender) {
         if (window.currentUserRole === 'Admin') {
             actions = `
                 <div class="flex items-center space-x-1 justify-center">
-                    <button onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
-                    <button onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                    <button type="button" onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button type="button" onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             `;
         }
@@ -300,10 +341,11 @@ function renderJobsCRUD(dataToRender) {
     }).join('');
 }
 window.renderJobsCRUD = renderJobsCRUD;
+
 // ==========================================
-// 6. MODAL & JOB ACTIONS
+// 6. MODAL & JOB ACTIONS (Fixed Edit Form Reset & Data Population)
 // ==========================================
-function openAddModal() {
+function openAddModal(isEdit = false) {
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -313,18 +355,18 @@ function openAddModal() {
     }
 
     const jobForm = document.getElementById('jobForm');
-    if (jobForm) jobForm.reset();
+    if (jobForm && !isEdit) {
+        jobForm.reset();
+        const editIndex = document.getElementById('editIndex');
+        if (editIndex) editIndex.value = '-1';
+        const modalTitle = document.getElementById('modalTitle');
+        if (modalTitle) modalTitle.innerText = 'Add New Job Dispatch';
 
-    const editIndex = document.getElementById('editIndex');
-    if (editIndex) editIndex.value = '';
-
-    const modalTitle = document.getElementById('modalTitle');
-    if (modalTitle) modalTitle.innerText = 'Add New Job Dispatch';
-
-    const puContainer = document.getElementById('puContainer');
-    const destContainer = document.getElementById('destContainer');
-    if (puContainer) puContainer.innerHTML = '';
-    if (destContainer) destContainer.innerHTML = '';
+        const puContainer = document.getElementById('puContainer');
+        const destContainer = document.getElementById('destContainer');
+        if (puContainer) puContainer.innerHTML = '';
+        if (destContainer) destContainer.innerHTML = '';
+    }
 }
 window.openAddModal = openAddModal;
 
@@ -362,22 +404,19 @@ function saveJob(event) {
     let yearVal = new Date().getFullYear();
 
     if (dateRaw) {
-        if (dateRaw.includes('-')) {
-            const p = dateRaw.split('-');
-            yearVal = parseInt(p[0]) || yearVal;
-            monthVal = parseInt(p[1]) || monthVal;
-            const dayVal = parseInt(p[2]) || 1;
-            dateVal = `${String(monthVal).padStart(2, '0')}/${String(dayVal).padStart(2, '0')}/${yearVal}`;
+        dateVal = formatJobDateToSlash(dateRaw);
+        const parts = dateVal.split('/');
+        if (parts.length === 3) {
+            monthVal = parseInt(parts[0]) || monthVal;
+            yearVal = parseInt(parts[2]) || yearVal;
         }
     }
 
-   let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
-let totalFormatted = totalRaw && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
+    let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
+    let totalFormatted = totalRaw && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
 
-// Shallaggii of-umaa (Automatic calculation) kaffaltii Foreman 10%
-let totalNum = parseFloat(String(totalFormatted).replace(/[^0-9.]/g, '')) || 0;
-    
-let foreman10Val = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+    let totalNum = parseFloat(String(totalFormatted).replace(/[^0-9.]/g, '')) || 0;
+    let foreman10Val = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
 
     const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
     const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
@@ -447,7 +486,7 @@ function editJob(jobNoParam) {
     }
 
     const j = window.masterJobs[index];
-    openAddModal();
+    openAddModal(true); // فتح النافذة في وضع التعديل وعدم تفريغ النموذج
 
     const modalTitle = document.getElementById('modalTitle');
     if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
@@ -455,14 +494,61 @@ function editJob(jobNoParam) {
     const editIndex = document.getElementById('editIndex');
     if (editIndex) editIndex.value = index;
 
-    const jobNoInput = document.getElementById('jobNo');
-    if (jobNoInput) jobNoInput.value = j.jobNo || '';
+    setTimeout(() => {
+        if (document.getElementById('jobDate')) document.getElementById('jobDate').value = formatJobDateForInput(j.date);
+        if (document.getElementById('jobNo')) document.getElementById('jobNo').value = j.jobNo || '';
+        if (document.getElementById('jobForeman')) document.getElementById('jobForeman').value = j.foreman || '';
+        if (document.getElementById('jobTotal')) document.getElementById('jobTotal').value = j.total || '';
 
-    const jobForeman = document.getElementById('jobForeman');
-    if (jobForeman) jobForeman.value = j.foreman || '';
+        // تعبئة المسار (From -> To)
+        if (j.route && j.route.includes('→')) {
+            const rParts = j.route.split('→');
+            if (document.getElementById('routeFrom')) document.getElementById('routeFrom').value = rParts[0].trim();
+            if (document.getElementById('routeTo')) document.getElementById('routeTo').value = rParts[1].trim();
+        }
 
-    const jobTotal = document.getElementById('jobTotal');
-    if (jobTotal) jobTotal.value = j.total || '';
+        // تعبئة الديزل
+        if (j.diesel && j.diesel !== '-') {
+            const dParts = j.diesel.split(' ');
+            if (document.getElementById('dieselAmount')) document.getElementById('dieselAmount').value = dParts[0] || '';
+            if (document.getElementById('dieselMethod') && dParts[1]) document.getElementById('dieselMethod').value = dParts[1];
+        }
+
+        // تعبئة الفندق
+        if (j.hotel && j.hotel !== '-') {
+            const hParts = j.hotel.split(' ');
+            if (document.getElementById('hotelAmount')) document.getElementById('hotelAmount').value = hParts[0] || '';
+            if (document.getElementById('hotelMethod') && hParts[1]) document.getElementById('hotelMethod').value = hParts[1];
+        }
+
+        // تعبئة المدفوعات (PU & Destination)
+        const puContainer = document.getElementById('puContainer');
+        if (puContainer) {
+            puContainer.innerHTML = '';
+            if (j.pu && j.pu !== '-') {
+                j.pu.split(',').forEach(pItem => {
+                    const parts = pItem.trim().split(' ');
+                    if (parts.length >= 2) {
+                        addPaymentRow('puContainer', parts[0], parts[1]);
+                    }
+                });
+            }
+        }
+
+        const destContainer = document.getElementById('destContainer');
+        if (destContainer) {
+            destContainer.innerHTML = '';
+            const destVal = j.destination || j.dest;
+            if (destVal && destVal !== '-') {
+                destVal.split(',').forEach(dItem => {
+                    const parts = dItem.trim().split(' ');
+                    if (parts.length >= 2) {
+                        addPaymentRow('destContainer', parts[0], parts[1]);
+                    }
+                });
+            }
+        }
+    }, 50);
 }
 window.editJob = editJob;
 
@@ -526,19 +612,6 @@ function updateDashboardAnalytics() {
                 }
             });
         });
-
-        const totalPaymentsCount = Object.values(paymentMethodMap).reduce((a, b) => a + b, 0);
-        if (totalPaymentsCount === 0) {
-            paymentMethodMap.Cash = 120;
-            paymentMethodMap.Zelle = 95;
-            paymentMethodMap.BC = 50;
-            paymentMethodMap.PC = 40;
-            paymentMethodMap.CC = 30;
-            paymentMethodMap.Cheque = 20;
-            paymentMethodMap.PMO = 15;
-            paymentMethodMap.WT = 10;
-            paymentMethodMap.Others = 4;
-        }
 
         const completedJobsCount = window.masterJobs.length;
         const avgJobVal = completedJobsCount > 0 ? (totalRev / completedJobsCount) : 0;
@@ -637,7 +710,6 @@ window.renderDashboardCharts = renderDashboardCharts;
 // ==========================================
 function switchTab(tabName) {
     try {
-        // قائمة شاملة لكافة التبويبات والشاشات في النظام لمنع أي تداخل
         const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
         
         tabs.forEach(t => {
@@ -654,7 +726,6 @@ function switchTab(tabName) {
             }
         });
 
-        // البحث الشامل عن التبويب النشط
         const activeTab = document.getElementById(`tab-${tabName}`) || document.getElementById(`${tabName}-view`);
         const activeNav = document.getElementById(`nav-${tabName}`) || document.getElementById(`nav-${tabName}-btn`);
         
@@ -667,7 +738,6 @@ function switchTab(tabName) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
-        // توجيه الأحداث والدوال الخاصة بكل شاشة
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
@@ -688,6 +758,7 @@ function switchTab(tabName) {
     }
 }
 window.switchTab = switchTab;
+
 // ==========================================
 // 9. INITIALIZATION
 // ==========================================
