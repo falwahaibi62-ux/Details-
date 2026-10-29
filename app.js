@@ -637,18 +637,20 @@ function updateDashboardAnalytics() {
         if (!window.masterJobs || window.masterJobs.length === 0) return;
 
         let totalRev = 0;
-        let validJobsCount = 0; // عداد للوظائف النشطة فقط (باستبعاد Cancel و None)
+        let totalDieselCost = 0;
+        let validJobsCount = 0; 
         const routeRevenueMap = {};
         const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0 };
         const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
         window.masterJobs.forEach(job => {
-            // 👈 استبعاد السجلات الملغية أو الفارغة من الحسابات المالية والتحليلات
             if (job.jobNo && (job.jobNo.toLowerCase().includes('cancel') || job.jobNo.toLowerCase().includes('none'))) {
-                return; // تخطي هذا السجل والانتقال للسجل التالي
+                return; 
             }
 
-            validJobsCount++; // زيادة عدد الوظائف النشطة الصحيحة
+            validJobsCount++; 
+
+            totalDieselCost += parseAndSumDiesel(job.diesel);
 
             let amt = 0;
             if (job.total) {
@@ -677,7 +679,6 @@ function updateDashboardAnalytics() {
             });
         });
 
-        // استخدام عدد الوظائف النشطة (validJobsCount) بدلاً من الإجمالي الكلي لحساب المتوسط بدقة
         const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
 
         const revEl = document.getElementById('dashTotalRevenue');
