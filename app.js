@@ -486,7 +486,7 @@ function editJob(jobNoParam) {
     }
 
     const j = window.masterJobs[index];
-    openAddModal(true); // فتح النافذة في وضع التعديل وعدم تفريغ النموذج
+    openAddModal(true); 
 
     const modalTitle = document.getElementById('modalTitle');
     if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
@@ -500,57 +500,82 @@ function editJob(jobNoParam) {
         if (document.getElementById('jobForeman')) document.getElementById('jobForeman').value = j.foreman || '';
         if (document.getElementById('jobTotal')) document.getElementById('jobTotal').value = j.total || '';
 
-        // تعبئة المسار (From -> To)
         if (j.route && j.route.includes('→')) {
             const rParts = j.route.split('→');
             if (document.getElementById('routeFrom')) document.getElementById('routeFrom').value = rParts[0].trim();
             if (document.getElementById('routeTo')) document.getElementById('routeTo').value = rParts[1].trim();
         }
 
-        // تعبئة الديزل
+        const helpersSelect = document.getElementById('helpersCost');
+        if (helpersSelect && j.helpers && j.helpers !== '-') {
+            const numHelpers = parseFloat(String(j.helpers).replace(/[^0-9.]/g, ''));
+            for (let option of helpersSelect.options) {
+                if (numHelpers > 0 && option.text.includes(`(${numHelpers})`)) {
+                    option.selected = true;
+                    break;
+                }
+            }
+        }
+
+        const driversSelect = document.getElementById('driversCost');
+        if (driversSelect && j.drivers && j.drivers !== '-') {
+            const numDrivers = parseFloat(String(j.drivers).replace(/[^0-9.]/g, ''));
+            for (let option of driversSelect.options) {
+                if (numDrivers > 0 && option.text.includes(`(${numDrivers})`)) {
+                    option.selected = true;
+                    break;
+                }
+            }
+        }
+
         if (j.diesel && j.diesel !== '-') {
             const dParts = j.diesel.split(' ');
             if (document.getElementById('dieselAmount')) document.getElementById('dieselAmount').value = dParts[0] || '';
             if (document.getElementById('dieselMethod') && dParts[1]) document.getElementById('dieselMethod').value = dParts[1];
         }
 
-        // تعبئة الفندق
         if (j.hotel && j.hotel !== '-') {
             const hParts = j.hotel.split(' ');
             if (document.getElementById('hotelAmount')) document.getElementById('hotelAmount').value = hParts[0] || '';
             if (document.getElementById('hotelMethod') && hParts[1]) document.getElementById('hotelMethod').value = hParts[1];
         }
 
-        // تعبئة المدفوعات (PU & Destination)
         const puContainer = document.getElementById('puContainer');
         if (puContainer) {
             puContainer.innerHTML = '';
             if (j.pu && j.pu !== '-') {
                 j.pu.split(',').forEach(pItem => {
                     const parts = pItem.trim().split(' ');
-                    if (parts.length >= 2) {
-                        addPaymentRow('puContainer', parts[0], parts[1]);
+                    if (parts.length >= 1) {
+                        const amt = parts[0] || '';
+                        const mth = parts[1] || 'Cash';
+                        addPaymentRow('puContainer', amt, mth);
                     }
                 });
             }
         }
 
-        const destContainer = document.getElementById('destContainer');
+        let destContainer = document.getElementById('destContainer') || document.getElementById('destContextContainer');
         if (destContainer) {
             destContainer.innerHTML = '';
-            const destVal = j.destination || j.dest;
+            const destVal = j.dest || j.destination;
             if (destVal && destVal !== '-') {
                 destVal.split(',').forEach(dItem => {
                     const parts = dItem.trim().split(' ');
-                    if (parts.length >= 2) {
-                        addPaymentRow('destContainer', parts[0], parts[1]);
+                    if (parts.length >= 1) {
+                        const amt = parts[0] || '';
+                        const mth = parts[1] || 'Cash';
+                        addPaymentRow(destContainer.id, amt, mth);
                     }
                 });
             }
         }
+
     }, 50);
 }
 window.editJob = editJob;
+
+
 
 function deleteJob(jobNo) {
     if (!confirm('Are you sure you want to delete this dispatch record?')) return;
