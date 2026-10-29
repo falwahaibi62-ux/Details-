@@ -58,21 +58,30 @@ function loadPrivateTruckRentals() {
     let storageKey = window.RENTALS_STORAGE_KEY || 'movepro_private_truck_rentals';
     let saved = localStorage.getItem(storageKey);
     
+    let rentals = [];
     if (!saved || JSON.parse(saved).length < forcedInitialRentals.length) {
         localStorage.setItem(storageKey, JSON.stringify(forcedInitialRentals));
-        return forcedInitialRentals;
+        rentals = [...forcedInitialRentals];
+    } else {
+        try {
+            const parsed = JSON.parse(saved);
+            rentals = Array.isArray(parsed) && parsed.length > 0 ? parsed : [...forcedInitialRentals];
+        } catch (e) {
+            console.error('Error parsing rentals:', e);
+            rentals = [...forcedInitialRentals];
+        }
     }
-    
-    try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    } catch (e) {
-        console.error('Error parsing rentals:', e);
-    }
-    
-    return forcedInitialRentals;
+
+    rentals.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateA - dateB;
+    });
+
+    return rentals;
 }
 window.loadPrivateTruckRentals = loadPrivateTestRentals = loadPrivateTruckRentals;
+
 
 function savePrivateTruckRentals(data) {
     let storageKey = window.RENTALS_STORAGE_KEY || 'movepro_private_truck_rentals';
