@@ -95,6 +95,7 @@ function renderPrivateTruckRentalTab() {
     if (!container) return;
 
     container.innerHTML = `
+        <!-- Header & Add Button -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs mb-6">
             <div>
                 <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -107,6 +108,43 @@ function renderPrivateTruckRentalTab() {
             </button>
         </div>
 
+        <!-- 🌟 Private Truck Rental Financial Summary Table -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mb-6">
+            <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial Summary</h3>
+                    <p class="text-[11px] text-slate-400">Comprehensive summary of rental duration, cash payments, and total expenses</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                        Total Rental Records: <span id="rentalTotalRecordsCount" class="text-emerald-600">0</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-100">
+                <table class="w-full text-left border-collapse text-[11px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">Total Rental Days</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash Payments</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">Other Payments (Zelle/Check)</th>
+                            <th class="p-2.5 text-center bg-amber-600 text-white font-extrabold">Grand Total Rental Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td id="sumRentalDaysCell" class="p-2.5 border-r text-center font-bold text-slate-800">0 Days</td>
+                            <td id="sumRentalCashCell" class="p-2.5 border-r text-center text-emerald-600 font-bold bg-emerald-50/20">$0.00</td>
+                            <td id="sumRentalOtherCell" class="p-2.5 border-r text-center text-blue-600 font-bold bg-blue-50/20">$0.00</td>
+                            <td id="sumRentalGrandTotalCell" class="p-2.5 text-center bg-amber-50 text-amber-900 font-extrabold text-xs">$0.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detailed Records Table -->
         <div class="glass-panel rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-xs">
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-xs min-w-[900px] border-collapse">
@@ -128,6 +166,10 @@ function renderPrivateTruckRentalTab() {
             </div>
         </div>
     `;
+
+    if (typeof renderTruckRentalSummary === 'function') {
+        renderTruckRentalSummary();
+    }
 }
 window.renderPrivateTruckRentalTab = renderPrivateTruckRentalTab;
 
