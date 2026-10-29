@@ -1,9 +1,10 @@
 /**
- * Private Truck Rental Module - MovePro
+ * Private Truck Rental Module - MovePro (Optimized & Cleaned)
  */
 
+const STORAGE_KEY = 'movepro_private_truck_rentals';
 if (typeof window.RENTALS_STORAGE_KEY === 'undefined') {
-    window.RENTALS_STORAGE_KEY = 'movepro_private_truck_rentals';
+    window.RENTALS_STORAGE_KEY = STORAGE_KEY;
 }
 
 const forcedInitialRentals = [
@@ -23,28 +24,21 @@ const forcedInitialRentals = [
     { date: "10/24/2026", days: 2, amount: 1250, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "2 days U-Haul rental" }
 ];
 
-// دالة تحويل التاريخ من صيغة الجدول (M/D/YYYY) إلى صيغة حقل الإدخال (YYYY-MM-DD)
+// Date Formatting Utilities
 function formatDateForInput(dateStr) {
     if (!dateStr) return '';
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
     const parts = dateStr.split('/');
     if (parts.length === 3) {
-        let month = parts[0].padStart(2, '0');
-        let day = parts[1].padStart(2, '0');
-        let year = parts[2];
-        return `${year}-${month}-${day}`;
+        return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
     }
     const d = new Date(dateStr);
     if (!isNaN(d.getTime())) {
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        return d.toISOString().split('T')[0];
     }
     return dateStr;
 }
 
-// دالة تحويل التاريخ من حقل الإدخال (YYYY-MM-DD) إلى صيغة الجدول (M/D/YYYY)
 function formatDateToSlash(dateStr) {
     if (!dateStr) return '';
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -54,13 +48,14 @@ function formatDateToSlash(dateStr) {
     return dateStr;
 }
 
+// Storage Handlers
 function loadPrivateTruckRentals() {
-    let storageKey = window.RENTALS_STORAGE_KEY || 'movepro_private_truck_rentals';
-    let saved = localStorage.getItem(storageKey);
+    let activeKey = window.RENTALS_STORAGE_KEY || STORAGE_KEY;
+    let saved = localStorage.getItem(activeKey);
     
     let rentals = [];
     if (!saved || JSON.parse(saved).length < forcedInitialRentals.length) {
-        localStorage.setItem(storageKey, JSON.stringify(forcedInitialRentals));
+        localStorage.setItem(activeKey, JSON.stringify(forcedInitialRentals));
         rentals = [...forcedInitialRentals];
     } else {
         try {
@@ -72,30 +67,20 @@ function loadPrivateTruckRentals() {
         }
     }
 
-    rentals.sort((a, b) => {
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
-        return dateB - dateA;
-   
-    });
-
-    return rentals;
+    return rentals.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
-window.loadPrivateTruckRentals = loadPrivateTestRentals = loadPrivateTruckRentals;
-
 
 function savePrivateTruckRentals(data) {
-    let storageKey = window.RENTALS_STORAGE_KEY || 'movepro_private_truck_rentals';
-    localStorage.setItem(storageKey, JSON.stringify(data));
+    let activeKey = window.RENTALS_STORAGE_KEY || STORAGE_KEY;
+    localStorage.setItem(activeKey, JSON.stringify(data));
 }
 
-// Render Tab Screen
+// Render Tab Screen & Summary
 function renderPrivateTruckRentalTab() {
     const container = document.getElementById('tab-rentals');
     if (!container) return;
 
     container.innerHTML = `
-        <!-- Header & Add Button -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs mb-6">
             <div>
                 <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -108,7 +93,7 @@ function renderPrivateTruckRentalTab() {
             </button>
         </div>
 
-        <!-- 🌟 Private Truck Rental Financial Summary Table -->
+        <!-- Financial Summary Table -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mb-6">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                 <div>
@@ -159,7 +144,7 @@ function renderPrivateTruckRentalTab() {
                             <th class="p-3.5 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="rentalTableBody" class="divide-y divide-slate-100 text-slate-700 bg-white">
+                    <tbody id="truckRentalTableBody" class="divide-y divide-slate-100 text-slate-700 bg-white">
                         ${generateRentalRowsHTML()}
                     </tbody>
                 </table>
@@ -167,15 +152,11 @@ function renderPrivateTruckRentalTab() {
         </div>
     `;
 
-    if (typeof renderTruckRentalSummary === 'function') {
-        renderTruckRentalSummary();
-    }
+    renderTruckRentalSummary();
 }
-window.renderPrivateTruckRentalTab = renderPrivateTruckRentalTab;
-
 
 function renderTruckRentalSummary() {
-    const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+    const rentals = loadPrivateTruckRentals();
     
     let totalDays = 0;
     let sumCash = 0;
@@ -183,15 +164,12 @@ function renderTruckRentalSummary() {
     let grandTotal = 0;
 
     rentals.forEach(r => {
-        // استخراج عدد الأيام رقمياً بأمان
-        const daysNum = parseInt(String(r.noOfDays || r.days || '0').replace(/[^0-9]/g, '')) || 0;
+        const daysNum = parseInt(String(r.days || '0').replace(/[^0-9]/g, '')) || 0;
         totalDays += daysNum;
 
-        // حساب المبلغ باستخدام دالة التنظيف
         const amount = typeof parseCurrency === 'function' ? parseCurrency(r.amount) : (parseFloat(String(r.amount).replace(/[^0-9.-]+/g, '')) || 0);
         grandTotal += amount;
 
-        // تصنيف طريقة الدفع (Cash مقابل الطرق الأخرى مثل Zelle أو Check)
         const paymentType = String(r.paymentType || '').toLowerCase();
         if (paymentType.includes('cash')) {
             sumCash += amount;
@@ -200,20 +178,17 @@ function renderTruckRentalSummary() {
         }
     });
 
-    // تحديث عناصر الواجهة بالقيم المحسوبة
-    const recordsEl = document.getElementById('rentalTotalRecordsCount');
-    const daysEl = document.getElementById('sumRentalDaysCell');
-    const cashEl = document.getElementById('sumRentalCashCell');
-    const otherEl = document.getElementById('sumRentalOtherCell');
-    const totalEl = document.getElementById('sumRentalGrandTotalCell');
+    const setElementText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = text;
+    };
 
-    if (recordsEl) recordsEl.innerText = rentals.length;
-    if (daysEl) daysEl.innerText = totalDays + ' Days';
-    if (cashEl) cashEl.innerText = '$' + sumCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    if (otherEl) otherEl.innerText = '$' + sumOther.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    if (totalEl) totalEl.innerText = '$' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    setElementText('rentalTotalRecordsCount', rentals.length);
+    setElementText('sumRentalDaysCell', `${totalDays} Days`);
+    setElementText('sumRentalCashCell', `$${sumCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+    setElementText('sumRentalOtherCell', `$${sumOther.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+    setElementText('sumRentalGrandTotalCell', `$${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
 }
-window.renderTruckRentalSummary = renderTruckRentalSummary;
 
 function generateRentalRowsHTML() {
     const rentals = loadPrivateTruckRentals(); 
@@ -241,7 +216,6 @@ function generateRentalRowsHTML() {
         </tr>
     `).join('');
 }
-window.generateRentalRowsHTML = generateRentalRowsHTML;
 
 function editRentalRecord(index) {
     const rentals = loadPrivateTruckRentals();
@@ -250,27 +224,27 @@ function editRentalRecord(index) {
 
     openPrivateTruckModal(true);
 
-    const indexField = document.getElementById('editRentalIndex');
-    if (indexField) indexField.value = index;
+    const setFieldValue = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    };
 
+    setFieldValue('editRentalIndex', index);
     const modalTitle = document.getElementById('rentalModalTitle');
     if (modalTitle) modalTitle.innerText = 'Edit Private Truck Rental';
 
     setTimeout(() => {
-        if (document.getElementById('rentalDate')) document.getElementById('rentalDate').value = formatDateForInput(item.date);
-        if (document.getElementById('rentalDays')) document.getElementById('rentalDays').value = item.days || 0;
-        if (document.getElementById('rentalAmount')) document.getElementById('rentalAmount').value = item.amount || 0;
-        if (document.getElementById('rentalPaymentType')) document.getElementById('rentalPaymentType').value = item.paymentType || 'Cash';
-        if (document.getElementById('rentalPaidBy')) document.getElementById('rentalPaidBy').value = item.paidBy || '';
-        if (document.getElementById('rentalTruckLabel')) document.getElementById('rentalTruckLabel').value = item.truckLabel || '';
+        setFieldValue('rentalDate', formatDateForInput(item.date));
+        setFieldValue('rentalDays', item.days || 0);
+        setFieldValue('rentalAmount', item.amount || 0);
+        setFieldValue('rentalPaymentType', item.paymentType || 'Cash');
+        setFieldValue('rentalPaidBy', item.paidBy || '');
+        setFieldValue('rentalTruckLabel', item.truckLabel || '');
     }, 50);
 }
-window.editRentalRecord = editRentalRecord;
 
 function deleteRentalRecord(index) {
-    if (!confirm('Are you sure you want to delete this rental record?')) {
-        return;
-    }
+    if (!confirm('Are you sure you want to delete this rental record?')) return;
 
     let rentals = loadPrivateTruckRentals();
     if (index < 0 || index >= rentals.length) return;
@@ -291,14 +265,9 @@ function deleteRentalRecord(index) {
 
     renderPrivateTruckRentalTab();
     
-    if (typeof renderTrashBin === 'function') {
-        renderTrashBin();
-    }
-    if (typeof updateDashboardAnalytics === 'function') {
-        updateDashboardAnalytics();
-    }
+    if (typeof renderTrashBin === 'function') renderTrashBin();
+    if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 }
-window.deleteRentalRecord = deleteRentalRecord;
 
 function renderPrivateTruckModal() {
     let modalContainer = document.getElementById('privateTruckModal');
@@ -403,8 +372,6 @@ function openPrivateTruckModal(isEdit = false) {
         modalContainer.style.setProperty('display', 'flex', 'important');
     }
 }
-window.openPrivateTruckModal = openPrivateTruckModal;
-window.openPrivateTestRentalsModal = openPrivateTruckModal;
 
 function closePrivateTruckModal() {
     const modal = document.getElementById('privateTruckModal');
@@ -414,7 +381,6 @@ function closePrivateTruckModal() {
         modal.style.setProperty('display', 'none', 'important');
     }
 }
-window.closePrivateTruckModal = closePrivateTruckModal;
 
 function adjustRentalNumber(elementId, step) {
     const input = document.getElementById(elementId);
@@ -425,7 +391,6 @@ function adjustRentalNumber(elementId, step) {
         input.value = newValue;
     }
 }
-window.adjustRentalNumber = adjustRentalNumber;
 
 function handlePrivateTruckSubmit(event) {
     event.preventDefault();
@@ -461,4 +426,16 @@ function handlePrivateTruckSubmit(event) {
         updateDashboardAnalytics();
     }
 }
+
+// Global Window Exposure (Exporting functions for HTML onclick attributes)
+window.loadPrivateTruckRentals = loadPrivateTruckRentals;
+window.renderPrivateTruckRentalTab = renderPrivateTruckRentalTab;
+window.renderTruckRentalSummary = renderTruckRentalSummary;
+window.generateRentalRowsHTML = generateRentalRowsHTML;
+window.editRentalRecord = editRentalRecord;
+window.deleteRentalRecord = deleteRentalRecord;
+window.openPrivateTruckModal = openPrivateTruckModal;
+window.openPrivateTestRentalsModal = openPrivateTruckModal;
+window.closePrivateTruckModal = closePrivateTruckModal;
+window.adjustRentalNumber = adjustRentalNumber;
 window.handlePrivateTruckSubmit = handlePrivateTruckSubmit;
