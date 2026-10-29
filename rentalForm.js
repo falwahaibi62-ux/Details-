@@ -123,7 +123,7 @@ function editRentalRecord(index) {
     const item = rentals[index];
     if (!item) return;
 
-    openPrivateTruckModal();
+    openPrivateTruckModal(true);
 
     const indexField = document.getElementById('editRentalIndex');
     if (indexField) indexField.value = index;
@@ -131,17 +131,14 @@ function editRentalRecord(index) {
     const modalTitle = document.getElementById('rentalModalTitle');
     if (modalTitle) modalTitle.innerText = 'Edit Private Truck Rental';
 
-    const setFieldValue = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.value = value;
-    };
-
-    setFieldValue('rentalDate', item.date || '');
-    setFieldValue('rentalDays', item.days || 0);
-    setFieldValue('rentalAmount', item.amount || 0);
-    setFieldValue('rentalPaymentType', item.paymentType || '');
-    setFieldValue('rentalPaidBy', item.paidBy || '');
-    setFieldValue('rentalTruckLabel', item.truckLabel || '');
+    setTimeout(() => {
+        if (document.getElementById('rentalDate')) document.getElementById('rentalDate').value = item.date || '';
+        if (document.getElementById('rentalDays')) document.getElementById('rentalDays').value = item.days || 0;
+        if (document.getElementById('rentalAmount')) document.getElementById('rentalAmount').value = item.amount || 0;
+        if (document.getElementById('rentalPaymentType')) document.getElementById('rentalPaymentType').value = item.paymentType || 'Cash';
+        if (document.getElementById('rentalPaidBy')) document.getElementById('rentalPaidBy').value = item.paidBy || '';
+        if (document.getElementById('rentalTruckLabel')) document.getElementById('rentalTruckLabel').value = item.truckLabel || '';
+    }, 50);
 }
 window.editRentalRecord = editRentalRecord;
 
@@ -256,22 +253,28 @@ function renderPrivateTruckModal() {
     `;
 }
 
-function openPrivateTruckModal() {
-    renderPrivateTruckModal();
-    const modal = document.getElementById('privateTruckModal');
+function openPrivateTruckModal(isEdit = false) {
+    let modalContainer = document.getElementById('privateTruckModal');
+    if (!modalContainer) {
+        renderPrivateTruckModal();
+        modalContainer = document.getElementById('privateTruckModal');
+    }
+
     const form = document.getElementById('privateTruckForm');
     const titleEl = document.getElementById('rentalModalTitle');
-    const indexField = document.getElementById('editRentalIndex');
 
-    if (form && (!indexField || indexField.value === '-1')) {
+    // إذا لم يكن وضع تعديل، نقوم بتفريغ النموذج تماماً
+    if (form && !isEdit) {
         form.reset();
+        const indexField = document.getElementById('editRentalIndex');
+        if (indexField) indexField.value = '-1';
         if (titleEl) titleEl.innerText = 'Add Private Truck Rental';
     }
 
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        modal.style.setProperty('display', 'flex', 'important');
+    if (modalContainer) {
+        modalContainer.classList.remove('hidden');
+        modalContainer.classList.add('flex');
+        modalContainer.style.setProperty('display', 'flex', 'important');
     }
 }
 window.openPrivateTruckModal = openPrivateTruckModal;
