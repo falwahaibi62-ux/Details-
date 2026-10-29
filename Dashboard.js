@@ -15,10 +15,14 @@ function updateDashboardAnalytics() {
         if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>0 Active Dispatches`;
         const avgEl = document.getElementById('dashAvgJobValue');
         if (avgEl) avgEl.innerText = '$0';
+        const dieselEl = document.getElementById('dashTotalDiesel');
+        if (dieselEl) dieselEl.innerText = '$0';
         return;
     }
 
     let totalRev = 0;
+    let totalDieselCost = 0; // متغير لحساب إجمالي الديزل بدقة
+    let validJobsCount = 0;  // عداد للوظائف النشطة فقط (باستبعاد Cancel و None)
     const routeRevenueMap = {};
     
     const paymentMethodMap = { 
@@ -36,6 +40,21 @@ function updateDashboardAnalytics() {
     const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     masterJobs.forEach(job => {
+        // استبعاد السجلات الملغية أو الفارغة من الحسابات المالية والتحليلات
+        if (job.jobNo && (job.jobNo.toLowerCase().includes('cancel') || job.jobNo.toLowerCase().includes('none'))) {
+            return; // تخطي هذا السجل والانتقال للسجل التالي
+        }
+
+        validJobsCount++; // زيادة عدد الوظائف النشطة الصحيحة
+
+        // حساب الديزل باستخدام دالة التحليل المتاحة
+        if (typeof parseAndSumDiesel === 'function') {
+            totalDieselCost += parseAndSumDiesel(job.diesel);
+        } else {
+            let dAmt = parseFloat(String(job.diesel || '').replace(/[^0-9.]/g, '')) || 0;
+            totalDieselCost += dAmt;
+        }
+
         let amt = 0;
         if (job.total) {
             amt = parseFloat(String(job.total).replace(/[^0-9.]/g, '')) || 0;
@@ -69,18 +88,21 @@ function updateDashboardAnalytics() {
         extractMethods(job.dest);
     });
 
-    const completedJobsCount = masterJobs.length;
-    const avgJobVal = completedJobsCount > 0 ? (totalRev / completedJobsCount) : 0;
+    const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
 
     // تحديث بطاقات الـ KPI
     const revEl = document.getElementById('dashTotalRevenue');
     if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
     const jobsTextEl = document.getElementById('dashCompletedJobsText');
-    if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${completedJobsCount} Active Dispatches`;
+    if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${validJobsCount} Active Dispatches`;
 
     const avgEl = document.getElementById('dashAvgJobValue');
     if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
+
+    // تحديث بطاقة إجمالي الديزل في الواجهة
+    const dieselEl = document.getElementById('dashTotalDiesel');
+    if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
 
     // تحديث ممرات الإيرادات العليا
     const topCorridorsContainer = document.getElementById('topCorridorsContainer');
