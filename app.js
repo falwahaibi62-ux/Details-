@@ -483,6 +483,30 @@ function saveJob(event) {
 }
 window.saveJob = saveJob;
 
+
+function parseAndSumDiesel(val) {
+    if (!val || val === '-' || val === '0' || val === 0) return 0;
+    
+    if (typeof val === 'number') return val;
+
+    let strVal = String(val).trim();
+    
+    if (strVal.includes('+')) {
+        let parts = strVal.split('+');
+        let sum = 0;
+        parts.forEach(part => {
+            let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
+            sum += cleanNum;
+        });
+        return sum;
+    }
+
+    return parseFloat(strVal.replace(/[^0-9.]/g, '')) || 0;
+}
+
+window.parseAndSumDiesel = parseAndSumDiesel;
+
+
 function editJob(jobNoParam) {
     initMasterJobsData();
     const index = window.masterJobs.findIndex(j => j.jobNo === jobNoParam);
