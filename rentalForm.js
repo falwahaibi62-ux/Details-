@@ -2,12 +2,13 @@
  * Private Truck Rental Module - MovePro (Optimized & Cleaned)
  */
 
-const STORAGE_KEY = 'movepro_private_truck_rentals';
 if (typeof window.RENTALS_STORAGE_KEY === 'undefined') {
-    window.RENTALS_STORAGE_KEY = STORAGE_KEY;
+    window.RENTALS_STORAGE_KEY = 'movepro_private_truck_rentals';
 }
-
+const STORAGE_KEY = window.RENTALS_STORAGE_KEY;
 const forcedInitialRentals = [
+
+    
     { date: "6/24/2026", days: 24, amount: 6000, paymentType: "Cheque", paidBy: "Sharef", truckLabel: "24 days rental paid by Sharef" },
     { date: "7/9/2026", days: 13, amount: 3250, paymentType: "Cash", paidBy: "Abu Essa", truckLabel: "13 days rental paid to Abu Essa" },
     { date: "7/20/2026", days: 8, amount: 1860, paymentType: "Cash", paidBy: "Penski", truckLabel: "8 days rental paid by Penski" },
