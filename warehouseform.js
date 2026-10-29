@@ -1,22 +1,62 @@
 /**
- * Warehouse & Others Module - MovePro (Fixed Edit & Delete)
+ * Warehouse & Others Module - MovePro (Updated & Synchronized)
  */
 
 if (typeof window.WAREHOUSE_STORAGE_KEY === 'undefined') {
     window.WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
 }
 
+// دالة تحويل التاريخ من صيغة الجدول (M/D/YYYY) إلى صيغة حقل الإدخال (YYYY-MM-DD)
+function formatWarehouseDateForInput(dateStr) {
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        let month = parts[0].padStart(2, '0');
+        let day = parts[1].padStart(2, '0');
+        let year = parts[2];
+        return `${year}-${month}-${day}`;
+    }
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    return dateStr;
+}
+
+// دالة تحويل التاريخ من حقل الإدخال (YYYY-MM-DD) إلى صيغة الجدول (M/D/YYYY)
+function formatWarehouseDateToSlash(dateStr) {
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [year, month, day] = dateStr.split('-');
+        return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
+    }
+    return dateStr;
+}
+
 function loadWarehouseRecords() {
     let saved = localStorage.getItem(window.WAREHOUSE_STORAGE_KEY);
+    let records = [];
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) return parsed;
+            if (Array.isArray(parsed)) records = parsed;
         } catch (e) {
             console.error('Error parsing warehouse records:', e);
         }
     }
-    return [];
+
+    // ترتيب السجلات تلقائياً من التاريخ الأحدث (الأعلى) إلى الأقدم (الأسفل)[cite: 13]
+    records.sort((a, b) => {
+        const dateA = new Date(a.date || 0);
+        const dateB = new Date(b.date || 0);
+        return dateB - dateA;
+    });
+
+    return records;
 }
 window.loadWarehouseRecords = loadWarehouseRecords;
 
@@ -36,7 +76,7 @@ function renderWarehouseTab() {
                 <h3 class="font-bold text-slate-900 text-base">Warehouse & Inventory Management</h3>
                 <p class="text-xs text-slate-500 mt-0.5">Track equipment, gear, and supplies stock levels and expenses.</p>
             </div>
-            <button type="button" onclick="openWarehouseModal()" class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer">
+            <button type="button" onclick="openWarehouseModal(false)" class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer">
                 <i class="fa-solid fa-plus"></i> Add Expense / Record
             </button>
         </div>
@@ -90,7 +130,6 @@ function deleteWarehouseRecord(index) {
     const deletedItem = records.splice(index, 1)[0];
     saveWarehouseRecords(records);
 
-    // إرسال السجل إلى سلة المهملات
     const TRASH_KEY = 'movepro_trash_bin';
     let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
     trashBin.unshift({
@@ -105,16 +144,48 @@ function deleteWarehouseRecord(index) {
 }
 window.deleteWarehouseRecord = deleteWarehouseRecord;
 
+// تحديث دالة فتح النافذة لدعم وضع التعديل وعدم مسح الحقول
+function openWarehouseModal(isEdit = false) {
+    if (typeof window.originalOpenWarehouseModal === 'function' && !isEdit) {
+        window.originalOpenWarehouseModal();
+        return;
+    }
+
+    let modal = document.getElementById('warehouseModal');
+    if (!modal) {
+        // إذا كانت الدالة الأصلية معرفة في ملف آخر
+        if (typeof window.originalOpenWarehouseModal === 'function') {
+            window.originalOpenWarehouseModal();
+        }
+        modal = document.getElementById('warehouseModal');
+    }
+
+    const form = document.getElementById('warehouseForm');
+    const titleEl = document.getElementById('warehouseModalTitle');
+
+    if (form && !isEdit) {
+        form.reset();
+        const indexField = document.getElementById('editWarehouseIndex');
+        if (indexField) indexField.value = '-1';
+        if (titleEl) titleEl.innerText = 'Add Warehouse Record';
+    }
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.style.setProperty('display', 'flex', 'important');
+    }
+}
+window.openWarehouseModal = openWarehouseModal;
+
 function editWarehouseRecord(index) {
     let records = loadWarehouseRecords();
     const item = records[index];
     if (!item) return;
 
-    if (typeof openWarehouseModal === 'function') {
-        openWarehouseModal();
-    }
+    // فتح النافذة في وضع التعديل (true) لمنع تفريغ الحقول
+    openWarehouseModal(true);
 
-    // تعبئة حقول النموذج بالتعديل
     setTimeout(() => {
         const indexField = document.getElementById('editWarehouseIndex');
         if (indexField) indexField.value = index;
@@ -122,11 +193,54 @@ function editWarehouseRecord(index) {
         const titleEl = document.getElementById('warehouseModalTitle');
         if (titleEl) titleEl.innerText = 'Edit Warehouse Record';
 
-        if (document.getElementById('warehouseDate')) document.getElementById('warehouseDate').value = item.date || '';
+        if (document.getElementById('warehouseDate')) document.getElementById('warehouseDate').value = formatWarehouseDateForInput(item.date);
         if (document.getElementById('warehouseService')) document.getElementById('warehouseService').value = item.services || '';
         if (document.getElementById('warehouseDetails')) document.getElementById('warehouseDetails').value = item.details || '';
         if (document.getElementById('warehousePaymentType')) document.getElementById('warehousePaymentType').value = item.paymentType || 'Cash';
         if (document.getElementById('warehouseAmount')) document.getElementById('warehouseAmount').value = item.amount || 0;
-    }, 100);
+    }, 50);
 }
 window.editWarehouseRecord = editWarehouseRecord;
+
+// دالة الحفظ وإرسال التعديل للنموذج
+function handleWarehouseSubmit(event) {
+    if (event) event.preventDefault();
+
+    const indexField = document.getElementById('editWarehouseIndex');
+    const index = indexField ? parseInt(indexField.value, 10) : -1;
+
+    const rawDate = document.getElementById('warehouseDate')?.value || '';
+    const formattedDate = formatWarehouseDateToSlash(rawDate);
+
+    const newRecord = {
+        date: formattedDate,
+        services: document.getElementById('warehouseService')?.value || '',
+        details: document.getElementById('warehouseDetails')?.value || '',
+        paymentType: document.getElementById('warehousePaymentType')?.value || 'Cash',
+        amount: parseFloat(document.getElementById('warehouseAmount')?.value) || 0
+    };
+
+    let records = loadWarehouseRecords();
+
+    if (index >= 0 && index < records.length) {
+        records[index] = newRecord;
+    } else {
+        records.unshift(newRecord);
+    }
+
+    saveWarehouseRecords(records);
+    
+    // إغلاق النافذة
+    const modal = document.getElementById('warehouseModal');
+    if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        modal.style.setProperty('display', 'none', 'important');
+    }
+
+    renderWarehouseTab();
+    if (typeof updateDashboardAnalytics === 'function') {
+        updateDashboardAnalytics();
+    }
+}
+window.handleWarehouseSubmit = handleWarehouseSubmit;
