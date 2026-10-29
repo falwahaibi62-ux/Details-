@@ -173,6 +173,48 @@ function renderPrivateTruckRentalTab() {
 }
 window.renderPrivateTruckRentalTab = renderPrivateTruckRentalTab;
 
+
+function renderTruckRentalSummary() {
+    const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+    
+    let totalDays = 0;
+    let sumCash = 0;
+    let sumOther = 0;
+    let grandTotal = 0;
+
+    rentals.forEach(r => {
+        // استخراج عدد الأيام رقمياً بأمان
+        const daysNum = parseInt(String(r.noOfDays || r.days || '0').replace(/[^0-9]/g, '')) || 0;
+        totalDays += daysNum;
+
+        // حساب المبلغ باستخدام دالة التنظيف
+        const amount = typeof parseCurrency === 'function' ? parseCurrency(r.amount) : (parseFloat(String(r.amount).replace(/[^0-9.-]+/g, '')) || 0);
+        grandTotal += amount;
+
+        // تصنيف طريقة الدفع (Cash مقابل الطرق الأخرى مثل Zelle أو Check)
+        const paymentType = String(r.paymentType || '').toLowerCase();
+        if (paymentType.includes('cash')) {
+            sumCash += amount;
+        } else {
+            sumOther += amount;
+        }
+    });
+
+    // تحديث عناصر الواجهة بالقيم المحسوبة
+    const recordsEl = document.getElementById('rentalTotalRecordsCount');
+    const daysEl = document.getElementById('sumRentalDaysCell');
+    const cashEl = document.getElementById('sumRentalCashCell');
+    const otherEl = document.getElementById('sumRentalOtherCell');
+    const totalEl = document.getElementById('sumRentalGrandTotalCell');
+
+    if (recordsEl) recordsEl.innerText = rentals.length;
+    if (daysEl) daysEl.innerText = totalDays + ' Days';
+    if (cashEl) cashEl.innerText = '$' + sumCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (otherEl) otherEl.innerText = '$' + sumOther.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (totalEl) totalEl.innerText = '$' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+window.renderTruckRentalSummary = renderTruckRentalSummary;
+
 function generateRentalRowsHTML() {
     const rentals = loadPrivateTruckRentals(); 
 
