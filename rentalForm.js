@@ -50,29 +50,29 @@ function formatDateToSlash(dateStr) {
 }
 
 // Storage Handlers
-function loadPrivateTruckRentals() {
-    let activeKey = window.RENTALS_STORAGE_KEY || STORAGE_KEY;
+function loadPrivateTrucks() {
+    let activeKey = window.S_STORAGE_KEY || STORAGE_KEY;
     let saved = localStorage.getItem(activeKey);
     
-    let rentals = [];
-    if (!saved || JSON.parse(saved).length < forcedInitialRentals.length) {
-        localStorage.setItem(activeKey, JSON.stringify(forcedInitialRentals));
-        rentals = [...forcedInitialRentals];
+    let s = [];
+    if (!saved || JSON.parse(saved).length < forcedInitials.length) {
+        localStorage.setItem(activeKey, JSON.stringify(forcedInitials));
+        s = [...forcedInitials];
     } else {
         try {
             const parsed = JSON.parse(saved);
-            rentals = Array.isArray(parsed) && parsed.length > 0 ? parsed : [...forcedInitialRentals];
+            s = Array.isArray(parsed) && parsed.length > 0 ? parsed : [...forcedInitials];
         } catch (e) {
-            console.error('Error parsing rentals:', e);
-            rentals = [...forcedInitialRentals];
+            console.error('Error parsing s:', e);
+            s = [...forcedInitials];
         }
     }
 
-    return rentals.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return s.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
-function savePrivateTruckRentals(data) {
-    let activeKey = window.RENTALS_STORAGE_KEY || STORAGE_KEY;
+function savePrivateTrucks(data) {
+    let activeKey = window.S_STORAGE_KEY || STORAGE_KEY;
     localStorage.setItem(activeKey, JSON.stringify(data));
 }
 
@@ -81,8 +81,11 @@ function renderPrivateTruckRentalTab() {
     const container = document.getElementById('tab-rentals');
     if (!container) return;
 
+    container.className = "space-y-6 w-full flex flex-col";
+
     container.innerHTML = `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs mb-6">
+        <!-- 1. Header & Add Button -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
             <div>
                 <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
                     <i class="fa-solid fa-truck-moving text-indigo-600"></i> Private Truck Rental Management
@@ -94,8 +97,8 @@ function renderPrivateTruckRentalTab() {
             </button>
         </div>
 
-        <!-- Financial Summary Table -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mb-6">
+        <!-- 2. Financial Summary Table -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                 <div>
                     <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial Summary</h3>
@@ -130,7 +133,7 @@ function renderPrivateTruckRentalTab() {
             </div>
         </div>
 
-        <!-- Detailed Records Table -->
+        <!-- 3. Detailed Records Table -->
         <div class="glass-panel rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-xs">
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-xs min-w-[900px] border-collapse">
@@ -155,6 +158,8 @@ function renderPrivateTruckRentalTab() {
 
     renderTruckRentalSummary();
 }
+window.renderPrivateTruckRentalTab = renderPrivateTruckRentalTab;
+
 
 function renderTruckRentalSummary() {
     const rentals = loadPrivateTruckRentals();
