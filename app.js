@@ -845,13 +845,3 @@ window.addEventListener('DOMContentLoaded', () => {
         console.error("Initialization error on DOMContentLoaded:", error);
     }
 });
-<script src="data.js"></script>
-<script src="storage.js"></script>
-<script src="Dashboard.js"></script>
-<script src="warehouse-data.js"></script>
-<script src="rentalForm.js"></script>
-<script src="warehouseform.js"></script>
-<script src="reports.js"></script>
-<script src="app.js"></script>
-
-
