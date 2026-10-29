@@ -3,6 +3,13 @@
  */
 
 // Global Chart Instances
+
+// في بداية ملف Dashboard.js
+if (typeof window.revenueChartInstance === 'undefined') {
+    window.revenueChartInstance = null;
+}
+
+
 let revenueChartInstance = null;
 let paymentMixChartInstance = null;
 
