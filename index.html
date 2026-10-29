@@ -82,121 +82,178 @@
     <!-- Main Content Area with all Tabs Properly Isolated -->
     <main class="flex-1 overflow-y-auto p-6 custom-scrollbar min-w-0 relative bg-slate-100 flex flex-col">
 
-        <!-- TAB 1: ADVANCED DASHBOARD & CHARTS -->
-        <div id="tab-dashboard" class="space-y-6 w-full flex flex-col">
-            <!-- 1. KPI Cards 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-600 bg-white shadow-sm">
+     <!-- TAB 1: ADVANCED DASHBOARD & CHARTS -->
+        <div id="tab-dashboard" class="space-y-6 w-full flex flex-col animate-fade-in">
+            
+            <!-- 1. KPI Cards Row (مؤشرات الأداء الرئيسية الحية) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- Card 1: Total Revenue -->
+                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 group">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Lifetime Revenue</p>
-                            <h3 id="dashTotalRevenue" class="text-2xl font-black text-slate-900 mt-1">$0</h3>
+                            <h3 id="dashTotalRevenue" class="text-2xl font-black text-slate-900 mt-1 group-hover:text-emerald-600 transition-colors">$0</h3>
                         </div>
-                        <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><i class="fa-solid fa-wallet text-base"></i></div>
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-xs">
+                            <i class="fa-solid fa-wallet text-base"></i>
+                        </div>
                     </div>
-                    <p id="dashCompletedJobsText" class="text-[11px] text-emerald-600 font-semibold mt-2"><i class="fa-solid fa-truck-check mr-1"></i>0 Active Dispatches</p>
+                    <div class="mt-3 flex items-center justify-between text-[11px]">
+                        <span id="dashCompletedJobsText" class="text-emerald-600 font-semibold flex items-center">
+                            <i class="fa-solid fa-truck-fast mr-1.5 animate-bounce"></i>0 Active Dispatches
+                        </span>
+                        <span class="text-slate-400 font-medium">Real-time</span>
+                    </div>
                 </div>
-                
-                <div class="glass-panel p-5 rounded-2xl border-l-4 border-blue-600 bg-white shadow-sm">
+
+                <!-- Card 2: Avg Job Value -->
+                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 group">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Avg. Job Value</p>
                             <h3 id="dashAvgJobValue" class="text-2xl font-black text-blue-600 mt-1">$0</h3>
                         </div>
-                        <div class="p-2 bg-blue-50 text-blue-600 rounded-xl"><i class="fa-solid fa-chart-line text-base"></i></div>
-                    </div>
-                    <p class="text-[11px] text-slate-500 mt-2">Optimal Freight Yield Ratio</p>
-                </div>
-
-                <div class="glass-panel p-5 rounded-2xl border-l-4 border-purple-600 bg-white shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">P.U Collection Rate</p>
-                            <h3 id="dashPuRate" class="text-2xl font-black text-purple-600 mt-1">100%</h3>
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-xs">
+                            <i class="fa-solid fa-chart-line text-base"></i>
                         </div>
-                        <div class="p-2 bg-purple-50 text-purple-600 rounded-xl"><i class="fa-solid fa-hand-holding-dollar text-base"></i></div>
                     </div>
-                    <p class="text-[11px] text-slate-500 mt-2">Upfront Liquidity Performance</p>
+                    <div class="mt-3 flex items-center justify-between text-[11px]">
+                        <span class="text-blue-600 font-semibold">Optimal Freight Yield</span>
+                        <span class="text-slate-400 font-medium">Average</span>
+                    </div>
                 </div>
 
-                <div class="glass-panel p-5 rounded-2xl border-l-4 border-amber-500 bg-white shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Destination Receivables</p>
-                            <h3 id="dashDestReceivables" class="text-2xl font-black text-amber-600 mt-1">Active</h3>
-                        </div>
-                        <div class="p-2 bg-amber-50 text-amber-600 rounded-xl"><i class="fa-solid fa-clock-rotate-left text-base"></i></div>
-                    </div>
-                    <p class="text-[11px] text-amber-700 font-semibold mt-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Settlement Tracking</p>
-                </div>
-
-                <div class="glass-panel p-5 rounded-2xl border-l-4 border-orange-500 bg-white shadow-sm">
+                <!-- Card 3: Total Diesel Cost -->
+                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 group">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Diesel Cost</p>
-                            <h3 id="dashTotalDiesel" class="text-2xl font-black text-slate-900 mt-1">$0</h3>
+                            <h3 id="dashTotalDiesel" class="text-2xl font-black text-orange-600 mt-1">$0</h3>
                         </div>
-                        <div class="p-2 bg-orange-50 text-orange-600 rounded-xl"><i class="fa-solid fa-gas-pump text-base"></i></div>
+                        <div class="p-3 bg-orange-50 text-orange-600 rounded-2xl group-hover:bg-orange-600 group-hover:text-white transition-all duration-300 shadow-xs">
+                            <i class="fa-solid fa-gas-pump text-base"></i>
+                        </div>
                     </div>
-                    <p class="text-[11px] text-orange-600 font-semibold mt-2"><i class="fa-solid fa-fire mr-1"></i>Fuel Expense Tracking</p>
+                    <div class="mt-3 flex items-center justify-between text-[11px]">
+                        <span class="text-orange-600 font-semibold flex items-center">
+                            <i class="fa-solid fa-fire mr-1"></i>Fuel Expenses
+                        </span>
+                        <span class="text-slate-400 font-medium">Tracking</span>
+                    </div>
                 </div>
+
+                <!-- Card 4: System Status -->
+                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 group">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">System Security</p>
+                            <h3 class="text-2xl font-black text-purple-600 mt-1">Active</h3>
+                        </div>
+                        <div class="p-3 bg-purple-50 text-purple-600 rounded-2xl group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 shadow-xs">
+                            <i class="fa-solid fa-shield-halved text-base"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between text-[11px]">
+                        <span class="text-purple-600 font-semibold">Enterprise v16</span>
+                        <span class="inline-flex items-center text-emerald-600 font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-ping"></span> Live
+                        </span>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- 2. Charts -->
+            <!-- 2. Charts Section (الرسوم البيانية بتصميم عصري) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm lg:col-span-2 space-y-4">
-                    <div class="flex justify-between items-center border-b pb-3">
+                <!-- Bar Chart -->
+                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:col-span-2 space-y-4 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-4">
                         <div>
-                            <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-chart-column text-emerald-600 mr-2"></i>Monthly Revenue & Volume Trend</h3>
-                            <p class="text-[11px] text-slate-400">Real-time performance distribution derived from active ledger</p>
+                            <h3 class="font-bold text-slate-900 text-sm flex items-center">
+                                <span class="w-2 h-5 bg-emerald-600 rounded-full mr-2"></span>
+                                Monthly Revenue & Volume Trend
+                            </h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Real-time performance distribution derived from active ledger</p>
                         </div>
-                        <span class="text-[11px] bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg">Real-Time Data</span>
+                        <span class="text-[11px] bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl border border-emerald-100 flex items-center">
+                            <i class="fa-solid fa-bolt text-amber-500 mr-1.5"></i> Live Telemetry
+                        </span>
                     </div>
-                    <div class="h-64 relative">
+                    <div class="h-68 relative w-full pt-2">
                         <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
 
-                <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm space-y-4">
-                    <div class="border-b pb-3">
-                        <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-pie-chart text-emerald-600 mr-2"></i>Payment Channels Mix</h3>
-                        <p class="text-[11px] text-slate-400">Distribution of Cash, Zelle, PS, BS</p>
+                <!-- Doughnut Chart -->
+                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 hover:shadow-md transition-shadow flex flex-col justify-between">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="font-bold text-slate-900 text-sm flex items-center">
+                            <span class="w-2 h-5 bg-blue-600 rounded-full mr-2"></span>
+                            Payment Channels Mix
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Distribution of Cash, Zelle, and Checks</p>
                     </div>
-                    <div class="h-64 relative flex items-center justify-center">
+                    <div class="h-60 relative flex items-center justify-center my-auto">
                         <canvas id="paymentMixChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. Business Intelligence & Decision Recommendations -->
+            <!-- 3. Business Intelligence & Corridors -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm space-y-4">
-                    <h3 class="font-bold text-slate-900 text-sm border-b pb-3"><i class="fa-solid fa-route text-emerald-600 mr-2"></i>Top Revenue Corridors</h3>
+                <!-- Top Corridors -->
+                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 hover:shadow-md transition-shadow">
+                    <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-900 text-sm flex items-center">
+                            <i class="fa-solid fa-route text-emerald-600 mr-2 text-base"></i>Top Revenue Corridors
+                        </h3>
+                        <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-2.5 py-1 rounded-lg">Top 4</span>
+                    </div>
                     <div id="topCorridorsContainer" class="space-y-3 text-xs"></div>
                 </div>
 
-                <div class="glass-panel p-6 rounded-2xl bg-white shadow-sm lg:col-span-2 space-y-4">
-                    <h3 class="font-bold text-slate-900 text-sm border-b pb-3"><i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>Strategic Business Recommendations & Optimizations</h3>
+                <!-- Strategic Recommendations -->
+                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:col-span-2 space-y-4 hover:shadow-md transition-shadow">
+                    <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-900 text-sm flex items-center">
+                            <i class="fa-solid fa-lightbulb text-amber-500 mr-2 text-base animate-pulse"></i>Strategic Business Recommendations
+                        </h3>
+                        <span class="text-[10px] bg-amber-50 text-amber-700 font-bold px-2.5 py-1 rounded-lg border border-amber-200/50">AI Insights</span>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                        <div class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl space-y-1.5">
-                            <div class="flex items-center gap-2 font-bold text-emerald-800"><i class="fa-solid fa-circle-arrow-up"></i> High Yield Lane Focus</div>
+                        <div class="p-4 bg-gradient-to-br from-emerald-50/60 to-transparent border border-emerald-100/80 rounded-2xl space-y-2 hover:border-emerald-300 transition-all">
+                            <div class="flex items-center gap-2 font-bold text-emerald-800">
+                                <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><i class="fa-solid fa-chart-line text-xs"></i></div>
+                                High Yield Lane Focus
+                            </div>
                             <p class="text-slate-600 leading-relaxed">Prioritize dispatch allocations on top-performing corridors to maximize revenue yield and minimize deadhead miles.</p>
                         </div>
-                        <div class="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-1.5">
-                            <div class="flex items-center gap-2 font-bold text-blue-800"><i class="fa-solid fa-shield-halved"></i> Liquidity Optimization</div>
+                        <div class="p-4 bg-gradient-to-br from-blue-50/60 to-transparent border border-blue-100/80 rounded-2xl space-y-2 hover:border-blue-300 transition-all">
+                            <div class="flex items-center gap-2 font-bold text-blue-800">
+                                <div class="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center"><i class="fa-solid fa-shield-halved text-xs"></i></div>
+                                Liquidity Optimization
+                            </div>
                             <p class="text-slate-600 leading-relaxed">Monitor operational cash flows closely and balance upfront pick-up collections to maintain robust financial stability.</p>
                         </div>
-                        <div class="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl space-y-1.5">
-                            <div class="flex items-center gap-2 font-bold text-purple-800"><i class="fa-solid fa-chart-line"></i> Payment Method Balancing</div>
-                            <p class="text-slate-600 leading-relaxed">Track digital payment channels (Zelle & PS) alongside cash transactions to accelerate bank reconciliations and auditing.</p>
+                        <div class="p-4 bg-gradient-to-br from-purple-50/60 to-transparent border border-purple-100/80 rounded-2xl space-y-2 hover:border-purple-300 transition-all">
+                            <div class="flex items-center gap-2 font-bold text-purple-800">
+                                <div class="w-7 h-7 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center"><i class="fa-solid fa-wallet text-xs"></i></div>
+                                Payment Balancing
+                            </div>
+                            <p class="text-slate-600 leading-relaxed">Track digital payment channels alongside cash transactions to accelerate bank reconciliations and auditing.</p>
                         </div>
-                        <div class="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl space-y-1.5">
-                            <div class="flex items-center gap-2 font-bold text-amber-800"><i class="fa-solid fa-user-gear"></i> Dispatch Allocation</div>
-                            <p class="text-slate-600 leading-relaxed">Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence and mitigate risks.</p>
+                        <div class="p-4 bg-gradient-to-br from-amber-50/60 to-transparent border border-amber-100/80 rounded-2xl space-y-2 hover:border-amber-300 transition-all">
+                            <div class="flex items-center gap-2 font-bold text-amber-800">
+                                <div class="w-7 h-7 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center"><i class="fa-solid fa-user-gear text-xs"></i></div>
+                                Dispatch Allocation
+                            </div>
+                            <p class="text-slate-600 leading-relaxed">Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence.</p>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div> <!-- END TAB 1: DASHBOARD -->
 
         <!-- TAB 2: OPERATIONS LEDGER (CRUD) -->
