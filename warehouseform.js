@@ -1,5 +1,5 @@
 /**
- * MovePro - Warehouse & Others Management Module
+ * Warehouse & Others Module - MovePro (Fixed Edit & Delete)
  */
 
 if (typeof window.WAREHOUSE_STORAGE_KEY === 'undefined') {
@@ -7,7 +7,7 @@ if (typeof window.WAREHOUSE_STORAGE_KEY === 'undefined') {
 }
 
 function loadWarehouseRecords() {
-    const saved = localStorage.getItem(window.WAREHOUSE_STORAGE_KEY);
+    let saved = localStorage.getItem(window.WAREHOUSE_STORAGE_KEY);
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
@@ -16,91 +16,63 @@ function loadWarehouseRecords() {
             console.error('Error parsing warehouse records:', e);
         }
     }
-    
-    const defaultData = [
-        { id: 'wh_1', date: "2026-06-04", services: "Flooring", amount: 2200, paymentType: "Cash", details: "Flooring installation and materials" },
-        { id: 'wh_2', date: "2026-06-05", services: "Palettes", amount: 2000, paymentType: "Cash", details: "Warehouse palettes purchase" },
-        { id: 'wh_3', date: "2026-09-05", services: "Rent", amount: 5500, paymentType: "Others", details: "Warehouse monthly rent" }
-    ];
-    localStorage.setItem(window.WAREHOUSE_STORAGE_KEY, JSON.stringify(defaultData));
-    return defaultData;
+    return [];
 }
+window.loadWarehouseRecords = loadWarehouseRecords;
 
 function saveWarehouseRecords(data) {
     localStorage.setItem(window.WAREHOUSE_STORAGE_KEY, JSON.stringify(data));
-    window.warehouseRecords = data;
 }
-
-let warehouseRecords = loadWarehouseRecords();
-window.warehouseRecords = warehouseRecords;
-
-function generateWarehouseRowsHTML() {
-    warehouseRecords = loadWarehouseRecords();
-    
-    if (!warehouseRecords || warehouseRecords.length === 0) {
-        return `
-            <tr>
-                <td colspan="6" class="p-12 text-center text-slate-400 text-xs">
-                    <i class="fa-solid fa-boxes-stacked text-3xl mb-2 block text-slate-300"></i>
-                    No warehouse records found. Click "Add Record" to create one.
-                </td>
-            </tr>
-        `;
-    }
-
-    return warehouseRecords.map((item, index) => `
-        <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
-            <td class="p-3.5 font-medium text-slate-800">${item.date || '-'}</td>
-            <td class="p-3.5 font-semibold text-slate-800">${item.services || '-'}</td>
-            <td class="p-3.5 font-bold text-emerald-600">$${parseFloat(item.amount || 0).toLocaleString()}</td>
-            <td class="p-3.5"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 text-[10px] font-bold">${item.paymentType || '-'}</span></td>
-            <td class="p-3.5 text-slate-600">${item.details || '-'}</td>
-            
-            <td class="p-3.5 text-center space-x-1">
-                <button onclick="editWarehouseRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer" title="Edit Record">
-                    <i class="fa-solid fa-pen-to-square text-xs"></i>
-                </button>
-                <button onclick="deleteWarehouseRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition cursor-pointer" title="Delete Record">
-                    <i class="fa-solid fa-trash-can text-xs"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
-window.generateWarehouseRowsHTML = generateWarehouseRowsHTML;
 
 function renderWarehouseTab() {
-    warehouseRecords = loadWarehouseRecords();
     const container = document.getElementById('tab-warehouse');
     if (!container) return;
 
+    const records = loadWarehouseRecords();
+
     container.innerHTML = `
-        <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-sm border border-slate-200">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs mb-6">
             <div>
-                <h3 class="font-bold text-slate-900 text-base">Warehouse and Others Management</h3>
-                <p class="text-xs text-slate-500">Manage warehouse expenses, labor, rent, and operational materials</p>
+                <h3 class="font-bold text-slate-900 text-base">Warehouse & Inventory Management</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Track equipment, gear, and supplies stock levels and expenses.</p>
             </div>
-            <button onclick="openWarehouseModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-2 cursor-pointer">
-                <i class="fa-solid fa-plus"></i>
-                <span>Add Record</span>
+            <button type="button" onclick="openWarehouseModal()" class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer">
+                <i class="fa-solid fa-plus"></i> Add Expense / Record
             </button>
         </div>
 
-        <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-sm border border-slate-200">
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs min-w-[1000px]">
-                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-[10px]">
                         <tr>
-                            <th class="p-3 text-left">Date</th>
-                            <th class="p-3 text-left">Service / Item</th>
-                            <th class="p-3 text-left">Amount</th>
-                            <th class="p-3 text-left">Payment Type</th>
-                            <th class="p-3 text-left">Details</th>
-                            <th class="p-3 text-center">Actions</th>
+                            <th class="p-3.5">Date</th>
+                            <th class="p-3.5">Category</th>
+                            <th class="p-3.5">Description</th>
+                            <th class="p-3.5">Method</th>
+                            <th class="p-3.5 text-right">Amount</th>
+                            <th class="p-3.5 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="warehouseTableBody" class="divide-y text-slate-700 bg-white">
-                        ${generateWarehouseRowsHTML()}
+                    <tbody id="warehouseTableBody" class="divide-y divide-slate-100 text-slate-700">
+                        ${records.length === 0 ? `<tr><td colspan="6" class="p-6 text-center text-slate-400">No warehouse records found</td></tr>` : 
+                          records.map((item, index) => `
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="p-3.5 font-medium">${item.date || '-'}</td>
+                                <td class="p-3.5 font-semibold text-slate-800">${item.services || '-'}</td>
+                                <td class="p-3.5 text-slate-600">${item.details || '-'}</td>
+                                <td class="p-3.5"><span class="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold">${item.paymentType || 'Cash'}</span></td>
+                                <td class="p-3.5 text-right font-bold text-purple-600">$${parseFloat(item.amount || 0).toLocaleString()}</td>
+                                <td class="p-3.5 text-center space-x-1">
+                                    <button type="button" onclick="editWarehouseRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer" title="Edit">
+                                        <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                    </button>
+                                    <button type="button" onclick="deleteWarehouseRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition cursor-pointer" title="Delete">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
                     </tbody>
                 </table>
             </div>
@@ -109,188 +81,52 @@ function renderWarehouseTab() {
 }
 window.renderWarehouseTab = renderWarehouseTab;
 
-function renderWarehouseModal() {
-    let modalContainer = document.getElementById('warehouseModal');
-    if (!modalContainer) {
-        modalContainer = document.createElement('div');
-        modalContainer.id = 'warehouseModal';
-        modalContainer.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4 overflow-y-auto';
-        document.body.appendChild(modalContainer);
-    }
-
-    modalContainer.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 transform transition-all">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-warehouse text-indigo-600"></i> <span id="warehouseModalTitle">Add Warehouse Record</span>
-                </h3>
-                <button onclick="closeWarehouseModal()" class="text-slate-400 hover:text-slate-600 transition p-1 cursor-pointer">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <form id="warehouseForm" onsubmit="handleWarehouseSubmit(event)" class="p-6 space-y-4">
-                <input type="hidden" id="warehouseRecordIndex" value="-1">
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Date <span class="text-red-500">*</span></label>
-                    <input type="date" id="warehouseDate" required class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition text-slate-700">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Services / Item <span class="text-red-500">*</span></label>
-                    <input type="text" id="warehouseServices" required placeholder="Enter service name" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition text-slate-700">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Amount <span class="text-red-500">*</span></label>
-                    <div class="flex items-center">
-                        <button type="button" onclick="adjustWarehouseNumber('warehouseAmount', -10)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-l-xl border border-r-0 border-slate-200 transition text-xs font-bold cursor-pointer">-</button>
-                        <input type="number" id="warehouseAmount" value="0" min="0" step="0.01" required class="w-full px-3 py-2.5 text-xs text-center bg-white border border-slate-200 focus:outline-none transition text-slate-700">
-                        <button type="button" onclick="adjustWarehouseNumber('warehouseAmount', 10)" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-r-xl border border-l-0 border-slate-200 transition text-xs font-bold cursor-pointer">+</button>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Payment type</label>
-                    <select id="warehousePaymentType" class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
-                        <option value="Cash">Cash</option>
-                        <option value="Zelle">Zelle</option>
-                        <option value="Cheque">Cheque</option>
-                        <option value="Others">Others</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Service Details</label>
-                    <textarea id="warehouseDetails" rows="3" placeholder="Enter service details..." class="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700"></textarea>
-                </div>
-
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="closeWarehouseModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition border border-slate-200 cursor-pointer">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition cursor-pointer">Save Record</button>
-                </div>
-            </form>
-        </div>
-    `;
-}
-
-function openWarehouseModal() {
-    renderWarehouseModal();
-    const modal = document.getElementById('warehouseModal');
-    const form = document.getElementById('warehouseForm');
-    const titleEl = document.getElementById('warehouseModalTitle');
-    const indexInput = document.getElementById('warehouseRecordIndex');
-    
-    if (form) form.reset();
-    if (titleEl) titleEl.innerText = 'Add Warehouse Record';
-    if (indexInput) indexInput.value = '-1';
-
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        modal.style.setProperty('display', 'flex', 'important');
-    }
-}
-window.openWarehouseModal = openWarehouseModal;
-
-function closeWarehouseModal() {
-    const modal = document.getElementById('warehouseModal');
-    if (modal) {
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-        modal.style.setProperty('display', 'none', 'important');
-    }
-}
-window.closeWarehouseModal = closeWarehouseModal;
-
-function editWarehouseRecord(index) {
-    renderWarehouseModal();
-    warehouseRecords = loadWarehouseRecords();
-    const record = warehouseRecords[index]; 
-    if (!record) return;
-
-    const indexInput = document.getElementById('warehouseRecordIndex');
-    const titleEl = document.getElementById('warehouseModalTitle');
-    
-    if (indexInput) indexInput.value = index;
-    if (titleEl) titleEl.innerText = 'Edit Warehouse Record';
-
-    document.getElementById('warehouseDate').value = record.date || '';
-    document.getElementById('warehouseServices').value = record.services || '';
-    document.getElementById('warehouseAmount').value = record.amount || 0;
-    document.getElementById('warehousePaymentType').value = record.paymentType || 'Cash';
-    document.getElementById('warehouseDetails').value = record.details || '';
-
-    const modal = document.getElementById('warehouseModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        modal.style.setProperty('display', 'flex', 'important');
-    }
-}
-window.editWarehouseRecord = editWarehouseRecord;
-
 function deleteWarehouseRecord(index) {
     if (!confirm('Are you sure you want to delete this warehouse record?')) return;
 
-    warehouseRecords = loadWarehouseRecords();
-    const deletedItem = warehouseRecords.splice(index, 1)[0];
-    saveWarehouseRecords(warehouseRecords);
+    let records = loadWarehouseRecords();
+    if (index < 0 || index >= records.length) return;
 
+    const deletedItem = records.splice(index, 1)[0];
+    saveWarehouseRecords(records);
+
+    // إرسال السجل إلى سلة المهملات
     const TRASH_KEY = 'movepro_trash_bin';
     let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
-    
     trashBin.unshift({
         ...deletedItem,
         recordType: 'warehouse',
         deletedAt: new Date().toISOString()
     });
-    
     localStorage.setItem(TRASH_KEY, JSON.stringify(trashBin));
-    
-    if (typeof renderWarehouseTab === 'function') renderWarehouseTab();
-    if (typeof renderTrashBin === 'function') renderTrashBin();
+
+    renderWarehouseTab();
     if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 }
 window.deleteWarehouseRecord = deleteWarehouseRecord;
 
-function adjustWarehouseNumber(elementId, step) {
-    const input = document.getElementById(elementId);
-    if (input) {
-        let currentValue = parseFloat(input.value) || 0;
-        let newValue = currentValue + step;
-        if (newValue < 0) newValue = 0;
-        input.value = newValue;
-    }
-}
-window.adjustWarehouseNumber = adjustWarehouseNumber;
+function editWarehouseRecord(index) {
+    let records = loadWarehouseRecords();
+    const item = records[index];
+    if (!item) return;
 
-function handleWarehouseSubmit(event) {
-    event.preventDefault();
-    warehouseRecords = loadWarehouseRecords();
-
-    const indexInput = document.getElementById('warehouseRecordIndex');
-    const editIndex = indexInput ? parseInt(indexInput.value, 10) : -1;
-
-    const recordData = {
-        id: editIndex >= 0 && warehouseRecords[editIndex] ? warehouseRecords[editIndex].id : 'wh_' + Date.now(),
-        date: document.getElementById('warehouseDate').value,
-        services: document.getElementById('warehouseServices').value.trim(),
-        amount: parseFloat(document.getElementById('warehouseAmount').value) || 0,
-        paymentType: document.getElementById('warehousePaymentType').value,
-        details: document.getElementById('warehouseDetails').value.trim()
-    };
-
-    if (editIndex >= 0 && editIndex < warehouseRecords.length) {
-        warehouseRecords[editIndex] = recordData;
-    } else {
-        warehouseRecords.unshift(recordData);
+    if (typeof openWarehouseModal === 'function') {
+        openWarehouseModal();
     }
 
-    saveWarehouseRecords(warehouseRecords);
-    closeWarehouseModal();
-    renderWarehouseTab();
-    if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
+    // تعبئة حقول النموذج بالتعديل
+    setTimeout(() => {
+        const indexField = document.getElementById('editWarehouseIndex');
+        if (indexField) indexField.value = index;
+
+        const titleEl = document.getElementById('warehouseModalTitle');
+        if (titleEl) titleEl.innerText = 'Edit Warehouse Record';
+
+        if (document.getElementById('warehouseDate')) document.getElementById('warehouseDate').value = item.date || '';
+        if (document.getElementById('warehouseService')) document.getElementById('warehouseService').value = item.services || '';
+        if (document.getElementById('warehouseDetails')) document.getElementById('warehouseDetails').value = item.details || '';
+        if (document.getElementById('warehousePaymentType')) document.getElementById('warehousePaymentType').value = item.paymentType || 'Cash';
+        if (document.getElementById('warehouseAmount')) document.getElementById('warehouseAmount').value = item.amount || 0;
+    }, 100);
 }
-window.handleWarehouseSubmit = handleWarehouseSubmit;
+window.editWarehouseRecord = editWarehouseRecord;
