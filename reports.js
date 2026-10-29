@@ -100,6 +100,89 @@ function getFilteredJobsData() {
 }
 window.getFilteredJobsData = getFilteredJobsData;
 
+// دالة حساب وإنشاء جدول إجمالي إيجارات الشاحنات المصفى حسب التاريخ
+function generateTruckRentalSummaryTableHTML() {
+    const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+    
+    const startDateVal = document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('filterEndDate')?.value;
+    const startDate = startDateVal ? new Date(startDateVal) : null;
+    const endDate = endDateVal ? new Date(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59);
+
+    let totalDays = 0;
+    let sumCash = 0;
+    let sumOther = 0;
+    let grandTotal = 0;
+    let filteredCount = 0;
+
+    rentals.forEach(r => {
+        if (r.date) {
+            const rDate = new Date(r.date);
+            if (startDate && rDate < startDate) return;
+            if (endDate && rDate > endDate) return;
+        }
+
+        filteredCount++;
+        const daysNum = parseInt(String(r.days || '0').replace(/[^0-9]/g, '')) || 0;
+        totalDays += daysNum;
+
+        const amount = parseCurrency(r.amount);
+        grandTotal += amount;
+
+        const paymentType = String(r.paymentType || '').toLowerCase();
+        if (paymentType.includes('cash')) {
+            sumCash += amount;
+        } else {
+            sumOther += amount;
+        }
+    });
+
+    return {
+        count: filteredCount,
+        totalDays: totalDays,
+        sumCash: sumCash,
+        sumOther: sumOther,
+        grandTotal: grandTotal,
+        html: `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
+                <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial Summary</h3>
+                        <p class="text-[11px] text-slate-400">Comprehensive summary of rental duration, cash payments, and total expenses</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                            Total Rental Records: <span class="text-emerald-600">${filteredCount}</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <table class="w-full text-left border-collapse text-[11px]">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                                <th class="p-2.5 border-r border-slate-200/60 text-center">Total Rental Days</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash Payments</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">Other Payments (Zelle/Check)</th>
+                                <th class="p-2.5 text-center bg-amber-600 text-white font-extrabold">Grand Total Rental Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-2.5 border-r text-center font-bold text-slate-800">${totalDays} Days</td>
+                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold bg-emerald-50/20">$${sumCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-blue-600 font-bold bg-blue-50/20">$${sumOther.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                <td class="p-2.5 text-center bg-amber-50 text-amber-900 font-extrabold text-xs">$${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `
+    };
+}
+
 function generateOfficialSummaryTable(filteredJobs) {
     const totalJobs = filteredJobs.length;
     const totalDeliveries = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
@@ -168,6 +251,8 @@ function generateOfficialSummaryTable(filteredJobs) {
         }
     });
 
+    const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
+
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
@@ -222,6 +307,9 @@ function generateOfficialSummaryTable(filteredJobs) {
                 </table>
             </div>
         </div>
+
+        <!-- 🌟 جدول ملخص إيجارات الشاحنات يظهر هنا تحت الجدول المالي مباشرة -->
+        ${rentalSummaryObj.html}
     `;
 }
 
@@ -515,6 +603,18 @@ function exportOfficialPDF() {
         }
     });
 
+    // حساب مجاميع إيجار الشاحنات لتقرير PDF
+    let rentalPdfDays = 0, rentalPdfCash = 0, rentalPdfOther = 0, rentalPdfTotal = 0;
+    filteredRentals.forEach(r => {
+        const daysNum = parseInt(String(r.days || '0').replace(/[^0-9]/g, '')) || 0;
+        rentalPdfDays += daysNum;
+        const amt = parseCurrency(r.amount);
+        rentalPdfTotal += amt;
+        const pType = String(r.paymentType || '').toLowerCase();
+        if (pType.includes('cash')) rentalPdfCash += amt;
+        else rentalPdfOther += amt;
+    });
+
     const printWindow = window.open('', '_blank');
     
     const htmlContent = `
@@ -532,6 +632,7 @@ function exportOfficialPDF() {
                 .table-pdf td { border: 1px solid #e2e8f0; padding: 5px; text-align: center; }
                 .page-break { page-break-before: always; }
                 .summary-header { background-color: #d6c3b3; color: #3f2e21; font-weight: bold; }
+                .rental-header { background-color: #f8fafc; color: #1e293b; font-weight: bold; }
             </style>
         </head>
         <body>
@@ -540,7 +641,8 @@ function exportOfficialPDF() {
                 <p class="text-xs font-semibold text-rose-800 mt-1">From Date: <span class="text-slate-800">${startDateVal}</span> &nbsp;&nbsp;|&nbsp;&nbsp; To Date: <span class="text-slate-800">${endDateVal}</span></p>
             </div>
 
-            <div class="mb-6">
+            <!-- 1. Official Period Financial Summary -->
+            <div class="mb-5">
                 <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Executive Financial Summary</h3>
                 <table class="table-pdf">
                     <thead>
@@ -573,6 +675,29 @@ function exportOfficialPDF() {
                             <td>$${sumPmoDeliveries.toLocaleString()}</td>
                             <td>$${sumDestZelle.toLocaleString()}</td>
                             <td class="bg-emerald-50 text-emerald-900 font-extrabold">$${sumTotalAfterDeposit.toLocaleString()}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 🌟 2. Private Truck Rental Financial Summary (يظهر هنا في الصفحة الأولى تحت الملخص مباشرة) -->
+            <div class="mb-6">
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Private Truck Rental Financial Summary (${filteredRentals.length} Records)</h3>
+                <table class="table-pdf">
+                    <thead>
+                        <tr class="rental-header">
+                            <th>Total Rental Days</th>
+                            <th class="text-emerald-700">Cash Payments</th>
+                            <th class="text-blue-700">Other Payments (Zelle/Check)</th>
+                            <th class="bg-amber-600 text-white">Grand Total Rental Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="font-bold text-slate-800">
+                            <td>${rentalPdfDays} Days</td>
+                            <td class="text-emerald-600">$${rentalPdfCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td class="text-blue-600">$${rentalPdfOther.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td class="bg-amber-50 text-amber-900 font-extrabold">$${rentalPdfTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         </tr>
                     </tbody>
                 </table>
