@@ -1,14 +1,11 @@
-/**
- * Private Truck Rental Module - MovePro (Optimized & Cleaned)
- */
 
+
+// إعداد المفتاح العام بشكل آمن بدون أي تكرار يعطل الملف
 if (typeof window.RENTALS_STORAGE_KEY === 'undefined') {
     window.RENTALS_STORAGE_KEY = 'movepro_private_truck_rentals';
 }
-const STORAGE_KEY = window.RENTALS_STORAGE_KEY;
-const forcedInitialRentals = [
 
-    
+const forcedInitialRentals = [
     { date: "6/24/2026", days: 24, amount: 6000, paymentType: "Cheque", paidBy: "Sharef", truckLabel: "24 days rental paid by Sharef" },
     { date: "7/9/2026", days: 13, amount: 3250, paymentType: "Cash", paidBy: "Abu Essa", truckLabel: "13 days rental paid to Abu Essa" },
     { date: "7/20/2026", days: 8, amount: 1860, paymentType: "Cash", paidBy: "Penski", truckLabel: "8 days rental paid by Penski" },
@@ -24,6 +21,32 @@ const forcedInitialRentals = [
     { date: "10/18/2026", days: 3, amount: 1720, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "3 days U-Haul rental" },
     { date: "10/24/2026", days: 2, amount: 1250, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "2 days U-Haul rental" }
 ];
+
+
+
+function loadPrivateTruckRentals() {
+    let saved = localStorage.getItem(window.RENTALS_STORAGE_KEY);
+    let rentals = [];
+    
+    if (!saved || JSON.parse(saved).length < forcedInitialRentals.length) {
+        localStorage.setItem(window.RENTALS_STORAGE_KEY, JSON.stringify(forcedInitialRentals));
+        rentals = [...forcedInitialRentals];
+    } else {
+        try {
+            const parsed = JSON.parse(saved);
+            rentals = Array.isArray(parsed) && parsed.length > 0 ? parsed : [...forcedInitialRentals];
+        } catch (e) {
+            console.error('Error parsing rentals:', e);
+            rentals = [...forcedInitialRentals];
+        }
+    }
+
+    return rentals.sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+function savePrivateTruckRentals(data) {
+    localStorage.setItem(window.RENTALS_STORAGE_KEY, JSON.stringify(data));
+}
 
 // Date Formatting Utilities
 function formatDateForInput(dateStr) {
