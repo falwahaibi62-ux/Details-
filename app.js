@@ -253,6 +253,13 @@ function parseHelpersDisplay(val) {
     return helpersMap[num] || '-';
 }
 
+function sanitizeCostValue(val) {
+    if (!val || val === '-' || val === '0') return 0;
+    let match = String(val).match(/\(([\d.]+)\)/);
+    if (match) return parseFloat(match[1]);
+    return parseFloat(String(val).replace(/[^0-9.]/g, '')) || 0;
+}
+
 function parseDriversDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
     let strVal = String(val).trim();
@@ -606,11 +613,19 @@ function updateDashboardAnalytics() {
         if (!window.masterJobs || window.masterJobs.length === 0) return;
 
         let totalRev = 0;
+        let validJobsCount = 0; // عداد للوظائف النشطة فقط (باستبعاد Cancel و None)
         const routeRevenueMap = {};
         const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0 };
         const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
         window.masterJobs.forEach(job => {
+            // 👈 استبعاد السجلات الملغية أو الفارغة من الحسابات المالية والتحليلات
+            if (job.jobNo && (job.jobNo.toLowerCase().includes('cancel') || job.jobNo.toLowerCase().includes('none'))) {
+                return; // تخطي هذا السجل والانتقال للسجل التالي
+            }
+
+            validJobsCount++; // زيادة عدد الوظائف النشطة الصحيحة
+
             let amt = 0;
             if (job.total) {
                 amt = parseFloat(String(job.total).replace(/[^0-9.]/g, '')) || 0;
@@ -638,14 +653,14 @@ function updateDashboardAnalytics() {
             });
         });
 
-        const completedJobsCount = window.masterJobs.length;
-        const avgJobVal = completedJobsCount > 0 ? (totalRev / completedJobsCount) : 0;
+        // استخدام عدد الوظائف النشطة (validJobsCount) بدلاً من الإجمالي الكلي لحساب المتوسط بدقة
+        const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
 
         const revEl = document.getElementById('dashTotalRevenue');
         if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
         const jobsTextEl = document.getElementById('dashCompletedJobsText');
-        if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${completedJobsCount} Active Dispatches`;
+        if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${validJobsCount} Active Dispatches`;
 
         const avgEl = document.getElementById('dashAvgJobValue');
         if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
@@ -670,7 +685,6 @@ function updateDashboardAnalytics() {
     }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
-
 function renderDashboardCharts(monthlyData, paymentData) {
     try {
         const ctxRevenue = document.getElementById('revenueChart');
