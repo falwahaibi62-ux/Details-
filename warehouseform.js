@@ -1,5 +1,5 @@
 /**
- * Warehouse & Others Module - MovePro (Updated & Synchronized)
+ * Warehouse & Others Module - MovePro (Fixed Modal, Edit, Delete & Sorting)
  */
 
 if (typeof window.WAREHOUSE_STORAGE_KEY === 'undefined') {
@@ -49,7 +49,7 @@ function loadWarehouseRecords() {
         }
     }
 
-    // ترتيب السجلات تلقائياً من التاريخ الأحدث (الأعلى) إلى الأقدم (الأسفل)[cite: 13]
+    // ترتيب السجلات تلقائياً من التاريخ الأحدث للأقدم
     records.sort((a, b) => {
         const dateA = new Date(a.date || 0);
         const dateB = new Date(b.date || 0);
@@ -63,6 +63,100 @@ window.loadWarehouseRecords = loadWarehouseRecords;
 function saveWarehouseRecords(data) {
     localStorage.setItem(window.WAREHOUSE_STORAGE_KEY, JSON.stringify(data));
 }
+
+// إنشاء النافذة المنبثقة برمجياً لضمان عدم اختفائها أو فشل فتحها
+function ensureWarehouseModalExists() {
+    let modal = document.getElementById('warehouseModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'warehouseModal';
+        modal.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4 overflow-y-auto';
+        modal.innerHTML = `
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 transform transition-all">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <h3 id="warehouseModalTitle" class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-warehouse text-amber-500"></i> Add Warehouse Expense
+                    </h3>
+                    <button type="button" onclick="closeWarehouseModal()" class="text-slate-400 hover:text-slate-600 transition p-1 cursor-pointer">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <form id="warehouseForm" onsubmit="handleWarehouseSubmit(event)" class="p-6 space-y-4 text-xs">
+                    <input type="hidden" id="editWarehouseIndex" value="-1">
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Date <span class="text-red-500">*</span></label>
+                        <input type="date" id="warehouseDate" required class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Category / Service <span class="text-red-500">*</span></label>
+                        <input type="text" id="warehouseService" required placeholder="e.g. Warehouse Labor" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Description / Details</label>
+                        <input type="text" id="warehouseDetails" placeholder="Enter description" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Payment Method</label>
+                        <select id="warehousePaymentType" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
+                            <option value="Cash">Cash</option>
+                            <option value="Zelle">Zelle</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="PMO">PMO</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Amount <span class="text-red-500">*</span></label>
+                        <input type="number" id="warehouseAmount" value="0" min="0" step="0.01" required class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="closeWarehouseModal()" class="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition border border-slate-200 cursor-pointer">Cancel</button>
+                        <button type="submit" class="px-5 py-2 font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition cursor-pointer">Save Record</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+}
+
+function openWarehouseModal(isEdit = false) {
+    ensureWarehouseModalExists();
+    const modal = document.getElementById('warehouseModal');
+    const form = document.getElementById('warehouseForm');
+    const titleEl = document.getElementById('warehouseModalTitle');
+
+    if (form && !isEdit) {
+        form.reset();
+        const indexField = document.getElementById('editWarehouseIndex');
+        if (indexField) indexField.value = '-1';
+        if (titleEl) titleEl.innerText = 'Add Warehouse Expense';
+    }
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.style.setProperty('display', 'flex', 'important');
+    }
+}
+window.openWarehouseModal = openWarehouseModal;
+
+function closeWarehouseModal() {
+    const modal = document.getElementById('warehouseModal');
+    if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        modal.style.setProperty('display', 'none', 'important');
+    }
+}
+window.closeWarehouseModal = closeWarehouseModal;
 
 function renderWarehouseTab() {
     const container = document.getElementById('tab-warehouse');
@@ -144,46 +238,11 @@ function deleteWarehouseRecord(index) {
 }
 window.deleteWarehouseRecord = deleteWarehouseRecord;
 
-// تحديث دالة فتح النافذة لدعم وضع التعديل وعدم مسح الحقول
-function openWarehouseModal(isEdit = false) {
-    if (typeof window.originalOpenWarehouseModal === 'function' && !isEdit) {
-        window.originalOpenWarehouseModal();
-        return;
-    }
-
-    let modal = document.getElementById('warehouseModal');
-    if (!modal) {
-        // إذا كانت الدالة الأصلية معرفة في ملف آخر
-        if (typeof window.originalOpenWarehouseModal === 'function') {
-            window.originalOpenWarehouseModal();
-        }
-        modal = document.getElementById('warehouseModal');
-    }
-
-    const form = document.getElementById('warehouseForm');
-    const titleEl = document.getElementById('warehouseModalTitle');
-
-    if (form && !isEdit) {
-        form.reset();
-        const indexField = document.getElementById('editWarehouseIndex');
-        if (indexField) indexField.value = '-1';
-        if (titleEl) titleEl.innerText = 'Add Warehouse Record';
-    }
-
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        modal.style.setProperty('display', 'flex', 'important');
-    }
-}
-window.openWarehouseModal = openWarehouseModal;
-
 function editWarehouseRecord(index) {
     let records = loadWarehouseRecords();
     const item = records[index];
     if (!item) return;
 
-    // فتح النافذة في وضع التعديل (true) لمنع تفريغ الحقول
     openWarehouseModal(true);
 
     setTimeout(() => {
@@ -202,7 +261,6 @@ function editWarehouseRecord(index) {
 }
 window.editWarehouseRecord = editWarehouseRecord;
 
-// دالة الحفظ وإرسال التعديل للنموذج
 function handleWarehouseSubmit(event) {
     if (event) event.preventDefault();
 
@@ -229,16 +287,9 @@ function handleWarehouseSubmit(event) {
     }
 
     saveWarehouseRecords(records);
-    
-    // إغلاق النافذة
-    const modal = document.getElementById('warehouseModal');
-    if (modal) {
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-        modal.style.setProperty('display', 'none', 'important');
-    }
-
+    closeWarehouseModal();
     renderWarehouseTab();
+    
     if (typeof updateDashboardAnalytics === 'function') {
         updateDashboardAnalytics();
     }
