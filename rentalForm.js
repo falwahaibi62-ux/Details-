@@ -23,6 +23,37 @@ const forcedInitialRentals = [
     { date: "10/24/2026", days: 2, amount: 1250, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "2 days U-Haul rental" }
 ];
 
+// دالة تحويل التاريخ من صيغة الجدول (M/D/YYYY) إلى صيغة حقل الإدخال (YYYY-MM-DD)
+function formatDateForInput(dateStr) {
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        let month = parts[0].padStart(2, '0');
+        let day = parts[1].padStart(2, '0');
+        let year = parts[2];
+        return `${year}-${month}-${day}`;
+    }
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    return dateStr;
+}
+
+// دالة تحويل التاريخ من حقل الإدخال (YYYY-MM-DD) إلى صيغة الجدول (M/D/YYYY)
+function formatDateToSlash(dateStr) {
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [year, month, day] = dateStr.split('-');
+        return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
+    }
+    return dateStr;
+}
+
 function loadPrivateTruckRentals() {
     let storageKey = window.RENTALS_STORAGE_KEY || 'movepro_private_truck_rentals';
     let saved = localStorage.getItem(storageKey);
@@ -61,7 +92,7 @@ function renderPrivateTruckRentalTab() {
                 </h2>
                 <p class="text-xs text-slate-500 mt-0.5">Manage and track private truck rental transactions and records</p>
             </div>
-            <button onclick="openPrivateTruckModal()" class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer">
+            <button type="button" onclick="openPrivateTruckModal()" class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer">
                 <i class="fa-solid fa-plus"></i> Add New Rental
             </button>
         </div>
@@ -106,10 +137,10 @@ function generateRentalRowsHTML() {
             <td class="p-3.5 text-slate-600">${item.paidBy || '-'}</td>
             <td class="p-3.5 text-slate-600">${item.truckLabel || '-'}</td>
             <td class="p-3.5 text-center space-x-1">
-                <button onclick="editRentalRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer" title="Edit">
+                <button type="button" onclick="editRentalRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer" title="Edit">
                     <i class="fa-solid fa-pen-to-square text-xs"></i>
                 </button>
-                <button onclick="deleteRentalRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition cursor-pointer" title="Delete">
+                <button type="button" onclick="deleteRentalRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition cursor-pointer" title="Delete">
                     <i class="fa-solid fa-trash text-xs"></i>
                 </button>
             </td>
@@ -132,7 +163,7 @@ function editRentalRecord(index) {
     if (modalTitle) modalTitle.innerText = 'Edit Private Truck Rental';
 
     setTimeout(() => {
-        if (document.getElementById('rentalDate')) document.getElementById('rentalDate').value = item.date || '';
+        if (document.getElementById('rentalDate')) document.getElementById('rentalDate').value = formatDateForInput(item.date);
         if (document.getElementById('rentalDays')) document.getElementById('rentalDays').value = item.days || 0;
         if (document.getElementById('rentalAmount')) document.getElementById('rentalAmount').value = item.amount || 0;
         if (document.getElementById('rentalPaymentType')) document.getElementById('rentalPaymentType').value = item.paymentType || 'Cash';
@@ -148,6 +179,8 @@ function deleteRentalRecord(index) {
     }
 
     let rentals = loadPrivateTruckRentals();
+    if (index < 0 || index >= rentals.length) return;
+
     const deletedItem = rentals.splice(index, 1)[0];
     savePrivateTruckRentals(rentals);
 
@@ -188,7 +221,7 @@ function renderPrivateTruckModal() {
                 <h3 id="rentalModalTitle" class="text-base font-bold text-slate-800 flex items-center gap-2">
                     <i class="fa-solid fa-truck-moving text-indigo-600"></i> Add Private Truck Rental
                 </h3>
-                <button onclick="closePrivateTruckModal()" class="text-slate-400 hover:text-slate-600 transition p-1 cursor-pointer">
+                <button type="button" onclick="closePrivateTruckModal()" class="text-slate-400 hover:text-slate-600 transition p-1 cursor-pointer">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
@@ -263,7 +296,6 @@ function openPrivateTruckModal(isEdit = false) {
     const form = document.getElementById('privateTruckForm');
     const titleEl = document.getElementById('rentalModalTitle');
 
-    // إذا لم يكن وضع تعديل، نقوم بتفريغ النموذج تماماً
     if (form && !isEdit) {
         form.reset();
         const indexField = document.getElementById('editRentalIndex');
@@ -307,8 +339,11 @@ function handlePrivateTruckSubmit(event) {
     const indexField = document.getElementById('editRentalIndex');
     const index = indexField ? parseInt(indexField.value, 10) : -1;
 
+    const rawDate = document.getElementById('rentalDate').value;
+    const formattedDate = formatDateToSlash(rawDate);
+
     const newRecord = {
-        date: document.getElementById('rentalDate').value,
+        date: formattedDate,
         days: parseFloat(document.getElementById('rentalDays').value) || 0,
         amount: parseFloat(document.getElementById('rentalAmount').value) || 0,
         paymentType: document.getElementById('rentalPaymentType').value,
