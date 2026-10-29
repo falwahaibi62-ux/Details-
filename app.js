@@ -690,6 +690,9 @@ function updateDashboardAnalytics() {
         const avgEl = document.getElementById('dashAvgJobValue');
         if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
 
+        const dieselEl = document.getElementById('dashTotalDiesel');
+        if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
+
         const topCorridorsContainer = document.getElementById('topCorridorsContainer');
         if (topCorridorsContainer) {
             const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
