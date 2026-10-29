@@ -3,10 +3,18 @@
  * Centralized LocalStorage keys and data persistence handlers.
  */
 
-const STORAGE_KEY = 'movePro_masterJobs';
-const TRASH_STORAGE_KEY = 'movepro_trash_bin'; 
-const RENTALS_STORAGE_KEY = 'movepro_private_truck_rentals';
-const WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
+if (typeof window.STORAGE_KEY === 'undefined') {
+    window.STORAGE_KEY = 'movePro_masterJobs';
+}
+if (typeof window.TRASH_STORAGE_KEY === 'undefined') {
+    window.TRASH_STORAGE_KEY = 'movepro_trash_bin';
+}
+if (typeof window.RENTALS_STORAGE_KEY === 'undefined') {
+    window.RENTALS_STORAGE_KEY = 'movepro_private_truck_rentals';
+}
+if (typeof window.WAREHOUSE_STORAGE_KEY === 'undefined') {
+    window.WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
+}
 
 // --- Master Jobs Management ---
 function loadMasterJobs() {
