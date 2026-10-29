@@ -271,34 +271,78 @@
         </div> <!-- END TAB 2: JOBS -->
 
         <!-- TAB 3: PRIVATE TRUCK RENTAL -->
-        <div id="tab-rentals" class="hidden space-y-6 w-full flex flex-col"> 
-            <div class="flex justify-between items-center bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+       <div id="truckRentalView" class="view-section hidden space-y-6">
+            
+            <!-- 1. Header & Actions -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                 <div>
-                    <h2 class="text-base font-bold text-slate-900">Truck Rentals Management</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Manage and track all truck rental records and details.</p>
+                    <h2 class="text-xl font-bold text-slate-800">Private Truck Rental Management</h2>
+                    <p class="text-xs text-slate-500 mt-1">Manage and track private truck rental transactions and records</p>
                 </div>
+                <button onclick="openRentalModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition shadow-sm">
+                    <i class="fa-solid fa-plus"></i> Add New Rental
+                </button>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+            <!-- 2. 🌟 ضع جدول الملخص الإجمالي هنا (الكود الجديد) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4">
+                <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial Summary</h3>
+                        <p class="text-[11px] text-slate-400">Comprehensive summary of rental duration, cash payments, and total expenses</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                            Total Rental Records: <span id="rentalTotalRecordsCount" class="text-emerald-600">0</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <table class="w-full text-left border-collapse text-[11px]">
                         <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
-                                <th class="p-3 font-semibold">Date</th>
-                                <th class="p-3 font-semibold">Type</th>
-                                <th class="p-3 font-semibold">Truck Label</th>
-                                <th class="p-3 font-semibold">Days</th>
-                                <th class="p-3 font-semibold">Paid By</th>
-                                <th class="p-3 font-semibold">Amount</th>
-                                <th class="p-3 text-right font-semibold">Actions</th>
+                            <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                                <th class="p-2.5 border-r border-slate-200/60 text-center">Total Rental Days</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash Payments</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">Other Payments (Zelle/Check)</th>
+                                <th class="p-2.5 text-center bg-amber-600 text-white font-extrabold">Grand Total Rental Cost</th>
                             </tr>
                         </thead>
-                        <tbody id="rentalTableBody" class="divide-y divide-slate-100"></tbody>
+                        <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td id="sumRentalDaysCell" class="p-2.5 border-r text-center font-bold text-slate-800">0 Days</td>
+                                <td id="sumRentalCashCell" class="p-2.5 border-r text-center text-emerald-600 font-bold bg-emerald-50/20">$0.00</td>
+                                <td id="sumRentalOtherCell" class="p-2.5 border-r text-center text-blue-600 font-bold bg-blue-50/20">$0.00</td>
+                                <td id="sumRentalGrandTotalCell" class="p-2.5 text-center bg-amber-50 text-amber-900 font-extrabold text-xs">$0.00</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
-        </div> <!-- END TAB 3: RENTALS -->
 
+            <!-- 3. الجدول القديم الخاص بالسجلات التفصيلية -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 font-bold uppercase border-b border-slate-200 text-[11px]">
+                                <th class="p-4">Date</th>
+                                <th class="p-4">No. of Days</th>
+                                <th class="p-4">Amount</th>
+                                <th class="p-4">Payment Type</th>
+                                <th class="p-4">Paid By</th>
+                                <th class="p-4">Truck Label</th>
+                                <th class="p-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="truckRentalTableBody" class="divide-y divide-slate-100 font-medium text-slate-700">
+                            <!-- Rows injected via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
         <!-- TAB 4: WAREHOUSE -->
         <div id="tab-warehouse" class="hidden space-y-6 w-full flex flex-col">
             <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
