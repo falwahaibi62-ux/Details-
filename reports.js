@@ -674,6 +674,73 @@ function generatePaymentMethodsSummaryTableHTML() {
 window.generatePaymentMethodsSummaryTableHTML = generatePaymentMethodsSummaryTableHTML;
 
 
+function showOthersDetailedReport() {
+    const filteredJobs = getFilteredJobsData();
+    const methods = ["Cash", "Zelle", "Cheque", "PMO", "BC", "PC", "CC", "WT"];
+    
+    // استخراج رحلات Others فقط
+    const othersJobs = filteredJobs.filter(job => {
+        const paymentField = String(job.paymentType || job.pu || job.dest || '').toLowerCase();
+        const amount = parseCurrency(job.total);
+        const matched = methods.some(m => paymentField.includes(m.toLowerCase()));
+        return !matched && amount > 0;
+    });
+
+    if (othersJobs.length === 0) {
+        alert("لا توجد سجلات تطابق بند Others للفترة المحددة.");
+        return;
+    }
+
+    let totalOthersAmount = 0;
+    const rows = othersJobs.map(j => {
+        const amt = parseCurrency(j.total);
+        totalOthersAmount += amt;
+        return `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-2 text-center font-bold">${j.jobNo || 'N/A'}</td>
+                <td class="p-2 text-center">${j.date || ''}</td>
+                <td class="p-2 text-center">${j.pu || '-'} / ${j.dest || '-'}</td>
+                <td class="p-2 text-center font-extrabold text-emerald-700">$${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // إنشاء نافذة منبثقة (Modal) لعرض التقرير حسب الطلب
+    const modalHTML = `
+        <div id="othersReportModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                <div class="p-4 bg-slate-800 text-white flex justify-between items-center">
+                    <h3 class="font-bold text-sm">Detailed Others Payment Report (${othersJobs.length} Jobs)</h3>
+                    <button onclick="document.getElementById('othersReportModal').remove()" class="text-white hover:text-red-400 font-bold text-lg">✕</button>
+                </div>
+                <div class="p-4 overflow-y-auto flex-1">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-bold border-b">
+                                <th class="p-2 text-center">Job No</th>
+                                <th class="p-2 text-center">Date</th>
+                                <th class="p-2 text-center">Payment / Details</th>
+                                <th class="p-2 text-center">Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-4 bg-slate-50 border-t flex justify-between items-center font-bold text-xs">
+                    <span>Grand Total: <span class="text-emerald-700 text-sm">$${totalOthersAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></span>
+                    <button onclick="document.getElementById('othersReportModal').remove()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-1.5 rounded-xl">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+window.showOthersDetailedReport = showOthersDetailedReport;
+
+
 /**
  * MovePro - Professional PDF Generation Engine (Includes Jobs, Rentals, and Warehouse)
  */
