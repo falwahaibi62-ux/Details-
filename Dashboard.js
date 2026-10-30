@@ -3,8 +3,6 @@
  */
 
 // Global Chart Instances
-
-// في بداية ملف Dashboard.js
 if (typeof window.revenueChartInstance === 'undefined') {
     window.revenueChartInstance = null;
 }
@@ -28,33 +26,31 @@ function updateDashboardAnalytics() {
     }
 
     let totalRev = 0;
-    let totalDieselCost = 0; // متغير لحساب إجمالي الديزل بدقة
-    let validJobsCount = 0;  // عداد للوظائف النشطة فقط (باستبعاد Cancel و None)
+    let totalDieselCost = 0; 
+    let validJobsCount = 0;  
     const routeRevenueMap = {};
     
-    const paymentMethodMap = { 
-        Cash: 0, 
-        Zelle: 0, 
-        Cheque: 0, 
-        PMO: 0, 
-        BC: 0, 
-        PC: 0, 
-        CC: 0, 
-        WT: 0, 
-        Others: 0 
+    const paymentMethodMap = {  
+        Cash: 0,  
+        Zelle: 0,  
+        Cheque: 0,  
+        PMO: 0,  
+        BC: 0,  
+        PC: 0,  
+        CC: 0,  
+        WT: 0,  
+        Others: 0  
     };
     
     const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     masterJobs.forEach(job => {
-        // استبعاد السجلات الملغية أو الفارغة من الحسابات المالية والتحليلات
         if (job.jobNo && (job.jobNo.toLowerCase().includes('cancel') || job.jobNo.toLowerCase().includes('none'))) {
-            return; // تخطي هذا السجل والانتقال للسجل التالي
+            return; 
         }
 
-        validJobsCount++; // زيادة عدد الوظائف النشطة الصحيحة
+        validJobsCount++; 
 
-        // حساب الديزل باستخدام دالة التحليل المتاحة
         if (typeof parseAndSumDiesel === 'function') {
             totalDieselCost += parseAndSumDiesel(job.diesel);
         } else {
@@ -97,7 +93,6 @@ function updateDashboardAnalytics() {
 
     const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
 
-    // تحديث بطاقات الـ KPI
     const revEl = document.getElementById('dashTotalRevenue');
     if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
@@ -107,11 +102,9 @@ function updateDashboardAnalytics() {
     const avgEl = document.getElementById('dashAvgJobValue');
     if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
 
-    // تحديث بطاقة إجمالي الديزل في الواجهة
     const dieselEl = document.getElementById('dashTotalDiesel');
     if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
 
-    // تحديث ممرات الإيرادات العليا
     const topCorridorsContainer = document.getElementById('topCorridorsContainer');
     if (topCorridorsContainer) {
         const sortedRoutes = Object.entries(routeRevenueMap)
@@ -133,7 +126,6 @@ function updateDashboardAnalytics() {
         }
     }
 
-    // استدعاء رسم المخططات
     if (typeof renderDashboardCharts === 'function') {
         renderDashboardCharts(monthlyRev, paymentMethodMap);
     }
@@ -144,10 +136,11 @@ function renderDashboardCharts(monthlyData, paymentData) {
     // 1. مخطط الإيرادات الشهرية (Bar Chart)
     const ctxRevenue = document.getElementById('revenueChart');
     if (ctxRevenue) {
-        if (e) {
-            e.destroy();
+        // تم التصحيح هنا لاستخدام window.revenueChartInstance بوضوح
+        if (window.revenueChartInstance) {
+            window.revenueChartInstance.destroy();
         }
-        revenueChartInstance = new Chart(ctxRevenue, {
+        window.revenueChartInstance = new Chart(ctxRevenue, {
             type: 'bar',
             data: {
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -174,8 +167,8 @@ function renderDashboardCharts(monthlyData, paymentData) {
     // 2. مخطط قنوات الدفع (Doughnut Chart)
     const ctxPayment = document.getElementById('paymentMixChart');
     if (ctxPayment) {
-        if (paymentMixChartInstance) {
-            paymentMixChartInstance.destroy();
+        if (window.paymentMixChartInstance) {
+            window.paymentMixChartInstance.destroy();
         }
         
         const paymentColors = [
@@ -183,7 +176,7 @@ function renderDashboardCharts(monthlyData, paymentData) {
             '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b'
         ];
 
-        paymentMixChartInstance = new Chart(ctxPayment, {
+        window.paymentMixChartInstance = new Chart(ctxPayment, {
             type: 'doughnut',
             data: {
                 labels: Object.keys(paymentData),
