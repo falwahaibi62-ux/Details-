@@ -53,10 +53,12 @@ function loadPrivateTruckRentals() {
 
     return rentals.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 }
+window.loadPrivateTruckRentals = loadPrivateTruckRentals;
 
 function savePrivateTruckRentals(data) {
     localStorage.setItem(window.RENTALS_STORAGE_KEY, JSON.stringify(data));
 }
+window.savePrivateTruckRentals = savePrivateTruckRentals;
 
 // 3. Date Utility Functions
 function formatDateForInput(dateStr) {
@@ -64,7 +66,20 @@ function formatDateForInput(dateStr) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
     const parts = dateStr.split('/');
     if (parts.length === 3) {
-        return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`; } const d = new Date(dateStr); if (!isNaN(d.getTime())) { return d.toISOString().split('T')[0]; } return dateStr; }  function formatDateToSlash(dateStr) { if (!dateStr) return ''; if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) { const [year, month, day] = dateStr.split('-'); return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
+        return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+    }
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+        return d.toISOString().split('T')[0];
+    }
+    return dateStr;
+}
+
+function formatDateToSlash(dateStr) {
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [year, month, day] = dateStr.split('-');
+        return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
     }
     return dateStr;
 }
@@ -74,7 +89,6 @@ function renderPrivateTruckRentalTab() {
     const container = document.getElementById('tab-rentals') || document.getElementById('tab-private-truck-rental');
     if (!container) return;
 
-    // ضبط الحاوية الرئيسية لتكون عمودية ومتناسقة بالكامل
     container.className = "view-section hidden space-y-6 w-full max-w-full";
 
     container.innerHTML = `
@@ -182,9 +196,12 @@ function renderTruckRentalSummary() {
     };
 
     setElementText('rentalTotalRecordsCount', rentals.length);
-    setElementText('sumRentalDaysCell', `${totalDays} Days`); setElementText('sumRentalCashCell', `$${sumCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
-    setElementText('sumRentalOtherCell', `$${sumOther.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`); setElementText('sumRentalGrandTotalCell', `$${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+    setElementText('sumRentalDaysCell', `${totalDays} Days`); 
+    setElementText('sumRentalCashCell', `$${sumCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+    setElementText('sumRentalOtherCell', `$${sumOther.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`); 
+    setElementText('sumRentalGrandTotalCell', `$${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
 }
+window.renderTruckRentalSummary = renderTruckRentalSummary;
 
 function generateRentalRowsHTML() {
     const rentals = loadPrivateTruckRentals(); 
@@ -196,7 +213,18 @@ function generateRentalRowsHTML() {
     return rentals.map((item, index) => `
         <tr class="hover:bg-slate-50 transition border-b border-slate-100">
             <td class="p-3.5 font-medium text-slate-800">${item.date || '-'}</td>
-            <td class="p-3.5 text-slate-600">${item.days \vert{}\vert{} 0} Days</td> <td class="p-3.5 text-emerald-700 font-bold">$${parseFloat(item.amount || 0).toLocaleString()}</td>
+            <td class="p-3.5 text-slate-600">${item.days || 0} Days</td>
+            <td class="p-3.5 text-emerald-700 font-bold">$${parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             <td class="p-3.5"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">${item.paymentType || '-'}</span></td>
             <td class="p-3.5 text-slate-600">${item.paidBy || '-'}</td>
             <td class="p-3.5 text-slate-600">${item.truckLabel || '-'}</td>
+            <td class="p-3.5 text-center">
+                <div class="flex items-center justify-center space-x-1">
+                    <button type="button" onclick="editPrivateTruckRental(${index})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer" title="Edit Rental"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button type="button" onclick="deletePrivateTruckRental(${index})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Delete Rental"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+window.generateRentalRowsHTML = generateRentalRowsHTML;
