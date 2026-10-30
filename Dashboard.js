@@ -9,9 +9,9 @@ if (typeof window.revenueChartInstance === 'undefined') {
     window.revenueChartInstance = null;
 }
 
-
-let revenueChartInstance = null;
-let paymentMixChartInstance = null;
+if (typeof window.paymentMixChartInstance === 'undefined') {
+    window.paymentMixChartInstance = null;
+}
 
 function updateDashboardAnalytics() {
     if (!window.masterJobs || !Array.isArray(window.masterJobs) || window.masterJobs.length === 0) {
@@ -144,8 +144,8 @@ function renderDashboardCharts(monthlyData, paymentData) {
     // 1. مخطط الإيرادات الشهرية (Bar Chart)
     const ctxRevenue = document.getElementById('revenueChart');
     if (ctxRevenue) {
-        if (revenueChartInstance) {
-            revenueChartInstance.destroy();
+        if (e) {
+            e.destroy();
         }
         revenueChartInstance = new Chart(ctxRevenue, {
             type: 'bar',
