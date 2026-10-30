@@ -1,6 +1,6 @@
 /**
  * MovePro - Private Truck Rental Module
- * Optimized & Hardened Core Logic
+ * Optimized & Hardened Core Logic (Complete Standalone Implementation)
  */
 
 // 1. Safe Initialization of Keys & Data Structure
@@ -74,6 +74,7 @@ function formatDateForInput(dateStr) {
     }
     return dateStr;
 }
+window.formatDateForInput = formatDateForInput;
 
 function formatDateToSlash(dateStr) {
     if (!dateStr) return '';
@@ -83,13 +84,15 @@ function formatDateToSlash(dateStr) {
     }
     return dateStr;
 }
+window.formatDateToSlash = formatDateToSlash;
 
 // 4. Interface Rendering Function
 function renderPrivateTruckRentalTab() {
     const container = document.getElementById('tab-rentals') || document.getElementById('tab-private-truck-rental');
     if (!container) return;
 
-    container.className = "view-section hidden space-y-6 w-full max-w-full";
+    // ضبط التنسيق العمودي لمنع التخربط الأفقي
+    container.className = "view-section hidden flex flex-col space-y-6 w-full max-w-full";
 
     container.innerHTML = `
         <!-- 1. Header & Actions -->
@@ -117,7 +120,7 @@ function renderPrivateTruckRentalTab() {
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs w-full">
                 <div class="p-4 bg-slate-50 rounded-xl border border-slate-200/60 text-center">
                     <span class="text-[10px] uppercase font-bold text-slate-500 block">Total Rental Days</span>
                     <span id="sumRentalDaysCell" class="text-lg font-extrabold text-slate-800 mt-1 block">0 Days</span>
@@ -161,9 +164,11 @@ function renderPrivateTruckRentalTab() {
     `;
 
     renderTruckRentalSummary();
+    injectPrivateTruckModalHTML();
 }
 window.renderPrivateTruckRentalTab = renderPrivateTruckRentalTab;
 
+// 5. Summary Calculations
 function renderTruckRentalSummary() {
     const rentals = loadPrivateTruckRentals();
     
@@ -203,6 +208,7 @@ function renderTruckRentalSummary() {
 }
 window.renderTruckRentalSummary = renderTruckRentalSummary;
 
+// 6. Table Rows Generator
 function generateRentalRowsHTML() {
     const rentals = loadPrivateTruckRentals(); 
 
@@ -228,3 +234,168 @@ function generateRentalRowsHTML() {
     `).join('');
 }
 window.generateRentalRowsHTML = generateRentalRowsHTML;
+
+// 7. Dynamic Modal Injection & CRUD Operations
+function injectPrivateTruckModalHTML() {
+    if (document.getElementById('privateTruckModal')) return;
+
+    const modalDiv = document.createElement('div');
+    modalDiv.id = 'privateTruckModal';
+    modalDiv.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden justify-center items-center p-4 z-50';
+
+    modalDiv.innerHTML = `
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-5 border border-slate-100">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 id="privateTruckModalTitle" class="text-base font-bold text-slate-800">Add New Truck Rental</h3>
+                <button type="button" onclick="closePrivateTruckModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+            </div>
+            
+            <form id="privateTruckForm" onsubmit="savePrivateTruckRental(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="rentalEditIndex" value="-1">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Date</label>
+                        <input type="date" id="rentalDate" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Number of Days</label>
+                        <input type="number" min="1" id="rentalDays" placeholder="e.g. 1" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Amount ($)</label>
+                        <input type="number" step="0.01" id="rentalAmount" placeholder="e.g. 500" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Payment Type</label>
+                        <select id="rentalPaymentType" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 bg-white font-semibold">
+                            <option value="Cash">Cash</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Zelle">Zelle</option>
+                            <option value="Card">Card</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Paid By</label>
+                        <input type="text" id="rentalPaidBy" placeholder="e.g. U-Haul, Sharef" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Truck Label / Note</label>
+                        <input type="text" id="rentalTruckLabel" placeholder="e.g. 1 day rental" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 border-t pt-4">
+                    <button type="button" onclick="closePrivateTruckModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition shadow-sm">Save Rental</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modalDiv);
+}
+
+function openPrivateTruckModal() {
+    injectPrivateTruckModalHTML();
+    const modal = document.getElementById('privateTruckModal');
+    const form = document.getElementById('privateTruckForm');
+    const editIndex = document.getElementById('rentalEditIndex');
+    const title = document.getElementById('privateTruckModalTitle');
+
+    if (form) form.reset();
+    if (editIndex) editIndex.value = "-1";
+    if (title) title.innerText = "Add New Truck Rental";
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+window.openPrivateTruckModal = openPrivateTruckModal;
+
+function closePrivateTruckModal() {
+    const modal = document.getElementById('privateTruckModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+window.closePrivateTruckModal = closePrivateTruckModal;
+
+function savePrivateTruckRental(e) {
+    if (e) e.preventDefault();
+
+    const editIndex = parseInt(document.getElementById('rentalEditIndex').value, 10);
+    const dateRaw = document.getElementById('rentalDate').value;
+    const days = parseInt(document.getElementById('rentalDays').value, 10) || 1;
+    const amount = parseFloat(document.getElementById('rentalAmount').value) || 0;
+    const paymentType = document.getElementById('rentalPaymentType').value;
+    const paidBy = document.getElementById('rentalPaidBy').value.trim();
+    const truckLabel = document.getElementById('rentalTruckLabel').value.trim();
+
+    const record = {
+        date: formatDateToSlash(dateRaw),
+        days: days,
+        amount: amount,
+        paymentType: paymentType,
+        paidBy: paidBy,
+        truckLabel: truckLabel || `${days} day(s) rental`
+    };
+
+    let rentals = loadPrivateTruckRentals();
+
+    if (editIndex >= 0 && editIndex < rentals.length) {
+        rentals[editIndex] = record;
+    } else {
+        rentals.unshift(record);
+    }
+
+    savePrivateTruckRentals(rentals);
+    closePrivateTruckModal();
+    
+    // إعادة التحديث والمزامنة
+    const tbody = document.getElementById('truckRentalTableBody');
+    if (tbody) tbody.innerHTML = generateRentalRowsHTML();
+    renderTruckRentalSummary();
+}
+window.savePrivateTruckRental = savePrivateTruckRental;
+
+function editPrivateTruckRental(index) {
+    const rentals = loadPrivateTruckRentals();
+    if (index < 0 || index >= rentals.length) return;
+
+    const item = rentals[index];
+    openPrivateTruckModal();
+
+    document.getElementById('privateTruckModalTitle').innerText = "Edit Truck Rental Record";
+    document.getElementById('rentalEditIndex').value = index;
+    document.getElementById('rentalDate').value = formatDateForInput(item.date);
+    document.getElementById('rentalDays').value = item.days || 1;
+    document.getElementById('rentalAmount').value = item.amount || 0;
+    document.getElementById('rentalPaymentType').value = item.paymentType || 'Cash';
+    document.getElementById('rentalPaidBy').value = item.paidBy || '';
+    document.getElementById('rentalTruckLabel').value = item.truckLabel || '';
+}
+window.editPrivateTruckRental = editPrivateTruckRental;
+
+function deletePrivateTruckRental(index) {
+    if (!confirm('Are you sure you want to delete this rental record?')) return;
+
+    let rentals = loadPrivateTruckRentals();
+    if (index >= 0 && index < rentals.length) {
+        rentals.splice(index, 1);
+        savePrivateTruckRentals(rentals);
+
+        const tbody = document.getElementById('truckRentalTableBody');
+        if (tbody) tbody.innerHTML = generateRentalRowsHTML();
+        renderTruckRentalSummary();
+    }
+}
+window.deletePrivateTruckRental = deletePrivateTruckRental;
