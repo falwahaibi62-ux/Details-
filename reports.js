@@ -292,6 +292,9 @@ function generateOfficialSummaryTable(filteredJobs) {
     });
 
     const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
+    
+    // 🌟 توليد جدول إجماليات طرق الدفع الجديد
+    const paymentSummaryObj = generatePaymentMethodsSummaryTableHTML();
 
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
@@ -349,6 +352,8 @@ function generateOfficialSummaryTable(filteredJobs) {
         </div>
 
         ${rentalSummaryObj.html}
+
+        ${paymentSummaryObj.html}
     `;
 }
 
