@@ -2,10 +2,13 @@
  * MovePro Storage Manager
  * Centralized LocalStorage keys and data persistence handlers.
  */
-if (typeof window.saveTrash === 'undefined') {
-    window.saveTrash = function(/* معاملات الدالة هنا */) { ... };
-}
 
+
+if (typeof window.saveTrash === 'undefined') {
+    window.saveTrash = function(/* parameters here */) {
+        // Function body / implementation
+    };
+}
 if (typeof window.STORAGE_KEY === 'undefined') {
     window.STORAGE_KEY = 'movePro_masterJobs';
 }
