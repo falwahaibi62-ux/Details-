@@ -361,7 +361,7 @@ window.renderJobsCRUD = renderJobsCRUD;
 // ==========================================
 // 6. MODAL & JOB ACTIONS (Fixed Edit Form Reset & Data Population)
 // ==========================================
-function openAddModal(isEdit = false) {
+function openAddModal(isEdit = false, recordData = null, index = -1) {
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -371,11 +371,29 @@ function openAddModal(isEdit = false) {
     }
 
     const jobForm = document.getElementById('jobForm');
-    if (jobForm && !isEdit) {
-        jobForm.reset();
-        const editIndex = document.getElementById('editIndex');
+    const modalTitle = document.getElementById('modalTitle');
+    const editIndex = document.getElementById('editIndex');
+
+    if (isEdit && recordData) {
+        // في حالة التعديل: تغيير العنوان وتعبئة الحقول بالبيانات الحالية
+        if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
+        if (editIndex) editIndex.value = index;
+
+        // تعبئة الحقول النصية والتاريخية (تأكد من مطابقة الـ IDs مع ملف الـ HTML لديك)
+        if (document.getElementById('jobDate')) document.getElementById('jobDate').value = recordData.date || '';
+        if (document.getElementById('jobNo')) document.getElementById('jobNo').value = recordData.jobNo || '';
+        if (document.getElementById('route')) document.getElementById('route').value = recordData.route || '';
+        if (document.getElementById('foreman')) document.getElementById('foreman').value = recordData.foreman || '';
+        if (document.getElementById('foreman10pct')) document.getElementById('foreman10pct').value = recordData.foreman10pct || '';
+
+        // استخدام دالة المطابقة لتعبئة قوائم Helpers و Drivers تلقائياً
+        setSelectValue('helpers', recordData.helpers); // استبدل 'helpers' بالـ ID الخاص بحقل القائمة في الـ HTML
+        setSelectValue('drivers', recordData.drivers); // استبدل 'drivers' بالـ ID الخاص بحقل القائمة في الـ HTML
+
+    } else {
+        // في حالة الإضافة الجديدة: تصفير النموذج
+        if (jobForm) jobForm.reset();
         if (editIndex) editIndex.value = '-1';
-        const modalTitle = document.getElementById('modalTitle');
         if (modalTitle) modalTitle.innerText = 'Add New Job Dispatch';
 
         const puContainer = document.getElementById('puContainer');
@@ -385,7 +403,6 @@ function openAddModal(isEdit = false) {
     }
 }
 window.openAddModal = openAddModal;
-
 function closeModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
