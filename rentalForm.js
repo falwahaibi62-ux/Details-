@@ -6,9 +6,8 @@ if (typeof window.RENTALS_STORAGE_KEY === 'undefined') {
 }
 
 if (typeof window.forcedInitialRentals === 'undefined') {
-    window.forcedInitialRentals = []; // أو القيمة الأصلية للمتغير
+    window.forcedInitialRentals = [];
 }
-
 const forcedInitialRentals = [
     { date: "6/24/2026", days: 24, amount: 6000, paymentType: "Cheque", paidBy: "Sharef", truckLabel: "24 days rental paid by Sharef" },
     { date: "7/9/2026", days: 13, amount: 3250, paymentType: "Cash", paidBy: "Abu Essa", truckLabel: "13 days rental paid to Abu Essa" },
