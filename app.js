@@ -233,11 +233,8 @@ function extractPaymentsFromContainer(containerId) {
 function parseHelpersDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
     let strVal = String(val).trim();
-    if (strVal.includes('(')) return strVal;
     
-    let num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
-    if (isNaN(num) || num === 0) return '-';
-
+    // في حال كانت القيمة نصاً يحتوي أصلًا على صيغة محددة من القاموس المعتمد
     const helpersMap = {
         100: "1/2 (100)",
         200: "1 (200)",
@@ -250,6 +247,18 @@ function parseHelpersDisplay(val) {
         1000: "4-1 1/2 (1000)"
     };
 
+    // استخراج المبلغ الرقمي بين الأقواس أو الرقم الأساسي
+    let num = 0;
+    let match = strVal.match(/\(([\d.]+)\)/);
+    if (match) {
+        num = parseFloat(match[1]);
+    } else {
+        num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
+    }
+
+    if (isNaN(num) || num === 0) return '-';
+
+    // الإرجاع من القاموس المعتمد فقط
     return helpersMap[num] || '-';
 }
 
