@@ -304,6 +304,7 @@ function generateOfficialSummaryTable(filteredJobs) {
                     <p class="text-[11px] text-slate-400">Comprehensive summary of labor fees, cash, Zelle, and PMO breakdown</p>
                 </div>
                 <div class="flex items-center gap-2">
+              
                     <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
                         Total Jobs: <span class="text-emerald-600">${totalJobs}</span>
                     </span>
@@ -582,23 +583,17 @@ window.generateDetailedReportData = generateDetailedReportData;
 /**
  * دالة لإنشاء جدول إجمالي العمليات لكل طريقة دفع بناءً على الفلاتر والتواريخ
  */
+// 1. دالة توليد جدول طرق الدفع الرئيسي (إذا لم تكن أضفتها مسبقاً)
 function generatePaymentMethodsSummaryTableHTML() {
     const filteredJobs = getFilteredJobsData();
-    
-    // تعريف طرق الدفع الأساسية الظاهرة في القائمة المنسدلة
     const methods = ["Cash", "Zelle", "Cheque", "PMO", "BC", "PC", "CC", "WT", "Others"];
     
-    // تجميع الإجماليات لكل طريقة دفع
     const summaryMap = {};
-    methods.forEach(m => {
-        summaryMap[m] = { count: 0, totalAmount: 0 };
-    });
+    methods.forEach(m => { summaryMap[m] = { count: 0, totalAmount: 0 }; });
 
     filteredJobs.forEach(job => {
-        // فحص حقل طريقة الدفع أو حقول الدفع PU و Dest
         const paymentField = String(job.paymentType || job.pu || job.dest || '').toLowerCase();
         const amount = parseCurrency(job.total);
-
         let matched = false;
         methods.forEach(method => {
             if (paymentField.includes(method.toLowerCase())) {
@@ -607,8 +602,6 @@ function generatePaymentMethodsSummaryTableHTML() {
                 matched = true;
             }
         });
-
-        // إذا لم تطابق أي طريقة صريحة، تضاف إلى Others
         if (!matched && amount > 0) {
             summaryMap["Others"].count += 1;
             summaryMap["Others"].totalAmount += amount;
@@ -622,7 +615,6 @@ function generatePaymentMethodsSummaryTableHTML() {
         const data = summaryMap[method];
         grandTotalCount += data.count;
         grandTotalAmount += data.totalAmount;
-
         return `
             <tr class="hover:bg-slate-50 transition-colors">
                 <td class="p-2.5 border-r font-bold text-slate-800 text-center">${method}</td>
@@ -641,7 +633,11 @@ function generatePaymentMethodsSummaryTableHTML() {
                         <h3 class="text-sm font-bold text-slate-800">Payment Methods Financial Summary</h3>
                         <p class="text-[11px] text-slate-400">Aggregated transaction totals and counts categorized by payment type</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-3">
+                        <!-- 🌟 هنا تم وضع زر "View Others Details Report" في ترويسة الجدول ليظهر للمستخدم بشكل صحيح -->
+                        <button onclick="showOthersDetailedReport()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm flex items-center gap-2">
+                            <span>📋 View Others Details Report</span>
+                        </button>
                         <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
                             Total Processed Jobs: <span class="text-emerald-600">${grandTotalCount}</span>
                         </span>
@@ -674,11 +670,11 @@ function generatePaymentMethodsSummaryTableHTML() {
 window.generatePaymentMethodsSummaryTableHTML = generatePaymentMethodsSummaryTableHTML;
 
 
+// 2. دالة إظهار نافذة تقرير Others المنبثقة عند الضغط على الزر
 function showOthersDetailedReport() {
     const filteredJobs = getFilteredJobsData();
     const methods = ["Cash", "Zelle", "Cheque", "PMO", "BC", "PC", "CC", "WT"];
     
-    // استخراج رحلات Others فقط
     const othersJobs = filteredJobs.filter(job => {
         const paymentField = String(job.paymentType || job.pu || job.dest || '').toLowerCase();
         const amount = parseCurrency(job.total);
@@ -687,7 +683,7 @@ function showOthersDetailedReport() {
     });
 
     if (othersJobs.length === 0) {
-        alert("لا توجد سجلات تطابق بند Others للفترة المحددة.");
+        alert("No records match 'Others' for the selected period.");
         return;
     }
 
@@ -696,16 +692,15 @@ function showOthersDetailedReport() {
         const amt = parseCurrency(j.total);
         totalOthersAmount += amt;
         return `
-            <tr class="border-b hover:bg-slate-50">
-                <td class="p-2 text-center font-bold">${j.jobNo || 'N/A'}</td>
-                <td class="p-2 text-center">${j.date || ''}</td>
-                <td class="p-2 text-center">${j.pu || '-'} / ${j.dest || '-'}</td>
-                <td class="p-2 text-center font-extrabold text-emerald-700">$${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <tr class="border-b hover:bg-slate-50 text-slate-700">
+                <td class="p-2.5 text-center font-bold">${j.jobNo || 'N/A'}</td>
+                <td class="p-2.5 text-center">${j.date || ''}</td>
+                <td class="p-2.5 text-center">${j.pu || '-'} / ${j.dest || '-'}</td>
+                <td class="p-2.5 text-center font-extrabold text-emerald-700">$${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             </tr>
         `;
     }).join('');
 
-    // إنشاء نافذة منبثقة (Modal) لعرض التقرير حسب الطلب
     const modalHTML = `
         <div id="othersReportModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]">
@@ -717,10 +712,10 @@ function showOthersDetailedReport() {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-100 text-slate-700 font-bold border-b">
-                                <th class="p-2 text-center">Job No</th>
-                                <th class="p-2 text-center">Date</th>
-                                <th class="p-2 text-center">Payment / Details</th>
-                                <th class="p-2 text-center">Total Amount</th>
+                                <th class="p-2.5 text-center">Job No</th>
+                                <th class="p-2.5 text-center">Date</th>
+                                <th class="p-2.5 text-center">Payment / Details</th>
+                                <th class="p-2.5 text-center">Total Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -730,7 +725,7 @@ function showOthersDetailedReport() {
                 </div>
                 <div class="p-4 bg-slate-50 border-t flex justify-between items-center font-bold text-xs">
                     <span>Grand Total: <span class="text-emerald-700 text-sm">$${totalOthersAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></span>
-                    <button onclick="document.getElementById('othersReportModal').remove()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-1.5 rounded-xl">إغلاق</button>
+                    <button onclick="document.getElementById('othersReportModal').remove()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-1.5 rounded-xl">Close</button>
                 </div>
             </div>
         </div>
@@ -739,7 +734,6 @@ function showOthersDetailedReport() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 window.showOthersDetailedReport = showOthersDetailedReport;
-
 
 /**
  * MovePro - Professional PDF Generation Engine (Includes Jobs, Rentals, and Warehouse)
