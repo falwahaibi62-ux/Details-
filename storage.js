@@ -3,7 +3,6 @@
  * Centralized LocalStorage keys and data persistence handlers.
  */
 
-
 if (typeof window.saveTrash === 'undefined') {
     window.saveTrash = function(/* parameters here */) {
         // Function body / implementation
@@ -24,7 +23,6 @@ if (typeof window.WAREHOUSE_STORAGE_KEY === 'undefined') {
 
 // --- Master Jobs Management ---
 function loadMasterJobs() {
-    // التحقق المباشر من التخزين المحلي أولاً لضمان جلب أحدث التحديثات
     const savedJobs = localStorage.getItem(STORAGE_KEY);
     if (savedJobs) {
         try {
@@ -38,7 +36,6 @@ function loadMasterJobs() {
         }
     }
     
-    // إذا لم يوجد في التخزين، يتم الاعتماد على الكائن العام أو مصفوفة فارغة
     if (window.masterJobs && Array.isArray(window.masterJobs) && window.masterJobs.length > 0) {
         saveMasterJobs(window.masterJobs);
         return window.masterJobs;
@@ -75,7 +72,8 @@ function saveTrashBin(trashData) {
     localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trashData));
 }
 
-const saveTrash = saveTrashBin;
+// استخدام window بدلاً من const لتجنب أخطاء التكرار
+window.saveTrash = saveTrashBin;
 window.masterTrash = loadTrashBin();
 
 
