@@ -839,6 +839,17 @@ function switchTab(tabName) {
             renderPrivateTruckRentalTab();
         } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
             renderWarehouseTab(); // 🌟 تحميل وعرض بيانات المستودع فوراً عند النقر
+        } else if (tabName === 'pdf-report') {
+            // 🌟 إدراج جدول وإجمالي المستودع تلقائياً في صفحة تقارير الـ PDF دون تكرار
+            const pdfContainer = document.getElementById('pdfReportContent') || document.getElementById('tab-pdf-report');
+            if (pdfContainer && typeof generateWarehousePDFSummaryHTML === 'function') {
+                if (!document.getElementById('warehousePDFSummarySection')) {
+                    const wrapper = document.createElement('div');
+                    wrapper.id = 'warehousePDFSummarySection';
+                    wrapper.innerHTML = generateWarehousePDFSummaryHTML();
+                    pdfContainer.appendChild(wrapper);
+                }
+            }
         } else if (tabName === 'users') {
             renderUsers();
         }
