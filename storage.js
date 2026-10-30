@@ -1,5 +1,5 @@
 /**
- * MovePro Storage Manager
+ * MovePro Storage Manager - Complete & Synchronized
  * Centralized LocalStorage keys and data persistence handlers.
  */
 
@@ -72,7 +72,6 @@ function saveTrashBin(trashData) {
     localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trashData));
 }
 
-// استخدام window بدلاً من const لتجنب أخطاء التكرار
 window.saveTrash = saveTrashBin;
 window.masterTrash = loadTrashBin();
 
@@ -94,6 +93,8 @@ function loadTruckRentals() {
 function saveTruckRentals(data) {
     localStorage.setItem(RENTALS_STORAGE_KEY, JSON.stringify(data));
 }
+window.loadTruckRentals = loadTruckRentals;
+window.saveTruckRentals = saveTruckRentals;
 
 
 // --- Warehouse Records Management ---
@@ -108,7 +109,9 @@ function loadWarehouseRecords() {
         }
     }
     
+    // السجلات الافتراضية لضمان عمل الجداول والتقارير بشكل سليم
     const initialWarehouseRecords = [
+        { date: "2026-10-09", services: "Warehouse Labor", amount: 700, paymentType: "Cash", details: "Warehouse labor and handling" },
         { date: "2026-06-04", services: "Flooring", amount: 2200, paymentType: "Cash", details: "Flooring installation and materials" },
         { date: "2026-06-05", services: "Palettes", amount: 2000, paymentType: "Cash", details: "Warehouse palettes purchase" },
         { date: "2026-09-05", services: "Rent", amount: 5500, paymentType: "Others", details: "Warehouse monthly rent" }
@@ -120,3 +123,5 @@ function loadWarehouseRecords() {
 function saveWarehouseRecords(data) {
     localStorage.setItem(WAREHOUSE_STORAGE_KEY, JSON.stringify(data));
 }
+window.loadWarehouseRecords = loadWarehouseRecords;
+window.saveWarehouseRecords = saveWarehouseRecords;
