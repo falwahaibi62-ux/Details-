@@ -1,5 +1,5 @@
 /**
- * MovePro - Private Truck Rental Data Module
+ * MovePro - Private Truck Rental Data Module (Optimized)
  */
 
 if (typeof window.RENTAL_STORAGE_KEY === 'undefined') {
@@ -30,21 +30,26 @@ function loadPrivateTruckRentals() {
     const initialData = window.forcedInitialRentals;
     
     let saved = localStorage.getItem(storageKey);
-    if (!saved) {
-        localStorage.setItem(storageKey, JSON.stringify(initialData));
-        return [...initialData];
-    }
-    
+    let rentals = [];
+
     try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-            // ترتيب السجلات تلقائياً من الأحدث للأقدم
-            return parsed.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                rentals = parsed;
+            }
         }
     } catch (e) {
-        console.error('Error parsing rentals:', e);
+        console.error('Error parsing rentals from localStorage:', e);
     }
-    
-    return [...initialData];
+
+    // إذا كانت البيانات المخزنة فارغة أو أقل من البيانات الأساسية، يتم إعادة تهئيتها وتعبئتها فوراً
+    if (rentals.length === 0) {
+        rentals = [...initialData];
+        localStorage.setItem(storageKey, JSON.stringify(rentals));
+    }
+
+    // ترتيب السجلات تلقائياً من الأحدث للأقدم
+    return rentals.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 }
 window.loadPrivateTruckRentals = loadPrivateTruckRentals;
