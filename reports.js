@@ -735,6 +735,58 @@ function showOthersDetailedReport() {
 }
 window.showOthersDetailedReport = showOthersDetailedReport;
 
+
+function generateWarehousePDFSummaryHTML() {
+    // جلب سجلات المستودع المخزنة محلياً
+    const warehouseRecords = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+    
+    // حساب الإجمالي العام لمصاريف المستودع
+    let totalWarehouseAmount = 0;
+    warehouseRecords.forEach(item => {
+        totalWarehouseAmount += parseFloat(item.amount || 0);
+    });
+
+    // توليد الأسطر الخاصة بسجلات المستودع لعرضها في جدول الـ PDF
+    const rows = warehouseRecords.map(item => `
+        <tr>
+            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${item.date || ''}</td>
+            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${item.services || ''}</td>
+            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${item.details || ''}</td>
+            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${item.paymentType || 'Cash'}</td>
+            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold;">$${parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+        </tr>
+    `).join('');
+
+    // هيكل HTML الخاص بجدول وقسم المستودع ليتم تضمينه في ملف الـ PDF
+    return `
+        <div style="margin-top: 20px; font-family: Arial, sans-serif;">
+            <h3 style="font-size: 14px; font-weight: bold; color: #1e293b; margin-bottom: 8px;">Warehouse & Others Expenses Summary</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; color: #334155; font-weight: bold;">
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Date</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Category</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Description</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Method</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.length > 0 ? rows : '<tr><td colspan="5" style="padding: 10px; text-align: center; color: #94a3b8;">No warehouse records found</td></tr>'}
+                </tbody>
+                <tfoot>
+                    <tr style="background-color: #e2e8f0; font-weight: bold;">
+                        <td colspan="4" style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Total Warehouse & Others Expenses:</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; color: #047857;">$${totalWarehouseAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+}
+window.generateWarehousePDFSummaryHTML = generateWarehousePDFSummaryHTML;
+
+
 /**
  * MovePro - Professional PDF Generation Engine (Includes Jobs, Rentals, and Warehouse)
  */
