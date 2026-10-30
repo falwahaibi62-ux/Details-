@@ -63,6 +63,28 @@ function resetReportFilters() {
 }
 window.resetReportFilters = resetReportFilters;
 
+// دالة مساعدة لتطبيع التواريخ محلياً وتجنب مشاكل الفروق الزمنية
+function parseLocalDate(dateStr) {
+    if (!dateStr) return null;
+    // إذا كان التاريخ بصيغة YYYY-MM-DD (من حقل الفلتر)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+    // إذا كان التاريخ بصيغة M/D/YYYY أو MM/DD/YYYY (من سجلات العمليات)
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        const m = parseInt(parts[0], 10);
+        const d = parseInt(parts[1], 10);
+        const y = parseInt(parts[2], 10);
+        return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+    const dObj = new Date(dateStr);
+    return isNaN(dObj.getTime()) ? null : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate());
+}
+window.parseLocalDate = parseLocalDate;
+
+// تحديث دالة getFilteredJobsData داخل ملف reports.js
 function getFilteredJobsData() {
     const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     
@@ -71,13 +93,22 @@ function getFilteredJobsData() {
     const jobTypeVal = document.getElementById('filterJobType')?.value || 'all';
     const paymentVal = document.getElementById('filterPaymentType')?.value || 'all';
 
-    const startDate = startDateVal ? new Date(startDateVal) : null;
-    const endDate = endDateVal ? new Date(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59);
+    let startDate = null;
+    if (startDateVal) {
+        const [y, m, d] = startDateVal.split('-').map(Number);
+        startDate = new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+
+    let endDate = null;
+    if (endDateVal) {
+        const [y, m, d] = endDateVal.split('-').map(Number);
+        endDate = new Date(y, m - 1, d, 23, 59, 59, 999);
+    }
 
     return jobs.filter(j => {
         if (j.date) {
-            const jDate = new Date(j.date);
+            const jDate = parseLocalDate(j.date);
+            if (!jDate) return false;
             if (startDate && jDate < startDate) return false;
             if (endDate && jDate > endDate) return false;
         } else if (startDate || endDate) {
@@ -99,7 +130,6 @@ function getFilteredJobsData() {
     });
 }
 window.getFilteredJobsData = getFilteredJobsData;
-
 // دالة حساب وإنشاء جدول إجمالي إيجارات الشاحنات المصفى حسب التاريخ
 function generateTruckRentalSummaryTableHTML() {
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
