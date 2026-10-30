@@ -13,7 +13,6 @@ if (typeof window.paymentMixChartInstance === 'undefined') {
 
 function updateDashboardAnalytics() {
     if (!window.masterJobs || !Array.isArray(window.masterJobs) || window.masterJobs.length === 0) {
-        // إعادة تعيين القيم الافتراضية إذا كانت البيانات فارغة
         const revEl = document.getElementById('dashTotalRevenue');
         if (revEl) revEl.innerText = '$0';
         const jobsTextEl = document.getElementById('dashCompletedJobsText');
@@ -136,7 +135,6 @@ function renderDashboardCharts(monthlyData, paymentData) {
     // 1. مخطط الإيرادات الشهرية (Bar Chart)
     const ctxRevenue = document.getElementById('revenueChart');
     if (ctxRevenue) {
-        // تم التصحيح هنا لاستخدام window.revenueChartInstance بوضوح
         if (window.revenueChartInstance) {
             window.revenueChartInstance.destroy();
         }
@@ -164,7 +162,6 @@ function renderDashboardCharts(monthlyData, paymentData) {
         });
     }
 
-    // 2. مخطط قنوات الدفع (Doughnut Chart)
     const ctxPayment = document.getElementById('paymentMixChart');
     if (ctxPayment) {
         if (window.paymentMixChartInstance) {
