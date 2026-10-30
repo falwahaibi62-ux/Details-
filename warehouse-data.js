@@ -1,9 +1,6 @@
 if (typeof window.initialWarehouseRecords === 'undefined') {
     window.initialWarehouseRecords = [
-        { date: "6/4/2026", services: "Flooring", amount: 2200, paymentType: "Cash", details: "Flooring installation and materials" },
-        { date: "6/5/2026", services: "Palettes", amount: 2000, paymentType: "Cash", details: "Warehouse palettes purchase" },
-    
-}
+       
     { date: "6/4/2026", services: "Flooring", amount: 2200, paymentType: "Cash", details: "Flooring installation and materials" },
     { date: "6/5/2026", services: "Palettes", amount: 2000, paymentType: "Cash", details: "Warehouse palettes purchase" },
     { date: "6/6/2026", services: "Fridge", amount: 700, paymentType: "Others", details: "Warehouse fridge equipment" },
