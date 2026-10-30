@@ -573,6 +573,102 @@ function generateDetailedReportData() {
 }
 window.generateDetailedReportData = generateDetailedReportData;
 
+
+/**
+ * دالة لإنشاء جدول إجمالي العمليات لكل طريقة دفع بناءً على الفلاتر والتواريخ
+ */
+function generatePaymentMethodsSummaryTableHTML() {
+    const filteredJobs = getFilteredJobsData();
+    
+    // تعريف طرق الدفع الأساسية الظاهرة في القائمة المنسدلة
+    const methods = ["Cash", "Zelle", "Cheque", "PMO", "BC", "PC", "CC", "WT", "Others"];
+    
+    // تجميع الإجماليات لكل طريقة دفع
+    const summaryMap = {};
+    methods.forEach(m => {
+        summaryMap[m] = { count: 0, totalAmount: 0 };
+    });
+
+    filteredJobs.forEach(job => {
+        // فحص حقل طريقة الدفع أو حقول الدفع PU و Dest
+        const paymentField = String(job.paymentType || job.pu || job.dest || '').toLowerCase();
+        const amount = parseCurrency(job.total);
+
+        let matched = false;
+        methods.forEach(method => {
+            if (paymentField.includes(method.toLowerCase())) {
+                summaryMap[method].count += 1;
+                summaryMap[method].totalAmount += amount;
+                matched = true;
+            }
+        });
+
+        // إذا لم تطابق أي طريقة صريحة، تضاف إلى Others
+        if (!matched && amount > 0) {
+            summaryMap["Others"].count += 1;
+            summaryMap["Others"].totalAmount += amount;
+        }
+    });
+
+    let grandTotalCount = 0;
+    let grandTotalAmount = 0;
+
+    const rowsHTML = methods.map(method => {
+        const data = summaryMap[method];
+        grandTotalCount += data.count;
+        grandTotalAmount += data.totalAmount;
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="p-2.5 border-r font-bold text-slate-800 text-center">${method}</td>
+                <td class="p-2.5 border-r text-center text-slate-600 font-semibold">${data.count} Jobs</td>
+                <td class="p-2.5 text-center font-extrabold text-emerald-700 bg-emerald-50/25">$${data.totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            </tr>
+        `;
+    }).join('');
+
+    return {
+        grandTotalAmount: grandTotalAmount,
+        html: `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
+                <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">Payment Methods Financial Summary</h3>
+                        <p class="text-[11px] text-slate-400">Aggregated transaction totals and counts categorized by payment type</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                            Total Processed Jobs: <span class="text-emerald-600">${grandTotalCount}</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <table class="w-full text-left border-collapse text-[11px]">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                                <th class="p-2.5 border-r border-slate-200/60 text-center">Payment Method</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center">Transaction Count</th>
+                                <th class="p-2.5 text-center bg-emerald-600 text-white font-extrabold">Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
+                            ${rowsHTML}
+                            <tr class="bg-slate-100/80 font-extrabold text-slate-900 border-t-2 border-slate-200">
+                                <td class="p-3 border-r text-center uppercase">Grand Total</td>
+                                <td class="p-3 border-r text-center">${grandTotalCount} Jobs</td>
+                                <td class="p-3 text-center text-emerald-900 bg-emerald-100/50 text-xs">$${grandTotalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `
+    };
+}
+window.generatePaymentMethodsSummaryTableHTML = generatePaymentMethodsSummaryTableHTML;
+
+
 /**
  * MovePro - Professional PDF Generation Engine (Includes Jobs, Rentals, and Warehouse)
  */
