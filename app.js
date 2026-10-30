@@ -361,6 +361,9 @@ window.renderJobsCRUD = renderJobsCRUD;
 // ==========================================
 // 6. MODAL & JOB ACTIONS (Fixed Edit Form Reset & Data Population)
 // ==========================================
+// ==========================================
+// 6. MODAL & JOB ACTIONS (Fixed Edit Form Reset & Data Population)
+// ==========================================
 function openAddModal(isEdit = false, recordData = null, index = -1) {
     const modal = document.getElementById('jobModal');
     if (modal) {
@@ -379,16 +382,37 @@ function openAddModal(isEdit = false, recordData = null, index = -1) {
         if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
         if (editIndex) editIndex.value = index;
 
-        // تعبئة الحقول النصية والتاريخية (تأكد من مطابقة الـ IDs مع ملف الـ HTML لديك)
-        if (document.getElementById('jobDate')) document.getElementById('jobDate').value = recordData.date || '';
-        if (document.getElementById('jobNo')) document.getElementById('jobNo').value = recordData.jobNo || '';
-        if (document.getElementById('route')) document.getElementById('route').value = recordData.route || '';
-        if (document.getElementById('foreman')) document.getElementById('foreman').value = recordData.foreman || '';
-        if (document.getElementById('foreman10pct')) document.getElementById('foreman10pct').value = recordData.foreman10pct || '';
+        // تعبئة الحقول النصية والتاريخية الأساسية
+        if (document.getElementById('jobDate')) {
+            // تحويل التاريخ من M/D/YYYY إلى YYYY-MM-DD ليتوافق مع input type="date"
+            let rawDate = recordData.date || '';
+            if (rawDate.includes('/')) {
+                const parts = rawDate.split('/');
+                if (parts.length === 3) {
+                    const m = parts[0].padStart(2, '0');
+                    const d = parts[1].padStart(2, '0');
+                    const y = parts[2];
+                    rawDate = `${y}-${m}-${d}`;
+                }
+            }
+            document.getElementById('jobDate').value = rawDate;
+        }
 
-        // استخدام دالة المطابقة لتعبئة قوائم Helpers و Drivers تلقائياً
-        setSelectValue('helpers', recordData.helpers); // استبدل 'helpers' بالـ ID الخاص بحقل القائمة في الـ HTML
-        setSelectValue('drivers', recordData.drivers); // استبدل 'drivers' بالـ ID الخاص بحقل القائمة في الـ HTML
+        if (document.getElementById('jobNo')) document.getElementById('jobNo').value = recordData.jobNo || '';
+        
+        // تفكيك المسار (Route) وتعبئة حقول From و To إن وجدت
+        if (recordData.route && recordData.route.includes('→')) {
+            const rParts = recordData.route.split('→').map(s => s.trim());
+            if (document.getElementById('routeFrom')) document.getElementById('routeFrom').value = rParts[0] || '';
+            if (document.getElementById('routeTo')) document.getElementById('routeTo').value = rParts[1] || '';
+        }
+
+        if (document.getElementById('jobForeman')) document.getElementById('jobForeman').value = recordData.foreman || '';
+        if (document.getElementById('jobTotal')) document.getElementById('jobTotal').value = recordData.total ? recordData.total.replace('$', '') : '';
+
+        // استخدام دالة المطابقة الصحيحة مع الـ IDs الفعلية المطابقة لدالة saveJob
+        setSelectValue('helpersCost', recordData.helpers); 
+        setSelectValue('driversCost', recordData.drivers); 
 
     } else {
         // في حالة الإضافة الجديدة: تصفير النموذج
