@@ -31,26 +31,32 @@ if (typeof window.forcedInitialRentalsData === 'undefined') {
 function loadPrivateTruckRentals() {
     let saved = localStorage.getItem(window.RENTALS_STORAGE_KEY);
     let rentals = [];
+    const initialData = window.forcedInitialRentalsData || [];
     
-    if (!saved || JSON.parse(saved).length < forcedInitialRentals.length) {
-        localStorage.setItem(window.RENTALS_STORAGE_KEY, JSON.stringify(forcedInitialRentals));
-        rentals = [...forcedInitialRentals];
+    if (!saved || JSON.parse(saved).length < initialData.length) {
+        localStorage.setItem(window.RENTALS_STORAGE_KEY, JSON.stringify(initialData));
+        rentals = [...initialData];
     } else {
         try {
             const parsed = JSON.parse(saved);
-            rentals = Array.isArray(parsed) && parsed.length > 0 ? parsed : [...forcedInitialRentals];
+            rentals = Array.isArray(parsed) && parsed.length > 0 ? parsed : [...initialData];
         } catch (e) {
             console.error('Error parsing rentals:', e);
-            rentals = [...forcedInitialRentals];
+            rentals = [...initialData];
         }
     }
 
     return rentals.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
+window.loadPrivateTruckRentals = loadPrivateTruckRentals;
+
+
+    
 
 function savePrivateTruckRentals(data) {
     localStorage.setItem(window.RENTALS_STORAGE_KEY, JSON.stringify(data));
 }
+window.savePrivateTruckRentals = savePrivateTruckRentals;
 
 // Date Formatting Utilities
 function formatDateForInput(dateStr) {
