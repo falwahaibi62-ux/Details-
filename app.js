@@ -798,6 +798,7 @@ function switchTab(tabName) {
     try {
         const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
         
+        // إخفاء جميع التبويبات وإعادة تعيين الأزرار الجانبية
         tabs.forEach(t => {
             const tabEl = document.getElementById(`tab-${t}`) || document.getElementById(`${t}-view`);
             const navEl = document.getElementById(`nav-${t}`) || document.getElementById(`nav-${t}-btn`);
@@ -812,6 +813,7 @@ function switchTab(tabName) {
             }
         });
 
+        // إظهار التبويب المطلوب وتنشيط الزر الخاص به
         const activeTab = document.getElementById(`tab-${tabName}`) || document.getElementById(`${tabName}-view`);
         const activeNav = document.getElementById(`nav-${tabName}`) || document.getElementById(`nav-${tabName}-btn`);
         
@@ -824,6 +826,7 @@ function switchTab(tabName) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
+        // تنفيذ دوال التحديث التلقائي حسب التبويب النشط
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
@@ -835,7 +838,7 @@ function switchTab(tabName) {
         } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
             renderPrivateTruckRentalTab();
         } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
-            renderWarehouseTab();
+            renderWarehouseTab(); // 🌟 تحميل وعرض بيانات المستودع فوراً عند النقر
         } else if (tabName === 'users') {
             renderUsers();
         }
@@ -844,6 +847,8 @@ function switchTab(tabName) {
     }
 }
 window.switchTab = switchTab;
+
+
 
 // ==========================================
 // 9. INITIALIZATION
