@@ -35,6 +35,18 @@ function parseCurrency(val) {
 }
 window.parseCurrency = parseCurrency;
 
+// 🌟 دالة مخصصة لاستخراج المبلغ المالي الصحيح للعمال والسائقين من بين القوسين (مثل 1-1 1/2 (250) -> 250)
+function parseLaborAmount(val) {
+    if (!val || val === '-') return 0;
+    const strVal = String(val);
+    const match = strVal.match(/\(([^)]+)\)/);
+    if (match) {
+        return parseCurrency(match[1]);
+    }
+    return parseCurrency(strVal);
+}
+window.parseLaborAmount = parseLaborAmount;
+
 function applyReportFilters() {
     const summaryView = document.getElementById('summaryReportView');
     if (!summaryView) return;
@@ -66,12 +78,10 @@ window.resetReportFilters = resetReportFilters;
 // دالة مساعدة لتطبيع التواريخ محلياً وتجنب مشاكل الفروق الزمنية
 function parseLocalDate(dateStr) {
     if (!dateStr) return null;
-    // إذا كان التاريخ بصيغة YYYY-MM-DD (من حقل الفلتر)
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
         const [y, m, d] = dateStr.split('-').map(Number);
         return new Date(y, m - 1, d, 0, 0, 0, 0);
     }
-    // إذا كان التاريخ بصيغة M/D/YYYY أو MM/DD/YYYY (من سجلات العمليات)
     const parts = dateStr.split('/');
     if (parts.length === 3) {
         const m = parseInt(parts[0], 10);
@@ -84,7 +94,6 @@ function parseLocalDate(dateStr) {
 }
 window.parseLocalDate = parseLocalDate;
 
-// تحديث دالة getFilteredJobsData داخل ملف reports.js
 function getFilteredJobsData() {
     const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     
@@ -130,7 +139,7 @@ function getFilteredJobsData() {
     });
 }
 window.getFilteredJobsData = getFilteredJobsData;
-// دالة حساب وإنشاء جدول إجمالي إيجارات الشاحنات المصفى حسب التاريخ
+
 function generateTruckRentalSummaryTableHTML() {
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     
@@ -237,8 +246,9 @@ function generateOfficialSummaryTable(filteredJobs) {
         sumTotalAfterDeposit += totalVal;
 
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-        sumHelpers += parseCurrency(item.helpers);
-        sumDrivers += parseCurrency(item.drivers);
+        // استخدام parseLaborAmount لاستخراج المبالغ الصحيحة للعمال والسائقين من الجدول فقط
+        sumHelpers += parseLaborAmount(item.helpers);
+        sumDrivers += parseLaborAmount(item.drivers);
 
         if (item.diesel && item.diesel !== '-') {
             let dieselStr = String(item.diesel);
@@ -338,7 +348,6 @@ function generateOfficialSummaryTable(filteredJobs) {
             </div>
         </div>
 
-        <!-- 🌟 جدول ملخص إيجارات الشاحنات يظهر هنا تحت الجدول المالي مباشرة -->
         ${rentalSummaryObj.html}
     `;
 }
@@ -481,8 +490,8 @@ function generateDetailedReportData() {
                 const dieselVal = item.diesel || '-';
                 const hotelVal = item.hotel || '-';
 
-                const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(item.helpers) : (item.helpers || '-');
-                const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(item.drivers) : (item.drivers || '-');
+                const helpersDisplay = item.helpers || '-';
+                const driversDisplay = item.drivers || '-';
 
                 return `
                     <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
@@ -603,8 +612,8 @@ function exportOfficialPDF() {
         const totalVal = parseCurrency(item.total);
         sumTotalAfterDeposit += totalVal;
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-        sumHelpers += parseCurrency(item.helpers);
-        sumDrivers += parseCurrency(item.drivers);
+        sumHelpers += parseLaborAmount(item.helpers);
+        sumDrivers += parseLaborAmount(item.drivers);
 
         if (item.diesel && item.diesel !== '-') {
             let dieselStr = String(item.diesel);
@@ -633,7 +642,6 @@ function exportOfficialPDF() {
         }
     });
 
-    // حساب مجاميع إيجار الشاحنات لتقرير PDF
     let rentalPdfDays = 0, rentalPdfCash = 0, rentalPdfOther = 0, rentalPdfTotal = 0;
     filteredRentals.forEach(r => {
         const daysNum = parseInt(String(r.days || '0').replace(/[^0-9]/g, '')) || 0;
@@ -671,7 +679,6 @@ function exportOfficialPDF() {
                 <p class="text-xs font-semibold text-rose-800 mt-1">From Date: <span class="text-slate-800">${startDateVal}</span> &nbsp;&nbsp;|&nbsp;&nbsp; To Date: <span class="text-slate-800">${endDateVal}</span></p>
             </div>
 
-            <!-- 1. Official Period Financial Summary -->
             <div class="mb-5">
                 <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Executive Financial Summary</h3>
                 <table class="table-pdf">
@@ -710,7 +717,6 @@ function exportOfficialPDF() {
                 </table>
             </div>
 
-            <!-- 🌟 2. Private Truck Rental Financial Summary (يظهر هنا في الصفحة الأولى تحت الملخص مباشرة) -->
             <div class="mb-6">
                 <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Private Truck Rental Financial Summary (${filteredRentals.length} Records)</h3>
                 <table class="table-pdf">
@@ -757,8 +763,8 @@ function exportOfficialPDF() {
                         ${jobs.map(j => {
                             const totalNum = parseCurrency(j.total);
                             const foreman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
-                            const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers) : (j.helpers || '-');
-                            const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers) : (j.drivers || '-');
+                            const helpersDisplay = j.helpers || '-';
+                            const driversDisplay = j.drivers || '-';
 
                             return `
                                 <tr>
