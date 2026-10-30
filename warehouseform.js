@@ -6,6 +6,10 @@ if (typeof window.WAREHOUSE_STORAGE_KEY === 'undefined') {
     window.WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
 }
 
+if (typeof window.initialWarehouseRecords === 'undefined') {
+    window.initialWarehouseRecords = []; // أو القيمة الأصلية للمتغير
+}
+
 // دالة تحويل التاريخ من صيغة الجدول (M/D/YYYY) إلى صيغة حقل الإدخال (YYYY-MM-DD)
 function formatWarehouseDateForInput(dateStr) {
     if (!dateStr) return '';
