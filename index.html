@@ -82,179 +82,70 @@
     <!-- Main Content Area with all Tabs Properly Isolated -->
     <main class="flex-1 overflow-y-auto p-6 custom-scrollbar min-w-0 relative bg-slate-100 flex flex-col">
 
-     <!-- TAB 1: ADVANCED DASHBOARD & CHARTS -->
+        <!-- TAB 1: ADVANCED DASHBOARD & CHARTS -->
         <div id="tab-dashboard" class="space-y-6 w-full flex flex-col animate-fade-in">
-            
-            <!-- 1. KPI Cards Row (مؤشرات الأداء الرئيسية الحية) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                
-                <!-- Card 1: Total Revenue -->
-                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 group">
+                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Lifetime Revenue</p>
-                            <h3 id="dashTotalRevenue" class="text-2xl font-black text-slate-900 mt-1 group-hover:text-emerald-600 transition-colors">$0</h3>
+                            <h3 id="dashTotalRevenue" class="text-2xl font-black text-slate-900 mt-1">$0</h3>
                         </div>
-                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-xs">
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
                             <i class="fa-solid fa-wallet text-base"></i>
                         </div>
                     </div>
-                    <div class="mt-3 flex items-center justify-between text-[11px]">
-                        <span id="dashCompletedJobsText" class="text-emerald-600 font-semibold flex items-center">
-                            <i class="fa-solid fa-truck-fast mr-1.5 animate-bounce"></i>0 Active Dispatches
-                        </span>
-                        <span class="text-slate-400 font-medium">Real-time</span>
-                    </div>
                 </div>
-
-                <!-- Card 2: Avg Job Value -->
-                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 group">
+                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Avg. Job Value</p>
                             <h3 id="dashAvgJobValue" class="text-2xl font-black text-blue-600 mt-1">$0</h3>
                         </div>
-                        <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-xs">
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl">
                             <i class="fa-solid fa-chart-line text-base"></i>
                         </div>
                     </div>
-                    <div class="mt-3 flex items-center justify-between text-[11px]">
-                        <span class="text-blue-600 font-semibold">Optimal Freight Yield</span>
-                        <span class="text-slate-400 font-medium">Average</span>
-                    </div>
                 </div>
-
-                <!-- Card 3: Total Diesel Cost -->
-                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 group">
+                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Diesel Cost</p>
                             <h3 id="dashTotalDiesel" class="text-2xl font-black text-orange-600 mt-1">$0</h3>
                         </div>
-                        <div class="p-3 bg-orange-50 text-orange-600 rounded-2xl group-hover:bg-orange-600 group-hover:text-white transition-all duration-300 shadow-xs">
+                        <div class="p-3 bg-orange-50 text-orange-600 rounded-2xl">
                             <i class="fa-solid fa-gas-pump text-base"></i>
                         </div>
                     </div>
-                    <div class="mt-3 flex items-center justify-between text-[11px]">
-                        <span class="text-orange-600 font-semibold flex items-center">
-                            <i class="fa-solid fa-fire mr-1"></i>Fuel Expenses
-                        </span>
-                        <span class="text-slate-400 font-medium">Tracking</span>
-                    </div>
                 </div>
-
-                <!-- Card 4: System Status -->
-                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 group">
+                <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">System Security</p>
                             <h3 class="text-2xl font-black text-purple-600 mt-1">Active</h3>
                         </div>
-                        <div class="p-3 bg-purple-50 text-purple-600 rounded-2xl group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 shadow-xs">
+                        <div class="p-3 bg-purple-50 text-purple-600 rounded-2xl">
                             <i class="fa-solid fa-shield-halved text-base"></i>
                         </div>
                     </div>
-                    <div class="mt-3 flex items-center justify-between text-[11px]">
-                        <span class="text-purple-600 font-semibold">Enterprise v16</span>
-                        <span class="inline-flex items-center text-emerald-600 font-bold">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-ping"></span> Live
-                        </span>
-                    </div>
                 </div>
-
             </div>
 
-            <!-- 2. Charts Section (الرسوم البيانية بتصميم عصري) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Bar Chart -->
-                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:col-span-2 space-y-4 hover:shadow-md transition-shadow">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-4">
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-sm flex items-center">
-                                <span class="w-2 h-5 bg-emerald-600 rounded-full mr-2"></span>
-                                Monthly Revenue & Volume Trend
-                            </h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Real-time performance distribution derived from active ledger</p>
-                        </div>
-                        <span class="text-[11px] bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl border border-emerald-100 flex items-center">
-                            <i class="fa-solid fa-bolt text-amber-500 mr-1.5"></i> Live Telemetry
-                        </span>
-                    </div>
+                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:col-span-2 space-y-4">
+                    <h3 class="font-bold text-slate-900 text-sm">Monthly Revenue & Volume Trend</h3>
                     <div class="h-68 relative w-full pt-2">
                         <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
-
-                <!-- Doughnut Chart -->
-                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 hover:shadow-md transition-shadow flex flex-col justify-between">
-                    <div class="border-b border-slate-100 pb-4">
-                        <h3 class="font-bold text-slate-900 text-sm flex items-center">
-                            <span class="w-2 h-5 bg-blue-600 rounded-full mr-2"></span>
-                            Payment Channels Mix
-                        </h3>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Distribution of Cash, Zelle, and Checks</p>
-                    </div>
+                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <h3 class="font-bold text-slate-900 text-sm">Payment Channels Mix</h3>
                     <div class="h-60 relative flex items-center justify-center my-auto">
                         <canvas id="paymentMixChart"></canvas>
                     </div>
                 </div>
             </div>
-
-            <!-- 3. Business Intelligence & Corridors -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Top Corridors -->
-                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 hover:shadow-md transition-shadow">
-                    <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
-                        <h3 class="font-bold text-slate-900 text-sm flex items-center">
-                            <i class="fa-solid fa-route text-emerald-600 mr-2 text-base"></i>Top Revenue Corridors
-                        </h3>
-                        <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-2.5 py-1 rounded-lg">Top 4</span>
-                    </div>
-                    <div id="topCorridorsContainer" class="space-y-3 text-xs"></div>
-                </div>
-
-                <!-- Strategic Recommendations -->
-                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:col-span-2 space-y-4 hover:shadow-md transition-shadow">
-                    <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
-                        <h3 class="font-bold text-slate-900 text-sm flex items-center">
-                            <i class="fa-solid fa-lightbulb text-amber-500 mr-2 text-base animate-pulse"></i>Strategic Business Recommendations
-                        </h3>
-                        <span class="text-[10px] bg-amber-50 text-amber-700 font-bold px-2.5 py-1 rounded-lg border border-amber-200/50">AI Insights</span>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                        <div class="p-4 bg-gradient-to-br from-emerald-50/60 to-transparent border border-emerald-100/80 rounded-2xl space-y-2 hover:border-emerald-300 transition-all">
-                            <div class="flex items-center gap-2 font-bold text-emerald-800">
-                                <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><i class="fa-solid fa-chart-line text-xs"></i></div>
-                                High Yield Lane Focus
-                            </div>
-                            <p class="text-slate-600 leading-relaxed">Prioritize dispatch allocations on top-performing corridors to maximize revenue yield and minimize deadhead miles.</p>
-                        </div>
-                        <div class="p-4 bg-gradient-to-br from-blue-50/60 to-transparent border border-blue-100/80 rounded-2xl space-y-2 hover:border-blue-300 transition-all">
-                            <div class="flex items-center gap-2 font-bold text-blue-800">
-                                <div class="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center"><i class="fa-solid fa-shield-halved text-xs"></i></div>
-                                Liquidity Optimization
-                            </div>
-                            <p class="text-slate-600 leading-relaxed">Monitor operational cash flows closely and balance upfront pick-up collections to maintain robust financial stability.</p>
-                        </div>
-                        <div class="p-4 bg-gradient-to-br from-purple-50/60 to-transparent border border-purple-100/80 rounded-2xl space-y-2 hover:border-purple-300 transition-all">
-                            <div class="flex items-center gap-2 font-bold text-purple-800">
-                                <div class="w-7 h-7 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center"><i class="fa-solid fa-wallet text-xs"></i></div>
-                                Payment Balancing
-                            </div>
-                            <p class="text-slate-600 leading-relaxed">Track digital payment channels alongside cash transactions to accelerate bank reconciliations and auditing.</p>
-                        </div>
-                        <div class="p-4 bg-gradient-to-br from-amber-50/60 to-transparent border border-amber-100/80 rounded-2xl space-y-2 hover:border-amber-300 transition-all">
-                            <div class="flex items-center gap-2 font-bold text-amber-800">
-                                <div class="w-7 h-7 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center"><i class="fa-solid fa-user-gear text-xs"></i></div>
-                                Dispatch Allocation
-                            </div>
-                            <p class="text-slate-600 leading-relaxed">Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div> <!-- END TAB 1: DASHBOARD -->
+        </div> <!-- END TAB 1 -->
 
         <!-- TAB 2: OPERATIONS LEDGER (CRUD) -->
         <div id="tab-jobs" class="hidden space-y-6 w-full flex flex-col">
@@ -264,41 +155,26 @@
                     <p class="text-xs text-slate-500">Filter records by Month and Year</p>
                 </div>
                 <button type="button" onclick="openAddModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center shadow-sm transition cursor-pointer">
-                    <i class="fa-solid fa-plus mr-1.5"></i>
-                    <span>Add New Job</span>
+                    <i class="fa-solid fa-plus mr-1.5"></i> Add New Job
                 </button>
             </div>
             
-            <!-- Filters Bar -->
             <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4 bg-white shadow-xs">
                 <div class="flex items-center space-x-2">
                     <label class="text-xs font-bold text-slate-600">Filter Month:</label>
                     <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
                         <option value="ALL">All Months</option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
+                        <option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option>
+                        <option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option>
+                        <option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
                     </select>
                 </div>
-                
                 <div class="flex items-center space-x-2">
                     <label class="text-xs font-bold text-slate-600">Filter Year:</label>
                     <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white"></select>
                 </div>
-                
-                <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
             </div>
             
-            <!-- Data Table Container -->
             <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs flex-1 flex flex-col">
                 <div class="overflow-x-auto flex-1">
                     <table class="w-full text-left text-xs min-w-[1100px]">
@@ -323,34 +199,29 @@
                     </table>
                 </div>
             </div>
-        </div> <!-- END TAB 2: JOBS -->
+        </div> <!-- END TAB 2 -->
 
-        <!-- TAB 3: PRIVATE TRUCK RENTAL -->
-<div id="tab-rentals" class="view-section hidden space-y-6"></div>
-        
-        <!-- 1. Header & Actions -->
+        <!-- TAB 3: PRIVATE TRUCK RENTAL (Properly Isolated inside tab-rentals container) -->
+        <div id="tab-rentals" class="hidden space-y-6 w-full flex flex-col">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                 <div>
                     <h2 class="text-xl font-bold text-slate-800">Private Truck Rental Management</h2>
                     <p class="text-xs text-slate-500 mt-1">Manage and track private truck rental transactions and records</p>
                 </div>
                 <button onclick="openPrivateTruckModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition shadow-sm cursor-pointer">
-    <i class="fa-solid fa-plus"></i> Add New Rental
-</button>
+                    <i class="fa-solid fa-plus"></i> Add New Rental
+                </button>
             </div>
 
-            <!-- 2. ضع جدول الملخص الإجمالي هنا (الكود الجديد) -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4">
                 <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                     <div>
                         <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial Summary</h3>
                         <p class="text-[11px] text-slate-400">Comprehensive summary of rental duration, cash payments, and total expenses</p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                            Total Rental Records: <span id="rentalTotalRecordsCount" class="text-emerald-600">0</span>
-                        </span>
-                    </div>
+                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                        Total Rental Records: <span id="rentalTotalRecordsCount" class="text-emerald-600">0</span>
+                    </span>
                 </div>
 
                 <div class="overflow-x-auto rounded-xl border border-slate-100">
@@ -375,7 +246,6 @@
                 </div>
             </div>
 
-            <!-- 3. الجدول القديم الخاص بالسجلات التفصيلية -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs">
@@ -390,244 +260,48 @@
                                 <th class="p-4 text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="truckRentalTableBody" class="divide-y divide-slate-100 font-medium text-slate-700">
-                            <!-- Rows injected via JavaScript -->
-                        </tbody>
+                        <tbody id="truckRentalTableBody" class="divide-y divide-slate-100 font-medium text-slate-700"></tbody>
                     </table>
                 </div>
             </div>
+        </div> <!-- END TAB 3 -->
 
-        </div>
-       <!-- TAB 4: WAREHOUSE -->
-<div id="tab-warehouse" class="hidden space-y-6 w-full flex flex-col"></div>
+        <!-- TAB 4: WAREHOUSE -->
+        <div id="tab-warehouse" class="hidden space-y-6 w-full flex flex-col"></div>
 
         <!-- TAB 5: USERS & ROLES -->
         <div id="tab-users" class="hidden space-y-6 w-full flex flex-col">
             <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs border border-slate-200">
-                <div>
-                    <h3 class="font-bold text-slate-900 text-base">Users & Roles Control Panel</h3>
-                    <p class="text-xs text-slate-500">Manage access privileges</p>
-                </div>
+                <h3 class="font-bold text-slate-900 text-base">Users & Roles Control Panel</h3>
             </div>
             <div class="glass-panel rounded-2xl overflow-hidden p-6 space-y-4 bg-white shadow-xs border border-slate-200">
                 <div class="space-y-3" id="usersListContainer"></div>
             </div>
-        </div> <!-- END TAB 5: USERS -->
+        </div> <!-- END TAB 5 -->
 
-        <!-- TAB 6: OFFICIAL PDF REPORT -->
+        <!-- TAB 6: REPORTS -->
         <div id="tab-reports" class="hidden space-y-6 w-full flex flex-col">
-            <!-- Header & Controls Bar -->
-            <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border border-slate-200">
-                <div>
-                    <h3 class="font-bold text-slate-900 text-base">Financial & Operations Reports</h3>
-                    <p class="text-xs text-slate-500">Summary and Detailed views with advanced telemetry</p>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                    <div class="flex items-center space-x-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
-                        <div class="flex items-center space-x-1 px-1">
-                            <span class="text-[10px] font-bold text-slate-500 uppercase">From:</span>
-                            <input type="date" id="filterStartDate" onchange="applyReportFilters()" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500">
-                        </div>
-                        <div class="flex items-center space-x-1 px-1">
-                            <span class="text-[10px] font-bold text-slate-500 uppercase">To:</span>
-                            <input type="date" id="filterEndDate" onchange="applyReportFilters()" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500">
-                        </div>
-                    </div>
-
-                    <!-- Save PDF Button -->
-                    <button onclick="exportOfficialPDF()" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 transition cursor-pointer shadow-sm">
-                        <i class="fa-solid fa-file-pdf text-sm"></i>
-                        <span>Save PDF</span>
-                    </button>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                    <select id="filterJobType" onchange="applyReportFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500">
-                        <option value="all">All Types</option>
-                        <option value="delivery">Deliveries Only</option>
-                        <option value="moving">Moving Jobs</option>
-                    </select>
-
-                    <select id="filterPaymentType" onchange="applyReportFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500">
-                        <option value="all">All Payments</option>
-                        <option value="cash">Cash</option>
-                        <option value="zelle">Zelle</option>
-                        <option value="cheque">Cheque</option>
-                        <option value="pmo">PMO</option>
-                        <option value="bc">BC</option>
-                        <option value="pc">PC</option>
-                        <option value="cc">CC</option>
-                        <option value="wt">WT</option>
-                    </select>
-
-                    <div class="flex space-x-2">
-                        <button onclick="switchReportMode('summary')" id="btnSummaryMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer">Summary</button>
-                        <button onclick="switchReportMode('detailed')" id="btnDetailedMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer">Detailed</button>
-                    </div>
-                </div>
+            <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs flex justify-between items-center border border-slate-200">
+                <h3 class="font-bold text-slate-900 text-base">Financial & Operations Reports</h3>
+                <button onclick="exportOfficialPDF()" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-600 text-white flex items-center gap-1.5">Save PDF</button>
             </div>
-
-            <!-- Summary Report View -->
-            <div id="summaryReportView" class="space-y-6">
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                        <div class="text-slate-500 text-xs">Total Jobs</div>
-                        <div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                        <div class="text-slate-500 text-xs">Total Deliveries</div>
-                        <div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                        <div class="text-slate-500 text-xs">Total Revenue</div>
-                        <div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                        <div class="text-slate-500 text-xs">Total Expenses</div>
-                        <div id="sumTotalExpenses" class="text-lg font-bold text-rose-600">$0</div>
-                    </div>
-                </div>
-                <div id="summaryReportContainer"></div>
-            </div>
-
-            <!-- Detailed Report View -->
-            <div id="detailedReportView" class="hidden space-y-8">
-                <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-sm">1. Operations Ledger (Master Jobs)</h4>
-                            <p class="text-[11px] text-slate-400">Detailed job operations, crew allocations, and revenues</p>
-                        </div>
-                        <span id="detailedJobsBadge" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">0 Jobs</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3 border">Date</th>
-                                    <th class="p-3 border">Job No</th>
-                                    <th class="p-3 border">Route</th>
-                                    <th class="p-3 border">Foreman Name</th>    
-                                    <th class="p-3 border">Foreman 10%</th>     
-                                    <th class="p-3 border">Helpers</th>
-                                    <th class="p-3 border">Drivers</th>
-                                    <th class="p-3 border">Total</th>
-                                    <th class="p-3 border">P.U Payment</th>
-                                    <th class="p-3 border">Destination</th>
-                                    <th class="p-3 border">Diesel</th>
-                                    <th class="p-3 border">Hotel</th>
-                                    <th class="p-3 border text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="detailedReportBody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-sm">2. Private Truck Rental Ledger</h4>
-                            <p class="text-[11px] text-slate-400">Recorded truck rental expenses for selected period</p>
-                        </div>
-                        <span id="detailedRentalsBadge" class="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-lg border border-amber-200">0 Records</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3 border">Date</th>
-                                    <th class="p-3 border">Vendor / Truck No</th>
-                                    <th class="p-3 border">Description / Notes</th>
-                                    <th class="p-3 border">Payment Method</th>
-                                    <th class="p-3 border text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody id="detailedRentalsBody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-sm">3. Warehouse & Other Expenses Ledger</h4>
-                            <p class="text-[11px] text-slate-400">Warehouse costs, storage units, diesel, and miscellaneous expenses</p>
-                        </div>
-                        <span id="detailedWarehouseBadge" class="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-lg border border-purple-200">0 Records</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3 border">Date</th>
-                                    <th class="p-3 border">Category / Type</th>
-                                    <th class="p-3 border">Description / Facility</th>
-                                    <th class="p-3 border">Payment Method</th>
-                                    <th class="p-3 border text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody id="detailedWarehouseBody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div> <!-- END TAB 6: REPORTS -->
+        </div> <!-- END TAB 6 -->
 
         <!-- TAB 7: RECYCLE BIN -->
         <div id="tab-trash" class="hidden space-y-6 w-full flex flex-col">
             <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs border border-slate-200">
-                <div>
-                    <h3 class="font-bold text-slate-900 text-base">Recycle Bin</h3>
-                    <p class="text-xs text-slate-500">Restore or permanently delete removed records</p>
-                </div>
-                <button onclick="emptyTrashBin()" class="px-3 py-2 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-semibold transition cursor-pointer">
-                    <i class="fa-solid fa-trash-can mr-1"></i> Empty Trash
-                </button>
+                <h3 class="font-bold text-slate-900 text-base">Recycle Bin</h3>
             </div>
-            <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs border border-slate-200">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs min-w-[1000px]">
-                        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
-                            <tr>
-                                <th class="p-3 text-left">Date</th>
-                                <th class="p-3 text-left">Type</th>
-                                <th class="p-3 text-left">Identifier / Title</th>
-                                <th class="p-3 text-left">Details / Route</th>
-                                <th class="p-3 text-left">Assigned / Paid By</th>
-                                <th class="p-3 text-left text-purple-700">Helpers</th>
-                                <th class="p-3 text-left text-blue-700">Drivers</th>
-                                <th class="p-3 text-left text-emerald-600">Amount / Total</th>
-                                <th class="p-3 text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="trashTableBody" class="divide-y text-slate-700 bg-white"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div> <!-- END TAB 7: TRASH -->
+        </div> <!-- END TAB 7 -->
 
     </main>
 
- <!-- External Script Files (Fixed Order & Synchronization) -->
-    <script src="data.js"></script>
-    <script src="storage.js"></script>
-    <script src="Dashboard.js"></script>
-    <script src="warehouse-data.js"></script>
-    <script src="rentalForm.js"></script>
-    <script src="warehouseform.js"></script>
-    <script src="reports.js"></script>
-    <script src="app.js"></script>
-
-    <!-- UNIQUE MODAL CONTAINER -->
+    <!-- UNIQUE JOB EDIT / ADD MODAL (Ensuring Drivers & Helpers inputs are fully visible) -->
     <div id="jobModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 overflow-y-auto" style="display: none;">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-auto relative z-10 max-h-[90vh] overflow-y-auto pointer-events-auto">
-            
-            <!-- Header with Close (X) Button -->
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-auto relative z-10 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 id="modalTitle" class="font-bold text-slate-900 text-base">Add New Job</h3>
-                <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-lg font-bold p-1 transition cursor-pointer">
+                <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-lg font-bold p-1 cursor-pointer">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -635,38 +309,34 @@
             <form id="jobForm" onsubmit="saveJob(event)" class="space-y-3 text-xs">
                 <input type="hidden" id="editIndex" value="-1">
                 
-                <!-- Date -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Date</label>
-                    <input type="date" id="jobDate" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 bg-white">
+                    <input type="date" id="jobDate" required class="w-full p-2.5 border rounded-xl bg-white">
                 </div>
                 
-                <!-- Job No -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Job No</label>
-                    <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="G4648193">
+                    <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl">
                 </div>
                 
-                <!-- Route -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Route (From → To)</label>
                     <div class="flex items-center gap-2">
-                        <input type="text" id="routeFrom" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="From (e.g. NC)">
-                        <span class="text-slate-400 font-bold text-sm px-1">→</span>
-                        <input type="text" id="routeTo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="To (e.g. NV)">
+                        <input type="text" id="routeFrom" required class="w-full p-2.5 border rounded-xl uppercase" placeholder="From">
+                        <span class="text-slate-400 font-bold text-sm">→</span>
+                        <input type="text" id="routeTo" required class="w-full p-2.5 border rounded-xl uppercase" placeholder="To">
                     </div>
                 </div>
                 
-                <!-- Foreman Name -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Foreman Name</label>
-                    <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="no name">
+                    <input type="text" id="jobForeman" class="w-full p-2.5 border rounded-xl">
                 </div>
 
                 <!-- Helpers Cost Section -->
                 <div class="border-t border-slate-200 pt-3 space-y-2">
                     <label class="block font-bold text-slate-700">Helpers Cost</label>
-                    <select id="helpersCost" class="w-full p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500">
+                    <select id="helpersCost" class="w-full p-2.5 border rounded-xl text-xs font-semibold bg-white">
                         <option value="0">None / 0</option>
                         <option value="100">1/2 (100)</option>
                         <option value="200">1 (200)</option>
@@ -680,10 +350,10 @@
                     </select>
                 </div>
 
-                <!-- Drivers Cost Section -->
+                <!-- Drivers Cost Section (Fixed for Edit Mode) -->
                 <div class="border-t border-slate-200 pt-3 space-y-2">
                     <label class="block font-bold text-slate-700">Drivers Cost</label>
-                    <select id="driversCost" class="w-full p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500">
+                    <select id="driversCost" class="w-full p-2.5 border rounded-xl text-xs font-semibold bg-white">
                         <option value="0">None / 0</option>
                         <option value="112.5">1/2 (112.5)</option>
                         <option value="225">1 (225)</option>
@@ -693,71 +363,20 @@
                     </select>
                 </div>
 
-                <!-- Diesel Expense -->
-                <div class="border-t border-slate-200 pt-3 space-y-2">
-                    <label class="block font-bold text-slate-700">Diesel Expense</label>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="dieselAmount" placeholder="Amount (e.g. 150)" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500">
-                        <select id="dieselMethod" class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white">
-                            <option value="Cash">Cash</option>
-                            <option value="Zelle">Zelle</option>
-                            <option value="Dif">Dif</option>
-                            <option value="Diesel">Diesel</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Hotel Expense -->
-                <div class="border-t border-slate-200 pt-3 space-y-2">
-                    <label class="block font-bold text-slate-700">Hotel Expense</label>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="hotelAmount" placeholder="Amount (e.g. 200)" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500">
-                        <select id="hotelMethod" class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white">
-                            <option value="Cash">Cash</option>
-                            <option value="Zelle">Zelle</option>
-                            <option value="others">others</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Total Amount -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Total Amount</label>
-                    <input type="text" id="jobTotal" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="$3,795">
+                    <input type="text" id="jobTotal" required class="w-full p-2.5 border rounded-xl">
                 </div>
 
-                <!-- Dynamic Pick Up Payments Section -->
-                <div class="border-t border-slate-200 pt-3 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <label class="block font-bold text-slate-700">P.U Payments</label>
-                        <button type="button" onclick="addPaymentRow('puContainer')" class="text-emerald-600 hover:text-emerald-700 text-xs font-bold flex items-center gap-1 cursor-pointer">
-                            <i class="fa-solid fa-plus"></i> Add Payment
-                        </button>
-                    </div>
-                    <div id="puContainer" class="space-y-2"></div>
-                </div>
-
-                <!-- Dynamic Destination Payments Section -->
-                <div class="border-t border-slate-200 pt-3 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <label class="block font-bold text-slate-700">Destination Payments / Balance</label>
-                        <button type="button" onclick="addPaymentRow('destContainer')" class="text-emerald-600 hover:text-emerald-700 text-xs font-bold flex items-center gap-1 cursor-pointer">
-                            <i class="fa-solid fa-plus"></i> Add Payment
-                        </button>
-                    </div>
-                    <div id="destContainer" class="space-y-2"></div>
-                </div>
-
-                <!-- Action Buttons -->
                 <div class="flex justify-end space-x-2 pt-4 border-t sticky bottom-0 bg-white pb-2 mt-4">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition cursor-pointer">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer">Save Record</button>
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md">Save Record</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- External Script Files -->
+    <!-- External Script Files (Loaded once in correct dependency order) -->
     <script src="data.js"></script>
     <script src="storage.js"></script>
     <script src="Dashboard.js"></script>
@@ -766,8 +385,5 @@
     <script src="warehouseform.js"></script>
     <script src="reports.js"></script>
     <script src="app.js"></script>
-</body>
-</html>
-
 </body>
 </html>
