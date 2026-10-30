@@ -182,15 +182,15 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
     rowDiv.innerHTML = `
         <input type="text" placeholder="Amount (e.g. 500)" value="${amount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
         <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
-            <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
-            <option value="Zelle" ${method === 'Zelle' ? 'selected' : ''}>Zelle</option>
-            <option value="Cheque" ${method === 'Cheque' ? 'selected' : ''}>Cheque</option>
-            <option value="PMO" ${method === 'PMO' ? 'selected' : ''}>PMO</option>
-            <option value="BC" ${method === 'BC' ? 'selected' : ''}>BC</option>
-            <option value="PC" ${method === 'PC' ? 'selected' : ''}>PC</option>
-            <option value="CC" ${method === 'CC' ? 'selected' : ''}>CC</option>
-            <option value="WT" ${method === 'WT' ? 'selected' : ''}>WT</option>
-            <option value="Others" ${method === 'Others' ? 'selected' : ''}>Others</option>
+            <option value="Cash" ${method.toLowerCase() === 'cash' ? 'selected' : ''}>Cash</option>
+            <option value="Zelle" ${method.toLowerCase() === 'zelle' ? 'selected' : ''}>Zelle</option>
+            <option value="Cheque" ${['cheque', 'ck', 'check'].includes(method.toLowerCase()) ? 'selected' : ''}>Cheque</option>
+            <option value="PMO" ${method.toUpperCase() === 'PMO' ? 'selected' : ''}>PMO</option>
+            <option value="BC" ${method.toUpperCase() === 'BC' ? 'selected' : ''}>BC</option>
+            <option value="PC" ${method.toUpperCase() === 'PC' ? 'selected' : ''}>PC</option>
+            <option value="CC" ${method.toUpperCase() === 'CC' ? 'selected' : ''}>CC</option>
+            <option value="WT" ${method.toUpperCase() === 'WT' ? 'selected' : ''}>WT</option>
+            <option value="Others" ${method.toLowerCase() === 'others' ? 'selected' : ''}>Others</option>
         </select>
         <button type="button" onclick="removePaymentRow('${rowId}')" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer delete-payment-btn" title="Remove">
             <i class="fa-solid fa-xmark pointer-events-none"></i>
@@ -234,7 +234,6 @@ function parseHelpersDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
     let strVal = String(val).trim();
     
-    // في حال كانت القيمة نصاً يحتوي أصلًا على صيغة محددة من القاموس المعتمد
     const helpersMap = {
         100: "1/2 (100)",
         200: "1 (200)",
@@ -247,7 +246,6 @@ function parseHelpersDisplay(val) {
         1000: "4-1 1/2 (1000)"
     };
 
-    // استخراج المبلغ الرقمي بين الأقواس أو الرقم الأساسي
     let num = 0;
     let match = strVal.match(/\(([\d.]+)\)/);
     if (match) {
@@ -256,17 +254,9 @@ function parseHelpersDisplay(val) {
         num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
     }
 
-    if (isNaN(num) || num === 0) return '-';
+    if (isNaN(num) || num === 0) return strVal.includes('(') ? strVal : '-';
 
-    // الإرجاع من القاموس المعتمد فقط
-    return helpersMap[num] || '-';
-}
-
-function sanitizeCostValue(val) {
-    if (!val || val === '-' || val === '0') return 0;
-    let match = String(val).match(/\(([\d.]+)\)/);
-    if (match) return parseFloat(match[1]);
-    return parseFloat(String(val).replace(/[^0-9.]/g, '')) || 0;
+    return helpersMap[num] || strVal;
 }
 
 function parseDriversDisplay(val) {
@@ -275,17 +265,20 @@ function parseDriversDisplay(val) {
     if (strVal.includes('(')) return strVal;
     
     let num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
-    if (isNaN(num) || num === 0) return '-';
+    if (isNaN(num) || num === 0) return strVal;
 
     const driversMap = {
         112.5: "1/2 (112.5)",
         225: "1 (225)",
+        250: "1-1 1/2 (250)",
         337: "1-1 1/2 (337)",
+        400: "2 (400)",
         450: "2 (450)",
+        500: "2-1 1/2 (500)",
         675: "2-1 1/2 (675)"
     };
 
-    return driversMap[num] || '-';
+    return driversMap[num] || strVal;
 }
 
 window.parseHelpersDisplay = parseHelpersDisplay;
@@ -335,7 +328,7 @@ function renderJobsCRUD(dataToRender) {
         const totalVal = (item.total && item.total !== '-') ? item.total : '-';
 
         let totalNum = parseFloat(String(totalVal).replace(/[^0-9.]/g, '')) || 0;
-        let foreman10Val = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+        let foreman10Val = item.foreman10pct ? ('$' + item.foreman10pct) : (totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-');
 
         return `
             <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
@@ -359,10 +352,7 @@ function renderJobsCRUD(dataToRender) {
 window.renderJobsCRUD = renderJobsCRUD;
 
 // ==========================================
-// 6. MODAL & JOB ACTIONS (Fixed Edit Form Reset & Data Population)
-// ==========================================
-// ==========================================
-// 6. MODAL & JOB ACTIONS (Fixed Edit Form Reset & Data Population)
+// 6. MODAL & JOB ACTIONS
 // ==========================================
 function openAddModal(isEdit = false, recordData = null, index = -1) {
     const modal = document.getElementById('jobModal');
@@ -377,56 +367,19 @@ function openAddModal(isEdit = false, recordData = null, index = -1) {
     const modalTitle = document.getElementById('modalTitle');
     const editIndex = document.getElementById('editIndex');
 
-    if (isEdit && recordData) {
-        // في حالة التعديل: تغيير العنوان وتعبئة الحقول بالبيانات الحالية
-        if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
-        if (editIndex) editIndex.value = index;
-
-        // تعبئة الحقول النصية والتاريخية الأساسية
-        if (document.getElementById('jobDate')) {
-            // تحويل التاريخ من M/D/YYYY إلى YYYY-MM-DD ليتوافق مع input type="date"
-            let rawDate = recordData.date || '';
-            if (rawDate.includes('/')) {
-                const parts = rawDate.split('/');
-                if (parts.length === 3) {
-                    const m = parts[0].padStart(2, '0');
-                    const d = parts[1].padStart(2, '0');
-                    const y = parts[2];
-                    rawDate = `${y}-${m}-${d}`;
-                }
-            }
-            document.getElementById('jobDate').value = rawDate;
-        }
-
-        if (document.getElementById('jobNo')) document.getElementById('jobNo').value = recordData.jobNo || '';
-        
-        // تفكيك المسار (Route) وتعبئة حقول From و To إن وجدت
-        if (recordData.route && recordData.route.includes('→')) {
-            const rParts = recordData.route.split('→').map(s => s.trim());
-            if (document.getElementById('routeFrom')) document.getElementById('routeFrom').value = rParts[0] || '';
-            if (document.getElementById('routeTo')) document.getElementById('routeTo').value = rParts[1] || '';
-        }
-
-        if (document.getElementById('jobForeman')) document.getElementById('jobForeman').value = recordData.foreman || '';
-        if (document.getElementById('jobTotal')) document.getElementById('jobTotal').value = recordData.total ? recordData.total.replace('$', '') : '';
-
-        // استخدام دالة المطابقة الصحيحة مع الـ IDs الفعلية المطابقة لدالة saveJob
-        setSelectValue('helpersCost', recordData.helpers); 
-        setSelectValue('driversCost', recordData.drivers); 
-
-    } else {
-        // في حالة الإضافة الجديدة: تصفير النموذج
+    if (!isEdit) {
         if (jobForm) jobForm.reset();
         if (editIndex) editIndex.value = '-1';
         if (modalTitle) modalTitle.innerText = 'Add New Job Dispatch';
 
         const puContainer = document.getElementById('puContainer');
-        const destContainer = document.getElementById('destContainer');
+        const destContainer = document.getElementById('destContainer') || document.getElementById('destContextContainer');
         if (puContainer) puContainer.innerHTML = '';
         if (destContainer) destContainer.innerHTML = '';
     }
 }
 window.openAddModal = openAddModal;
+
 function closeModal() {
     const modal = document.getElementById('jobModal');
     if (modal) {
@@ -470,10 +423,10 @@ function saveJob(event) {
     }
 
     let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
-    let totalFormatted = totalRaw && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
+    let totalFormatted = totalRaw && totalRaw !== '-' && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
 
     let totalNum = parseFloat(String(totalFormatted).replace(/[^0-9.]/g, '')) || 0;
-    let foreman10Val = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+    let foreman10Val = totalNum > 0 ? (totalNum * 0.1).toFixed(0) : '0';
 
     const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
     const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
@@ -503,7 +456,7 @@ function saveJob(event) {
         jobNo: jobNoVal,
         route: routeVal,
         foreman: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
-        foreman10: foreman10Val,
+        foreman10pct: foreman10Val,
         total: totalFormatted,
         helpers: helpersFormatted,        
         drivers: driversFormatted,        
@@ -533,14 +486,11 @@ function saveJob(event) {
 }
 window.saveJob = saveJob;
 
-
 function parseAndSumDiesel(val) {
     if (!val || val === '-' || val === '0' || val === 0) return 0;
-    
     if (typeof val === 'number') return val;
 
     let strVal = String(val).trim();
-    
     if (strVal.includes('+')) {
         let parts = strVal.split('+');
         let sum = 0;
@@ -553,9 +503,7 @@ function parseAndSumDiesel(val) {
 
     return parseFloat(strVal.replace(/[^0-9.]/g, '')) || 0;
 }
-
 window.parseAndSumDiesel = parseAndSumDiesel;
-
 
 function editJob(jobNoParam) {
     initMasterJobsData();
@@ -567,7 +515,7 @@ function editJob(jobNoParam) {
     }
 
     const j = window.masterJobs[index];
-    openAddModal(true); 
+    openAddModal(true, j, index); 
 
     const modalTitle = document.getElementById('modalTitle');
     if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
@@ -579,21 +527,33 @@ function editJob(jobNoParam) {
         if (document.getElementById('jobDate')) document.getElementById('jobDate').value = formatJobDateForInput(j.date);
         if (document.getElementById('jobNo')) document.getElementById('jobNo').value = j.jobNo || '';
         if (document.getElementById('jobForeman')) document.getElementById('jobForeman').value = j.foreman || '';
-        if (document.getElementById('jobTotal')) document.getElementById('jobTotal').value = j.total || '';
+        if (document.getElementById('jobTotal')) document.getElementById('jobTotal').value = j.total ? String(j.total).replace('$', '').trim() : '';
 
         if (j.route && j.route.includes('→')) {
             const rParts = j.route.split('→');
             if (document.getElementById('routeFrom')) document.getElementById('routeFrom').value = rParts[0].trim();
             if (document.getElementById('routeTo')) document.getElementById('routeTo').value = rParts[1].trim();
+        } else if (j.route) {
+            if (document.getElementById('routeFrom')) document.getElementById('routeFrom').value = j.route.trim();
         }
 
         const helpersSelect = document.getElementById('helpersCost');
         if (helpersSelect && j.helpers && j.helpers !== '-') {
             const numHelpers = parseFloat(String(j.helpers).replace(/[^0-9.]/g, ''));
+            let matched = false;
             for (let option of helpersSelect.options) {
                 if (numHelpers > 0 && option.text.includes(`(${numHelpers})`)) {
                     option.selected = true;
+                    matched = true;
                     break;
+                }
+            }
+            if (!matched) {
+                for (let option of helpersSelect.options) {
+                    if (option.text.trim() === String(j.helpers).trim()) {
+                        option.selected = true;
+                        break;
+                    }
                 }
             }
         }
@@ -601,10 +561,20 @@ function editJob(jobNoParam) {
         const driversSelect = document.getElementById('driversCost');
         if (driversSelect && j.drivers && j.drivers !== '-') {
             const numDrivers = parseFloat(String(j.drivers).replace(/[^0-9.]/g, ''));
+            let matched = false;
             for (let option of driversSelect.options) {
                 if (numDrivers > 0 && option.text.includes(`(${numDrivers})`)) {
                     option.selected = true;
+                    matched = true;
                     break;
+                }
+            }
+            if (!matched) {
+                for (let option of driversSelect.options) {
+                    if (option.text.trim() === String(j.drivers).trim()) {
+                        option.selected = true;
+                        break;
+                    }
                 }
             }
         }
@@ -655,8 +625,6 @@ function editJob(jobNoParam) {
     }, 50);
 }
 window.editJob = editJob;
-
-
 
 function deleteJob(jobNo) {
     if (!confirm('Are you sure you want to delete this dispatch record?')) return;
@@ -763,6 +731,7 @@ function updateDashboardAnalytics() {
     }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
+
 function renderDashboardCharts(monthlyData, paymentData) {
     try {
         const ctxRevenue = document.getElementById('revenueChart');
