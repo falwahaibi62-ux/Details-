@@ -35,8 +35,6 @@ if (typeof window.initialWarehouseRecords === 'undefined') {
     { date: "10/25/2026", services: "Materials", amount: 450, paymentType: "Cash", details: "Warehouse supplies and materials" }
 ];
 
-if (!localStorage.getItem('movepro_warehouse_records')) {
-    localStorage.setItem('movepro_warehouse_records', JSON.stringify(initialWarehouseRecords));
-} else {
+if (!localStorage.getItem('movepro_warehouse_records') && typeof initialWarehouseRecords !== 'undefined') {
     localStorage.setItem('movepro_warehouse_records', JSON.stringify(initialWarehouseRecords));
 }
