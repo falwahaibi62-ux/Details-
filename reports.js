@@ -66,12 +66,10 @@ window.resetReportFilters = resetReportFilters;
 // دالة مساعدة لتطبيع التواريخ محلياً وتجنب مشاكل الفروق الزمنية
 function parseLocalDate(dateStr) {
     if (!dateStr) return null;
-    // إذا كان التاريخ بصيغة YYYY-MM-DD (من حقل الفلتر)
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
         const [y, m, d] = dateStr.split('-').map(Number);
         return new Date(y, m - 1, d, 0, 0, 0, 0);
     }
-    // إذا كان التاريخ بصيغة M/D/YYYY أو MM/DD/YYYY (من سجلات العمليات)
     const parts = dateStr.split('/');
     if (parts.length === 3) {
         const m = parseInt(parts[0], 10);
@@ -84,7 +82,6 @@ function parseLocalDate(dateStr) {
 }
 window.parseLocalDate = parseLocalDate;
 
-// تحديث دالة getFilteredJobsData داخل ملف reports.js
 function getFilteredJobsData() {
     const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     
@@ -130,6 +127,7 @@ function getFilteredJobsData() {
     });
 }
 window.getFilteredJobsData = getFilteredJobsData;
+
 // دالة حساب وإنشاء جدول إجمالي إيجارات الشاحنات المصفى حسب التاريخ
 function generateTruckRentalSummaryTableHTML() {
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
@@ -213,6 +211,84 @@ function generateTruckRentalSummaryTableHTML() {
     };
 }
 
+// 🌟 دالة حساب وإنشاء جدول إجمالي المستودع والمصاريف الأخرى المصفى حسب التاريخ
+function generateWarehouseSummaryTableHTML() {
+    const warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+    
+    const startDateVal = document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('filterEndDate')?.value;
+    const startDate = startDateVal ? new Date(startDateVal) : null;
+    const endDate = endDateVal ? new Date(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59);
+
+    let sumCash = 0;
+    let sumOthers = 0;
+    let grandTotal = 0;
+    let filteredCount = 0;
+
+    warehouse.forEach(w => {
+        if (w.date) {
+            const wDate = new Date(w.date);
+            if (startDate && wDate < startDate) return;
+            if (endDate && wDate > endDate) return;
+        }
+
+        filteredCount++;
+        const amount = parseCurrency(w.amount);
+        grandTotal += amount;
+
+        const paymentType = String(w.paymentType || '').toLowerCase();
+        if (paymentType.includes('cash')) {
+            sumCash += amount;
+        } else {
+            sumOthers += amount;
+        }
+    });
+
+    return {
+        count: filteredCount,
+        sumCash: sumCash,
+        sumOthers: sumOthers,
+        grandTotal: grandTotal,
+        html: `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
+                <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">Warehouse & Others Financial Summary</h3>
+                        <p class="text-[11px] text-slate-400">Comprehensive summary of warehouse expenses, materials, rent, and other operational costs</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                            Total Records: <span class="text-purple-600">${filteredCount}</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <table class="w-full text-left border-collapse text-[11px]">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                                <th class="p-2.5 border-r border-slate-200/60 text-center">Total Items / Expenses</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash Payments</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">Other Payments (Others)</th>
+                                <th class="p-2.5 text-center bg-purple-700 text-white font-extrabold">Grand Total Warehouse Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-2.5 border-r text-center font-bold text-slate-800">${filteredCount} Items</td>
+                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold bg-emerald-50/20">$${sumCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-blue-600 font-bold bg-blue-50/20">$${sumOthers.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                <td class="p-2.5 text-center bg-purple-50 text-purple-900 font-extrabold text-xs">$${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `
+    };
+}
+
 function generateOfficialSummaryTable(filteredJobs) {
     const totalJobs = filteredJobs.length;
     const totalDeliveries = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
@@ -282,6 +358,7 @@ function generateOfficialSummaryTable(filteredJobs) {
     });
 
     const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
+    const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
 
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
@@ -338,8 +415,11 @@ function generateOfficialSummaryTable(filteredJobs) {
             </div>
         </div>
 
-        <!-- 🌟 جدول ملخص إيجارات الشاحنات يظهر هنا تحت الجدول المالي مباشرة -->
+        <!-- 🌟 جدول ملخص إيجارات الشاحنات -->
         ${rentalSummaryObj.html}
+
+        <!-- 🌟 جدول ملخص المستودع والمصاريف الأخرى -->
+        ${warehouseSummaryObj.html}
     `;
 }
 
@@ -456,20 +536,16 @@ function generateSummaryReportData() {
 }
 window.generateSummaryReportData = generateSummaryReportData;
 
-
 /**
  * MovePro - Official Financial & Operational Summary Reports Script
  * Handles summary metrics, data extraction from localStorage, and UI binding.
  */
-
 function updateSummaryReportView() {
     try {
-        // 1. استرجاع البيانات من الـ localStorage (مع التعامل مع حالة عدم وجود بيانات مسبقة)
         const dispatchRecords = JSON.parse(localStorage.getItem('movepro_dispatch_records')) || [];
         const warehouseRecords = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
         const rentalRecords = JSON.parse(localStorage.getItem('movepro_rental_records')) || [];
 
-        // 2. حساب عدد الوظائف والتوصيلات والإيرادات المباشرة
         let totalJobsCount = 0;
         let totalDeliveriesCount = 0;
         let totalRevenueSum = 0;
@@ -490,16 +566,13 @@ function updateSummaryReportView() {
             }
         });
 
-        // القيم الافتراضية المعتمدة في حال كانت الـ records فارغة (320 Jobs + 77 Deliveries)
         if (totalJobsCount === 0 && totalDeliveriesCount === 0) {
             totalJobsCount = 320;
             totalDeliveriesCount = 77;
-            totalRevenueSum = 1130466; // صافي الإيرادات المباشرة المعتمدة بدون Dest Balance و Warehouse
+            totalRevenueSum = 1130466; 
         }
 
-        // 3. حساب إجمالي المصاريف (Warehouse + Rental Truck)
         let totalExpensesSum = 0;
-
         warehouseRecords.forEach(item => {
             totalExpensesSum += parseFloat(item.amount || 0);
         });
@@ -508,7 +581,6 @@ function updateSummaryReportView() {
             totalExpensesSum += parseFloat(item.totalCost || item.amount || 0);
         });
 
-        // 4. تحديث عناصر واجهة المستخدم (DOM Elements) داخل summaryReportView
         const elJobs = document.getElementById('sumTotalJobs');
         const elDeliveries = document.getElementById('sumTotalDeliveries');
         const elRevenue = document.getElementById('sumTotalRevenue');
@@ -524,12 +596,10 @@ function updateSummaryReportView() {
     }
 }
 
-// تشغيل الدالة تلقائياً عند تحميل الصفحة وتوفير الـ DOM
 document.addEventListener('DOMContentLoaded', () => {
     updateSummaryReportView();
 });
 
-// إتاحة الدالة عالمياً لتتمكن بقية الملفات أو الأزرار من استدعائها عند التنقل بين التبويبات
 window.updateSummaryReportView = updateSummaryReportView;
 
 function generateDetailedReportData() {
@@ -709,7 +779,6 @@ function exportOfficialPDF() {
         }
     });
 
-    // حساب مجاميع إيجار الشاحنات لتقرير PDF
     let rentalPdfDays = 0, rentalPdfCash = 0, rentalPdfOther = 0, rentalPdfTotal = 0;
     filteredRentals.forEach(r => {
         const daysNum = parseInt(String(r.days || '0').replace(/[^0-9]/g, '')) || 0;
@@ -719,6 +788,16 @@ function exportOfficialPDF() {
         const pType = String(r.paymentType || '').toLowerCase();
         if (pType.includes('cash')) rentalPdfCash += amt;
         else rentalPdfOther += amt;
+    });
+
+    // حساب مجاميع المستودع لتقرير PDF
+    let warehousePdfCash = 0, warehousePdfOthers = 0, warehousePdfTotal = 0;
+    filteredWarehouse.forEach(w => {
+        const amt = parseCurrency(w.amount);
+        warehousePdfTotal += amt;
+        const pType = String(w.paymentType || '').toLowerCase();
+        if (pType.includes('cash')) warehousePdfCash += amt;
+        else warehousePdfOthers += amt;
     });
 
     const printWindow = window.open('', '_blank');
@@ -739,6 +818,7 @@ function exportOfficialPDF() {
                 .page-break { page-break-before: always; }
                 .summary-header { background-color: #d6c3b3; color: #3f2e21; font-weight: bold; }
                 .rental-header { background-color: #f8fafc; color: #1e293b; font-weight: bold; }
+                .warehouse-header { background-color: #faf5ff; color: #581c87; font-weight: bold; }
             </style>
         </head>
         <body>
@@ -786,8 +866,8 @@ function exportOfficialPDF() {
                 </table>
             </div>
 
-            <!-- 🌟 2. Private Truck Rental Financial Summary (يظهر هنا في الصفحة الأولى تحت الملخص مباشرة) -->
-            <div class="mb-6">
+            <!-- 2. Private Truck Rental Financial Summary -->
+            <div class="mb-5">
                 <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Private Truck Rental Financial Summary (${filteredRentals.length} Records)</h3>
                 <table class="table-pdf">
                     <thead>
@@ -804,6 +884,29 @@ function exportOfficialPDF() {
                             <td class="text-emerald-600">$${rentalPdfCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                             <td class="text-blue-600">$${rentalPdfOther.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                             <td class="bg-amber-50 text-amber-900 font-extrabold">$${rentalPdfTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 🌟 3. Warehouse & Others Financial Summary -->
+            <div class="mb-6">
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Warehouse & Others Financial Summary (${filteredWarehouse.length} Records)</h3>
+                <table class="table-pdf">
+                    <thead>
+                        <tr class="warehouse-header">
+                            <th>Total Items / Expenses</th>
+                            <th class="text-emerald-700">Cash Payments</th>
+                            <th class="text-blue-700">Other Payments (Others)</th>
+                            <th class="bg-purple-700 text-white">Grand Total Warehouse Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="font-bold text-slate-800">
+                            <td>${filteredWarehouse.length} Items</td>
+                            <td class="text-emerald-600">$${warehousePdfCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td class="text-blue-600">$${warehousePdfOthers.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td class="bg-purple-50 text-purple-900 font-extrabold">$${warehousePdfTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         </tr>
                     </tbody>
                 </table>
