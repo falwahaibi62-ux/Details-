@@ -329,6 +329,8 @@ function generateOfficialSummaryTable(filteredJobs) {
 
         const puStr = String(item.pu || '').toLowerCase();
         
+      const puStr = String(item.pu || '').toLowerCase();
+        
         // استخراج مبلغ الـ Cash بدقة (حتى لو كان في نص مركب مثل "2000 Cash, 250 Zelle")
         let cashPuVal = 0;
         if (puStr.includes('cash')) {
