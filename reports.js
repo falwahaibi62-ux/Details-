@@ -419,9 +419,69 @@ function generateOfficialSummaryTable(filteredJobs) {
         ${rentalSummaryObj.html}
 
         <!-- 🌟 جدول ملخص المستودع والمصاريف الأخرى -->
-        ${warehouseSummaryObj.html}
+       const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
+
+    return `
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
+            <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800">Official Period Financial Summary</h3>
+                    <p class="text-[11px] text-slate-400">Comprehensive summary of labor fees, cash, Zelle, and PMO breakdown</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                        Total Jobs: <span class="text-emerald-600">${totalJobs}</span>
+                    </span>
+                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                        Total Deliveries: <span class="text-blue-600">${totalDeliveries}</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-100">
+                <table class="w-full text-left border-collapse text-[11px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">Foreman</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">Helpers</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">Drivers</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-amber-700 bg-amber-50/50">Cash Diesel</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash PU Payment</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash Dest-Balance</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">PMO PU Payment</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">PU (No Cash/PMO)</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">Balance (No Cash/PMO)</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center">PMO Deliveries</th>
+                            <th class="p-2.5 border-r border-slate-200/60 text-center text-purple-700 bg-purple-50/30">Dest Balance Zelle</th>
+                            <th class="p-2.5 text-center bg-emerald-600 text-white font-extrabold">Total After Deposit</th>
+                        </tr>
+                    </thead>
+                    <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-2.5 border-r text-center">$${sumForeman10.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td class="p-2.5 border-r text-center">$${sumHelpers.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center">$${sumDrivers.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-amber-700 font-bold bg-amber-50/20">$${sumCashDiesel.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${sumCashPu.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${sumCashDest.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center">$${sumPmoPu.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${sumZellePu.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${sumDestNoCashPmo.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center">$${sumPmoDeliveries.toLocaleString()}</td>
+                            <td class="p-2.5 border-r text-center text-purple-600 font-bold">$${sumDestZelle.toLocaleString()}</td>
+                            <td class="p-2.5 text-center bg-emerald-50 text-emerald-800 font-extrabold text-xs">$${sumTotalAfterDeposit.toLocaleString()}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 🌟 جدول ملخص إيجارات الشاحنات فقط (تمت إزالة تكرار جدول المستودع) -->
+        ${rentalSummaryObj.html}
     `;
 }
+    
+
 
 function generateSummaryReportData() {
     const filteredJobs = getFilteredJobsData();
