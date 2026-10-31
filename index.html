@@ -377,63 +377,7 @@
                 </div>
             </div>
 
-       <!-- Summary Report View -->
-    <div id="summaryReportView" class="space-y-6">
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                <div class="text-slate-500 text-xs">Total Jobs</div>
-                <div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div>
-            </div>
-            <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                <div class="text-slate-500 text-xs">Total Deliveries</div>
-                <div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div>
-            </div>
-            <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                <div class="text-slate-500 text-xs">Total Revenue</div>
-                <div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div>
-            </div>
-            <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                <div class="text-slate-500 text-xs">Total Expenses</div>
-                <div id="sumTotalExpenses" class="text-lg font-bold text-rose-600">$0</div>
-            </div>
-        </div>
-
-        <!-- حاوية التقارير والجدول العام -->
-       <div id="summaryReportContainer"></div>
-    </div>
-        <!-- 🌟 إضافة قسم جدول ملخص المستودع هنا ليظهر مباشرة داخل شاشة التقارير -->
-        <div class="financial-section bg-white p-5 rounded-xl shadow-xs border border-slate-200" style="margin-top: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div>
-                    <h3 style="margin: 0; font-size: 16px; color: #1e293b; font-weight: 700;">Warehouse & Others Financial Summary</h3>
-                    <p style="margin: 3px 0 0 0; font-size: 12px; color: #64748b;">Comprehensive summary of warehouse expenses, materials, rent, and other operational costs</p>
-                </div>
-                <div style="background: #f1f5f9; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: #475569;">
-                    Total Records: <span id="warehouse-total-records">0</span>
-                </div>
-            </div>
-
-            <table style="width: 100%; border-collapse: collapse; text-align: center; font-family: inherit; font-size: 13px;">
-                <thead>
-                    <tr style="background-color: #f8fafc; color: #475569; border-bottom: 2px solid #e2e8f0;">
-                        <th style="padding: 10px; font-weight: 600; width: 25%;">TOTAL ITEMS / EXPENSES</th>
-                        <th style="padding: 10px; font-weight: 600; color: #0284c7; width: 25%;">CASH PAYMENTS</th>
-                        <th style="padding: 10px; font-weight: 600; color: #2563eb; width: 25%;">OTHER PAYMENTS (OTHERS)</th>
-                        <th style="padding: 10px; font-weight: 600; color: #fff; background-color: #d97706; width: 25%; border-top-right-radius: 6px;">GRAND TOTAL WAREHOUSE COST</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 600;">
-                        <td id="wh-count-items" style="padding: 14px; background-color: #fdfdfd;">0 Items</td>
-                        <td id="wh-cash-sum" style="padding: 14px; color: #0284c7; background-color: #fdfdfd;">$0.00</td>
-                        <td id="wh-others-sum" style="padding: 14px; color: #2563eb; background-color: #fdfdfd;">$0.00</td>
-                        <td id="wh-grand-total" style="padding: 14px; color: #b45309; background-color: #fef3c7; font-weight: 700; font-size: 15px;">$0.00</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
+      
             <!-- Detailed Report View -->
             <div id="detailedReportView" class="hidden space-y-8">
                 <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3">
