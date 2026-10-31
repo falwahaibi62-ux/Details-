@@ -329,9 +329,7 @@ function generateOfficialSummaryTable(filteredJobs) {
 
         const puStr = String(item.pu || '').toLowerCase();
         
-      const puStr = String(item.pu || '').toLowerCase();
-        
-        // استخراج مبلغ الـ Cash بدقة (حتى لو كان في نص مركب مثل "2000 Cash, 250 Zelle")
+        // استخراج مبلغ الـ Cash بدقة حتى لو كان في نص مركب (مثل "2000 Cash, 250 Zelle")
         let cashPuVal = 0;
         if (puStr.includes('cash')) {
             const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
@@ -343,22 +341,16 @@ function generateOfficialSummaryTable(filteredJobs) {
         }
 
         const rawPuVal = parseCurrency(item.pu);
-        const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
+        const puVal = (rawVal < 50000) ? rawVal : 0; // تم تصحيح rawPuVal أدناه
+        const cleanPuVal = (rawPuVal < 50000) ? rawPuVal : 0;
 
         if (puStr.includes('cash')) {
-            sumCashPu += (cashPuVal > 0 ? cashPuVal : puVal);
+            sumCashPu += (cashPuVal > 0 ? cashPuVal : cleanPuVal);
         } else if (puStr.includes('pmo')) {
-            sumPmoPu += puVal;
-        } else if (puStr.includes('zelle')) {
-            // احتساب مدفوعات Zelle الصريحة بدقة وتجنب جمع الرموز الأخرى غير المرغوبة
-            let zelleVal = 0;
-            const zelleMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*zelle/);
-            if (zelleMatch) {
-                zelleVal = parseCurrency(zelleMatch[1]);
-            } else {
-                zelleVal = puVal;
-            }
-            sumZellePu += zelleVal;
+            sumPmoPu += cleanPuVal;
+        } else {
+            // 🌟 احتساب كافة القيم الأخرى غير الكاش وغير الـ PMO (مثل Zelle, PC, BC وغيرها) لتظهر النتيجة الصحيحة
+            sumZellePu += cleanPuVal;
         }
         
         // تعريف وتجهيز متغير الـ Destination
@@ -388,7 +380,7 @@ function generateOfficialSummaryTable(filteredJobs) {
         }
 
         if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
-            sumPmoDeliveries += puVal;
+            sumPmoDeliveries += cleanPuVal;
         }
     });
 
