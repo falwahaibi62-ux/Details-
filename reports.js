@@ -211,7 +211,7 @@ function generateTruckRentalSummaryTableHTML() {
     };
 }
 
-// 🌟 دالة حساب وإنشاء جدول إجمالي المستودع والمصاريف الأخرى المصفى حسب التاريخ
+// دالة حساب وإنشاء جدول إجمالي المستودع والمصاريف الأخرى المصفى حسب التاريخ
 function generateWarehouseSummaryTableHTML() {
     const warehouse = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
     
@@ -415,73 +415,13 @@ function generateOfficialSummaryTable(filteredJobs) {
             </div>
         </div>
 
-        <!-- 🌟 جدول ملخص إيجارات الشاحنات -->
+        <!-- جدول ملخص إيجارات الشاحنات -->
         ${rentalSummaryObj.html}
 
-        <!-- 🌟 جدول ملخص المستودع والمصاريف الأخرى -->
-       const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
-
-    return `
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
-            <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-800">Official Period Financial Summary</h3>
-                    <p class="text-[11px] text-slate-400">Comprehensive summary of labor fees, cash, Zelle, and PMO breakdown</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                        Total Jobs: <span class="text-emerald-600">${totalJobs}</span>
-                    </span>
-                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                        Total Deliveries: <span class="text-blue-600">${totalDeliveries}</span>
-                    </span>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto rounded-xl border border-slate-100">
-                <table class="w-full text-left border-collapse text-[11px]">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">Foreman</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">Helpers</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">Drivers</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-amber-700 bg-amber-50/50">Cash Diesel</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash PU Payment</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash Dest-Balance</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">PMO PU Payment</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">PU (No Cash/PMO)</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">Balance (No Cash/PMO)</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">PMO Deliveries</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-purple-700 bg-purple-50/30">Dest Balance Zelle</th>
-                            <th class="p-2.5 text-center bg-emerald-600 text-white font-extrabold">Total After Deposit</th>
-                        </tr>
-                    </thead>
-                    <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="p-2.5 border-r text-center">$${sumForeman10.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td class="p-2.5 border-r text-center">$${sumHelpers.toLocaleString()}</td>
-                            <td class="p-2.5 border-r text-center">$${sumDrivers.toLocaleString()}</td>
-                            <td class="p-2.5 border-r text-center text-amber-700 font-bold bg-amber-50/20">$${sumCashDiesel.toLocaleString()}</td>
-                            <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${sumCashPu.toLocaleString()}</td>
-                            <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${sumCashDest.toLocaleString()}</td>
-                            <td class="p-2.5 border-r text-center">$${sumPmoPu.toLocaleString()}</td>
-                            <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${sumZellePu.toLocaleString()}</td>
-                            <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${sumDestNoCashPmo.toLocaleString()}</td>
-                            <td class="p-2.5 border-r text-center">$${sumPmoDeliveries.toLocaleString()}</td>
-                            <td class="p-2.5 border-r text-center text-purple-600 font-bold">$${sumDestZelle.toLocaleString()}</td>
-                            <td class="p-2.5 text-center bg-emerald-50 text-emerald-800 font-extrabold text-xs">$${sumTotalAfterDeposit.toLocaleString()}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 🌟 جدول ملخص إيجارات الشاحنات فقط (تمت إزالة تكرار جدول المستودع) -->
-        ${rentalSummaryObj.html}
+        <!-- جدول ملخص المستودع والمصاريف الأخرى الفعلي (بدون تكرار فارغ) -->
+        ${warehouseSummaryObj.html}
     `;
 }
-    
-
 
 function generateSummaryReportData() {
     const filteredJobs = getFilteredJobsData();
@@ -596,10 +536,6 @@ function generateSummaryReportData() {
 }
 window.generateSummaryReportData = generateSummaryReportData;
 
-/**
- * MovePro - Official Financial & Operational Summary Reports Script
- * Handles summary metrics, data extraction from localStorage, and UI binding.
- */
 function updateSummaryReportView() {
     try {
         const dispatchRecords = JSON.parse(localStorage.getItem('movepro_dispatch_records')) || [];
@@ -770,9 +706,6 @@ function generateDetailedReportData() {
 }
 window.generateDetailedReportData = generateDetailedReportData;
 
-/**
- * MovePro - Professional PDF Generation Engine (Includes Jobs, Rentals, and Warehouse)
- */
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
@@ -850,7 +783,6 @@ function exportOfficialPDF() {
         else rentalPdfOther += amt;
     });
 
-    // حساب مجاميع المستودع لتقرير PDF
     let warehousePdfCash = 0, warehousePdfOthers = 0, warehousePdfTotal = 0;
     filteredWarehouse.forEach(w => {
         const amt = parseCurrency(w.amount);
@@ -887,7 +819,6 @@ function exportOfficialPDF() {
                 <p class="text-xs font-semibold text-rose-800 mt-1">From Date: <span class="text-slate-800">${startDateVal}</span> &nbsp;&nbsp;|&nbsp;&nbsp; To Date: <span class="text-slate-800">${endDateVal}</span></p>
             </div>
 
-            <!-- 1. Official Period Financial Summary -->
             <div class="mb-5">
                 <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Executive Financial Summary</h3>
                 <table class="table-pdf">
@@ -926,7 +857,6 @@ function exportOfficialPDF() {
                 </table>
             </div>
 
-            <!-- 2. Private Truck Rental Financial Summary -->
             <div class="mb-5">
                 <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Private Truck Rental Financial Summary (${filteredRentals.length} Records)</h3>
                 <table class="table-pdf">
@@ -949,7 +879,6 @@ function exportOfficialPDF() {
                 </table>
             </div>
 
-            <!-- 🌟 3. Warehouse & Others Financial Summary -->
             <div class="mb-6">
                 <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Warehouse & Others Financial Summary (${filteredWarehouse.length} Records)</h3>
                 <table class="table-pdf">
