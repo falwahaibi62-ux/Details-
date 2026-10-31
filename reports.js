@@ -327,13 +327,13 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
 
-       // معالجة حقل الـ PU بتقسيم القيم المفصولة بفواصل لضمان دقة الاستخراج وعدم دمج الأرقام
+        // 🌟 المعالجة الدقيقة لحقل الـ PU بتقسيم النصوص المركبة (مثل "2000 Cash, 250 Zelle" أو "595 PC")
         const puRawStr = String(item.pu || '').trim();
         if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
             const puParts = puRawStr.split(',');
             puParts.forEach(part => {
                 const pLower = part.toLowerCase();
-                const partVal = parseCurrency(part); // تحليل آمن لكل جزء على حدة
+                const partVal = parseCurrency(part);
                 
                 if (partVal > 0 && partVal < 50000) {
                     if (pLower.includes('cash')) {
@@ -344,55 +344,32 @@ function generateOfficialSummaryTable(filteredJobs) {
                             sumPmoDeliveries += partVal;
                         }
                     } else {
-                        // أي قيمة أخرى (Zelle, CC, BC, PC أو رقم صريح) تذهب مباشرة لـ PU (No Cash/PMO)
+                        // أي قيمة أخرى (Zelle, PC, BC, CC وغيرها) تضاف مباشرة للحقل الصافي
                         sumZellePu += partVal;
                     }
                 }
             });
         }
+        
+        // استعراض وتجهيز حقل الـ Destination
+        const destRawStr = String(item.dest || item.destination || '').trim();
+        if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
+            const destParts = destRawStr.split(',');
+            destParts.forEach(part => {
+                const dLower = part.toLowerCase();
+                const partVal = parseCurrency(part);
 
-        // 3. القيمة الكلية للـ PU واستخراج المتبقي بدون كاش و PMO
-        const rawPuVal = parseCurrency(item.pu);
-        const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
-
-        let netPuWithoutCashPmo = puVal;
-        if (puStr.includes('cash')) {
-            netPuWithoutCashPmo -= cashPuVal;
-        }
-        if (puStr.includes('pmo')) {
-            netPuWithoutCashPmo -= pmoPuVal;
-        }
-
-        if (netPuWithoutCashPmo > 0) {
-            sumZellePu += netPuWithoutCashPmo;
-        }
-
-        // 4. استخراج وجهة الوصول (Destination)
-        const destStr = String(item.dest || item.destination || '').toLowerCase();
-        let cashDestVal = 0;
-        if (destStr.includes('cash')) {
-            const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            if (cashDestMatch) {
-                cashDestVal = parseCurrency(cashDestMatch[1]);
-            } else {
-                cashDestVal = parseCurrency(item.dest || item.destination);
-            }
-        }
-
-        const rawDestVal = parseCurrency(item.dest || item.destination);
-        const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
-
-        if (destStr.includes('cash')) {
-            sumCashDest += (cashDestVal > 0 ? cashDestVal : destVal);
-        } else if (destStr.includes('zelle')) {
-            sumDestZelle += destVal;
-            sumDestNoCashPmo += destVal;
-        } else if (!destStr.includes('pmo') && destVal > 0) {
-            sumDestNoCashPmo += destVal;
-        }
-
-        if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
-            sumPmoDeliveries += puVal;
+                if (partVal > 0 && partVal < 50000) {
+                    if (dLower.includes('cash')) {
+                        sumCashDest += partVal;
+                    } else if (dLower.includes('zelle')) {
+                        sumDestZelle += partVal;
+                        sumDestNoCashPmo += partVal;
+                    } else if (!dLower.includes('pmo')) {
+                        sumDestNoCashPmo += partVal;
+                    }
+                }
+            });
         }
     });
 
@@ -461,7 +438,6 @@ function generateOfficialSummaryTable(filteredJobs) {
         ${warehouseSummaryObj.html}
     `;
 }
-
 function generateSummaryReportData() {
     const filteredJobs = getFilteredJobsData();
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
