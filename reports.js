@@ -327,9 +327,9 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
 
-        const puStr = String(item.pu || '').toLowerCase();
+       const puStr = String(item.pu || '').toLowerCase();
         
-        // 🌟 استخراج دقيق لمبلغ الـ Cash حتى لو كان في نص مركب مثل "2000 Cash, 250 Zelle"
+        // استخراج مبلغ الـ Cash بدقة (حتى لو كان في نص مركب مثل "2000 Cash, 250 Zelle")
         let cashPuVal = 0;
         if (puStr.includes('cash')) {
             const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
@@ -347,11 +347,17 @@ function generateOfficialSummaryTable(filteredJobs) {
             sumCashPu += (cashPuVal > 0 ? cashPuVal : puVal);
         } else if (puStr.includes('pmo')) {
             sumPmoPu += puVal;
-        } else if (puVal > 0) {
-            sumZellePu += puVal;
+        } else if (puStr.includes('zelle')) {
+            // 🌟 احتساب مدفوعات Zelle الصريحة فقط لضمان دقة الرقم (مثل 13,123 أو المجموع المطلوب)
+            let zelleVal = 0;
+            const zelleMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*zelle/);
+            if (zelleMatch) {
+                zelleVal = parseCurrency(zelleMatch[1]);
+            } else {
+                zelleVal = puVal;
+            }
+            sumZellePu += zelleVal;
         }
-
-        const destStr = String(item.dest || item.destination || '').toLowerCase();
         
         // 🌟 استخراج دقيق لمبلغ الـ Cash في حقل الوجهة (Dest) لو وُجد بصيغة مركبة
         let cashDestVal = 0;
