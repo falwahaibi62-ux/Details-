@@ -763,7 +763,7 @@ function exportOfficialPDF() {
     let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
     let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
 
-    jobs.forEach(item => {
+   jobs.forEach(item => {
         const totalVal = parseCurrency(item.total);
         sumTotalAfterDeposit += totalVal;
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
@@ -779,18 +779,54 @@ function exportOfficialPDF() {
         }
 
         const puStr = String(item.pu || '').toLowerCase();
+        
+        // 🌟 استخراج دقيق لمبلغ الـ Cash في الـ PDF ليتطابق مع الشاشة
+        let cashPuVal = 0;
+        if (puStr.includes('cash')) {
+            const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
+            if (cashMatch) {
+                cashPuVal = parseCurrency(cashMatch[1]);
+            } else {
+                cashPuVal = parseCurrency(item.pu);
+            }
+        }
+
         const rawPuVal = parseCurrency(item.pu);
         const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
-        if (puStr.includes('cash')) sumCashPu += puVal;
-        else if (puStr.includes('pmo')) sumPmoPu += puVal;
-        else if (puVal > 0) sumZellePu += puVal;
+
+        if (puStr.includes('cash')) {
+            sumCashPu += (cashPuVal > 0 ? cashPuVal : puVal);
+        } else if (puStr.includes('pmo')) {
+            sumPmoPu += puVal;
+        } else if (puVal > 0) {
+            sumZellePu += puVal;
+        }
 
         const destStr = String(item.dest || item.destination || '').toLowerCase();
+        
+        // 🌟 استخراج دقيق لمبلغ الـ Cash في الوجهة (Dest) لتقرير الـ PDF
+        let cashDestVal = 0;
+        if (destStr.includes('cash')) {
+            const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
+            if (cashDestMatch) {
+                cashDestMatch[1];
+                cashDestVal = parseCurrency(cashDestMatch[1]);
+            } else {
+                cashDestVal = parseCurrency(item.dest || item.destination);
+            }
+        }
+
         const rawDestVal = parseCurrency(item.dest || item.destination);
         const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
-        if (destStr.includes('cash')) sumCashDest += destVal;
-        else if (destStr.includes('zelle')) { sumDestZelle += destVal; sumDestNoCashPmo += destVal; }
-        else if (!destStr.includes('pmo') && destVal > 0) sumDestNoCashPmo += destVal;
+
+        if (destStr.includes('cash')) {
+            sumCashDest += (cashDestVal > 0 ? cashDestVal : destVal);
+        } else if (destStr.includes('zelle')) {
+            sumDestZelle += destVal;
+            sumDestNoCashPmo += destVal;
+        } else if (!destStr.includes('pmo') && destVal > 0) {
+            sumDestNoCashPmo += destVal;
+        }
 
         if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
             sumPmoDeliveries += puVal;
