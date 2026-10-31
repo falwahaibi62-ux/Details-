@@ -1,3 +1,6 @@
+// Matched with AppSheet Official PDF Report
+// ==========================================
+
 window.masterJobs = [
     { date: '5/12/2026', month: 5, year: 2026, jobNo: 'G4648193', route: 'NC → NV', foreman: '', foreman10pct: '380', helpers: '3-1 1/2 (750)', drivers: '1-1 1/2 (337)', total: '$3,795', pu: '1935 CC', dest: '1960', diesel: '390+100+350', hotel: '-', storage: '734' },
     { date: '5/13/2026', month: 5, year: 2026, jobNo: 'G4625966', route: 'GA → TX', foreman: '', foreman10pct: '0', helpers: '3-1 1/2 (750)', drivers: '1-1 1/2 (337)', total: '-', pu: 'Cheque', dest: '7181', diesel: '-', hotel: '-', storage: '643' },
