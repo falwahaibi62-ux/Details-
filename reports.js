@@ -327,7 +327,7 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
 
-       const puStr = String(item.pu || '').toLowerCase();
+        const puStr = String(item.pu || '').toLowerCase();
         
         // استخراج مبلغ الـ Cash بدقة (حتى لو كان في نص مركب مثل "2000 Cash, 250 Zelle")
         let cashPuVal = 0;
@@ -348,7 +348,7 @@ function generateOfficialSummaryTable(filteredJobs) {
         } else if (puStr.includes('pmo')) {
             sumPmoPu += puVal;
         } else if (puStr.includes('zelle')) {
-            // 🌟 احتساب مدفوعات Zelle الصريحة فقط لضمان دقة الرقم (مثل 13,123 أو المجموع المطلوب)
+            // احتساب مدفوعات Zelle الصريحة بدقة وتجنب جمع الرموز الأخرى غير المرغوبة
             let zelleVal = 0;
             const zelleMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*zelle/);
             if (zelleMatch) {
@@ -359,7 +359,10 @@ function generateOfficialSummaryTable(filteredJobs) {
             sumZellePu += zelleVal;
         }
         
-        // 🌟 استخراج دقيق لمبلغ الـ Cash في حقل الوجهة (Dest) لو وُجد بصيغة مركبة
+        // تعريف وتجهيز متغير الـ Destination
+        const destStr = String(item.dest || item.destination || '').toLowerCase();
+        
+        // استخراج دقيق لمبلغ الـ Cash في حقل الوجهة (Dest) لو وُجد بصيغة مركبة
         let cashDestVal = 0;
         if (destStr.includes('cash')) {
             const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
