@@ -35,25 +35,13 @@ function parseCurrency(val) {
 }
 window.parseCurrency = parseCurrency;
 
-// 🌟 دالة مخصصة لاستخراج المبلغ المالي الصحيح للعمال والسائقين من بين القوسين (مثل 1-1 1/2 (250) -> 250)
-function parseLaborAmount(val) {
-    if (!val || val === '-') return 0;
-    const strVal = String(val);
-    const match = strVal.match(/\(([^)]+)\)/);
-    if (match) {
-        return parseCurrency(match[1]);
-    }
-    return parseCurrency(strVal);
-}
-window.parseLaborAmount = parseLaborAmount;
-
 function applyReportFilters() {
-    const View = document.getElementById('ReportView');
-    if (!View) return;
+    const summaryView = document.getElementById('summaryReportView');
+    if (!summaryView) return;
     
-    const isActive = !View.classList.contains('hidden');
-    if (isActive) {
-        generateReportData();
+    const isSummaryActive = !summaryView.classList.contains('hidden');
+    if (isSummaryActive) {
+        generateSummaryReportData();
     } else {
         generateDetailedReportData();
     }
@@ -78,10 +66,12 @@ window.resetReportFilters = resetReportFilters;
 // دالة مساعدة لتطبيع التواريخ محلياً وتجنب مشاكل الفروق الزمنية
 function parseLocalDate(dateStr) {
     if (!dateStr) return null;
+    // إذا كان التاريخ بصيغة YYYY-MM-DD (من حقل الفلتر)
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
         const [y, m, d] = dateStr.split('-').map(Number);
         return new Date(y, m - 1, d, 0, 0, 0, 0);
     }
+    // إذا كان التاريخ بصيغة M/D/YYYY أو MM/DD/YYYY (من سجلات العمليات)
     const parts = dateStr.split('/');
     if (parts.length === 3) {
         const m = parseInt(parts[0], 10);
@@ -94,6 +84,7 @@ function parseLocalDate(dateStr) {
 }
 window.parseLocalDate = parseLocalDate;
 
+// تحديث دالة getFilteredJobsData داخل ملف reports.js
 function getFilteredJobsData() {
     const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     
@@ -139,8 +130,8 @@ function getFilteredJobsData() {
     });
 }
 window.getFilteredJobsData = getFilteredJobsData;
-
-function generateTruckRentalTableHTML() {
+// دالة حساب وإنشاء جدول إجمالي إيجارات الشاحنات المصفى حسب التاريخ
+function generateTruckRentalSummaryTableHTML() {
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     
     const startDateVal = document.getElementById('filterStartDate')?.value;
@@ -187,8 +178,8 @@ function generateTruckRentalTableHTML() {
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
                 <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                     <div>
-                        <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial </h3>
-                        <p class="text-[11px] text-slate-400">Comprehensive  of rental duration, cash payments, and total expenses</p>
+                        <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial Summary</h3>
+                        <p class="text-[11px] text-slate-400">Comprehensive summary of rental duration, cash payments, and total expenses</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
@@ -246,9 +237,8 @@ function generateOfficialSummaryTable(filteredJobs) {
         sumTotalAfterDeposit += totalVal;
 
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-        // استخدام parseLaborAmount لاستخراج المبالغ الصحيحة للعمال والسائقين من الجدول فقط
-        sumHelpers += parseLaborAmount(item.helpers);
-        sumDrivers += parseLaborAmount(item.drivers);
+        sumHelpers += parseCurrency(item.helpers);
+        sumDrivers += parseCurrency(item.drivers);
 
         if (item.diesel && item.diesel !== '-') {
             let dieselStr = String(item.diesel);
@@ -292,9 +282,6 @@ function generateOfficialSummaryTable(filteredJobs) {
     });
 
     const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
-    
-    // 🌟 توليد جدول إجماليات طرق الدفع الجديد
-    const paymentSummaryObj = generatePaymentMethodsSummaryTableHTML();
 
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
@@ -304,7 +291,6 @@ function generateOfficialSummaryTable(filteredJobs) {
                     <p class="text-[11px] text-slate-400">Comprehensive summary of labor fees, cash, Zelle, and PMO breakdown</p>
                 </div>
                 <div class="flex items-center gap-2">
-              
                     <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
                         Total Jobs: <span class="text-emerald-600">${totalJobs}</span>
                     </span>
@@ -352,9 +338,8 @@ function generateOfficialSummaryTable(filteredJobs) {
             </div>
         </div>
 
+        <!-- 🌟 جدول ملخص إيجارات الشاحنات يظهر هنا تحت الجدول المالي مباشرة -->
         ${rentalSummaryObj.html}
-
-        ${paymentSummaryObj.html}
     `;
 }
 
@@ -399,23 +384,6 @@ function generateSummaryReportData() {
 
     const totalExpenses = totalRentalExp + totalWarehouseExp;
     const netProfit = totalRevenue - totalExpenses;
-
-    // --- معالجة وتحليل إضافية لحقول الدفع المركبة (مثل Cash PU) لتلافي مشكلة ظهورها بقيمة 0 ---
-    filteredJobs.forEach(j => {
-        if (j.pu) {
-            const parts = String(j.pu).split(',');
-            parts.forEach(part => {
-                const cleanPart = part.trim();
-                if (cleanPart.toLowerCase().includes('cash')) {
-                    const match = cleanPart.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
-                    if (match) {
-                        const num = parseFloat(match[1].replace(/,/g, ''));
-                        // إذا أردت تجميع الكاش أو استخدامه في الحسابات التراكمية الداخلية
-                    }
-                }
-            });
-        }
-    });
 
     const sumJobsEl = document.getElementById('sumTotalJobs');
     const sumDelivEl = document.getElementById('sumTotalDeliveries');
@@ -487,40 +455,35 @@ function generateSummaryReportData() {
     }
 }
 window.generateSummaryReportData = generateSummaryReportData;
-function generateSummaryReportData(filteredJobs) {
-    let totalCashPu = 0; // متغير إجمالي كاش الاستلام
-    let totalPmoPu = 0;
 
-    filteredJobs.forEach(job => {
-        // ... (العمليات الحسابية الأخرى للوظائف) ...
+function generateDetailedReportData() {
+    const startDateVal = document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('filterEndDate')?.value;
 
-        // تصحيح قراءة وحساب Cash PU للأعمدة المركبة
-        if (job.pu) {
-            // تقسيم النص عند وجود فاصلة (مثال: "2000 Cash, 250 Zelle")
-            const parts = job.pu.split(',');
+    const startDate = startDateVal ? new Date(startDateVal) : null;
+    const endDate = endDateVal ? new Date(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59);
 
-            parts.forEach(part => {
-                const cleanPart = part.trim();
+    const filteredJobs = getFilteredJobsData();
+    const jobsTbody = document.getElementById('detailedReportBody');
+    const jobsBadge = document.getElementById('detailedJobsBadge');
+
+    if (jobsBadge) jobsBadge.innerText = `${filteredJobs.length} Jobs`;
+    if (jobsTbody) {
+        if (filteredJobs.length === 0) {
+            jobsTbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-slate-400 text-xs">No job records found for selected period.</td></tr>`;
+        } else {
+            jobsTbody.innerHTML = filteredJobs.map(item => {
+                const totalNum = parseCurrency(item.total);
+                const dynamicForeman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
                 
-                // البحث عن كلمة cash واستخراج الرقم الحسابي منها
-                if (cleanPart.toLowerCase().includes('cash')) {
-                    const match = cleanPart.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
-                    if (match) {
-                        const num = parseFloat(match[1].replace(/,/g, ''));
-                        totalCashPu += num;
-                    }
-                } 
-                // البحث عن كلمة pmo إذا وجدت
-                else if (cleanPart.toLowerCase().includes('pmo')) {
-                    const match = cleanPart.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
-                    if (match) {
-                        const num = parseFloat(match[1].replace(/,/g, ''));
-                        totalPmoPu += num;
-                    }
-                }
-            });
-        }
-    });
+                const destVal = item.destination || item.dest || '-';
+                const dieselVal = item.diesel || '-';
+                const hotelVal = item.hotel || '-';
+
+                const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(item.helpers) : (item.helpers || '-');
+                const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(item.drivers) : (item.drivers || '-');
+
                 return `
                     <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
                         <td class="p-3 border font-medium">${item.date || '-'}</td>
@@ -601,214 +564,6 @@ function generateSummaryReportData(filteredJobs) {
 }
 window.generateDetailedReportData = generateDetailedReportData;
 
-
-/**
- * دالة لإنشاء جدول إجمالي العمليات لكل طريقة دفع بناءً على الفلاتر والتواريخ
- */
-// 1. دالة توليد جدول طرق الدفع الرئيسي (إذا لم تكن أضفتها مسبقاً)
-function generatePaymentMethodsSummaryTableHTML() {
-    const filteredJobs = getFilteredJobsData();
-    const methods = ["Cash", "Zelle", "Cheque", "PMO", "BC", "PC", "CC", "WT", "Others"];
-    
-    const summaryMap = {};
-    methods.forEach(m => { summaryMap[m] = { count: 0, totalAmount: 0 }; });
-
-    filteredJobs.forEach(job => {
-        const paymentField = String(job.paymentType || job.pu || job.dest || '').toLowerCase();
-        const amount = parseCurrency(job.total);
-        let matched = false;
-        methods.forEach(method => {
-            if (paymentField.includes(method.toLowerCase())) {
-                summaryMap[method].count += 1;
-                summaryMap[method].totalAmount += amount;
-                matched = true;
-            }
-        });
-        if (!matched && amount > 0) {
-            summaryMap["Others"].count += 1;
-            summaryMap["Others"].totalAmount += amount;
-        }
-    });
-
-    let grandTotalCount = 0;
-    let grandTotalAmount = 0;
-
-    const rowsHTML = methods.map(method => {
-        const data = summaryMap[method];
-        grandTotalCount += data.count;
-        grandTotalAmount += data.totalAmount;
-        return `
-            <tr class="hover:bg-slate-50 transition-colors">
-                <td class="p-2.5 border-r font-bold text-slate-800 text-center">${method}</td>
-                <td class="p-2.5 border-r text-center text-slate-600 font-semibold">${data.count} Jobs</td>
-                <td class="p-2.5 text-center font-extrabold text-emerald-700 bg-emerald-50/25">$${data.totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-            </tr>
-        `;
-    }).join('');
-
-    return {
-        grandTotalAmount: grandTotalAmount,
-        html: `
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
-                <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800">Payment Methods Financial Summary</h3>
-                        <p class="text-[11px] text-slate-400">Aggregated transaction totals and counts categorized by payment type</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <!-- 🌟 هنا تم وضع زر "View Others Details Report" في ترويسة الجدول ليظهر للمستخدم بشكل صحيح -->
-                        <button onclick="showOthersDetailedReport()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm flex items-center gap-2">
-                            <span>📋 View Others Details Report</span>
-                        </button>
-                        <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                            Total Processed Jobs: <span class="text-emerald-600">${grandTotalCount}</span>
-                        </span>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto rounded-xl border border-slate-100">
-                    <table class="w-full text-left border-collapse text-[11px]">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
-                                <th class="p-2.5 border-r border-slate-200/60 text-center">Payment Method</th>
-                                <th class="p-2.5 border-r border-slate-200/60 text-center">Transaction Count</th>
-                                <th class="p-2.5 text-center bg-emerald-600 text-white font-extrabold">Total Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
-                            ${rowsHTML}
-                            <tr class="bg-slate-100/80 font-extrabold text-slate-900 border-t-2 border-slate-200">
-                                <td class="p-3 border-r text-center uppercase">Grand Total</td>
-                                <td class="p-3 border-r text-center">${grandTotalCount} Jobs</td>
-                                <td class="p-3 text-center text-emerald-900 bg-emerald-100/50 text-xs">$${grandTotalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `
-    };
-}
-window.generatePaymentMethodsSummaryTableHTML = generatePaymentMethodsSummaryTableHTML;
-
-
-// 2. دالة إظهار نافذة تقرير Others المنبثقة عند الضغط على الزر
-function showOthersDetailedReport() {
-    const filteredJobs = getFilteredJobsData();
-    const methods = ["Cash", "Zelle", "Cheque", "PMO", "BC", "PC", "CC", "WT"];
-    
-    const othersJobs = filteredJobs.filter(job => {
-        const paymentField = String(job.paymentType || job.pu || job.dest || '').toLowerCase();
-        const amount = parseCurrency(job.total);
-        const matched = methods.some(m => paymentField.includes(m.toLowerCase()));
-        return !matched && amount > 0;
-    });
-
-    if (othersJobs.length === 0) {
-        alert("No records match 'Others' for the selected period.");
-        return;
-    }
-
-    let totalOthersAmount = 0;
-    const rows = othersJobs.map(j => {
-        const amt = parseCurrency(j.total);
-        totalOthersAmount += amt;
-        return `
-            <tr class="border-b hover:bg-slate-50 text-slate-700">
-                <td class="p-2.5 text-center font-bold">${j.jobNo || 'N/A'}</td>
-                <td class="p-2.5 text-center">${j.date || ''}</td>
-                <td class="p-2.5 text-center">${j.pu || '-'} / ${j.dest || '-'}</td>
-                <td class="p-2.5 text-center font-extrabold text-emerald-700">$${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-            </tr>
-        `;
-    }).join('');
-
-    const modalHTML = `
-        <div id="othersReportModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]">
-                <div class="p-4 bg-slate-800 text-white flex justify-between items-center">
-                    <h3 class="font-bold text-sm">Detailed Others Payment Report (${othersJobs.length} Jobs)</h3>
-                    <button onclick="document.getElementById('othersReportModal').remove()" class="text-white hover:text-red-400 font-bold text-lg">✕</button>
-                </div>
-                <div class="p-4 overflow-y-auto flex-1">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-700 font-bold border-b">
-                                <th class="p-2.5 text-center">Job No</th>
-                                <th class="p-2.5 text-center">Date</th>
-                                <th class="p-2.5 text-center">Payment / Details</th>
-                                <th class="p-2.5 text-center">Total Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rows}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-4 bg-slate-50 border-t flex justify-between items-center font-bold text-xs">
-                    <span>Grand Total: <span class="text-emerald-700 text-sm">$${totalOthersAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></span>
-                    <button onclick="document.getElementById('othersReportModal').remove()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-1.5 rounded-xl">Close</button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-window.showOthersDetailedReport = showOthersDetailedReport;
-
-
-function generateWarehousePDFSummaryHTML() {
-    // جلب سجلات المستودع المخزنة محلياً
-    const warehouseRecords = JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-    
-    // حساب الإجمالي العام لمصاريف المستودع
-    let totalWarehouseAmount = 0;
-    warehouseRecords.forEach(item => {
-        totalWarehouseAmount += parseFloat(item.amount || 0);
-    });
-
-    // توليد الأسطر الخاصة بسجلات المستودع لعرضها في جدول الـ PDF
-    const rows = warehouseRecords.map(item => `
-        <tr>
-            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${item.date || ''}</td>
-            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${item.services || ''}</td>
-            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${item.details || ''}</td>
-            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${item.paymentType || 'Cash'}</td>
-            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold;">$${parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-        </tr>
-    `).join('');
-
-    // هيكل HTML الخاص بجدول وقسم المستودع ليتم تضمينه في ملف الـ PDF
-    return `
-        <div style="margin-top: 20px; font-family: Arial, sans-serif;">
-            <h3 style="font-size: 14px; font-weight: bold; color: #1e293b; margin-bottom: 8px;">Warehouse & Others Expenses Summary</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                <thead>
-                    <tr style="background-color: #f1f5f9; color: #334155; font-weight: bold;">
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Date</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Category</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Description</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Method</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rows.length > 0 ? rows : '<tr><td colspan="5" style="padding: 10px; text-align: center; color: #94a3b8;">No warehouse records found</td></tr>'}
-                </tbody>
-                <tfoot>
-                    <tr style="background-color: #e2e8f0; font-weight: bold;">
-                        <td colspan="4" style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Total Warehouse & Others Expenses:</td>
-                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; color: #047857;">$${totalWarehouseAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    `;
-}
-window.generateWarehousePDFSummaryHTML = generateWarehousePDFSummaryHTML;
-
-
 /**
  * MovePro - Professional PDF Generation Engine (Includes Jobs, Rentals, and Warehouse)
  */
@@ -848,8 +603,8 @@ function exportOfficialPDF() {
         const totalVal = parseCurrency(item.total);
         sumTotalAfterDeposit += totalVal;
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-        sumHelpers += parseLaborAmount(item.helpers);
-        sumDrivers += parseLaborAmount(item.drivers);
+        sumHelpers += parseCurrency(item.helpers);
+        sumDrivers += parseCurrency(item.drivers);
 
         if (item.diesel && item.diesel !== '-') {
             let dieselStr = String(item.diesel);
@@ -878,6 +633,7 @@ function exportOfficialPDF() {
         }
     });
 
+    // حساب مجاميع إيجار الشاحنات لتقرير PDF
     let rentalPdfDays = 0, rentalPdfCash = 0, rentalPdfOther = 0, rentalPdfTotal = 0;
     filteredRentals.forEach(r => {
         const daysNum = parseInt(String(r.days || '0').replace(/[^0-9]/g, '')) || 0;
@@ -915,6 +671,7 @@ function exportOfficialPDF() {
                 <p class="text-xs font-semibold text-rose-800 mt-1">From Date: <span class="text-slate-800">${startDateVal}</span> &nbsp;&nbsp;|&nbsp;&nbsp; To Date: <span class="text-slate-800">${endDateVal}</span></p>
             </div>
 
+            <!-- 1. Official Period Financial Summary -->
             <div class="mb-5">
                 <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Executive Financial Summary</h3>
                 <table class="table-pdf">
@@ -953,6 +710,7 @@ function exportOfficialPDF() {
                 </table>
             </div>
 
+            <!-- 🌟 2. Private Truck Rental Financial Summary (يظهر هنا في الصفحة الأولى تحت الملخص مباشرة) -->
             <div class="mb-6">
                 <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Private Truck Rental Financial Summary (${filteredRentals.length} Records)</h3>
                 <table class="table-pdf">
@@ -999,8 +757,8 @@ function exportOfficialPDF() {
                         ${jobs.map(j => {
                             const totalNum = parseCurrency(j.total);
                             const foreman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
-                            const helpersDisplay = j.helpers || '-';
-                            const driversDisplay = j.drivers || '-';
+                            const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers) : (j.helpers || '-');
+                            const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers) : (j.drivers || '-');
 
                             return `
                                 <tr>
