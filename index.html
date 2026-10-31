@@ -377,6 +377,37 @@
                 </div>
             </div>
 
+
+<!-- Summary Report View -->
+<div id="summaryReportView" class="space-y-6">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+            <div class="text-slate-500 text-xs">Total Jobs</div>
+            <div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div>
+        </div>
+        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+            <div class="text-slate-500 text-xs">Total Deliveries</div>
+            <div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div>
+        </div>
+        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+            <div class="text-slate-500 text-xs">Total Revenue</div>
+            <div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div>
+        </div>
+        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+            <div class="text-slate-500 text-xs">Total Expenses</div>
+            <div id="sumTotalExpenses" class="text-lg font-bold text-rose-600">$0</div>
+        </div>
+    </div>
+
+    <!-- حاوية التقارير والجدول العام الديناميكي -->
+    <div id="summaryReportContainer"></div>
+
+    <!-- حاوية الـ PDF والملخصات الرسمية المرتبطة بالـ IDs البرمجية -->
+    <div id="pdfReportContent" class="space-y-6">
+        <div id="warehousePDFSummarySection"></div>
+    </div>
+</div>
+            
       
             <!-- Detailed Report View -->
             <div id="detailedReportView" class="hidden space-y-8">
