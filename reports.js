@@ -763,7 +763,7 @@ function exportOfficialPDF() {
     let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
     let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
 
-   jobs.forEach(item => {
+    jobs.forEach(item => {
         const totalVal = parseCurrency(item.total);
         sumTotalAfterDeposit += totalVal;
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
@@ -780,7 +780,7 @@ function exportOfficialPDF() {
 
         const puStr = String(item.pu || '').toLowerCase();
         
-        // 🌟 استخراج دقيق لمبلغ الـ Cash في الـ PDF ليتطابق مع الشاشة
+        // 🌟 استخراج دقيق لمبلغ الـ Cash في الـ PDF ليتطابق تماماً مع الشاشة
         let cashPuVal = 0;
         if (puStr.includes('cash')) {
             const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
@@ -809,7 +809,6 @@ function exportOfficialPDF() {
         if (destStr.includes('cash')) {
             const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
             if (cashDestMatch) {
-                cashDestMatch[1];
                 cashDestVal = parseCurrency(cashDestMatch[1]);
             } else {
                 cashDestVal = parseCurrency(item.dest || item.destination);
