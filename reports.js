@@ -327,30 +327,28 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
 
-        const puStr = String(item.pu || '').toLowerCase();
-        
-        // 1. استخراج الكاش بدقة (حتى لو كان في نص مركب مثل "2000 Cash, 250 Zelle")
-        let cashPuVal = 0;
-        if (puStr.includes('cash')) {
-            const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            if (cashMatch) {
-                cashPuVal = parseCurrency(cashMatch[1]);
-            } else {
-                cashPuVal = parseCurrency(item.pu);
-            }
-            sumCashPu += cashPuVal;
-        }
-
-        // 2. استخراج PMO بدقة
-        let pmoPuVal = 0;
-        if (puStr.includes('pmo')) {
-            const pmoMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*pmo/);
-            if (pmoMatch) {
-                pmoPuVal = parseCurrency(pmoMatch[1]);
-            } else {
-                pmoPuVal = parseCurrency(item.pu);
-            }
-            sumPmoPu += pmoPuVal;
+       // معالجة حقل الـ PU بتقسيم القيم المفصولة بفواصل لضمان دقة الاستخراج وعدم دمج الأرقام
+        const puRawStr = String(item.pu || '').trim();
+        if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
+            const puParts = puRawStr.split(',');
+            puParts.forEach(part => {
+                const pLower = part.toLowerCase();
+                const partVal = parseCurrency(part); // تحليل آمن لكل جزء على حدة
+                
+                if (partVal > 0 && partVal < 50000) {
+                    if (pLower.includes('cash')) {
+                        sumCashPu += partVal;
+                    } else if (pLower.includes('pmo')) {
+                        sumPmoPu += partVal;
+                        if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery')) {
+                            sumPmoDeliveries += partVal;
+                        }
+                    } else {
+                        // أي قيمة أخرى (Zelle, CC, BC, PC أو رقم صريح) تذهب مباشرة لـ PU (No Cash/PMO)
+                        sumZellePu += partVal;
+                    }
+                }
+            });
         }
 
         // 3. القيمة الكلية للـ PU واستخراج المتبقي بدون كاش و PMO
