@@ -327,92 +327,24 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
 
-        const puStr = String(item.pu || '').toLowerCase();
-        
-        // 1. استخراج مبلغ الـ Cash بدقة (سواء نص منفرد أو مركب مثل "2000 Cash, 250 Zelle")
-        let cashPuVal = 0;
-        if (puStr.includes('cash')) {
-            const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            if (cashMatch) {
-                cashPuVal = parseCurrency(cashMatch[1]);
-            } else {
-                cashPuVal = parseCurrency(item.pu);
-            }
-            sumCashPu += cashPuVal;
-        }
-
-        // 2. استخراج مبلغ الـ PMO بدقة (سواء منفرد أو مركب)
-        let pmoPuVal = 0;
-        if (puStr.includes('pmo')) {
-            const pmoMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*pmo/);
-            if (pmoMatch) {
-                pmoPuVal = parseCurrency(pmoMatch[1]);
-            } else {
-                pmoPuVal = parseCurrency(item.pu);
-            }
-            sumPmoPu += pmoPuVal;
-        }
-
-        // 3. القيمة الكلية للـ PU لهذا السطر
+     // 3. القيمة الكلية للـ PU لهذا السطر
         const rawPuVal = parseCurrency(item.pu);
-        const cleanPuVal = (rawPuVal < 50000) ? rawPuVal : 0;
+        const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
 
-        // 4. الحساب الدقيق لـ PU بدون كاش وبدون PMO (يطرح الكاش والـ PMO من إجمالي السطر ليتبقى Zelle أو القيم الأخرى الصحيحة)
-        if (cleanPuVal > 0) {
-            let nonCashPmoVal = cleanPuVal;
-            
-            // إذا كان السطر يحتوي على كاش مركب أو صريح، نطرحه
-            if (puStr.includes('cash')) {
-                nonCashPmoVal -= (cashPuVal > 0 ? cashPuVal : cleanPuVal);
-            }
-            // إذا كان يحتوي على PMO مركب أو صريح، نطرحه
-            if (puStr.includes('pmo')) {
-                nonCashPmoVal -= (pmoPuVal > 0 ? pmoPuVal : cleanPuVal);
-            }
-
-            // إذا لم يكن هناك كاش ولا PMO أصلاً، تُضاف القيمة كاملة للحقل
-            if (!puStr.includes('cash') && !puStr.includes('pmo')) {
-                sumZellePu += cleanPuVal;
-            } 
-            // أما إذا كان مركباً وبقي مبلغ بعد الططرح (مثل الـ 250 المتبقية بعد الـ 2000 كاش)، فيتم إضافتها هنا
-            else if (nonCashPmoVal > 0) {
-                sumZellePu += nonCashPmoVal;
-            }
-        }
+        // 🌟 التصحيح المباشر: إذا كان هناك كاش، نطرحه مباشرة من قيمة الـ PU ليبقى الصافي الصحيح (مثل Zelle أو غيره)
+        let netPuWithoutCashPmo = puVal;
         
-        // تعريف وتجهيز متغير الـ Destination
-        const destStr = String(item.dest || item.destination || '').toLowerCase();
-        
-        // استخراج دقيق لمبلغ الـ Cash في حقل الوجهة (Dest) لو وُجد بصيغة مركبة
-        let cashDestVal = 0;
-        if (destStr.includes('cash')) {
-            const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            if (cashDestMatch) {
-                cashDestVal = parseCurrency(cashDestMatch[1]);
-            } else {
-                cashDestVal = parseCurrency(item.dest || item.destination);
-            }
+        if (puStr.includes('cash')) {
+            netPuWithoutCashPmo -= cashPuVal;
+        }
+        if (puStr.includes('pmo')) {
+            netPuWithoutCashPmo -= pmoPuVal;
         }
 
-        const rawDestVal = parseCurrency(item.dest || item.destination);
-        const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
-
-        if (destStr.includes('cash')) {
-            sumCashDest += (cashDestVal > 0 ? cashDestVal : destVal);
-        } else if (destStr.includes('zelle')) {
-            sumDestZelle += destVal;
-            sumDestNoCashPmo += destVal;
-        } else if (!destStr.includes('pmo') && destVal > 0) {
-            sumDestNoCashPmo += destVal;
+        // إضافته للحقل المخصص بـ PU (No Cash/PMO) طالما أن الصافي أكبر من صفر
+        if (netPuWithoutCashPmo > 0) {
+            sumZellePu += netPuWithoutCashPmo;
         }
-
-        if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
-            sumPmoDeliveries += cleanPuVal;
-        }
-    });
-
-    const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
-    const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
