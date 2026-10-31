@@ -48,12 +48,12 @@ function parseLaborAmount(val) {
 window.parseLaborAmount = parseLaborAmount;
 
 function applyReportFilters() {
-    const summaryView = document.getElementById('summaryReportView');
-    if (!summaryView) return;
+    const View = document.getElementById('ReportView');
+    if (!View) return;
     
-    const isSummaryActive = !summaryView.classList.contains('hidden');
-    if (isSummaryActive) {
-        generateSummaryReportData();
+    const isActive = !View.classList.contains('hidden');
+    if (isActive) {
+        generateReportData();
     } else {
         generateDetailedReportData();
     }
@@ -140,7 +140,7 @@ function getFilteredJobsData() {
 }
 window.getFilteredJobsData = getFilteredJobsData;
 
-function generateTruckRentalSummaryTableHTML() {
+function generateTruckRentalTableHTML() {
     const rentals = JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     
     const startDateVal = document.getElementById('filterStartDate')?.value;
@@ -187,8 +187,8 @@ function generateTruckRentalSummaryTableHTML() {
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
                 <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                     <div>
-                        <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial Summary</h3>
-                        <p class="text-[11px] text-slate-400">Comprehensive summary of rental duration, cash payments, and total expenses</p>
+                        <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial </h3>
+                        <p class="text-[11px] text-slate-400">Comprehensive  of rental duration, cash payments, and total expenses</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
@@ -471,34 +471,40 @@ function generateSummaryReportData() {
 }
 window.generateSummaryReportData = generateSummaryReportData;
 
-function generateDetailedReportData() {
-    const startDateVal = document.getElementById('filterStartDate')?.value;
-    const endDateVal = document.getElementById('filterEndDate')?.value;
+function generateSummaryReportData(filteredJobs) {
+    let totalCashPu = 0; // متغير إجمالي كاش الاستلام
+    let totalPmoPu = 0;
 
-    const startDate = startDateVal ? new Date(startDateVal) : null;
-    const endDate = endDateVal ? new Date(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59);
+    filteredJobs.forEach(job => {
+        // ... (العمليات الحسابية الأخرى للوظائف) ...
 
-    const filteredJobs = getFilteredJobsData();
-    const jobsTbody = document.getElementById('detailedReportBody');
-    const jobsBadge = document.getElementById('detailedJobsBadge');
+        // تصحيح قراءة وحساب Cash PU للأعمدة المركبة
+        if (job.pu) {
+            // تقسيم النص عند وجود فاصلة (مثال: "2000 Cash, 250 Zelle")
+            const parts = job.pu.split(',');
 
-    if (jobsBadge) jobsBadge.innerText = `${filteredJobs.length} Jobs`;
-    if (jobsTbody) {
-        if (filteredJobs.length === 0) {
-            jobsTbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-slate-400 text-xs">No job records found for selected period.</td></tr>`;
-        } else {
-            jobsTbody.innerHTML = filteredJobs.map(item => {
-                const totalNum = parseCurrency(item.total);
-                const dynamicForeman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+            parts.forEach(part => {
+                const cleanPart = part.trim();
                 
-                const destVal = item.destination || item.dest || '-';
-                const dieselVal = item.diesel || '-';
-                const hotelVal = item.hotel || '-';
-
-                const helpersDisplay = item.helpers || '-';
-                const driversDisplay = item.drivers || '-';
-
+                // البحث عن كلمة cash واستخراج الرقم الحسابي منها
+                if (cleanPart.toLowerCase().includes('cash')) {
+                    const match = cleanPart.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
+                    if (match) {
+                        const num = parseFloat(match[1].replace(/,/g, ''));
+                        totalCashPu += num;
+                    }
+                } 
+                // البحث عن كلمة pmo إذا وجدت
+                else if (cleanPart.toLowerCase().includes('pmo')) {
+                    const match = cleanPart.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
+                    if (match) {
+                        const num = parseFloat(match[1].replace(/,/g, ''));
+                        totalPmoPu += num;
+                    }
+                }
+            });
+        }
+    });
                 return `
                     <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
                         <td class="p-3 border font-medium">${item.date || '-'}</td>
