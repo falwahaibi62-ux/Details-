@@ -327,13 +327,37 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
 
-     // 3. القيمة الكلية للـ PU لهذا السطر
+        const puStr = String(item.pu || '').toLowerCase();
+        
+        // 1. استخراج الكاش بدقة (حتى لو كان في نص مركب مثل "2000 Cash, 250 Zelle")
+        let cashPuVal = 0;
+        if (puStr.includes('cash')) {
+            const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
+            if (cashMatch) {
+                cashPuVal = parseCurrency(cashMatch[1]);
+            } else {
+                cashPuVal = parseCurrency(item.pu);
+            }
+            sumCashPu += cashPuVal;
+        }
+
+        // 2. استخراج PMO بدقة
+        let pmoPuVal = 0;
+        if (puStr.includes('pmo')) {
+            const pmoMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*pmo/);
+            if (pmoMatch) {
+                pmoPuVal = parseCurrency(pmoMatch[1]);
+            } else {
+                pmoPuVal = parseCurrency(item.pu);
+            }
+            sumPmoPu += pmoPuVal;
+        }
+
+        // 3. القيمة الكلية للـ PU واستخراج المتبقي بدون كاش و PMO
         const rawPuVal = parseCurrency(item.pu);
         const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
 
-        // 🌟 التصحيح المباشر: إذا كان هناك كاش، نطرحه مباشرة من قيمة الـ PU ليبقى الصافي الصحيح (مثل Zelle أو غيره)
         let netPuWithoutCashPmo = puVal;
-        
         if (puStr.includes('cash')) {
             netPuWithoutCashPmo -= cashPuVal;
         }
@@ -341,10 +365,42 @@ function generateOfficialSummaryTable(filteredJobs) {
             netPuWithoutCashPmo -= pmoPuVal;
         }
 
-        // إضافته للحقل المخصص بـ PU (No Cash/PMO) طالما أن الصافي أكبر من صفر
         if (netPuWithoutCashPmo > 0) {
             sumZellePu += netPuWithoutCashPmo;
         }
+
+        // 4. استخراج وجهة الوصول (Destination)
+        const destStr = String(item.dest || item.destination || '').toLowerCase();
+        let cashDestVal = 0;
+        if (destStr.includes('cash')) {
+            const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
+            if (cashDestMatch) {
+                cashDestVal = parseCurrency(cashDestMatch[1]);
+            } else {
+                cashDestVal = parseCurrency(item.dest || item.destination);
+            }
+        }
+
+        const rawDestVal = parseCurrency(item.dest || item.destination);
+        const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
+
+        if (destStr.includes('cash')) {
+            sumCashDest += (cashDestVal > 0 ? cashDestVal : destVal);
+        } else if (destStr.includes('zelle')) {
+            sumDestZelle += destVal;
+            sumDestNoCashPmo += destVal;
+        } else if (!destStr.includes('pmo') && destVal > 0) {
+            sumDestNoCashPmo += destVal;
+        }
+
+        if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
+            sumPmoDeliveries += puVal;
+        }
+    });
+
+    const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
+    const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
+
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
@@ -407,7 +463,6 @@ function generateOfficialSummaryTable(filteredJobs) {
         ${warehouseSummaryObj.html}
     `;
 }
-
 
 function generateSummaryReportData() {
     const filteredJobs = getFilteredJobsData();
@@ -741,7 +796,6 @@ function exportOfficialPDF() {
 
         const puStr = String(item.pu || '').toLowerCase();
         
-        // استخراج دقيق لمبلغ الـ Cash في الـ PDF
         let cashPuVal = 0;
         if (puStr.includes('cash')) {
             const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
@@ -750,21 +804,36 @@ function exportOfficialPDF() {
             } else {
                 cashPuVal = parseCurrency(item.pu);
             }
+            sumCashPu += cashPuVal;
+        }
+
+        let pmoPuVal = 0;
+        if (puStr.includes('pmo')) {
+            const pmoMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*pmo/);
+            if (pmoMatch) {
+                pmoPuVal = parseCurrency(pmoMatch[1]);
+            } else {
+                pmoPuVal = parseCurrency(item.pu);
+            }
+            sumPmoPu += pmoPuVal;
         }
 
         const rawPuVal = parseCurrency(item.pu);
         const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
 
+        let netPuWithoutCashPmo = puVal;
         if (puStr.includes('cash')) {
-            sumCashPu += (cashPuVal > 0 ? cashPuVal : puVal);
-        } else if (puStr.includes('pmo')) {
-            sumPmoPu += puVal;
-        } else {
-            sumZellePu += puVal;
+            netPuWithoutCashPmo -= cashPuVal;
+        }
+        if (puStr.includes('pmo')) {
+            netPuWithoutCashPmo -= pmoPuVal;
+        }
+
+        if (netPuWithoutCashPmo > 0) {
+            sumZellePu += netPuWithoutCashPmo;
         }
 
         const destStr = String(item.dest || item.destination || '').toLowerCase();
-        
         let cashDestVal = 0;
         if (destStr.includes('cash')) {
             const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
