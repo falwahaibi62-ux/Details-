@@ -329,7 +329,7 @@ function generateOfficialSummaryTable(filteredJobs) {
 
         const puStr = String(item.pu || '').toLowerCase();
         
-        // استخراج مبلغ الـ Cash بدقة حتى لو كان في نص مركب (مثل "2000 Cash, 250 Zelle")
+        // 1. استخراج مبلغ الـ Cash بدقة (سواء نص منفرد أو مركب مثل "2000 Cash, 250 Zelle")
         let cashPuVal = 0;
         if (puStr.includes('cash')) {
             const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
@@ -338,18 +338,46 @@ function generateOfficialSummaryTable(filteredJobs) {
             } else {
                 cashPuVal = parseCurrency(item.pu);
             }
+            sumCashPu += cashPuVal;
         }
 
+        // 2. استخراج مبلغ الـ PMO بدقة (سواء منفرد أو مركب)
+        let pmoPuVal = 0;
+        if (puStr.includes('pmo')) {
+            const pmoMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*pmo/);
+            if (pmoMatch) {
+                pmoPuVal = parseCurrency(pmoMatch[1]);
+            } else {
+                pmoPuVal = parseCurrency(item.pu);
+            }
+            sumPmoPu += pmoPuVal;
+        }
+
+        // 3. القيمة الكلية للـ PU لهذا السطر
         const rawPuVal = parseCurrency(item.pu);
         const cleanPuVal = (rawPuVal < 50000) ? rawPuVal : 0;
 
-        if (puStr.includes('cash')) {
-            sumCashPu += (cashPuVal > 0 ? cashPuVal : cleanPuVal);
-        } else if (puStr.includes('pmo')) {
-            sumPmoPu += cleanPuVal;
-        } else {
-            // 🌟 احتساب كافة القيم الأخرى غير الكاش وغير الـ PMO (مثل Zelle, PC, BC وغيرها) لتظهر النتيجة الصحيحة
-            sumZellePu += cleanPuVal;
+        // 4. الحساب الدقيق لـ PU بدون كاش وبدون PMO (يطرح الكاش والـ PMO من إجمالي السطر ليتبقى Zelle أو القيم الأخرى الصحيحة)
+        if (cleanPuVal > 0) {
+            let nonCashPmoVal = cleanPuVal;
+            
+            // إذا كان السطر يحتوي على كاش مركب أو صريح، نطرحه
+            if (puStr.includes('cash')) {
+                nonCashPmoVal -= (cashPuVal > 0 ? cashPuVal : cleanPuVal);
+            }
+            // إذا كان يحتوي على PMO مركب أو صريح، نطرحه
+            if (puStr.includes('pmo')) {
+                nonCashPmoVal -= (pmoPuVal > 0 ? pmoPuVal : cleanPuVal);
+            }
+
+            // إذا لم يكن هناك كاش ولا PMO أصلاً، تُضاف القيمة كاملة للحقل
+            if (!puStr.includes('cash') && !puStr.includes('pmo')) {
+                sumZellePu += cleanPuVal;
+            } 
+            // أما إذا كان مركباً وبقي مبلغ بعد الططرح (مثل الـ 250 المتبقية بعد الـ 2000 كاش)، فيتم إضافتها هنا
+            else if (nonCashPmoVal > 0) {
+                sumZellePu += nonCashPmoVal;
+            }
         }
         
         // تعريف وتجهيز متغير الـ Destination
@@ -385,7 +413,6 @@ function generateOfficialSummaryTable(filteredJobs) {
 
     const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
     const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
-
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
