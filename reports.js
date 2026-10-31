@@ -328,11 +328,23 @@ function generateOfficialSummaryTable(filteredJobs) {
         }
 
         const puStr = String(item.pu || '').toLowerCase();
+        
+        // 🌟 استخراج دقيق لمبلغ الـ Cash حتى لو كان في نص مركب مثل "2000 Cash, 250 Zelle"
+        let cashPuVal = 0;
+        if (puStr.includes('cash')) {
+            const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
+            if (cashMatch) {
+                cashPuVal = parseCurrency(cashMatch[1]);
+            } else {
+                cashPuVal = parseCurrency(item.pu);
+            }
+        }
+
         const rawPuVal = parseCurrency(item.pu);
         const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
 
         if (puStr.includes('cash')) {
-            sumCashPu += puVal;
+            sumCashPu += (cashPuVal > 0 ? cashPuVal : puVal);
         } else if (puStr.includes('pmo')) {
             sumPmoPu += puVal;
         } else if (puVal > 0) {
@@ -340,11 +352,23 @@ function generateOfficialSummaryTable(filteredJobs) {
         }
 
         const destStr = String(item.dest || item.destination || '').toLowerCase();
+        
+        // 🌟 استخراج دقيق لمبلغ الـ Cash في حقل الوجهة (Dest) لو وُجد بصيغة مركبة
+        let cashDestVal = 0;
+        if (destStr.includes('cash')) {
+            const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
+            if (cashDestMatch) {
+                cashDestVal = parseCurrency(cashDestMatch[1]);
+            } else {
+                cashDestVal = parseCurrency(item.dest || item.destination);
+            }
+        }
+
         const rawDestVal = parseCurrency(item.dest || item.destination);
         const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
 
         if (destStr.includes('cash')) {
-            sumCashDest += destVal;
+            sumCashDest += (cashDestVal > 0 ? cashDestVal : destVal);
         } else if (destStr.includes('zelle')) {
             sumDestZelle += destVal;
             sumDestNoCashPmo += destVal;
@@ -422,6 +446,7 @@ function generateOfficialSummaryTable(filteredJobs) {
         ${warehouseSummaryObj.html}
     `;
 }
+
 
 function generateSummaryReportData() {
     const filteredJobs = getFilteredJobsData();
