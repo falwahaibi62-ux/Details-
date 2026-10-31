@@ -415,10 +415,10 @@ function generateOfficialSummaryTable(filteredJobs) {
             </div>
         </div>
 
-        <!-- جدول ملخص إيجارات الشاحنات -->
+        <!-- جدول ملخص إيجارات الشاحنات الديناميكي -->
         ${rentalSummaryObj.html}
 
-        <!-- جدول ملخص المستودع والمصاريف الأخرى الفعلي (بدون تكرار فارغ) -->
+        <!-- جدول ملخص المستودع والمصاريف الأخرى الديناميكي الوحيد -->
         ${warehouseSummaryObj.html}
     `;
 }
