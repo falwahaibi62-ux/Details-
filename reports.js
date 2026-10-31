@@ -341,7 +341,6 @@ function generateOfficialSummaryTable(filteredJobs) {
         }
 
         const rawPuVal = parseCurrency(item.pu);
-        const puVal = (rawVal < 50000) ? rawVal : 0; // تم تصحيح rawPuVal أدناه
         const cleanPuVal = (rawPuVal < 50000) ? rawPuVal : 0;
 
         if (puStr.includes('cash')) {
@@ -783,7 +782,7 @@ function exportOfficialPDF() {
 
         const puStr = String(item.pu || '').toLowerCase();
         
-        // 🌟 استخراج دقيق لمبلغ الـ Cash في الـ PDF ليتطابق تماماً مع الشاشة
+        // استخراج دقيق لمبلغ الـ Cash في الـ PDF
         let cashPuVal = 0;
         if (puStr.includes('cash')) {
             const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
@@ -801,13 +800,12 @@ function exportOfficialPDF() {
             sumCashPu += (cashPuVal > 0 ? cashPuVal : puVal);
         } else if (puStr.includes('pmo')) {
             sumPmoPu += puVal;
-        } else if (puVal > 0) {
+        } else {
             sumZellePu += puVal;
         }
 
         const destStr = String(item.dest || item.destination || '').toLowerCase();
         
-        // 🌟 استخراج دقيق لمبلغ الـ Cash في الوجهة (Dest) لتقرير الـ PDF
         let cashDestVal = 0;
         if (destStr.includes('cash')) {
             const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
