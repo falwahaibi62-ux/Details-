@@ -879,6 +879,12 @@ window.addEventListener('DOMContentLoaded', () => {
         
         updateDashboardAnalytics();
         filterJobsTable();
+
+        // 🌟 تحديث وحساب ملخص التقارير المالي فور تحميل الصفحة
+        if (typeof updateSummaryReportView === 'function') {
+            updateSummaryReportView();
+        }
+
         switchTab('dashboard');
     } catch (error) {
         console.error("Initialization error on DOMContentLoaded:", error);
