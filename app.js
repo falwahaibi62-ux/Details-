@@ -826,13 +826,18 @@ function switchTab(tabName) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
-        // تنفيذ دوال التحديث التلقائي حسب التبويب النشط
+       // تنفيذ دوال التحديث التلقائي حسب التبويب النشط
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
             filterJobsTable();
         } else if (tabName === 'reports' && typeof renderReportsTab === 'function') {
             renderReportsTab();
+        } else if (tabName === 'summaryReport' || tabName === 'summary') {
+            // 🌟 تحديث مؤشرات وتقارير الملخص المالي فوراً عند النقر على تبويب التقارير
+            if (typeof updateSummaryReportView === 'function') {
+                updateSummaryReportView();
+            }
         } else if (tabName === 'trash' && typeof renderTrashBin === 'function') {
             renderTrashBin();
         } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
@@ -858,7 +863,6 @@ function switchTab(tabName) {
     }
 }
 window.switchTab = switchTab;
-
 
 
 // ==========================================
