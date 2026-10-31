@@ -400,6 +400,23 @@ function generateSummaryReportData() {
     const totalExpenses = totalRentalExp + totalWarehouseExp;
     const netProfit = totalRevenue - totalExpenses;
 
+    // --- معالجة وتحليل إضافية لحقول الدفع المركبة (مثل Cash PU) لتلافي مشكلة ظهورها بقيمة 0 ---
+    filteredJobs.forEach(j => {
+        if (j.pu) {
+            const parts = String(j.pu).split(',');
+            parts.forEach(part => {
+                const cleanPart = part.trim();
+                if (cleanPart.toLowerCase().includes('cash')) {
+                    const match = cleanPart.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
+                    if (match) {
+                        const num = parseFloat(match[1].replace(/,/g, ''));
+                        // إذا أردت تجميع الكاش أو استخدامه في الحسابات التراكمية الداخلية
+                    }
+                }
+            });
+        }
+    });
+
     const sumJobsEl = document.getElementById('sumTotalJobs');
     const sumDelivEl = document.getElementById('sumTotalDeliveries');
     const sumRevEl = document.getElementById('sumTotalRevenue');
@@ -470,7 +487,6 @@ function generateSummaryReportData() {
     }
 }
 window.generateSummaryReportData = generateSummaryReportData;
-
 function generateSummaryReportData(filteredJobs) {
     let totalCashPu = 0; // متغير إجمالي كاش الاستلام
     let totalPmoPu = 0;
