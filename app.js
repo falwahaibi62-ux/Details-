@@ -57,24 +57,42 @@ async function initMasterJobsData() {
             return;
         }
 
-        // مطابقة أسماء أعمدة سوبابيس مع هيكل النظام لديك
-        window.masterJobs = (data || []).map(item => ({
-            date: item.date || '',
-            mon: item.mon || 1,
-            year: item.year || new Date().getFullYear(),
-            jobNo: item.job_no || '',
-            route: (item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : (item.route || ''),
-            foreman: item.foreman_name || '',
-            foreman10pct: item.foreman_cost || '0',
-            total: item.total_amount || '$0',
-            helpers: item.helpers_cost || '-',
-            drivers: item.drivers_cost || '-',
-            pu: item.pu_payments || '-',
-            dest: item.destination_payments || '-',
-            diesel: item.diesel_expense || '-',
-            hotel: item.hotel_expense || '-',
-            storage: '-'
-        }));
+        // مطابقة أعمدة سوبابيس واستخراج الشهر والسنة من التاريخ للفلترة والداشبورد
+        window.masterJobs = (data || []).map(item => {
+            let dVal = item.date || '';
+            let mVal = 1;
+            let yVal = new Date().getFullYear();
+
+            if (dVal) {
+                const parts = dVal.split('/');
+                if (parts.length === 3) {
+                    mVal = parseInt(parts[0]) || 1;
+                    yVal = parseInt(parts[2]) || yVal;
+                } else if (dVal.includes('-')) {
+                    const dashParts = dVal.split('-');
+                    if (dashParts.length === 3) {
+                        yVal = parseInt(dashParts[0]) || yVal;
+                        mVal = parseInt(dashParts[1]) || 1;
+                    }
+                }
+            }
+
+            return {
+                date: dVal,
+                jobNo: item.job_no || '',
+                route: (item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : (item.route || ''),
+                foreman: item.foreman_name || '',
+                foreman10pct: item.foreman_cost || '0',
+                total: item.total_amount || '$0',
+                helpers: item.helpers_cost || '-',
+                drivers: item.drivers_cost || '-',
+                pu: item.pu_payments || '-',
+                dest: item.destination_payments || '-',
+                diesel: item.diesel_expense || '-',
+                hotel: item.hotel_expense || '-',
+                storage: item.storage || '-'
+            };
+        });
 
         // ترتيب السجلات تلقائياً من الأحدث للأقدم
         window.masterJobs.sort((a, b) => {
@@ -83,7 +101,6 @@ async function initMasterJobsData() {
             return dateB - dateA;
         });
 
-        // تحديث الفلاتر واللوحة بعد جلب البيانات السحابية
         populateYearFilter();
         filterJobsTable();
         updateDashboardAnalytics();
@@ -94,7 +111,6 @@ async function initMasterJobsData() {
     }
 }
 window.initMasterJobsData = initMasterJobsData;
-
 // 🌟 دالة لحفظ وتحديث البيانات مباشرة في Supabase
 async function saveMasterJobsData(jobs) {
     window.masterJobs = jobs;
