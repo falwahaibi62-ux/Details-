@@ -158,39 +158,41 @@
                 </div>
             </div>
 
-            <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:col-span-2 space-y-4 hover:shadow-md transition-shadow">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-4">
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-sm flex items-center">
-                                <span class="w-2 h-5 bg-emerald-600 rounded-full mr-2"></span>
-                                Monthly Revenue & Volume Trend
-                            </h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Real-time performance distribution derived from active ledger</p>
-                        </div>
-                        <span class="text-[11px] bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl border border-emerald-100 flex items-center">
-                            <i class="fa-solid fa-bolt text-amber-500 mr-1.5"></i> Live Telemetry
-                        </span>
-                    </div>
-                    <div class="h-68 relative w-full pt-2">
-                        <canvas id="revenueChart"></canvas>
-                    </div>
+          <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Monthly Revenue Trend -->
+        <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:col-span-2 space-y-4 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-sm flex items-center">
+                        <span class="w-2 h-5 bg-emerald-600 rounded-full mr-2"></span>
+                        Monthly Revenue & Volume Trend
+                    </h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Real-time performance distribution derived from active ledger</p>
                 </div>
-
-                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 hover:shadow-md transition-shadow flex flex-col justify-between">
-                    <div class="border-b border-slate-100 pb-4">
-                        <h3 class="font-bold text-slate-900 text-sm flex items-center">
-                            <span class="w-2 h-5 bg-blue-600 rounded-full mr-2"></span>
-                            Payment Channels Mix
-                        </h3>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Distribution of Cash, Zelle, and Checks</p>
-                    </div>
-                    <div class="h-60 relative flex items-center justify-center my-auto">
-                        <canvas id="paymentMixChart"></canvas>
-                    </div>
-                </div>
+                <span class="text-[11px] bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl border border-emerald-100 flex items-center">
+                    <i class="fa-solid fa-bolt text-amber-500 mr-1.5"></i> Live Telemetry
+                </span>
             </div>
+            <div class="chart-container" style="height: 260px; position: relative; width: 100%;">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Payment Channels Mix -->
+        <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 hover:shadow-md transition-shadow flex flex-col justify-between">
+            <div class="border-b border-slate-100 pb-4">
+                <h3 class="font-bold text-slate-900 text-sm flex items-center">
+                    <span class="w-2 h-5 bg-blue-600 rounded-full mr-2"></span>
+                    Payment Channels Mix
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Distribution of Cash, Zelle, and Checks</p>
+            </div>
+            <div class="chart-container" style="height: 240px; position: relative; width: 100%;">
+                <canvas id="paymentMixChart"></canvas>
+            </div>
+        </div>
+    </div>
 
             <!-- Business Intelligence & Strategic Recommendations -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
