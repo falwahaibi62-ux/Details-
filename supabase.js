@@ -1,6 +1,6 @@
 // Initialize and export the Supabase client for use across all project files
 const SUPABASE_URL = 'https://xxqmvrbsurvoepubnful.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'your_publishable_key_here';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_mHr5tGWLiFdwBB9mWwLHzA_TskTbbn8';
 
 // Create a global client instance
 window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
