@@ -381,7 +381,7 @@ function renderJobsCRUD(dataToRender) {
 window.renderJobsCRUD = renderJobsCRUD;
 
 // ==========================================
-// 6. MODAL & JOB ACTIONS
+// 6. MODAL & SUPABASE CRUD ACTIONS (Save, Edit, Delete)
 // ==========================================
 function openAddModal(isEdit = false, recordData = null, index = -1) {
     const modal = document.getElementById('jobModal');
@@ -419,7 +419,8 @@ function closeModal() {
 }
 window.closeModal = closeModal;
 
-function saveJob(event) {
+// 🌟 دالة الحفظ والتعديل المباشرة في Supabase
+async function saveJob(event) {
     if (event) event.preventDefault();
 
     const jobNoInput = document.getElementById('jobNo');
@@ -429,12 +430,7 @@ function saveJob(event) {
         return;
     }
 
-    initMasterJobsData();
     const jobNoVal = jobNoInput.value.trim();
-
-    const editIndexInput = document.getElementById('editIndex');
-    const editIndex = editIndexInput ? parseInt(editIndexInput.value, 10) : -1;
-    const isEditing = !isNaN(editIndex) && editIndex >= 0 && editIndex < window.masterJobs.length;
 
     const dateInput = document.getElementById('jobDate');
     const dateRaw = dateInput ? dateInput.value : '';
@@ -459,7 +455,6 @@ function saveJob(event) {
 
     const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
     const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
-    const routeVal = (fromVal || toVal) ? `${fromVal} → ${toVal}` : '-';
 
     const puFormatted = extractPaymentsFromContainer('puContainer');
     const destFormatted = extractPaymentsFromContainer('destContainer');
@@ -478,202 +473,88 @@ function saveJob(event) {
     const driversSelect = document.getElementById('driversCost');
     const driversFormatted = driversSelect && driversSelect.selectedIndex > 0 ? driversSelect.options[driversSelect.selectedIndex].text : '-';
 
-    const jobData = {
+    // تجهيز البيانات بالأسماء المناسبة لأعمدة سوبابيس
+    const supabasePayload = {
         date: dateVal,
         month: monthVal,
         year: yearVal,
-        jobNo: jobNoVal,
-        route: routeVal,
-        foreman: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
-        foreman10pct: foreman10Val,
-        total: totalFormatted,
-        helpers: helpersFormatted,        
-        drivers: driversFormatted,        
-        pu: puFormatted,
-        dest: destFormatted,
-        diesel: dieselFormatted,
-        hotel: hotelFormatted,
-        storage: '-'
+        job_no: jobNoVal,
+        route_from: fromVal,
+        route_to: toVal,
+        foreman_name: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
+        foreman_cost: foreman10Val,
+        total_amount: totalFormatted,
+        helpers_cost: helpersFormatted,        
+        drivers_cost: driversFormatted,        
+        pu_payments: puFormatted,
+        destination_payments: destFormatted,
+        diesel_expense: dieselFormatted,
+        hotel_expense: hotelFormatted
     };
 
-    if (isEditing) {
-        window.masterJobs[editIndex] = jobData;
-    } else {
-        const targetIndex = window.masterJobs.findIndex(j => j.jobNo === jobNoVal);
-        if (targetIndex !== -1) {
-            window.masterJobs[targetIndex] = jobData;
-        } else {
-            window.masterJobs.unshift(jobData);
-        }
-    }
-
-    saveMasterJobsData(window.masterJobs);
-    closeModal();
-    populateYearFilter();
-    filterJobsTable();
-    updateDashboardAnalytics();
-}
-window.saveJob = saveJob;
-
-function parseAndSumDiesel(val) {
-    if (!val || val === '-' || val === '0' || val === 0) return 0;
-    if (typeof val === 'number') return val;
-
-    let strVal = String(val).trim();
-    if (strVal.includes('+')) {
-        let parts = strVal.split('+');
-        let sum = 0;
-        parts.forEach(part => {
-            let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
-            sum += cleanNum;
-        });
-        return sum;
-    }
-
-    return parseFloat(strVal.replace(/[^0-9.]/g, '')) || 0;
-}
-window.parseAndSumDiesel = parseAndSumDiesel;
-
-function editJob(jobNoParam) {
-    initMasterJobsData();
-    const index = window.masterJobs.findIndex(j => j.jobNo === jobNoParam);
-
-    if (index === -1 || !window.masterJobs[index]) {
-        alert("Could not find the record for editing.");
+    if (!window.supabaseClient) {
+        alert("Supabase client not initialized!");
         return;
     }
 
-    const j = window.masterJobs[index];
-    openAddModal(true, j, index); 
+    // التحقق هل المهمة موجودة مسبقاً (لتحديد هل هي عملية تعديل أو إضافة جديدة)
+    const { data: existingData } = await window.supabaseClient
+        .from('jobs_report')
+        .select('id')
+        .eq('job_no', jobNoVal)
+        .maybeSingle();
 
-    const modalTitle = document.getElementById('modalTitle');
-    if (modalTitle) modalTitle.innerText = 'Edit Dispatch Record';
-    
-    const editIndex = document.getElementById('editIndex');
-    if (editIndex) editIndex.value = index;
+    let error;
+    if (existingData) {
+        // تحديث سجل موجود مسبقاً بناءً على رقم المهمة
+        const res = await window.supabaseClient
+            .from('jobs_report')
+            .update(supabasePayload)
+            .eq('job_no', jobNoVal);
+        error = res.error;
+    } else {
+        // إدراج سجل جديد كلياً
+        const res = await window.supabaseClient
+            .from('jobs_report')
+            .insert([supabasePayload]);
+        error = res.error;
+    }
 
-    setTimeout(() => {
-        if (document.getElementById('jobDate')) document.getElementById('jobDate').value = formatJobDateForInput(j.date);
-        if (document.getElementById('jobNo')) document.getElementById('jobNo').value = j.jobNo || '';
-        if (document.getElementById('jobForeman')) document.getElementById('jobForeman').value = j.foreman || '';
-        if (document.getElementById('jobTotal')) document.getElementById('jobTotal').value = j.total ? String(j.total).replace('$', '').trim() : '';
-
-        if (j.route && j.route.includes('→')) {
-            const rParts = j.route.split('→');
-            if (document.getElementById('routeFrom')) document.getElementById('routeFrom').value = rParts[0].trim();
-            if (document.getElementById('routeTo')) document.getElementById('routeTo').value = rParts[1].trim();
-        } else if (j.route) {
-            if (document.getElementById('routeFrom')) document.getElementById('routeFrom').value = j.route.trim();
-        }
-
-        const helpersSelect = document.getElementById('helpersCost');
-        if (helpersSelect && j.helpers && j.helpers !== '-') {
-            const numHelpers = parseFloat(String(j.helpers).replace(/[^0-9.]/g, ''));
-            let matched = false;
-            for (let option of helpersSelect.options) {
-                if (numHelpers > 0 && option.text.includes(`(${numHelpers})`)) {
-                    option.selected = true;
-                    matched = true;
-                    break;
-                }
-            }
-            if (!matched) {
-                for (let option of helpersSelect.options) {
-                    if (option.text.trim() === String(j.helpers).trim()) {
-                        option.selected = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        const driversSelect = document.getElementById('driversCost');
-        if (driversSelect && j.drivers && j.drivers !== '-') {
-            const numDrivers = parseFloat(String(j.drivers).replace(/[^0-9.]/g, ''));
-            let matched = false;
-            for (let option of driversSelect.options) {
-                if (numDrivers > 0 && option.text.includes(`(${numDrivers})`)) {
-                    option.selected = true;
-                    matched = true;
-                    break;
-                }
-            }
-            if (!matched) {
-                for (let option of driversSelect.options) {
-                    if (option.text.trim() === String(j.drivers).trim()) {
-                        option.selected = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (j.diesel && j.diesel !== '-') {
-            const dParts = j.diesel.split(' ');
-            if (document.getElementById('dieselAmount')) document.getElementById('dieselAmount').value = dParts[0] || '';
-            if (document.getElementById('dieselMethod') && dParts[1]) document.getElementById('dieselMethod').value = dParts[1];
-        }
-
-        if (j.hotel && j.hotel !== '-') {
-            const hParts = j.hotel.split(' ');
-            if (document.getElementById('hotelAmount')) document.getElementById('hotelAmount').value = hParts[0] || '';
-            if (document.getElementById('hotelMethod') && hParts[1]) document.getElementById('hotelMethod').value = hParts[1];
-        }
-
-        const puContainer = document.getElementById('puContainer');
-        if (puContainer) {
-            puContainer.innerHTML = '';
-            if (j.pu && j.pu !== '-') {
-                j.pu.split(',').forEach(pItem => {
-                    const parts = pItem.trim().split(' ');
-                    if (parts.length >= 1) {
-                        const amt = parts[0] || '';
-                        const mth = parts[1] || 'Cash';
-                        addPaymentRow('puContainer', amt, mth);
-                    }
-                });
-            }
-        }
-
-        let destContainer = document.getElementById('destContainer') || document.getElementById('destContextContainer');
-        if (destContainer) {
-            destContainer.innerHTML = '';
-            const destVal = j.dest || j.destination;
-            if (destVal && destVal !== '-') {
-                destVal.split(',').forEach(dItem => {
-                    const parts = dItem.trim().split(' ');
-                    if (parts.length >= 1) {
-                        const amt = parts[0] || '';
-                        const mth = parts[1] || 'Cash';
-                        addPaymentRow(destContainer.id, amt, mth);
-                    }
-                });
-            }
-        }
-
-    }, 50);
+    if (error) {
+        console.error('Error saving to Supabase:', error);
+        alert('Failed to save record to cloud database.');
+    } else {
+        closeModal();
+        // إعادة جلب البيانات وتحديث الواجهة مباشرة من السحابة
+        initMasterJobsData();
+    }
 }
-window.editJob = editJob;
+window.saveJob = saveJob;
 
-function deleteJob(jobNo) {
-    if (!confirm('Are you sure you want to delete this dispatch record?')) return;
+// 🌟 دالة الحذف المباشرة من Supabase
+async function deleteJob(jobNo) {
+    if (!confirm('Are you sure you want to delete this dispatch record from cloud?')) return;
 
-    initMasterJobsData();
-    const jobIndex = window.masterJobs.findIndex(j => j.jobNo === jobNo);
+    if (!window.supabaseClient) {
+        alert("Supabase client not initialized!");
+        return;
+    }
 
-    if (jobIndex !== -1) {
-        const deletedJob = window.masterJobs.splice(jobIndex, 1)[0];
-        window.masterTrash = JSON.parse(localStorage.getItem('movepro_trash_bin')) || [];
-        window.masterTrash.push(deletedJob);
+    const { error } = await window.supabaseClient
+        .from('jobs_report')
+        .delete()
+        .eq('job_no', jobNo);
 
-        saveMasterJobsData(window.masterJobs);
-        localStorage.setItem('movepro_trash_bin', JSON.stringify(window.masterTrash));
-
-        filterJobsTable();
-        updateDashboardAnalytics();
+    if (error) {
+        console.error('Error deleting from Supabase:', error);
+        alert('Failed to delete record from cloud database.');
+    } else {
+        // إعادة جلب البيانات وتحديث الجدول بعد الحذف
+        initMasterJobsData();
     }
 }
 window.deleteJob = deleteJob;
+
 
 // ==========================================
 // 7. DASHBOARD ANALYTICS & CHARTS
