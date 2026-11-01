@@ -33,8 +33,8 @@ function formatJobDateForInput(dateStr) {
 function formatJobDateToSlash(dateStr) {
     if (!dateStr) return '';
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        const [year, month, day] = dateStr.split('-');
-        return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
+        const [year, mon, day] = dateStr.split('-');
+        return `${parseInt(mon, 10)}/${parseInt(day, 10)}/${year}`;
     }
     return dateStr;
 }
@@ -60,7 +60,7 @@ async function initMasterJobsData() {
         // مطابقة أسماء أعمدة سوبابيس مع هيكل النظام لديك
         window.masterJobs = (data || []).map(item => ({
             date: item.date || '',
-            month: item.month || 1,
+            mon: item.mon || 1,
             year: item.year || new Date().getFullYear(),
             jobNo: item.job_no || '',
             route: (item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : (item.route || ''),
@@ -522,10 +522,12 @@ async function saveJob(event) {
         .from('jobs_report')
         .insert([supabasePayload]);
 
-    if (error) {
-        console.error('Error saving to Supabase:', error);
-        alert('Supabase Error: ' + (error.message || JSON.stringify(error)));
-    } else {
+   if (error) {
+        console.error('Error saving to Supabase:', error.message, error.details, error.hint);
+        alert('Supabase Error: ' + error.message);
+    } 
+   
+   else {
         closeModal();
         // إعادة جلب وتحديث البيانات من السحابة فوراً
         initMasterJobsData();
