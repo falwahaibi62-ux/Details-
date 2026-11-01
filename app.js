@@ -441,7 +441,6 @@ function closeModal() {
 }
 window.closeModal = closeModal;
 
-// 🌟 دالة الحفظ والتعديل المباشرة في Supabase
 async function saveJob(event) {
     if (event) event.preventDefault();
 
@@ -495,7 +494,7 @@ async function saveJob(event) {
     const driversSelect = document.getElementById('driversCost');
     const driversFormatted = driversSelect && driversSelect.selectedIndex > 0 ? driversSelect.options[driversSelect.selectedIndex].text : '-';
 
-    // تجهيز البيانات بالأسماء المناسبة لأعمدة سوبابيس
+    // تجهيز البيانات المتوافقة مع جدول Supabase
     const supabasePayload = {
         date: dateVal,
         month: monthVal,
@@ -519,35 +518,17 @@ async function saveJob(event) {
         return;
     }
 
-    // التحقق هل المهمة موجودة مسبقاً (لتحديد هل هي عملية تعديل أو إضافة جديدة)
-    const { data: existingData } = await window.supabaseClient
+    // استخدام upsert لحفظ السجل أو تحديثه تلقائياً بناءً على رقم المهمة (job_no)
+    const { error } = await window.supabaseClient
         .from('jobs_report')
-        .select('id')
-        .eq('job_no', jobNoVal)
-        .maybeSingle();
-
-    let error;
-    if (existingData) {
-        // تحديث سجل موجود مسبقاً بناءً على رقم المهمة
-        const res = await window.supabaseClient
-            .from('jobs_report')
-            .update(supabasePayload)
-            .eq('job_no', jobNoVal);
-        error = res.error;
-    } else {
-        // إدراج سجل جديد كلياً
-        const res = await window.supabaseClient
-            .from('jobs_report')
-            .insert([supabasePayload]);
-        error = res.error;
-    }
+        .upsert([supabasePayload], { onConflict: 'job_no' });
 
     if (error) {
         console.error('Error saving to Supabase:', error);
-        alert('Failed to save record to cloud database.');
+        alert('Failed to save record to cloud database. Check console for details.');
     } else {
         closeModal();
-        // إعادة جلب البيانات وتحديث الواجهة مباشرة من السحابة
+        // إعادة جلب وتحديث البيانات من السحابة فوراً
         initMasterJobsData();
     }
 }
