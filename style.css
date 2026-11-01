@@ -65,3 +65,11 @@ input:focus, select:focus, textarea:focus {
     border-color: #059669 !important;
     box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
 }
+
+/* 6. Chart Container Fixed Height Fix */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 240px; /* ارتفاع ثابت يمنع قص الرسم البياني */
+    max-height: 240px;
+}
