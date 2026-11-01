@@ -494,9 +494,8 @@ async function saveJob(event) {
     const driversSelect = document.getElementById('driversCost');
     const driversFormatted = driversSelect && driversSelect.selectedIndex > 0 ? driversSelect.options[driversSelect.selectedIndex].text : '-';
 
-    // تجهيز البيانات المتوافقة مع جدول Supabase
+    // الحقول الأساسية المطابقة للجدول
     const supabasePayload = {
-        date: dateVal,
         month: monthVal,
         year: yearVal,
         job_no: jobNoVal,
@@ -518,19 +517,19 @@ async function saveJob(event) {
         return;
     }
 
-    // استخدام upsert لحفظ السجل أو تحديثه تلقائياً بناءً على رقم المهمة (job_no)
+    // إرسال البيانات مباشرة باستخدام insert (أو upsert بدون تحديد onConflict مؤقتاً لتجنب الخطأ)
     const { error } = await window.supabaseClient
         .from('jobs_report')
-        .upsert([supabasePayload], { onConflict: 'job_no' });
+        .insert([supabasePayload]);
 
-  if (error) {
+    if (error) {
         console.error('Error saving to Supabase:', error);
-        // إظهار رسالة الخطأ التفصيلية مباشرة على الشاشة لنعرف السبب
         alert('Supabase Error: ' + (error.message || JSON.stringify(error)));
     } else {
         closeModal();
         // إعادة جلب وتحديث البيانات من السحابة فوراً
         initMasterJobsData();
+        alert('تم حفظ السجل بنجاح في السحابة!');
     }
 }
 window.saveJob = saveJob;
