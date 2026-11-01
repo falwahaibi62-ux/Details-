@@ -523,9 +523,10 @@ async function saveJob(event) {
         .from('jobs_report')
         .upsert([supabasePayload], { onConflict: 'job_no' });
 
-    if (error) {
+  if (error) {
         console.error('Error saving to Supabase:', error);
-        alert('Failed to save record to cloud database. Check console for details.');
+        // إظهار رسالة الخطأ التفصيلية مباشرة على الشاشة لنعرف السبب
+        alert('Supabase Error: ' + (error.message || JSON.stringify(error)));
     } else {
         closeModal();
         // إعادة جلب وتحديث البيانات من السحابة فوراً
