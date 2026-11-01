@@ -8,7 +8,7 @@ if (typeof window.revenueChartInstance === 'undefined') window.revenueChartInsta
 if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChartInstance = null;
 
 // ==========================================
-// 1. DATA INITIALIZATION & STORAGE SYNC (Sorted Newest to Oldest)
+// 1. DATA INITIALIZATION & SUPABASE CLOUD SYNC (Sorted Newest to Oldest)
 // ==========================================
 function formatJobDateForInput(dateStr) {
     if (!dateStr) return '';
@@ -39,43 +39,72 @@ function formatJobDateToSlash(dateStr) {
     return dateStr;
 }
 
-function initMasterJobsData() {
+// 🌟 تعديل دالة التهيئة لجلب البيانات سحابياً من جدول jobs_report في Supabase
+async function initMasterJobsData() {
     try {
-        let stored = localStorage.getItem('movePro_masterJobs');
-        if (!stored || JSON.parse(stored).length === 0) {
-            if (typeof window.masterJobs !== 'undefined' && Array.isArray(window.masterJobs) && window.masterJobs.length > 0) {
-                localStorage.setItem('movePro_masterJobs', JSON.stringify(window.masterJobs));
-            }
+        if (!window.supabaseClient) {
+            console.error("Supabase client is not initialized!");
+            return;
         }
-        window.masterJobs = JSON.parse(localStorage.getItem('movePro_masterJobs')) || window.masterJobs || [];
-        
+
+        const { data, error } = await window.supabaseClient
+            .from('jobs_report')
+            .select('*');
+
+        if (error) {
+            console.error("Error fetching jobs from Supabase:", error);
+            window.masterJobs = [];
+            return;
+        }
+
+        // مطابقة أسماء أعمدة سوبابيس مع هيكل النظام لديك
+        window.masterJobs = (data || []).map(item => ({
+            date: item.date || '',
+            month: item.month || 1,
+            year: item.year || new Date().getFullYear(),
+            jobNo: item.job_no || '',
+            route: (item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : (item.route || ''),
+            foreman: item.foreman_name || '',
+            foreman10pct: item.foreman_cost || '0',
+            total: item.total_amount || '$0',
+            helpers: item.helpers_cost || '-',
+            drivers: item.drivers_cost || '-',
+            pu: item.pu_payments || '-',
+            dest: item.destination_payments || '-',
+            diesel: item.diesel_expense || '-',
+            hotel: item.hotel_expense || '-',
+            storage: '-'
+        }));
+
         // ترتيب السجلات تلقائياً من الأحدث للأقدم
         window.masterJobs.sort((a, b) => {
             const dateA = new Date(a.date || 0);
             const dateB = new Date(b.date || 0);
             return dateB - dateA;
         });
+
+        // تحديث الفلاتر واللوحة بعد جلب البيانات السحابية
+        populateYearFilter();
+        filterJobsTable();
+        updateDashboardAnalytics();
+
     } catch (e) {
-        console.error("Error initializing master jobs:", e);
-        window.masterJobs = window.masterJobs || [];
+        console.error("Error initializing master jobs from Supabase:", e);
+        window.masterJobs = [];
     }
 }
 window.initMasterJobsData = initMasterJobsData;
 
-function saveMasterJobsData(jobs) {
-    try {
-        jobs.sort((a, b) => {
-            const dateA = new Date(a.date || 0);
-            const dateB = new Date(b.date || 0);
-            return dateB - dateA;
-        });
-        window.masterJobs = jobs;
-        localStorage.setItem('movePro_masterJobs', JSON.stringify(jobs));
-    } catch (e) {
-        console.error("Error saving master jobs:", e);
-    }
+// 🌟 دالة لحفظ وتحديث البيانات مباشرة في Supabase
+async function saveMasterJobsData(jobs) {
+    window.masterJobs = jobs;
+    // يتم تحديث الواجهة محلياً فوراً لضمان سرعة الاستجابة
+    filterJobsTable();
+    updateDashboardAnalytics();
 }
 window.saveMasterJobsData = saveMasterJobsData;
+
+
 
 function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
