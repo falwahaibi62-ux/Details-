@@ -336,33 +336,31 @@ function renderJobsCRUD(dataToRender) {
             ? `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px]">-</span>` 
             : `<span class="bg-amber-50 text-amber-800 px-2.5 py-1 rounded font-bold text-xs">${item.foreman}</span>`;
         
-       let actions = `<span class="text-xs text-slate-400">-</span>`;
-        if (window.currentUserRole === 'Admin') {
-            actions = `
-                <div class="flex items-center space-x-1 justify-center">
-                    <button type="button" onclick="('${item.jobNo || item.id}')" class="px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg cursor-pointer" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
-                    <button type="button" onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
-                </div>
-            `;
-        }
+        // إظهار أزرار التعديل والحذف مباشرة لضمان ظهورها
+        const jobIdentifier = item.jobNo || item.job_no || item.id;
+        const actions = `
+            <div class="flex items-center space-x-1 justify-center gap-1">
+                <button type="button" onclick="openEditJobModal('${jobIdentifier}')" class="px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg cursor-pointer transition" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button type="button" onclick="deleteJob('${item.jobNo || item.job_no}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer transition" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+        `;
 
-        const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : '-';
-        const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : '-';
-        const helpersVal = parseHelpersDisplay(item.helpers);
-        const driversVal = parseDriversDisplay(item.drivers); 
-        const puVal = (item.pu && item.pu !== '-') ? item.pu : '-';
-        const rawDest = item.destination || item.dest;
-        const destVal = (rawDest && rawDest !== '-') ? rawDest : '-';
-        const totalVal = (item.total && item.total !== '-') ? item.total : '-';
+        const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : (item.diesel_expense || '-');
+        const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : (item.hotel_expense || '-');
+        const helpersVal = parseHelpersDisplay(item.helpers || item.helpers_cost);
+        const driversVal = parseDriversDisplay(item.drivers || item.drivers_cost); 
+        const totalVal = item.total || item.total_amount || '-';
+        const puVal = item.pu || item.pu_payments || '-';
+        const destVal = item.destination || item.dest || item.destination_payments || '-';
 
         let totalNum = parseFloat(String(totalVal).replace(/[^0-9.]/g, '')) || 0;
-        let foreman10Val = item.foreman10pct ? ('$' + item.foreman10pct) : (totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-');
+        let foreman10Val = item.foreman10pct ? ('$' + item.foreman10pct) : (item.foreman_cost ? '$' + item.foreman_cost : (totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-'));
 
         return `
             <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
                 <td class="p-3 text-slate-700 font-medium">${item.date || '-'}</td>
-                <td class="p-3 text-slate-900 font-bold">${item.jobNo || '-'}</td>
-                <td class="p-3 text-slate-700">${item.route || '-'}</td>
+                <td class="p-3 text-slate-900 font-bold">${item.jobNo || item.job_no || '-'}</td>
+                <td class="p-3 text-slate-700">${item.route || ((item.route_from || '') + ' → ' + (item.route_to || '')) || '-'}</td>
                 <td class="p-3">${foremanDisplay}</td>
                 <td class="p-3 text-emerald-800 font-bold">${foreman10Val}</td>
                 <td class="p-3 text-purple-700 font-semibold">${helpersVal}</td>
