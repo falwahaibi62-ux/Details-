@@ -42,17 +42,13 @@ async function initMasterJobsData() {
             console.error("Supabase client is not initialized!");
             return;
         }
-const { data, error } = await window.supabaseClient
-    .from('jobs_report')
-    .select('*')
-    .eq('is_deleted', false) // جلب السجلات النشطة فقط
-    .order('id', { ascending: false });
 
-
-        
-        const { data, error } = await window.supabaseClient
+        // 🌟 جلب السجلات النشطة فقط (غير المحذوفة) مع الترتيب
+        const { data: jobsData, error } = await window.supabaseClient
             .from('jobs_report')
-            .select('*');
+            .select('*')
+            .eq('is_deleted', false)
+            .order('id', { ascending: false });
 
         if (error) {
             console.error("Error fetching jobs from Supabase:", error);
@@ -60,7 +56,7 @@ const { data, error } = await window.supabaseClient
             return;
         }
 
-        window.masterJobs = (data || []).map(item => {
+        window.masterJobs = (jobsData || []).map(item => {
             let dVal = item.date || '';
             let mVal = 1;
             let yVal = new Date().getFullYear();
@@ -79,7 +75,8 @@ const { data, error } = await window.supabaseClient
                 }
             }
 
-          return {
+            return {
+                id: item.id, // الاحتفاظ بالمعرف الحقيقي للسجل لتسهيل التعديل والحذف
                 date: dVal,
                 month: mVal,
                 year: yVal,
@@ -105,9 +102,9 @@ const { data, error } = await window.supabaseClient
             return dateB - dateA;
         });
 
-        populateYearFilter();
-        filterJobsTable();
-        updateDashboardAnalytics();
+        if (typeof populateYearFilter === 'function') populateYearFilter();
+        if (typeof filterJobsTable === 'function') filterJobsTable();
+        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 
     } catch (e) {
         console.error("Error initializing master jobs from Supabase:", e);
