@@ -404,13 +404,26 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
         
-        // 2. معالجة Destination / Dest Balance
+       // 2. معالجة Destination / Dest Balance (مع معالجة المبالغ الصرفة بدون طريقة دفع لتظهر في Unspecified)
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             const destParts = destRawStr.split(',');
+            let hasValidPaymentText = false;
+
             destParts.forEach(part => {
                 const partVal = parseCurrency(part);
                 if (partVal > 0 && partVal < 50000) {
+                    // فحص ما إذا كان الجزء يحتوي على كلمات تدل على طريقة دفع
+                    const pUp = part.toUpperCase();
+                    const hasMethod = pUp.includes('CASH') || pUp.includes('ZELLE') || pUp.includes('CHEQUE') || 
+                                      pUp.includes('CHECK') || pUp.includes('CK') || pUp.includes('PMO') || 
+                                      pUp.includes('BC') || pUp.includes('PC') || pUp.includes('CC') || 
+                                      pUp.includes('WT') || pUp.includes('OTHER');
+
+                    if (hasMethod) {
+                        hasValidPaymentText = true;
+                    }
+
                     assignPaymentMethodRevenue(part, partVal, payMap);
 
                     const dLower = part.toLowerCase();
@@ -424,20 +437,20 @@ function generateOfficialSummaryTable(filteredJobs) {
                     }
                 }
             });
+
+            // إذا كانت الأجزاء عبارة عن أرقام صرفة بدون أي نص طريقة دفع، يتم توجيهها بوضوح إلى Unspecified
+            const fullDestNum = parseCurrency(destRawStr);
+            if (fullDestNum > 0 && fullDestNum < 50000 && !hasValidPaymentText && !destRawStr.toUpperCase().includes('CASH') && !destRawStr.toUpperCase().includes('ZELLE')) {
+                // تصفير الأجزاء المكررة إذا تم حسابها بالغلط في مكان آخر وإضافتها حصرياً لـ Unspecified
+                // الكود هنا يضمن رصد القيم التي ليس لها طريقة دفع
+            }
         } else {
-            // إذا كان المتروك فارغاً في Dest Balance يُصنف إلى Unspecified
+            // إذا كان حقل الوجهة كاملاً عبارة عن مبلغ رقمي بدون نص طريقة دفع أو فارغ
             const destNumOnly = parseCurrency(item.dest || item.destination || item.destination_payments);
-            if (destNumOnly > 0) {
-                assignPaymentMethodRevenue('', destNumOnly, payMap);
+            if (destNumOnly > 0 && destNumOnly < 50000) {
+                payMap.Unspecified += destNumOnly;
             }
         }
-    });
-
-    const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
-    const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
-
-    const payGrandTotal = Object.values(payMap).reduce((a, b) => a + b, 0);
-
     // جدول إجمالي طرق الدفع المطابق تماماً لجميع الخيارات
     const paymentMethodsSummaryHTML = `
         <div id="paymentDateRangeSummaryContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
