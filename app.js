@@ -461,17 +461,17 @@ function openEditJobModal(jobIdOrNo) {
     let fromVal = job.route_from || job.from || '';
     let toVal = job.route_to || job.to || '';
     
-    if ((!fromVal || !toVal) && (job.route || job.route_str)) {
-        const routeStr = job.route || job.route_str;
-        const parts = routeStr.split(/→|->/);
+    if ((!fromVal || !toVal) && job.route && job.route.trim() !== "") {
+        const parts = job.route.split(/→|->/);
         if (parts.length >= 2) {
             fromVal = parts[0].trim();
             toVal = parts[1].trim();
         } else {
-            fromVal = routeStr;
+            fromVal = job.route;
         }
     }
 
+    // تعبئة حقول المسار مباشرة (بدون تكرار)
     const fromEl = document.getElementById('routeFrom') || document.querySelector('[name="routeFrom"]') || document.querySelector('[name="route_from"]');
     if (fromEl) fromEl.value = fromVal;
 
@@ -523,6 +523,7 @@ function openEditJobModal(jobIdOrNo) {
     }
 }
 window.openEditJobModal = openEditJobModal;
+
 
 function parseAndSumDiesel(val) {
     if (!val || val === '-' || val === '0' || val === 0) return 0;
