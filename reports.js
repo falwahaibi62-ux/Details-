@@ -122,25 +122,47 @@ window.getFilteredJobsData = getFilteredJobsData;
 
 
 
-// دالة التصنيف المالي النهائية والمنقحة لمعالجة الأرقام الصرفة، الشيكات، و Unspecified
+// دالة تحليل وتصنيف المبالغ (نسخة ذكية تتعامل مع النصوص المركبة، الفواصل، والشرائط المائلة)
 function assignPaymentMethodRevenue(methodStr, amount, map) {
-    if (amount <= 0) return;
+    if (!methodStr) return;
 
-    const rawStr = String(methodStr || '').trim();
+    const rawStr = String(methodStr).trim();
+    if (rawStr === '-' || rawStr === '---') return;
 
-    // تنظيف النص من رمز العملة والمسافات لفحص ما إذا كان المدخل رقماً بحتاً (مثل 1960 أو $1,960.00)
-    const cleanedForCheck = rawStr.replace(/[^0-9.]/g, '');
-    const isPureNumber = cleanedForCheck.length > 0 && !/[a-zA-Z]/.test(rawStr);
+    // إذا كانت الخانة تحتوي على فواصل أو شرائط مائلة (مثل "400 Cash / 466" أو "1750 Zelle, 500 Cash")
+    // نقوم بتفكيكها إلى أجزاء لمعالجة كل جزء على حدة بدقة متناهية
+    if (rawStr.includes(',') || rawStr.includes('/')) {
+        // استبدال الشرائط المائلة بفواصل لتوحيد عملية التقسيم
+        const normalizedStr = rawStr.replace(/\//g, ',');
+        const parts = normalizedStr.split(',');
+        
+        parts.forEach(part => {
+            const subPart = part.trim();
+            if (!subPart) return;
 
-    // 1. إذا كان الحقل فارغاً، شرطة، أو عبارة عن رقم بحت (بدون أي حروف تدل على طريقة دفع) -> يوجه حصرياً إلى Unspecified
-    if (!rawStr || rawStr === '-' || rawStr === '---' || isPureNumber || /^[\d,.\s$]+$/.test(rawStr)) {
+            // استخراج الرقم المالي من هذا الجزء الفرعي
+            const numMatch = subPart.match(/([0-9,.]+)/);
+            const subAmount = numMatch ? parseCurrency(numMatch[1]) : 0;
+
+            if (subAmount > 0) {
+                // استدعاء نفس الدالة recursively لكل جزء فرعي
+                assignPaymentMethodRevenue(subPart.replace(/([0-9,.]+)/, '').trim(), subAmount, map);
+            }
+        });
+        return;
+    }
+
+    // تنظيف النص لفحص ما إذا كان المدخل رقماً بحتاً فقط (بدون أي حروف أو كلمات)
+    const upperPay = rawStr.toUpperCase();
+    const isPureNumber = /^[0-9,.\s$]+$/.test(rawStr) && !/[A-Z]/.test(upperPay);
+
+    // إذا كان رقماً بحتاً (مثل 1960 أو 466) -> يذهب حصرياً إلى Unspecified
+    if (isPureNumber) {
         map.Unspecified += amount;
         return;
     }
 
-    const upperPay = rawStr.toUpperCase();
-
-    // 2. المطابقة الدقيقة لطرق الدفع المعروفة (شاملة كافة صيغ الشيكات)
+    // المطابقة الدقيقة لطرق الدفع المعروفة
     if (upperPay.includes('CASH')) { 
         map.Cash += amount; 
     }
@@ -165,15 +187,16 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
     else if (upperPay.includes('WT')) { 
         map.WT += amount; 
     }
-    // 3. خانة Others مخصصة حصرياً لمن كتب كلمة OTHER أو OTHERS صراحة
+    // خانة Others مخصصة حصرياً لمن كتب كلمة OTHER أو OTHERS صراحة
     else if (upperPay === 'OTHER' || upperPay === 'OTHERS' || upperPay.startsWith('OTHER') || upperPay.startsWith('OTHERS')) { 
         map.Others += amount; 
     }
-    // 4. أي نص آخر غير معروف يذهب إلى Unspecified
+    // أي نصوص مبهمة أخرى لا تحتوي على طريقة دفع معروفة تذهب إلى Unspecified
     else {
         map.Unspecified += amount;
     }
 }
+
 
 
 
