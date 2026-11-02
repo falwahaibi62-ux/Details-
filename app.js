@@ -569,7 +569,9 @@ window.deleteJob = deleteJob;
 // ==========================================
 function updateDashboardAnalytics() {
     try {
-        initMasterJobsData();
+        if (!window.masterJobs || window.masterJobs.length === 0) {
+            if (typeof initMasterJobsData === 'function') initMasterJobsData();
+        }
         if (!window.masterJobs || window.masterJobs.length === 0) return;
 
         let totalRev = 0;
@@ -585,38 +587,56 @@ function updateDashboardAnalytics() {
             }
 
             validJobsCount++; 
-
             totalDieselCost += parseAndSumDiesel(job.diesel);
 
+            // استخراج المبلغ المالي بدقة من أي صيغة نصية أو رقمية
             let amt = 0;
             if (job.total) {
                 amt = parseFloat(String(job.total).replace(/[^0-9.]/g, '')) || 0;
             }
             totalRev += amt;
 
-            if (job.month && job.month >= 1 && job.month <= 12) {
-                monthlyRev[job.month - 1] += amt;
+            // استخراج الشهر بدقة من التاريخ أو الكائن
+            let monthIdx = parseInt(job.month) - 1;
+            if ((isNaN(monthIdx) || monthIdx < 0 || monthIdx > 11) && job.date) {
+                const dateParts = job.date.split('/');
+                if (dateParts.length === 3) {
+                    monthIdx = parseInt(dateParts[0]) - 1;
+                }
             }
-            if (job.route) {
-                routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
+            if (!isNaN(monthIdx) && monthIdx >= 0 && monthIdx <= 11) {
+                monthlyRev[monthIdx] += amt;
             }
 
+            // تجميع مسارات الإيرادات
+            let routeKey = job.route;
+            if (!routeKey && job.route_from && job.route_to) {
+                routeKey = `${job.route_from} → ${job.route_to}`;
+            }
+            if (routeKey && routeKey.trim() !== '') {
+                routeRevenueMap[routeKey] = (routeRevenueMap[routeKey] || 0) + amt;
+            }
+
+            // تجميع طرق الدفع للرسم الدائري
             [job.pu, job.dest].forEach(payStr => {
                 if (payStr && payStr !== '-') {
-                    if (payStr.toUpperCase().includes('CASH')) paymentMethodMap.Cash += 1;
-                    if (payStr.toUpperCase().includes('ZELLE')) paymentMethodMap.Zelle += 1;
-                    if (payStr.toUpperCase().includes('CHEQUE') || payStr.toUpperCase().includes('CK')) paymentMethodMap.Cheque += 1;
-                    if (payStr.toUpperCase().includes('PMO')) paymentMethodMap.PMO += 1;
-                    if (payStr.toUpperCase().includes('BC')) paymentMethodMap.BC += 1;
-                    if (payStr.toUpperCase().includes('PC')) paymentMethodMap.PC += 1;
-                    if (payStr.toUpperCase().includes('CC')) paymentMethodMap.CC += 1;
-                    if (payStr.toUpperCase().includes('WT')) paymentMethodMap.WT += 1;
+                    const upperPay = payStr.toUpperCase();
+                    if (upperPay.includes('CASH')) paymentMethodMap.Cash += 1;
+                    else if (upperPay.includes('ZELLE')) paymentMethodMap.Zelle += 1;
+                    else if (upperPay.includes('CHEQUE') || upperPay.includes('CK')) paymentMethodMap.Cheque += 1;
+                    else if (upperPay.includes('PMO')) paymentMethodMap.PMO += 1;
+                    else if (upperPay.includes('BC')) paymentMethodMap.BC += 1;
+                    else if (upperPay.includes('PC')) paymentMethodMap.PC += 1;
+                    else if (upperPay.includes('CC')) paymentMethodMap.CC += 1;
+                    else if (upperPay.includes('WT')) paymentMethodMap.WT += 1;
+                    else paymentMethodMap.Others += 1;
                 }
             });
         });
 
         const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
 
+        // تحديث البطاقات العلوية
         const revEl = document.getElementById('dashTotalRevenue');
         if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
@@ -629,20 +649,26 @@ function updateDashboardAnalytics() {
         const dieselEl = document.getElementById('dashTotalDiesel');
         if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
 
+        // تحديث قسم مسارات الإيرادات الأعلى (Top Revenue Corridors)
         const topCorridorsContainer = document.getElementById('topCorridorsContainer');
         if (topCorridorsContainer) {
             const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
-            topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
-                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
-                        <span class="font-bold text-emerald-800">${route}</span>
+            if (sortedRoutes.length > 0) {
+                topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border mb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
+                            <span class="font-bold text-emerald-800">${route}</span>
+                        </div>
+                        <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
                     </div>
-                    <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
-                </div>
-            `).join('');
+                `).join('');
+            } else {
+                topCorridorsContainer.innerHTML = `<p class="text-xs text-slate-400 text-center p-6">No corridor data available</p>`;
+            }
         }
 
+        // إعادة رسم المخططات البيانية بقيم صحيحة
         renderDashboardCharts(monthlyRev, paymentMethodMap);
     } catch (e) {
         console.error("Error updating dashboard analytics:", e);
