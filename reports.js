@@ -122,28 +122,31 @@ window.getFilteredJobsData = getFilteredJobsData;
 
 
 
-// دالة التصنيف المالي المحسنة لمعالجة الشيكات، Others، و Unspecified بدقة
+// دالة التصنيف المالي النهائية والمنقحة لمعالجة الأرقام الصرفة، الشيكات، و Unspecified
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     if (amount <= 0) return;
 
     const rawStr = String(methodStr || '').trim();
 
-    // 1. إذا كان الحقل فارغاً، شرطة، أو أرقام صرفة فقط -> يوجه حصرياً إلى Unspecified
-    if (!rawStr || rawStr === '-' || rawStr === '---' || /^[\d,.\s]+$/.test(rawStr)) {
+    // تنظيف النص من رمز العملة والمسافات لفحص ما إذا كان المدخل رقماً بحتاً (مثل 1960 أو $1,960.00)
+    const cleanedForCheck = rawStr.replace(/[^0-9.]/g, '');
+    const isPureNumber = cleanedForCheck.length > 0 && !/[a-zA-Z]/.test(rawStr);
+
+    // 1. إذا كان الحقل فارغاً، شرطة، أو عبارة عن رقم بحت (بدون أي حروف تدل على طريقة دفع) -> يوجه حصرياً إلى Unspecified
+    if (!rawStr || rawStr === '-' || rawStr === '---' || isPureNumber || /^[\d,.\s$]+$/.test(rawStr)) {
         map.Unspecified += amount;
         return;
     }
 
     const upperPay = rawStr.toUpperCase();
 
-    // 2. المطابقة الدقيقة لطرق الدفع (مع تغطية كافة اختصارات الشيكات)
+    // 2. المطابقة الدقيقة لطرق الدفع المعروفة (شاملة كافة صيغ الشيكات)
     if (upperPay.includes('CASH')) { 
         map.Cash += amount; 
     }
     else if (upperPay.includes('ZELLE')) { 
         map.Zelle += amount; 
     }
-    // تغطية كافة صيغ وإملاءات الشيكات الممكنة
     else if (upperPay.includes('CHEQUE') || upperPay.includes('CHECK') || upperPay.includes('CK') || upperPay.includes('CHQ') || upperPay.includes('CHEQ')) { 
         map.Cheque += amount; 
     }
@@ -162,16 +165,15 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
     else if (upperPay.includes('WT')) { 
         map.WT += amount; 
     }
-    // 3. خانة Others تُحتسب فقط إذا كتب المصطلح صراحة
-    else if (upperPay === 'OTHER' || upperPay === 'OTHERS' || upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { 
+    // 3. خانة Others مخصصة حصرياً لمن كتب كلمة OTHER أو OTHERS صراحة
+    else if (upperPay === 'OTHER' || upperPay === 'OTHERS' || upperPay.startsWith('OTHER') || upperPay.startsWith('OTHERS')) { 
         map.Others += amount; 
     }
-    // 4. أي نصوص أخرى مبهمة (ملاحظات، أسماء، إلخ) تذهب حصرياً إلى Unspecified لتفريغ Others وضبط التقرير
+    // 4. أي نص آخر غير معروف يذهب إلى Unspecified
     else {
         map.Unspecified += amount;
     }
 }
-
 
 
 
