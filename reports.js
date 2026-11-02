@@ -122,6 +122,7 @@ window.getFilteredJobsData = getFilteredJobsData;
 // دالة التصنيف الدقيقة: حصر Others للكلمات الصريحة فقط، وتوجيه الباقي لـ Unspecified
 // دالة تصنيف وتحليل المبالغ: تحافظ على Others للكلمات الصريحة، وتوجه المبهم لـ Unspecified
 // دالة التصنيف المالية النهائية (تعزل الأرقام الصرفة إلى Unspecified وتحافظ على Others للكلمات الصريحة)
+// دالة تحليل وتصنيف المبالغ (نسخة مطورة لضمان دقة الفرز بين الأرقام الصرفة والنصوص)
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     if (amount <= 0) return;
 
@@ -135,7 +136,7 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
 
     const upperPay = rawStr.toUpperCase();
 
-    // 2. المطابقة لطرق الدفع المعروفة
+    // 2. المطابقة الدقيقة لطرق الدفع المعتمدة
     if (upperPay.includes('CASH')) { 
         map.Cash += amount; 
     }
@@ -160,11 +161,11 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
     else if (upperPay.includes('WT')) { 
         map.WT += amount; 
     }
-    // 3. خانة Others تبقى فقط للنصوص التي تحتوي صراحة على كلمة OTHER أو OTHERS
-    else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { 
+    // 3. خانة Others مخصصة حصرياً لمن كتب كلمة OTHER أو OTHERS صراحة
+    else if (upperPay === 'OTHER' || upperPay === 'OTHERS' || upperPay.startsWith('OTHER') || upperPay.startsWith('OTHERS')) { 
         map.Others += amount; 
     }
-    // 4. أي نصوص أخرى مبهمة لا تحتوي على طريقة دفع صريحة تذهب إلى Unspecified
+    // 4. أي نصوص أخرى (ملاحظات، أسماء، أو بيانات غير معروفة) توجّه إلى Unspecified لتتمكنِ من مراجعتها بوضوح
     else {
         map.Unspecified += amount;
     }
