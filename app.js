@@ -707,7 +707,7 @@ function switchTab(tabName) {
     try {
         const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
         
-        // إخفاء جميع التبويبات بالكامل
+        // إخفاء جميع التبويبات وإعادة تعيين الأزرار الجانبية بأمان
         tabs.forEach(t => {
             const possibleElIds = [`tab-${t}`, `${t}-view`, t];
             possibleElIds.forEach(id => {
@@ -719,16 +719,17 @@ function switchTab(tabName) {
                 }
             });
 
+            // قائمة الاحتمالات لمعرفات الأزرار الجانبية
             const possibleNavIds = [`nav-${t}`, `nav-${t}-btn`, t];
             possibleNavIds.forEach(id => {
                 const navEl = document.getElementById(id);
-                if (navEl && navEl.tagName === 'BUTTON' || navEl.tagName === 'DIV') {
+                if (navEl) {
                     navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
                 }
             });
         });
 
-        // إظهار التبويب النشط المطلوب فوراً
+        // إظهار التبويب النشط المطلوب
         const targetIds = [`tab-${tabName}`, `${tabName}-view`, tabName];
         let activeTab = null;
         for (let id of targetIds) {
@@ -740,12 +741,10 @@ function switchTab(tabName) {
             activeTab.classList.remove('hidden');
             activeTab.classList.add('flex');
             activeTab.style.setProperty('display', 'flex', 'important');
-        } else {
-            console.warn("Tab element not found for:", tabName);
         }
 
-        // تنشيط زر القائمة الجانبية
-        const navTargetIds = [`nav-${tabName}`, `nav-${tabName}-btn`];
+        // تنشيط زر القائمة الجانبية الخاص بالتبويب النشط بأمان تام
+        const navTargetIds = [`nav-${tabName}`, `nav-${tabName}-btn`, tabName];
         let activeNav = null;
         for (let id of navTargetIds) {
             activeNav = document.getElementById(id);
@@ -756,11 +755,13 @@ function switchTab(tabName) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
-        // استدعاء الدوال المرتبطة بالتبويب
+        // استدعاء الدوال المرتبطة بالتبويب النشط
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
             if (typeof filterJobsTable === 'function') filterJobsTable();
+        } else if (tabName === 'reports' && typeof renderReportsTab === 'function') {
+            renderReportsTab();
         } else if (tabName === 'users') {
             if (typeof renderUsers === 'function') renderUsers();
         }
@@ -769,7 +770,6 @@ function switchTab(tabName) {
     }
 }
 window.switchTab = switchTab;
-
 // ==========================================
 // 9. INITIALIZATION
 // ==========================================
