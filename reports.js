@@ -1,5 +1,5 @@
 /**
- * MovePro - Financial & Operations Reports Module (Production Ready & Print Optimized)
+ * MovePro - Financial & Operations Reports Module (Production Ready & Fixed Detailed View)
  */
 
 function switchReportMode(mode) {
@@ -63,7 +63,7 @@ function resetReportFilters() {
 }
 window.resetReportFilters = resetReportFilters;
 
-// دالة تحويل وتحليل التواريخ محلية بدون أخطاء التوقيت
+// دالة تطبيع التواريخ محلياً
 function parseLocalDate(dateStr) {
     if (!dateStr) return null;
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -90,17 +90,9 @@ function getFilteredJobsData() {
     const jobTypeVal = document.getElementById('filterJobType')?.value || 'all';
     const paymentVal = document.getElementById('filterPaymentType')?.value || 'all';
 
-    let startDate = null;
-    if (startDateVal) {
-        const [y, m, d] = startDateVal.split('-').map(Number);
-        startDate = new Date(y, m - 1, d, 0, 0, 0, 0);
-    }
-
-    let endDate = null;
-    if (endDateVal) {
-        const [y, m, d] = endDateVal.split('-').map(Number);
-        endDate = new Date(y, m - 1, d, 23, 59, 59, 999);
-    }
+    let startDate = startDateVal ? parseLocalDate(startDateVal) : null;
+    let endDate = endDateVal ? parseLocalDate(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59, 999);
 
     return jobs.filter(j => {
         if (j.date) {
@@ -128,15 +120,15 @@ function getFilteredJobsData() {
 }
 window.getFilteredJobsData = getFilteredJobsData;
 
-// دالة حساب وإنشاء جدول إجمالي إيجارات الشاحنات
+// جدول ملخص إيجارات الشاحنات
 function generateTruckRentalSummaryTableHTML() {
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     
     const startDateVal = document.getElementById('filterStartDate')?.value;
     const endDateVal = document.getElementById('filterEndDate')?.value;
-    const startDate = startDateVal ? new Date(startDateVal) : null;
-    const endDate = endDateVal ? new Date(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59);
+    const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
+    const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59, 999);
 
     let totalDays = 0;
     let sumCash = 0;
@@ -173,7 +165,7 @@ function generateTruckRentalSummaryTableHTML() {
         sumOther: sumOther,
         grandTotal: grandTotal,
         html: `
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2 print:border-slate-300">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
                 <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                     <div>
                         <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial Summary</h3>
@@ -199,9 +191,9 @@ function generateTruckRentalSummaryTableHTML() {
                         <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
                             <tr class="hover:bg-slate-50 transition-colors">
                                 <td class="p-2.5 border-r text-center font-bold text-slate-800">${totalDays} Days</td>
-                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold bg-emerald-50/20">$${sumCash.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                <td class="p-2.5 border-r text-center text-blue-600 font-bold bg-blue-50/20">$${sumOther.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                <td class="p-2.5 text-center bg-amber-50 text-amber-900 font-extrabold text-xs">$${grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold bg-emerald-50/20">$${sumCash.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-blue-600 font-bold bg-blue-50/20">$${sumOther.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 text-center bg-amber-50 text-amber-900 font-extrabold text-xs">$${grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -211,15 +203,15 @@ function generateTruckRentalSummaryTableHTML() {
     };
 }
 
-// دالة حساب وإنشاء جدول إجمالي المستودع
+// جدول ملخص المستودع والمصاريف الأخرى
 function generateWarehouseSummaryTableHTML() {
     const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
     
     const startDateVal = document.getElementById('filterStartDate')?.value;
     const endDateVal = document.getElementById('filterEndDate')?.value;
-    const startDate = startDateVal ? new Date(startDateVal) : null;
-    const endDate = endDateVal ? new Date(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59);
+    const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
+    const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59, 999);
 
     let sumCash = 0;
     let sumOthers = 0;
@@ -251,7 +243,7 @@ function generateWarehouseSummaryTableHTML() {
         sumOthers: sumOthers,
         grandTotal: grandTotal,
         html: `
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2 print:border-slate-300">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
                 <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                     <div>
                         <h3 class="text-sm font-bold text-slate-800">Warehouse & Others Financial Summary</h3>
@@ -277,9 +269,9 @@ function generateWarehouseSummaryTableHTML() {
                         <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
                             <tr class="hover:bg-slate-50 transition-colors">
                                 <td class="p-2.5 border-r text-center font-bold text-slate-800">${filteredCount} Items</td>
-                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold bg-emerald-50/20">$${sumCash.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                <td class="p-2.5 border-r text-center text-blue-600 font-bold bg-blue-50/20">$${sumOthers.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                <td class="p-2.5 text-center bg-purple-50 text-purple-900 font-extrabold text-xs">$${grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold bg-emerald-50/20">$${sumCash.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-blue-600 font-bold bg-blue-50/20">$${sumOthers.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 text-center bg-purple-50 text-purple-900 font-extrabold text-xs">$${grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -293,20 +285,16 @@ function generateOfficialSummaryTable(filteredJobs) {
     const totalJobs = filteredJobs.length;
     const totalDeliveries = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
 
-    let sumForeman10 = 0;
-    let sumHelpers = 0;
-    let sumDrivers = 0;
-    let sumCashDiesel = 0;
-    
-    let sumCashPu = 0;
-    let sumCashDest = 0;
-    let sumPmoPu = 0;
-    let sumZellePu = 0;
-    
-    let sumDestZelle = 0;
-    let sumDestNoCashPmo = 0;
-    let sumPmoDeliveries = 0;
-    let sumTotalAfterDeposit = 0;
+    let sumForeman10 = 0, sumHelpers = 0, sumDrivers = 0, sumCashDiesel = 0;
+    let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
+    let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
+
+    // متغيرات جدول إجمالي طرق الدفع من عمودي pu و dest balance
+    let paySummaryCash = 0;
+    let paySummaryZelle = 0;
+    let paySummaryCheque = 0;
+    let paySummaryPmo = 0;
+    let paySummaryOther = 0;
 
     filteredJobs.forEach(item => {
         const totalVal = parseCurrency(item.total);
@@ -327,7 +315,7 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
 
-        // المعالجة الدقيقة لحقل الـ PU
+        // معالجة PU
         const puRawStr = String(item.pu || '').trim();
         if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
             const puParts = puRawStr.split(',');
@@ -338,19 +326,27 @@ function generateOfficialSummaryTable(filteredJobs) {
                 if (partVal > 0 && partVal < 50000) {
                     if (pLower.includes('cash')) {
                         sumCashPu += partVal;
+                        paySummaryCash += partVal;
                     } else if (pLower.includes('pmo')) {
                         sumPmoPu += partVal;
+                        paySummaryPmo += partVal;
                         if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery')) {
                             sumPmoDeliveries += partVal;
                         }
+                    } else if (pLower.includes('zelle')) {
+                        sumZellePu += partVal;
+                        paySummaryZelle += partVal;
+                    } else if (pLower.includes('cheque') || pLower.includes('check')) {
+                        paySummaryCheque += partVal;
                     } else {
                         sumZellePu += partVal;
+                        paySummaryOther += partVal;
                     }
                 }
             });
         }
         
-        // معالجة حقل الـ Destination
+        // معالجة Destination / Dest Balance
         const destRawStr = String(item.dest || item.destination || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             const destParts = destRawStr.split(',');
@@ -361,11 +357,18 @@ function generateOfficialSummaryTable(filteredJobs) {
                 if (partVal > 0 && partVal < 50000) {
                     if (dLower.includes('cash')) {
                         sumCashDest += partVal;
+                        paySummaryCash += partVal;
                     } else if (dLower.includes('zelle')) {
                         sumDestZelle += partVal;
                         sumDestNoCashPmo += partVal;
-                    } else if (!dLower.includes('pmo')) {
+                        paySummaryZelle += partVal;
+                    } else if (dLower.includes('cheque') || dLower.includes('check')) {
+                        paySummaryCheque += partVal;
+                    } else if (dLower.includes('pmo')) {
+                        paySummaryPmo += partVal;
+                    } else {
                         sumDestNoCashPmo += partVal;
+                        paySummaryOther += partVal;
                     }
                 }
             });
@@ -374,9 +377,50 @@ function generateOfficialSummaryTable(filteredJobs) {
 
     const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
     const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
+    const payGrandTotal = paySummaryCash + paySummaryZelle + paySummaryCheque + paySummaryPmo + paySummaryOther;
+
+    // جدول إجمالي طرق الدفع (يظهر بعد المستودع مباشرة)
+    const paymentMethodsSummaryHTML = `
+        <div id="paymentDateRangeSummaryContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
+            <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800">Payment Methods Summary (PU & Dest Balance)</h3>
+                    <p class="text-[11px] text-slate-400">Aggregated totals categorized by payment type for the selected period</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                        Total Filtered Jobs: <span class="text-emerald-600">${totalJobs}</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
+                <div class="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100 text-center">
+                    <span class="text-[10px] uppercase font-bold text-emerald-700 block">Cash Total</span>
+                    <span class="text-base font-extrabold text-emerald-600 mt-1 block">$${paySummaryCash.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-center">
+                    <span class="text-[10px] uppercase font-bold text-blue-700 block">Zelle Total</span>
+                    <span class="text-base font-extrabold text-blue-600 mt-1 block">$${paySummaryZelle.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 text-center">
+                    <span class="text-[10px] uppercase font-bold text-indigo-700 block">Cheque Total</span>
+                    <span class="text-base font-extrabold text-indigo-600 mt-1 block">$${paySummaryCheque.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="p-3 bg-amber-50/50 rounded-xl border border-amber-100 text-center">
+                    <span class="text-[10px] uppercase font-bold text-amber-700 block">PMO Total</span>
+                    <span class="text-base font-extrabold text-amber-600 mt-1 block">$${paySummaryPmo.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-center col-span-2 sm:col-span-1">
+                    <span class="text-[10px] uppercase font-bold text-purple-700 block">Grand Total</span>
+                    <span class="text-base font-black text-purple-700 mt-1 block">$${payGrandTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+            </div>
+        </div>
+    `;
 
     return `
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2 print:border-slate-300">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                 <div>
                     <h3 class="text-sm font-bold text-slate-800">Official Period Financial Summary</h3>
@@ -423,18 +467,16 @@ function generateOfficialSummaryTable(filteredJobs) {
                             <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${sumDestNoCashPmo.toLocaleString('en-US')}</td>
                             <td class="p-2.5 border-r text-center">$${sumPmoDeliveries.toLocaleString('en-US')}</td>
                             <td class="p-2.5 border-r text-center text-purple-600 font-bold">$${sumDestZelle.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 text-center bg-emerald-50 text-emerald-800 font-extrabold text-xs">$${sumTotalAfterDeposit.toLocaleString('en-US')}</td>
+                            <td class="p-2.5 border-r text-center bg-emerald-50 text-emerald-800 font-extrabold text-xs">$${sumTotalAfterDeposit.toLocaleString('en-US')}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- جدول ملخص إيجارات الشاحنات -->
         ${rentalSummaryObj.html}
-
-        <!-- جدول ملخص المستودع والمصاريف الأخرى -->
         ${warehouseSummaryObj.html}
+        ${paymentMethodsSummaryHTML}
     `;
 }
 
@@ -447,15 +489,13 @@ function generateSummaryReportData() {
     const totalDeliveriesCount = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
 
     let totalRevenue = 0;
-    filteredJobs.forEach(j => {
-        totalRevenue += parseCurrency(j.total);
-    });
+    filteredJobs.forEach(j => { totalRevenue += parseCurrency(j.total); });
 
     const startDateVal = document.getElementById('filterStartDate')?.value;
     const endDateVal = document.getElementById('filterEndDate')?.value;
-    const startDate = startDateVal ? new Date(startDateVal) : null;
-    const endDate = endDateVal ? new Date(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59);
+    const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
+    const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59, 999);
 
     let totalRentalExp = 0;
     rentals.forEach(r => {
@@ -508,7 +548,7 @@ function generateSummaryReportData() {
     const container = document.getElementById('summaryReportContainer');
     if (container) {
         container.innerHTML = `
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 print:p-2 print:border-slate-300">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
                         <h3 class="text-base font-bold text-slate-800">Executive Monthly Financial Breakdown</h3>
@@ -551,7 +591,116 @@ function generateSummaryReportData() {
 }
 window.generateSummaryReportData = generateSummaryReportData;
 
-// دالة تصدير طباعة التقرير والـ PDF المنسقة باحترافية
+// دالة التقرير التفصيلي المُصلحة بالكامل لضمان ظهور البيانات بدقة
+function generateDetailedReportData() {
+    const startDateVal = document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('filterEndDate')?.value;
+
+    const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
+    const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59, 999);
+
+    const filteredJobs = getFilteredJobsData();
+    const jobsTbody = document.getElementById('detailedReportBody');
+    const jobsBadge = document.getElementById('detailedJobsBadge');
+
+    if (jobsBadge) jobsBadge.innerText = `${filteredJobs.length} Jobs`;
+    if (jobsTbody) {
+        if (filteredJobs.length === 0) {
+            jobsTbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-slate-400 text-xs">No job records found for selected period.</td></tr>`;
+        } else {
+            jobsTbody.innerHTML = filteredJobs.map(item => {
+                const totalNum = parseCurrency(item.total);
+                const dynamicForeman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+                
+                const destVal = item.destination || item.dest || '-';
+                const dieselVal = item.diesel || '-';
+                const hotelVal = item.hotel || '-';
+
+                const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(item.helpers) : (item.helpers || '-');
+                const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(item.drivers) : (item.drivers || '-');
+
+                return `
+                    <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
+                        <td class="p-3 border font-medium">${item.date || '-'}</td>
+                        <td class="p-3 border font-semibold text-slate-800">${item.jobNo || '-'}</td>
+                        <td class="p-3 border">${item.route || '-'}</td>
+                        <td class="p-3 border">${item.foreman || '-'}</td>
+                        <td class="p-3 border font-bold text-emerald-800">${dynamicForeman10}</td>
+                        <td class="p-3 border text-purple-700 font-semibold">${helpersDisplay}</td>
+                        <td class="p-3 border text-blue-700 font-semibold">${driversDisplay}</td>
+                        <td class="p-3 border font-bold text-emerald-600">${item.total || '$0'}</td>
+                        <td class="p-3 border">${item.pu || '-'}</td>
+                        <td class="p-3 border font-medium">${destVal}</td>
+                        <td class="p-3 border text-emerald-700">${dieselVal}</td>
+                        <td class="p-3 border text-indigo-700">${hotelVal}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+    const filteredRentals = rentals.filter(r => {
+        if (!r.date) return true;
+        const rDate = parseLocalDate(r.date);
+        if (startDate && rDate < startDate) return false;
+        if (endDate && rDate > endDate) return false;
+        return true;
+    });
+
+    const rentalsTbody = document.getElementById('detailedRentalsBody');
+    const rentalsBadge = document.getElementById('detailedRentalsBadge');
+
+    if (rentalsBadge) rentalsBadge.innerText = `${filteredRentals.length} Records`;
+    if (rentalsTbody) {
+        if (filteredRentals.length === 0) {
+            rentalsTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">No truck rental records found for selected period.</td></tr>`;
+        } else {
+            rentalsTbody.innerHTML = filteredRentals.map(r => `
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
+                    <td class="p-3 border font-medium">${r.date || '-'}</td>
+                    <td class="p-3 border font-semibold text-slate-800">${r.truckLabel || 'Truck Rental'}</td>
+                    <td class="p-3 border">${r.paidBy || '-'}</td>
+                    <td class="p-3 border">${r.paymentType || 'Cash'}</td>
+                    <td class="p-3 border text-right font-bold text-amber-600">$${parseCurrency(r.amount).toLocaleString('en-US')}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+    const filteredWarehouse = warehouse.filter(w => {
+        if (!w.date) return true;
+        const wDate = parseLocalDate(w.date);
+        if (startDate && wDate < startDate) return false;
+        if (endDate && wDate > endDate) return false;
+        return true;
+    });
+
+    const warehouseTbody = document.getElementById('detailedWarehouseBody');
+    const warehouseBadge = document.getElementById('detailedWarehouseBadge');
+
+    if (warehouseBadge) warehouseBadge.innerText = `${filteredWarehouse.length} Records`;
+    if (warehouseTbody) {
+        if (filteredWarehouse.length === 0) {
+            warehouseTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">No warehouse records found for selected period.</td></tr>`;
+        } else {
+            warehouseTbody.innerHTML = filteredWarehouse.map(w => `
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
+                    <td class="p-3 border font-medium">${w.date || '-'}</td>
+                    <td class="p-3 border font-semibold text-slate-800">${w.services || 'Warehouse Expense'}</td>
+                    <td class="p-3 border">${w.details || '-'}</td>
+                    <td class="p-3 border">${w.paymentType || 'Cash'}</td>
+                    <td class="p-3 border text-right font-bold text-purple-600">$${parseCurrency(w.amount).toLocaleString('en-US')}</td>
+                </tr>
+            `).join('');
+        }
+    }
+}
+window.generateDetailedReportData = generateDetailedReportData;
+
+// دالة التصدير والطباعة الرسمية المنسقة
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
@@ -560,9 +709,9 @@ function exportOfficialPDF() {
     const startDateVal = document.getElementById('filterStartDate')?.value || 'All Dates';
     const endDateVal = document.getElementById('filterEndDate')?.value || 'All Dates';
 
-    const startDate = startDateVal !== 'All Dates' ? new Date(startDateVal) : null;
-    const endDate = endDateVal !== 'All Dates' ? new Date(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59);
+    const startDate = startDateVal !== 'All Dates' ? parseLocalDate(startDateVal) : null;
+    const endDate = endDateVal !== 'All Dates' ? parseLocalDate(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59, 999);
 
     const filteredRentals = rentals.filter(r => {
         if (!r.date) return true;
@@ -600,7 +749,6 @@ function exportOfficialPDF() {
         }
 
         const puStr = String(item.pu || '').toLowerCase();
-        
         let cashPuVal = 0;
         if (puStr.includes('cash')) {
             const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
@@ -679,125 +827,154 @@ function exportOfficialPDF() {
             <script src="https://cdn.tailwindcss.com"></script>
             <style>
                 @page { size: A4 landscape; margin: 6mm; }
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #0f172a; background: #fff; padding: 12px; }
-                .table-pdf { width: 100%; border-collapse: collapse; font-size: 9.5px; margin-bottom: 12px; page-break-inside: avoid; }
-                .table-pdf th { background-color: #f8fafc; color: #1e293b; font-weight: 700; border: 1px solid #cbd5e1; padding: 6px 4px; text-align: center; }
-                .table-pdf td { border: 1px solid #e2e8f0; padding: 5px 4px; text-align: center; }
+                body { font-family: system-ui, -apple-system, sans-serif; color: #1e293b; background: #fff; padding: 10px; }
+                .table-pdf { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 12px; page-break-inside: avoid; }
+                .table-pdf th { background-color: #f1f5f9; color: #334155; font-weight: 700; border: 1px solid #cbd5e1; padding: 5px; text-align: center; }
+                .table-pdf td { border: 1px solid #e2e8f0; padding: 4px; text-align: center; }
                 .page-break { page-break-before: always; }
                 .summary-header { background-color: #e2e8f0; color: #0f172a; font-weight: bold; }
-                .rental-header { background-color: #f1f5f9; color: #1e293b; font-weight: bold; }
+                .rental-header { background-color: #f8fafc; color: #1e293b; font-weight: bold; }
                 .warehouse-header { background-color: #faf5ff; color: #581c87; font-weight: bold; }
-                @media print {
-                    body { padding: 0; }
-                    .table-pdf { page-break-inside: avoid; }
-                    tr { page-break-inside: avoid; page-break-after: auto; }
-                }
             </style>
         </head>
         <body>
-            <div class="text-center mb-4 border-b-2 border-emerald-600 pb-3">
-                <h1 class="text-2xl font-black text-emerald-900 tracking-tight">MovePro Executive Financial Report</h1>
-                <p class="text-xs font-bold text-slate-600 mt-1">
-                    Period: <span class="text-emerald-700 font-extrabold">${startDateVal}</span> to <span class="text-emerald-700 font-extrabold">${endDateVal}</span>
-                </p>
+            <div class="text-center mb-4 border-b pb-3">
+                <h1 class="text-xl font-bold text-emerald-800">Total Cash, PMO & Expenses Report</h1>
+                <p class="text-xs font-semibold text-slate-600 mt-1">Period: <span class="text-slate-800">${startDateVal}</span> to <span class="text-slate-800">${endDateVal}</span></p>
             </div>
 
-            <!-- 1. Executive Summary Table -->
             <div class="mb-4">
-                <h3 class="text-xs font-bold uppercase text-slate-700 mb-1.5 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span> Official Period Financial Summary
-                </h3>
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-1">Executive Financial Summary</h3>
                 <table class="table-pdf">
                     <thead>
                         <tr class="summary-header">
                             <th>Foreman 10%</th>
                             <th>Helpers</th>
                             <th>Drivers</th>
-                            <th class="bg-amber-100 text-amber-900">Cash Diesel</th>
-                            <th class="bg-emerald-100 text-emerald-900">Cash PU</th>
-                            <th class="bg-emerald-100 text-emerald-900">Cash Dest</th>
+                            <th>Cash Diesel</th>
+                            <th>Cash PU</th>
+                            <th>Cash Dest</th>
                             <th>PMO PU</th>
-                            <th class="bg-blue-100 text-blue-900">PU (No Cash/PMO)</th>
-                            <th class="bg-blue-100 text-blue-900">Balance (No Cash/PMO)</th>
+                            <th>PU (No Cash/PMO)</th>
+                            <th>Balance (No Cash/PMO)</th>
                             <th>PMO Deliveries</th>
-                            <th class="bg-purple-100 text-purple-900">Dest Zelle</th>
-                            <th class="bg-emerald-800 text-white font-black">Total After Deposit</th>
+                            <th>Dest Zelle</th>
+                            <th class="bg-emerald-700 text-white">Total After Deposit</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr class="font-bold text-slate-800">
-                            <td>$${sumForeman10.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td>$${sumForeman10.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                             <td>$${sumHelpers.toLocaleString('en-US')}</td>
                             <td>$${sumDrivers.toLocaleString('en-US')}</td>
-                            <td class="bg-amber-50 text-amber-800">$${sumCashDiesel.toLocaleString('en-US')}</td>
-                            <td class="bg-emerald-50 text-emerald-800">$${sumCashPu.toLocaleString('en-US')}</td>
-                            <td class="bg-emerald-50 text-emerald-800">$${sumCashDest.toLocaleString('en-US')}</td>
+                            <td>$${sumCashDiesel.toLocaleString('en-US')}</td>
+                            <td>$${sumCashPu.toLocaleString('en-US')}</td>
+                            <td>$${sumCashDest.toLocaleString('en-US')}</td>
                             <td>$${sumPmoPu.toLocaleString('en-US')}</td>
-                            <td class="bg-blue-50 text-blue-800">$${sumZellePu.toLocaleString('en-US')}</td>
-                            <td class="bg-blue-50 text-blue-800">$${sumDestNoCashPmo.toLocaleString('en-US')}</td>
+                            <td>$${sumZellePu.toLocaleString('en-US')}</td>
+                            <td>$${sumDestNoCashPmo.toLocaleString('en-US')}</td>
                             <td>$${sumPmoDeliveries.toLocaleString('en-US')}</td>
-                            <td class="bg-purple-50 text-purple-800">$${sumDestZelle.toLocaleString('en-US')}</td>
-                            <td class="bg-emerald-100 text-emerald-950 font-black text-xs">$${sumTotalAfterDeposit.toLocaleString('en-US')}</td>
+                            <td>$${sumDestZelle.toLocaleString('en-US')}</td>
+                            <td class="bg-emerald-50 text-emerald-900 font-extrabold">$${sumTotalAfterDeposit.toLocaleString('en-US')}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- 2. Truck Rental Financial Summary -->
             <div class="mb-4">
-                <h3 class="text-xs font-bold uppercase text-slate-700 mb-1.5 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> Private Truck Rental Financial Summary (${filteredRentals.length} Records)
-                </h3>
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-1">Private Truck Rental Financial Summary (${filteredRentals.length} Records)</h3>
                 <table class="table-pdf">
                     <thead>
                         <tr class="rental-header">
                             <th>Total Rental Days</th>
-                            <th class="text-emerald-800 bg-emerald-50">Cash Payments</th>
-                            <th class="text-blue-800 bg-blue-50">Other Payments (Zelle/Check)</th>
-                            <th class="bg-amber-600 text-white font-bold">Grand Total Rental Cost</th>
+                            <th class="text-emerald-700">Cash Payments</th>
+                            <th class="text-blue-700">Other Payments (Zelle/Check)</th>
+                            <th class="bg-amber-600 text-white">Grand Total Rental Cost</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr class="font-bold text-slate-800">
                             <td>${rentalPdfDays} Days</td>
-                            <td class="text-emerald-700 bg-emerald-50/30">$${rentalPdfCash.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td class="text-blue-700 bg-blue-50/30">$${rentalPdfOther.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td class="bg-amber-100 text-amber-950 font-black text-xs">$${rentalPdfTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td class="text-emerald-600">$${rentalPdfCash.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            <td class="text-blue-600">$${rentalPdfOther.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            <td class="bg-amber-50 text-amber-900 font-extrabold">$${rentalPdfTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- 3. Warehouse Financial Summary -->
-            <div class="mb-6">
-                <h3 class="text-xs font-bold uppercase text-slate-700 mb-1.5 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-purple-600"></span> Warehouse & Others Financial Summary (${filteredWarehouse.length} Records)
-                </h3>
+            <div class="mb-4">
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-1">Warehouse & Others Financial Summary (${filteredWarehouse.length} Records)</h3>
                 <table class="table-pdf">
                     <thead>
                         <tr class="warehouse-header">
                             <th>Total Items / Expenses</th>
-                            <th class="text-emerald-800 bg-emerald-50">Cash Payments</th>
-                            <th class="text-blue-800 bg-blue-50">Other Payments (Others)</th>
-                            <th class="bg-purple-700 text-white font-bold">Grand Total Warehouse Cost</th>
+                            <th class="text-emerald-700">Cash Payments</th>
+                            <th class="text-blue-700">Other Payments (Others)</th>
+                            <th class="bg-purple-700 text-white">Grand Total Warehouse Cost</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr class="font-bold text-slate-800">
                             <td>${filteredWarehouse.length} Items</td>
-                            <td class="text-emerald-700 bg-emerald-50/30">$${warehousePdfCash.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td class="text-blue-700 bg-blue-50/30">$${warehousePdfOthers.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td class="bg-purple-100 text-purple-950 font-black text-xs">$${warehousePdfTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td class="text-emerald-600">$${warehousePdfCash.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            <td class="text-blue-600">$${warehousePdfOthers.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            <td class="bg-purple-50 text-purple-900 font-extrabold">$${warehousePdfTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                         </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="page-break"></div>
+
+            <div class="mt-4">
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-1">1. Detailed Dispatch Operations Ledger (${jobs.length} Records)</h3>
+                <table class="table-pdf">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Job No</th>
+                            <th>From State</th>
+                            <th>To State</th>
+                            <th>Foreman Name</th>
+                            <th>Foreman 10%</th>
+                            <th>Helpers</th>
+                            <th>Drivers</th>
+                            <th>Total After Deposit</th>
+                            <th>P.U Payment</th>
+                            <th>Dest Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${jobs.map(j => {
+                            const totalNum = parseCurrency(j.total);
+                            const foreman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
+                            const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers) : (j.helpers || '-');
+                            const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers) : (j.drivers || '-');
+
+                            return `
+                                <tr>
+                                    <td>${j.date || '-'}</td>
+                                    <td class="font-bold">${j.jobNo || '-'}</td>
+                                    <td>${j.route ? j.route.split('→')[0] : '-'}</td>
+                                    <td>${j.route ? j.route.split('→')[1] || '-' : '-'}</td>
+                                    <td>${j.foreman || '-'}</td>
+                                    <td class="font-bold text-emerald-700">${foreman10}</td>
+                                    <td>${helpersDisplay}</td>
+                                    <td>${driversDisplay}</td>
+                                    <td class="font-bold text-emerald-600">${j.total || '$0'}</td>
+                                    <td>${j.pu || '-'}</td>
+                                    <td>${j.dest || j.destination || '-'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
             </div>
 
             <script>
                 window.onload = function() {
-                    setTimeout(() => {
-                        window.print();
-                    }, 400);
+                    setTimeout(() => { window.print(); }, 400);
                 }
             <\/script>
         </body>
