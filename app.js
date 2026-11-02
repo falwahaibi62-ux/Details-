@@ -578,7 +578,9 @@ function updateDashboardAnalytics() {
         let totalDieselCost = 0;
         let validJobsCount = 0; 
         const routeRevenueMap = {};
-        const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0 };
+        
+        // 🌟 تهيئة كائن طرق الدفع ليشمل كافة الخيارات بما فيها Unspecified
+        const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 };
         const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
         window.masterJobs.forEach(job => {
@@ -589,14 +591,14 @@ function updateDashboardAnalytics() {
             validJobsCount++; 
             totalDieselCost += parseAndSumDiesel(job.diesel);
 
-            // استخراج المبلغ المالي بدقة من أي صيغة نصية أو رقمية
+            // استخراج المبلغ المالي بدقة
             let amt = 0;
             if (job.total) {
                 amt = parseFloat(String(job.total).replace(/[^0-9.]/g, '')) || 0;
             }
             totalRev += amt;
 
-            // استخراج الشهر بدقة من التاريخ أو الكائن
+            // استخراج الشهر بدقة
             let monthIdx = parseInt(job.month) - 1;
             if ((isNaN(monthIdx) || monthIdx < 0 || monthIdx > 11) && job.date) {
                 const dateParts = job.date.split('/');
@@ -617,25 +619,55 @@ function updateDashboardAnalytics() {
                 routeRevenueMap[routeKey] = (routeRevenueMap[routeKey] || 0) + amt;
             }
 
-            // تجميع طرق الدفع للرسم الدائري
+            // 🌟 تجميع طرق الدفع حصرياً من عمودي pu و dest (dest balance)
             [job.pu, job.dest].forEach(payStr => {
-                if (payStr && payStr !== '-') {
-                    const upperPay = payStr.toUpperCase();
-                    if (upperPay.includes('CASH')) paymentMethodMap.Cash += 1;
-                    else if (upperPay.includes('ZELLE')) paymentMethodMap.Zelle += 1;
-                    else if (upperPay.includes('CHEQUE') || upperPay.includes('CK')) paymentMethodMap.Cheque += 1;
-                    else if (upperPay.includes('PMO')) paymentMethodMap.PMO += 1;
-                    else if (upperPay.includes('BC')) paymentMethodMap.BC += 1;
-                    else if (upperPay.includes('PC')) paymentMethodMap.PC += 1;
-                    else if (upperPay.includes('CC')) paymentMethodMap.CC += 1;
-                    else if (upperPay.includes('WT')) paymentMethodMap.WT += 1;
-                    else paymentMethodMap.Others += 1;
+                if (!payStr || payStr === '-' || payStr === '---' || String(payStr).trim() === '') {
+                    paymentMethodMap.Unspecified += 1;
+                } else {
+                    const upperPay = String(payStr).toUpperCase();
+                    let matched = false;
+
+                    if (upperPay.includes('CASH')) { 
+                        paymentMethodMap.Cash += 1; 
+                        matched = true; 
+                    } else if (upperPay.includes('ZELLE')) { 
+                        paymentMethodMap.Zelle += 1; 
+                        matched = true; 
+                    } else if (upperPay.includes('CHEQUE') || upperPay.includes('CK') || upperPay.includes('CHECK')) { 
+                        paymentMethodMap.Cheque += 1; 
+                        matched = true; 
+                    } else if (upperPay.includes('PMO')) { 
+                        paymentMethodMap.PMO += 1; 
+                        matched = true; 
+                    } else if (upperPay.includes('BC')) { 
+                        paymentMethodMap.BC += 1; 
+                        matched = true; 
+                    } else if (upperPay.includes('PC')) { 
+                        paymentMethodMap.PC += 1; 
+                        matched = true; 
+                    } else if (upperPay.includes('CC')) { 
+                        paymentMethodMap.CC += 1; 
+                        matched = true; 
+                    } else if (upperPay.includes('WT')) { 
+                        paymentMethodMap.WT += 1; 
+                        matched = true; 
+                    } else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) {
+                        paymentMethodMap.Others += 1;
+                        matched = true;
+                    }
+
+                    if (!matched) {
+                        paymentMethodMap.Others += 1;
+                    }
                 }
             });
         });
 
-        const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
+        // حفظ خريطة طرق الدفع في النافذة العامة لكي تستخدمها الرسوم البيانية أو التقارير الأخرى
+        window.currentPaymentMethodMap = paymentMethodMap;
 
+        const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
+        
         // تحديث البطاقات العلوية
         const revEl = document.getElementById('dashTotalRevenue');
         if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
@@ -667,7 +699,11 @@ function updateDashboardAnalytics() {
                 topCorridorsContainer.innerHTML = `<p class="text-xs text-slate-400 text-center p-6">No corridor data available</p>`;
             }
         }
-
+    } catch (e) {
+        console.error("Error in updateDashboardAnalytics:", e);
+    }
+}
+window.updateDashboardAnalytics = updateDashboardAnalytics;
         // إعادة رسم المخططات البيانية بقيم صحيحة
         renderDashboardCharts(monthlyRev, paymentMethodMap);
     } catch (e) {
