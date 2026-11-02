@@ -1,66 +1,9 @@
 /**
  * MovePro - Private Truck Rental Module
- * Optimized & Hardened Core Logic (Complete Standalone Implementation)
+ * Supabase Integrated Version (Direct Cloud Database Sync)
  */
 
-// 1. Safe Initialization of Keys & Data Structure
-if (typeof window.RENTALS_STORAGE_KEY === 'undefined') {
-    window.RENTALS_STORAGE_KEY = 'movepro_private_truck_rentals';
-}
-
-if (typeof window.forcedInitialRentalsData === 'undefined') {
-    window.forcedInitialRentalsData = [
-        { date: "6/24/2026", days: 24, amount: 6000, paymentType: "Cheque", paidBy: "Sharef", truckLabel: "24 days rental paid by Sharef" },
-        { date: "7/9/2026", days: 13, amount: 3250, paymentType: "Cash", paidBy: "Abu Essa", truckLabel: "13 days rental paid to Abu Essa" },
-        { date: "7/20/2026", days: 8, amount: 1860, paymentType: "Cash", paidBy: "Penski", truckLabel: "8 days rental paid by Penski" },
-        { date: "8/18/2026", days: 1, amount: 425, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "1 day U-Haul rental" },
-        { date: "8/21/2026", days: 1, amount: 675, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "1 day U-Haul rental" },
-        { date: "8/26/2026", days: 1, amount: 759, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "1 day U-Haul rental" },
-        { date: "8/31/2026", days: 1, amount: 1282, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "1 day U-Haul rental" },
-        { date: "9/18/2026", days: 2, amount: 240, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "2 days U-Haul + Storage rental" },
-        { date: "9/25/2026", days: 1, amount: 533, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "1 day U-Haul rental" },
-        { date: "9/28/2026", days: 1, amount: 568, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "1 day U-Haul rental" },
-        { date: "10/5/2026", days: 2, amount: 1150, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "2 days U-Haul rental" },
-        { date: "10/12/2026", days: 1, amount: 610, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "1 day U-Haul rental" },
-        { date: "10/18/2026", days: 3, amount: 1720, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "3 days U-Haul rental" },
-        { date: "10/24/2026", days: 2, amount: 1250, paymentType: "Cash", paidBy: "U-Haul", truckLabel: "2 days U-Haul rental" }
-    ];
-}
-
-// 2. Storage Handlers
-function loadPrivateTruckRentals() {
-    const activeKey = window.RENTALS_STORAGE_KEY;
-    const initialData = window.forcedInitialRentalsData || [];
-    let saved = localStorage.getItem(activeKey);
-    let rentals = [];
-
-    if (!saved) {
-        localStorage.setItem(activeKey, JSON.stringify(initialData));
-        rentals = [...initialData];
-    } else {
-        try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length >= initialData.length) {
-                rentals = parsed;
-            } else {
-                rentals = Array.isArray(parsed) && parsed.length > 0 ? parsed : [...initialData];
-            }
-        } catch (e) {
-            console.error('Error parsing rentals:', e);
-            rentals = [...initialData];
-        }
-    }
-
-    return rentals.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-}
-window.loadPrivateTruckRentals = loadPrivateTruckRentals;
-
-function savePrivateTruckRentals(data) {
-    localStorage.setItem(window.RENTALS_STORAGE_KEY, JSON.stringify(data));
-}
-window.savePrivateTruckRentals = savePrivateTruckRentals;
-
-// 3. Date Utility Functions
+// 1. Data Utility Functions & Converters
 function formatDateForInput(dateStr) {
     if (!dateStr) return '';
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
@@ -86,12 +29,48 @@ function formatDateToSlash(dateStr) {
 }
 window.formatDateToSlash = formatDateToSlash;
 
-// 4. Interface Rendering Function
-function renderPrivateTruckRentalTab() {
+// 2. Fetch Data from Supabase
+async function loadPrivateTruckRentals() {
+    try {
+        if (!window.supabaseClient) {
+            console.error("Supabase client is not initialized!");
+            return [];
+        }
+
+        const { data, error } = await window.supabaseClient
+            .from('truck_rental')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching truck rentals from Supabase:', error);
+            return [];
+        }
+
+        const formattedRentals = (data || []).map(item => ({
+            id: item.id,
+            date: item.date || '',
+            days: parseInt(item.Days) || 0,
+            amount: item.amount || '$0',
+            paymentType: item.paymentType || 'Cash',
+            paidBy: item.paidBy || '',
+            truckLabel: item.truckLabel || ''
+        }));
+
+        window.currentTruckRentals = formattedRentals;
+        return formattedRentals;
+    } catch (e) {
+        console.error('Error loading private truck rentals:', e);
+        return [];
+    }
+}
+window.loadPrivateTruckRentals = loadPrivateTruckRentals;
+
+// 3. Interface Rendering Function
+async function renderPrivateTruckRentalTab() {
     const container = document.getElementById('tab-rentals') || document.getElementById('tab-private-truck-rental');
     if (!container) return;
 
-    // ضبط التنسيق العمودي لمنع التخربط الأفقي
     container.className = "view-section hidden flex flex-col space-y-6 w-full max-w-full";
 
     container.innerHTML = `
@@ -156,21 +135,32 @@ function renderPrivateTruckRentalTab() {
                         </tr>
                     </thead>
                     <tbody id="truckRentalTableBody" class="divide-y divide-slate-100 text-slate-700 bg-white">
-                        ${generateRentalRowsHTML()}
+                        <tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">Loading rental records...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     `;
 
-    renderTruckRentalSummary();
     injectPrivateTruckModalHTML();
+    await refreshPrivateTruckData();
 }
 window.renderPrivateTruckRentalTab = renderPrivateTruckRentalTab;
 
+// 4. Reload Data & Update UI Components
+async function refreshPrivateTruckData() {
+    const rentals = await loadPrivateTruckRentals();
+    
+    const tbody = document.getElementById('truckRentalTableBody');
+    if (tbody) tbody.innerHTML = generateRentalRowsHTML(rentals);
+
+    renderTruckRentalSummary(rentals);
+}
+window.refreshPrivateTruckData = refreshPrivateTruckData;
+
 // 5. Summary Calculations
-function renderTruckRentalSummary() {
-    const rentals = loadPrivateTruckRentals();
+function renderTruckRentalSummary(rentalsData) {
+    const rentals = rentalsData || window.currentTruckRentals || [];
     
     let totalDays = 0;
     let sumCash = 0;
@@ -178,20 +168,16 @@ function renderTruckRentalSummary() {
     let grandTotal = 0;
 
     rentals.forEach(r => {
-        const daysNum = parseInt(String(r.days || '0').replace(/[^0-9]/g, ''), 10) || 0;
-        totalDays += daysNum;
+        totalDays += r.days || 0;
 
-        const amount = typeof parseCurrency === 'function' 
-            ? parseCurrency(r.amount) 
-            : (parseFloat(String(r.amount).replace(/[^0-9.-]+/g, '')) || 0);
-            
-        grandTotal += amount;
+        let numAmt = parseFloat(String(r.amount || '0').replace(/[^0-9.]/g, '')) || 0;
+        grandTotal += numAmt;
 
         const paymentType = String(r.paymentType || '').toLowerCase();
         if (paymentType.includes('cash')) {
-            sumCash += amount;
+            sumCash += numAmt;
         } else {
-            sumOther += amount;
+            sumOther += numAmt;
         }
     });
 
@@ -202,40 +188,45 @@ function renderTruckRentalSummary() {
 
     setElementText('rentalTotalRecordsCount', rentals.length);
     setElementText('sumRentalDaysCell', `${totalDays} Days`); 
-    setElementText('sumRentalCashCell', `$${sumCash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
-    setElementText('sumRentalOtherCell', `$${sumOther.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`); 
-    setElementText('sumRentalGrandTotalCell', `$${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+    setElementText('sumRentalCashCell', `$${sumCash.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+    setElementText('sumRentalOtherCell', `$${sumOther.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`); 
+    setElementText('sumRentalGrandTotalCell', `$${grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
 }
 window.renderTruckRentalSummary = renderTruckRentalSummary;
 
 // 6. Table Rows Generator
-function generateRentalRowsHTML() {
-    const rentals = loadPrivateTruckRentals(); 
+function generateRentalRowsHTML(rentalsData) {
+    const rentals = rentalsData || window.currentTruckRentals || [];
 
     if (!rentals || rentals.length === 0) {
         return `<tr><td colspan="7" class="text-center py-6 text-slate-400 text-xs">No rental records found</td></tr>`;
     }
 
-    return rentals.map((item, index) => `
-        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-            <td class="p-3.5 font-medium text-slate-800">${item.date || '-'}</td>
-            <td class="p-3.5 text-slate-600">${item.days || 0} Days</td>
-            <td class="p-3.5 text-emerald-700 font-bold">$${parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-            <td class="p-3.5"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">${item.paymentType || '-'}</span></td>
-            <td class="p-3.5 text-slate-600">${item.paidBy || '-'}</td>
-            <td class="p-3.5 text-slate-600">${item.truckLabel || '-'}</td>
-            <td class="p-3.5 text-center">
-                <div class="flex items-center justify-center space-x-1">
-                    <button type="button" onclick="editPrivateTruckRental(${index})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer" title="Edit Rental"><i class="fa-solid fa-pen-to-square"></i></button>
-                    <button type="button" onclick="deletePrivateTruckRental(${index})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Delete Rental"><i class="fa-solid fa-trash-can"></i></button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
+    return rentals.map((item) => {
+        let numAmt = parseFloat(String(item.amount || '0').replace(/[^0-9.]/g, '')) || 0;
+        let formattedAmount = '$' + numAmt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        return `
+            <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                <td class="p-3.5 font-medium text-slate-800">${item.date || '-'}</td>
+                <td class="p-3.5 text-slate-600">${item.days || 0} Days</td>
+                <td class="p-3.5 text-emerald-700 font-bold">${formattedAmount}</td>
+                <td class="p-3.5"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">${item.paymentType || '-'}</span></td>
+                <td class="p-3.5 text-slate-600">${item.paidBy || '-'}</td>
+                <td class="p-3.5 text-slate-600">${item.truckLabel || '-'}</td>
+                <td class="p-3.5 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                        <button type="button" onclick="editPrivateTruckRental(${item.id})" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer" title="Edit Rental"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button type="button" onclick="deletePrivateTruckRental(${item.id})" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Delete Rental"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 window.generateRentalRowsHTML = generateRentalRowsHTML;
 
-// 7. Dynamic Modal Injection & CRUD Operations
+// 7. Dynamic Modal Injection & Cloud CRUD Operations
 function injectPrivateTruckModalHTML() {
     if (document.getElementById('privateTruckModal')) return;
 
@@ -251,7 +242,7 @@ function injectPrivateTruckModalHTML() {
             </div>
             
             <form id="privateTruckForm" onsubmit="savePrivateTruckRental(event)" class="space-y-4 text-xs">
-                <input type="hidden" id="rentalEditIndex" value="-1">
+                <input type="hidden" id="rentalEditId" value="">
                 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -306,11 +297,11 @@ function openPrivateTruckModal() {
     injectPrivateTruckModalHTML();
     const modal = document.getElementById('privateTruckModal');
     const form = document.getElementById('privateTruckForm');
-    const editIndex = document.getElementById('rentalEditIndex');
+    const editId = document.getElementById('rentalEditId');
     const title = document.getElementById('privateTruckModalTitle');
 
     if (form) form.reset();
-    if (editIndex) editIndex.value = "-1";
+    if (editId) editId.value = "";
     if (title) title.innerText = "Add New Truck Rental";
 
     if (modal) {
@@ -329,73 +320,95 @@ function closePrivateTruckModal() {
 }
 window.closePrivateTruckModal = closePrivateTruckModal;
 
-function savePrivateTruckRental(e) {
+async function savePrivateTruckRental(e) {
     if (e) e.preventDefault();
 
-    const editIndex = parseInt(document.getElementById('rentalEditIndex').value, 10);
+    if (!window.supabaseClient) {
+        alert("Supabase client is not initialized!");
+        return;
+    }
+
+    const editId = document.getElementById('rentalEditId').value;
     const dateRaw = document.getElementById('rentalDate').value;
     const days = parseInt(document.getElementById('rentalDays').value, 10) || 1;
-    const amount = parseFloat(document.getElementById('rentalAmount').value) || 0;
+    const amountNum = parseFloat(document.getElementById('rentalAmount').value) || 0;
     const paymentType = document.getElementById('rentalPaymentType').value;
     const paidBy = document.getElementById('rentalPaidBy').value.trim();
     const truckLabel = document.getElementById('rentalTruckLabel').value.trim();
 
-    const record = {
+    // تجهيز الحقول لتتطابق مع أعمدة Supabase بالضبط
+    const payload = {
         date: formatDateToSlash(dateRaw),
-        days: days,
-        amount: amount,
+        Days: days,
+        amount: '$' + amountNum.toFixed(2),
         paymentType: paymentType,
         paidBy: paidBy,
         truckLabel: truckLabel || `${days} day(s) rental`
     };
 
-    let rentals = loadPrivateTruckRentals();
-
-    if (editIndex >= 0 && editIndex < rentals.length) {
-        rentals[editIndex] = record;
+    let response;
+    if (editId) {
+        // تحديث سجل موجود
+        response = await window.supabaseClient
+            .from('truck_rental')
+            .update(payload)
+            .eq('id', editId);
     } else {
-        rentals.unshift(record);
+        // إضافة سجل جديد
+        response = await window.supabaseClient
+            .from('truck_rental')
+            .insert([payload]);
     }
 
-    savePrivateTruckRentals(rentals);
-    closePrivateTruckModal();
-    
-    // إعادة التحديث والمزامنة
-    const tbody = document.getElementById('truckRentalTableBody');
-    if (tbody) tbody.innerHTML = generateRentalRowsHTML();
-    renderTruckRentalSummary();
+    if (response.error) {
+        console.error('Error saving to Supabase:', response.error);
+        alert('Supabase Error: ' + response.error.message);
+    } else {
+        closePrivateTruckModal();
+        await refreshPrivateTruckData();
+    }
 }
 window.savePrivateTruckRental = savePrivateTruckRental;
 
-function editPrivateTruckRental(index) {
-    const rentals = loadPrivateTruckRentals();
-    if (index < 0 || index >= rentals.length) return;
+function editPrivateTruckRental(id) {
+    const rentals = window.currentTruckRentals || [];
+    const item = rentals.find(r => r.id === id);
+    if (!item) return;
 
-    const item = rentals[index];
     openPrivateTruckModal();
 
     document.getElementById('privateTruckModalTitle').innerText = "Edit Truck Rental Record";
-    document.getElementById('rentalEditIndex').value = index;
+    document.getElementById('rentalEditId').value = item.id;
     document.getElementById('rentalDate').value = formatDateForInput(item.date);
     document.getElementById('rentalDays').value = item.days || 1;
-    document.getElementById('rentalAmount').value = item.amount || 0;
+    
+    let rawAmount = parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0;
+    document.getElementById('rentalAmount').value = rawAmount;
+    
     document.getElementById('rentalPaymentType').value = item.paymentType || 'Cash';
     document.getElementById('rentalPaidBy').value = item.paidBy || '';
     document.getElementById('rentalTruckLabel').value = item.truckLabel || '';
 }
 window.editPrivateTruckRental = editPrivateTruckRental;
 
-function deletePrivateTruckRental(index) {
+async function deletePrivateTruckRental(id) {
     if (!confirm('Are you sure you want to delete this rental record?')) return;
 
-    let rentals = loadPrivateTruckRentals();
-    if (index >= 0 && index < rentals.length) {
-        rentals.splice(index, 1);
-        savePrivateTruckRentals(rentals);
+    if (!window.supabaseClient) {
+        alert("Supabase client is not initialized!");
+        return;
+    }
 
-        const tbody = document.getElementById('truckRentalTableBody');
-        if (tbody) tbody.innerHTML = generateRentalRowsHTML();
-        renderTruckRentalSummary();
+    const { error } = await window.supabaseClient
+        .from('truck_rental')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error deleting from Supabase:', error);
+        alert('Supabase Error: ' + error.message);
+    } else {
+        await refreshPrivateTruckData();
     }
 }
 window.deletePrivateTruckRental = deletePrivateTruckRental;
