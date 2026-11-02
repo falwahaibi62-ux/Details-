@@ -714,7 +714,7 @@ function switchTab(tabName) {
     try {
         const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
         
-        // إخفاء جميع التبويبات وإعادة تعيين الأزرار الجانبية بأمان
+        // إخفاء جميع التبويبات وإعادة تعيين الأزرار
         tabs.forEach(t => {
             const possibleElIds = [`tab-${t}`, `${t}-view`, t];
             possibleElIds.forEach(id => {
@@ -726,7 +726,6 @@ function switchTab(tabName) {
                 }
             });
 
-            // قائمة الاحتمالات لمعرفات الأزرار الجانبية
             const possibleNavIds = [`nav-${t}`, `nav-${t}-btn`, t];
             possibleNavIds.forEach(id => {
                 const navEl = document.getElementById(id);
@@ -736,7 +735,7 @@ function switchTab(tabName) {
             });
         });
 
-        // إظهار التبويب النشط المطلوب
+        // إظهار التبويب المطلوب
         const targetIds = [`tab-${tabName}`, `${tabName}-view`, tabName];
         let activeTab = null;
         for (let id of targetIds) {
@@ -750,7 +749,7 @@ function switchTab(tabName) {
             activeTab.style.setProperty('display', 'flex', 'important');
         }
 
-        // تنشيط زر القائمة الجانبية الخاص بالتبويب النشط بأمان تام
+        // تنشيط زر القائمة الجانبية
         const navTargetIds = [`nav-${tabName}`, `nav-${tabName}-btn`, tabName];
         let activeNav = null;
         for (let id of navTargetIds) {
@@ -762,15 +761,29 @@ function switchTab(tabName) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
-        // استدعاء الدوال المرتبطة بالتبويب النشط
+        // 🌟 استدعاء دالة البيانات الخاصة بكل شاشة عند فتحها
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
             if (typeof filterJobsTable === 'function') filterJobsTable();
-        } else if (tabName === 'reports' && typeof renderReportsTab === 'function') {
-            renderReportsTab();
+        } else if (tabName === 'rentals') {
+            if (typeof renderPrivateTruckRentalTab === 'function') {
+                renderPrivateTruckRentalTab();
+            } else {
+                console.warn("renderPrivateTruckRentalTab function is not loaded yet.");
+            }
+        } else if (tabName === 'warehouse') {
+            if (typeof renderWarehouseTab === 'function') {
+                renderWarehouseTab();
+            } else {
+                console.warn("renderWarehouseTab function is not loaded yet.");
+            }
+        } else if (tabName === 'reports') {
+            if (typeof renderReportsTab === 'function') renderReportsTab();
         } else if (tabName === 'users') {
             if (typeof renderUsers === 'function') renderUsers();
+        } else if (tabName === 'trash') {
+            if (typeof renderTrashBin === 'function') renderTrashBin();
         }
     } catch (e) {
         console.error("Error switching tab:", e);
