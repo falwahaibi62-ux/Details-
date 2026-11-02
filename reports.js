@@ -120,29 +120,52 @@ function getFilteredJobsData() {
 window.getFilteredJobsData = getFilteredJobsData;
 
 // دالة تصنيف وطرح المبالغ بناءً على القائمة المحددة وتصنيف الفراغات إلى Unspecified
+// دالة تصنيف وتحليل المبالغ بطريقة دقيقة جداً:
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     if (amount <= 0) return;
 
-    if (!methodStr || methodStr === '-' || methodStr === '---' || String(methodStr).trim() === '') {
-        map.Unspecified = (map.Unspecified || 0) + amount;
+    const rawStr = String(methodStr || '').trim();
+
+    // 1. إذا كان الحقل فارغاً، أو عبارة عن شرطة (-)، أو يحتوي على رقم فقط بدون نص طريقة الدفع -> تصنف تلقائياً كـ UNSPECIFIED
+    if (!rawStr || rawStr === '-' || rawStr === '---' || /^\d+(\.\d+)?$/.test(rawStr)) {
+        map.Unspecified += amount;
         return;
     }
 
-    const upperPay = String(methodStr).toUpperCase().trim();
-    let matched = false;
+    const upperPay = rawStr.toUpperCase();
 
-    if (upperPay.includes('CASH')) { map.Cash += amount; matched = true; }
-    else if (upperPay.includes('ZELLE')) { map.Zelle += amount; matched = true; }
-    else if (upperPay.includes('CHEQUE') || upperPay.includes('CHECK') || upperPay.includes('CK')) { map.Cheque += amount; matched = true; }
-    else if (upperPay.includes('PMO')) { map.PMO += amount; matched = true; }
-    else if (upperPay.includes('BC')) { map.BC += amount; matched = true; }
-    else if (upperPay.includes('PC')) { map.PC += amount; matched = true; }
-    else if (upperPay.includes('CC')) { map.CC += amount; matched = true; }
-    else if (upperPay.includes('WT')) { map.WT += amount; matched = true; }
-    else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { map.Others += amount; matched = true; }
-
-    if (!matched) {
-        map.Others += amount;
+    // 2. الفحص والمطابقة الدقيقة مع عناصر القائمة المنسدلة
+    if (upperPay.includes('CASH')) { 
+        map.Cash += amount; 
+    }
+    else if (upperPay.includes('ZELLE')) { 
+        map.Zelle += amount; 
+    }
+    else if (upperPay.includes('CHEQUE') || upperPay.includes('CHECK') || upperPay.includes('CK')) { 
+        map.Cheque += amount; 
+    }
+    else if (upperPay.includes('PMO')) { 
+        map.PMO += amount; 
+    }
+    else if (upperPay.includes('BC')) { 
+        map.BC += amount; 
+    }
+    else if (upperPay.includes('PC')) { 
+        map.PC += amount; 
+    }
+    else if (upperPay.includes('CC')) { 
+        map.CC += amount; 
+    }
+    else if (upperPay.includes('WT')) { 
+        map.WT += amount; 
+    }
+    // احتساب Others فقط إذا تم وضع خيار Others صراحةً
+    else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { 
+        map.Others += amount; 
+    }
+    // أي طريقة دفع أخرى غير معروفة أو لم تذكر في القائمة تصنف كـ UNSPECIFIED لضمان عدم الخلط
+    else {
+        map.Unspecified += amount;
     }
 }
 
