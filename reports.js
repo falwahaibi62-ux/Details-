@@ -337,7 +337,6 @@ function generateOfficialSummaryTable(filteredJobs) {
     let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
     let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
 
-    // خريطة تصنيف جميع طرق الدفع في القائمة المنسدلة
     const payMap = {
         Cash: 0,
         Zelle: 0,
@@ -388,8 +387,6 @@ function generateOfficialSummaryTable(filteredJobs) {
                         if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery')) {
                             sumPmoDeliveries += partVal;
                         }
-                    } else if (pLower.includes('zelle')) {
-                        sumZellePu += partVal;
                     } else {
                         sumZellePu += partVal;
                     }
@@ -398,11 +395,11 @@ function generateOfficialSummaryTable(filteredJobs) {
         } else {
             const puNumOnly = parseCurrency(item.pu || item.pu_payments);
             if (puNumOnly > 0) {
-                assignPaymentMethodRevenue('', puNumOnly, payMap);
+                payMap.Unspecified += puNumOnly;
             }
         }
         
-        // 2. معالجة Destination / Dest Balance
+        // 2. معالجة Destination / Dest Balance والتأكد من تحويل المبالغ الصرفة إلى Unspecified
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             const destParts = destRawStr.split(',');
@@ -425,7 +422,7 @@ function generateOfficialSummaryTable(filteredJobs) {
         } else {
             const destNumOnly = parseCurrency(item.dest || item.destination || item.destination_payments);
             if (destNumOnly > 0) {
-                assignPaymentMethodRevenue('', destNumOnly, payMap);
+                payMap.Unspecified += destNumOnly;
             }
         }
     });
@@ -435,7 +432,6 @@ function generateOfficialSummaryTable(filteredJobs) {
 
     const payGrandTotal = Object.values(payMap).reduce((a, b) => a + b, 0);
 
-    // جدول إجمالي طرق الدفع
     const paymentMethodsSummaryHTML = `
         <div id="paymentDateRangeSummaryContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
