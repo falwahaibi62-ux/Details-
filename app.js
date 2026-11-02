@@ -340,7 +340,7 @@ function renderJobsCRUD(dataToRender) {
         const jobIdentifier = item.jobNo || item.job_no || item.id;
         const actions = `
             <div class="flex items-center space-x-1 justify-center gap-1">
-                <button type="button" onclick="openEditJobModal('${jobIdentifier}')" class="px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg cursor-pointer transition" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button type="button" onclick="('${jobIdentifier}')" class="px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg cursor-pointer transition" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
                 <button type="button" onclick="deleteJob('${item.jobNo || item.job_no}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer transition" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
             </div>
         `;
@@ -417,38 +417,28 @@ function openEditJobModal(jobIdOrNo) {
         return;
     }
 
-    // فتح النافذة
+    // فتح النافذة المنبثقة
     openAddModal(true);
 
-    // تخزين الـ id في الفورم لعمل التحديث لاحقاً
     const jobForm = document.getElementById('jobForm');
     if (jobForm) {
         jobForm.setAttribute('data-edit-id', job.id || '');
     }
 
-    // دالة مساعدة لتعبئة أي حقل بالطريقة الأكيدة
-    function setFieldValue(selectors, value) {
+    // تعبئة الحقول
+    const setVal = (selectors, val) => {
         for (let sel of selectors) {
             const el = document.querySelector(sel) || (jobForm ? jobForm.querySelector(sel) : null);
-            if (el) {
-                el.value = value !== undefined && value !== null ? value : '';
-                break;
-            }
+            if (el) { el.value = val !== undefined && val !== null ? val : ''; break; }
         }
-    }
+    };
 
-    // تعبئة الحقول بالاعتماد على الـ ID أو الـ Name المحتملة في النموذج لديكِ
-    setFieldValue(['#jobDate', '[name="date"]', '#dateInput'], job.date || '');
-    setFieldValue(['#jobNo', '[name="jobNo"]', '[name="job_no"]', '#jobNoInput'], job.jobNo || job.job_no || '');
-    setFieldValue(['#routeFrom', '[name="routeFrom"]', '[name="route_from"]', '#routeFromInput'], job.route_from || '');
-    setFieldValue(['#routeTo', '[name="routeTo"]', '[name="route_to"]', '#routeToInput'], job.route_to || '');
-    setFieldValue(['#jobForeman', '[name="foreman"]', '[name="foreman_name"]', '#foremanInput'], job.foreman || job.foreman_name || '');
-    setFieldValue(['#jobTotal', '[name="total"]', '[name="total_amount"]', '#totalInput'], job.total || job.total_amount || '');
-    setFieldValue(['#storage', '[name="storage"]', '#storageInput'], job.storage || '');
-
-    // ملاحظة: حقول الديزل والفندق والدفعات (PU & Dest) إذا كانت تحتوي على أزرار اختيار أو حاويات خاصة، سيتم تعبئة النصوص المباشرة إن وجدت
-    setFieldValue(['#dieselAmount', '[name="diesel"]', '[name="diesel_expense"]'], job.diesel || job.diesel_expense || '');
-    setFieldValue(['#hotelAmount', '[name="hotel"]', '[name="hotel_expense"]'], job.hotel || job.hotel_expense || '');
+    setVal(['#jobDate', '[name="date"]', '#dateInput'], job.date || '');
+    setVal(['#jobNo', '[name="jobNo"]', '[name="job_no"]', '#jobNoInput'], job.jobNo || job.job_no || '');
+    setVal(['#routeFrom', '[name="routeFrom"]', '[name="route_from"]', '#routeFromInput'], job.route_from || '');
+    setVal(['#routeTo', '[name="routeTo"]', '[name="route_to"]', '#routeToInput'], job.route_to || '');
+    setVal(['#jobForeman', '[name="foreman"]', '[name="foreman_name"]', '#foremanInput'], job.foreman || job.foreman_name || '');
+    setVal(['#jobTotal', '[name="total"]', '[name="total_amount"]', '#totalInput'], job.total || job.total_amount || '');
 }
 window.openEditJobModal = openEditJobModal;
 
