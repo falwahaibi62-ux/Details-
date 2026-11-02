@@ -453,7 +453,7 @@ function openEditJobModal(jobIdOrNo) {
 
     setVal('jobNo', job.jobNo || job.job_no || '');
 
-    // --- تعبئة حقول المسار (Route From & To) بذكاء ---
+    // --- [تم التعديل] تعبئة حقول المسار ببحث مرن ومباشر ---
     let fromVal = job.route_from || '';
     let toVal = job.route_to || '';
     
@@ -467,8 +467,14 @@ function openEditJobModal(jobIdOrNo) {
         }
     }
 
-    setVal('routeFrom', fromVal);
-    setVal('routeTo', toVal);
+    // البحث المباشر عن حقل From بالـ ID أو الـ Name
+    const fromEl = document.getElementById('routeFrom') || document.querySelector('[name="routeFrom"]') || document.querySelector('[name="route_from"]');
+    if (fromEl) fromEl.value = fromVal;
+
+    // البحث المباشر عن حقل To بالـ ID أو الـ Name
+    const toEl = document.getElementById('routeTo') || document.querySelector('[name="routeTo"]') || document.querySelector('[name="route_to"]');
+    if (toEl) toEl.value = toVal;
+    // ----------------------------------------------------
 
     setVal('jobForeman', job.foreman || job.foreman_name || '');
     setVal('jobTotal', job.total || job.total_amount || '');
@@ -514,7 +520,6 @@ function openEditJobModal(jobIdOrNo) {
     }
 }
 window.openEditJobModal = openEditJobModal;
-
 
 function parseAndSumDiesel(val) {
     if (!val || val === '-' || val === '0' || val === 0) return 0;
