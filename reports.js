@@ -1,5 +1,5 @@
 /**
- * MovePro - Financial & Operations Reports Module (Production Ready & Fixed Detailed View)
+ * MovePro - Financial & Operations Reports Module (Production Ready & Extended Payment Methods Categorization)
  */
 
 function switchReportMode(mode) {
@@ -63,7 +63,6 @@ function resetReportFilters() {
 }
 window.resetReportFilters = resetReportFilters;
 
-// دالة تطبيع التواريخ محلياً
 function parseLocalDate(dateStr) {
     if (!dateStr) return null;
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -111,14 +110,41 @@ function getFilteredJobsData() {
         }
 
         if (paymentVal !== 'all') {
-            const paymentField = String(j.paymentType || j.pu || j.dest || '').toLowerCase();
-            if (!paymentField.includes(paymentVal)) return false;
+            const paymentField = String(j.paymentType || j.pu || j.dest || j.pu_payments || j.destination_payments || '').toLowerCase();
+            if (!paymentField.includes(paymentVal.toLowerCase())) return false;
         }
 
         return true;
     });
 }
 window.getFilteredJobsData = getFilteredJobsData;
+
+// دالة تصنيف وطرح المبالغ بناءً على القائمة المحددة وتصنيف الفراغات إلى Unspecified
+function assignPaymentMethodRevenue(methodStr, amount, map) {
+    if (amount <= 0) return;
+
+    if (!methodStr || methodStr === '-' || methodStr === '---' || String(methodStr).trim() === '') {
+        map.Unspecified = (map.Unspecified || 0) + amount;
+        return;
+    }
+
+    const upperPay = String(methodStr).toUpperCase().trim();
+    let matched = false;
+
+    if (upperPay.includes('CASH')) { map.Cash += amount; matched = true; }
+    else if (upperPay.includes('ZELLE')) { map.Zelle += amount; matched = true; }
+    else if (upperPay.includes('CHEQUE') || upperPay.includes('CHECK') || upperPay.includes('CK')) { map.Cheque += amount; matched = true; }
+    else if (upperPay.includes('PMO')) { map.PMO += amount; matched = true; }
+    else if (upperPay.includes('BC')) { map.BC += amount; matched = true; }
+    else if (upperPay.includes('PC')) { map.PC += amount; matched = true; }
+    else if (upperPay.includes('CC')) { map.CC += amount; matched = true; }
+    else if (upperPay.includes('WT')) { map.WT += amount; matched = true; }
+    else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { map.Others += amount; matched = true; }
+
+    if (!matched) {
+        map.Others += amount;
+    }
+}
 
 // جدول ملخص إيجارات الشاحنات
 function generateTruckRentalSummaryTableHTML() {
@@ -144,13 +170,13 @@ function generateTruckRentalSummaryTableHTML() {
         }
 
         filteredCount++;
-        const daysNum = parseInt(String(r.days || '0').replace(/[^0-9]/g, '')) || 0;
+        const daysNum = parseInt(String(r.days || r.Days || '0').replace(/[^0-9]/g, '')) || 0;
         totalDays += daysNum;
 
         const amount = parseCurrency(r.amount);
         grandTotal += amount;
 
-        const paymentType = String(r.paymentType || '').toLowerCase();
+        const paymentType = String(r.paymentType || r.paymentMethod || '').toLowerCase();
         if (paymentType.includes('cash')) {
             sumCash += amount;
         } else {
@@ -229,7 +255,7 @@ function generateWarehouseSummaryTableHTML() {
         const amount = parseCurrency(w.amount);
         grandTotal += amount;
 
-        const paymentType = String(w.paymentType || '').toLowerCase();
+        const paymentType = String(w.paymentType || w.paymentMethod || '').toLowerCase();
         if (paymentType.includes('cash')) {
             sumCash += amount;
         } else {
@@ -289,23 +315,31 @@ function generateOfficialSummaryTable(filteredJobs) {
     let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
     let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
 
-    // متغيرات جدول إجمالي طرق الدفع من عمودي pu و dest balance
-    let paySummaryCash = 0;
-    let paySummaryZelle = 0;
-    let paySummaryCheque = 0;
-    let paySummaryPmo = 0;
-    let paySummaryOther = 0;
+    // خريطة تصنيف جميع طرق الدفع في القائمة المنسدلة
+    const payMap = {
+        Cash: 0,
+        Zelle: 0,
+        Cheque: 0,
+        PMO: 0,
+        BC: 0,
+        PC: 0,
+        CC: 0,
+        WT: 0,
+        Others: 0,
+        Unspecified: 0
+    };
 
     filteredJobs.forEach(item => {
-        const totalVal = parseCurrency(item.total);
+        const totalVal = parseCurrency(item.total || item.total_amount);
         sumTotalAfterDeposit += totalVal;
 
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-        sumHelpers += parseCurrency(item.helpers);
-        sumDrivers += parseCurrency(item.drivers);
+        sumHelpers += parseCurrency(item.helpers || item.helpers_cost);
+        sumDrivers += parseCurrency(item.drivers || item.drivers_cost);
 
-        if (item.diesel && item.diesel !== '-') {
-            let dieselStr = String(item.diesel);
+        const dieselValStr = item.diesel || item.diesel_expense;
+        if (dieselValStr && dieselValStr !== '-') {
+            let dieselStr = String(dieselValStr);
             let dieselSum = dieselStr.split('+').reduce((sum, part) => {
                 let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
                 return sum + (cleanNum < 5000 ? cleanNum : 0);
@@ -315,71 +349,73 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
 
-        // معالجة PU
-        const puRawStr = String(item.pu || '').trim();
+        // 1. معالجة PU Payments
+        const puRawStr = String(item.pu || item.pu_payments || '').trim();
         if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
             const puParts = puRawStr.split(',');
             puParts.forEach(part => {
-                const pLower = part.toLowerCase();
                 const partVal = parseCurrency(part);
-                
                 if (partVal > 0 && partVal < 50000) {
+                    assignPaymentMethodRevenue(part, partVal, payMap);
+
+                    const pLower = part.toLowerCase();
                     if (pLower.includes('cash')) {
                         sumCashPu += partVal;
-                        paySummaryCash += partVal;
                     } else if (pLower.includes('pmo')) {
                         sumPmoPu += partVal;
-                        paySummaryPmo += partVal;
                         if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery')) {
                             sumPmoDeliveries += partVal;
                         }
                     } else if (pLower.includes('zelle')) {
                         sumZellePu += partVal;
-                        paySummaryZelle += partVal;
-                    } else if (pLower.includes('cheque') || pLower.includes('check')) {
-                        paySummaryCheque += partVal;
                     } else {
                         sumZellePu += partVal;
-                        paySummaryOther += partVal;
                     }
                 }
             });
+        } else {
+            // إضافة قيمة فارغة إذا كانت مسجلة بدقائق ولكن لا توجد طريقة دفع
+            const puNumOnly = parseCurrency(item.pu || item.pu_payments);
+            if (puNumOnly > 0) {
+                assignPaymentMethodRevenue('', puNumOnly, payMap);
+            }
         }
         
-        // معالجة Destination / Dest Balance
-        const destRawStr = String(item.dest || item.destination || '').trim();
+        // 2. معالجة Destination / Dest Balance
+        const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             const destParts = destRawStr.split(',');
             destParts.forEach(part => {
-                const dLower = part.toLowerCase();
                 const partVal = parseCurrency(part);
-
                 if (partVal > 0 && partVal < 50000) {
+                    assignPaymentMethodRevenue(part, partVal, payMap);
+
+                    const dLower = part.toLowerCase();
                     if (dLower.includes('cash')) {
                         sumCashDest += partVal;
-                        paySummaryCash += partVal;
                     } else if (dLower.includes('zelle')) {
                         sumDestZelle += partVal;
                         sumDestNoCashPmo += partVal;
-                        paySummaryZelle += partVal;
-                    } else if (dLower.includes('cheque') || dLower.includes('check')) {
-                        paySummaryCheque += partVal;
-                    } else if (dLower.includes('pmo')) {
-                        paySummaryPmo += partVal;
                     } else {
                         sumDestNoCashPmo += partVal;
-                        paySummaryOther += partVal;
                     }
                 }
             });
+        } else {
+            // إذا كان المتروك فارغاً في Dest Balance يُصنف إلى Unspecified
+            const destNumOnly = parseCurrency(item.dest || item.destination || item.destination_payments);
+            if (destNumOnly > 0) {
+                assignPaymentMethodRevenue('', destNumOnly, payMap);
+            }
         }
     });
 
     const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
     const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
-    const payGrandTotal = paySummaryCash + paySummaryZelle + paySummaryCheque + paySummaryPmo + paySummaryOther;
 
-    // جدول إجمالي طرق الدفع (يظهر بعد المستودع مباشرة)
+    const payGrandTotal = Object.values(payMap).reduce((a, b) => a + b, 0);
+
+    // جدول إجمالي طرق الدفع المطابق تماماً لجميع الخيارات
     const paymentMethodsSummaryHTML = `
         <div id="paymentDateRangeSummaryContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
@@ -397,22 +433,34 @@ function generateOfficialSummaryTable(filteredJobs) {
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
                 <div class="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100 text-center">
                     <span class="text-[10px] uppercase font-bold text-emerald-700 block">Cash Total</span>
-                    <span class="text-base font-extrabold text-emerald-600 mt-1 block">$${paySummaryCash.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    <span class="text-base font-extrabold text-emerald-600 mt-1 block">$${payMap.Cash.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                 </div>
                 <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-center">
                     <span class="text-[10px] uppercase font-bold text-blue-700 block">Zelle Total</span>
-                    <span class="text-base font-extrabold text-blue-600 mt-1 block">$${paySummaryZelle.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    <span class="text-base font-extrabold text-blue-600 mt-1 block">$${payMap.Zelle.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                 </div>
                 <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 text-center">
                     <span class="text-[10px] uppercase font-bold text-indigo-700 block">Cheque Total</span>
-                    <span class="text-base font-extrabold text-indigo-600 mt-1 block">$${paySummaryCheque.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    <span class="text-base font-extrabold text-indigo-600 mt-1 block">$${payMap.Cheque.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                 </div>
                 <div class="p-3 bg-amber-50/50 rounded-xl border border-amber-100 text-center">
                     <span class="text-[10px] uppercase font-bold text-amber-700 block">PMO Total</span>
-                    <span class="text-base font-extrabold text-amber-600 mt-1 block">$${paySummaryPmo.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    <span class="text-base font-extrabold text-amber-600 mt-1 block">$${payMap.PMO.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                 </div>
-                <div class="p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-center col-span-2 sm:col-span-1">
-                    <span class="text-[10px] uppercase font-bold text-purple-700 block">Grand Total</span>
+                <div class="p-3 bg-teal-50/50 rounded-xl border border-teal-100 text-center">
+                    <span class="text-[10px] uppercase font-bold text-teal-700 block">BC / PC / CC / WT</span>
+                    <span class="text-base font-extrabold text-teal-600 mt-1 block">$${(payMap.BC + payMap.PC + payMap.CC + payMap.WT).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="p-3 bg-slate-50/50 rounded-xl border border-slate-200 text-center">
+                    <span class="text-[10px] uppercase font-bold text-slate-600 block">Others</span>
+                    <span class="text-base font-extrabold text-slate-700 mt-1 block">$${payMap.Others.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="p-3 bg-rose-50/50 rounded-xl border border-rose-100 text-center">
+                    <span class="text-[10px] uppercase font-bold text-rose-700 block">Unspecified</span>
+                    <span class="text-base font-extrabold text-rose-600 mt-1 block">$${payMap.Unspecified.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-center col-span-2 sm:col-span-3 lg:col-span-3">
+                    <span class="text-[10px] uppercase font-bold text-purple-700 block">Grand Total All Methods</span>
                     <span class="text-base font-black text-purple-700 mt-1 block">$${payGrandTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                 </div>
             </div>
@@ -489,7 +537,7 @@ function generateSummaryReportData() {
     const totalDeliveriesCount = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
 
     let totalRevenue = 0;
-    filteredJobs.forEach(j => { totalRevenue += parseCurrency(j.total); });
+    filteredJobs.forEach(j => { totalRevenue += parseCurrency(j.total || j.total_amount); });
 
     const startDateVal = document.getElementById('filterStartDate')?.value;
     const endDateVal = document.getElementById('filterEndDate')?.value;
@@ -537,7 +585,7 @@ function generateSummaryReportData() {
             if (dateObj) {
                 const month = dateObj.getMonth();
                 if (!isNaN(month) && month >= 0 && month < 12) {
-                    monthlyRevenue[month] += parseCurrency(j.total);
+                    monthlyRevenue[month] += parseCurrency(j.total || j.total_amount);
                 }
             }
         }
@@ -591,7 +639,6 @@ function generateSummaryReportData() {
 }
 window.generateSummaryReportData = generateSummaryReportData;
 
-// دالة التقرير التفصيلي المُصلحة بالكامل لضمان ظهور البيانات بدقة
 function generateDetailedReportData() {
     const startDateVal = document.getElementById('filterStartDate')?.value;
     const endDateVal = document.getElementById('filterEndDate')?.value;
@@ -610,27 +657,27 @@ function generateDetailedReportData() {
             jobsTbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-slate-400 text-xs">No job records found for selected period.</td></tr>`;
         } else {
             jobsTbody.innerHTML = filteredJobs.map(item => {
-                const totalNum = parseCurrency(item.total);
+                const totalNum = parseCurrency(item.total || item.total_amount);
                 const dynamicForeman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
                 
-                const destVal = item.destination || item.dest || '-';
-                const dieselVal = item.diesel || '-';
-                const hotelVal = item.hotel || '-';
+                const destVal = item.destination || item.dest || item.destination_payments || '-';
+                const dieselVal = item.diesel || item.diesel_expense || '-';
+                const hotelVal = item.hotel || item.hotel_expense || '-';
 
-                const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(item.helpers) : (item.helpers || '-');
-                const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(item.drivers) : (item.drivers || '-');
+                const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(item.helpers || item.helpers_cost) : (item.helpers || item.helpers_cost || '-');
+                const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(item.drivers || item.drivers_cost) : (item.drivers || item.drivers_cost || '-');
 
                 return `
                     <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
                         <td class="p-3 border font-medium">${item.date || '-'}</td>
-                        <td class="p-3 border font-semibold text-slate-800">${item.jobNo || '-'}</td>
-                        <td class="p-3 border">${item.route || '-'}</td>
-                        <td class="p-3 border">${item.foreman || '-'}</td>
+                        <td class="p-3 border font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
+                        <td class="p-3 border">${item.route || (item.route_from ? item.route_from + ' → ' + item.route_to : '-')}</td>
+                        <td class="p-3 border">${item.foreman || item.foreman_name || '-'}</td>
                         <td class="p-3 border font-bold text-emerald-800">${dynamicForeman10}</td>
                         <td class="p-3 border text-purple-700 font-semibold">${helpersDisplay}</td>
                         <td class="p-3 border text-blue-700 font-semibold">${driversDisplay}</td>
-                        <td class="p-3 border font-bold text-emerald-600">${item.total || '$0'}</td>
-                        <td class="p-3 border">${item.pu || '-'}</td>
+                        <td class="p-3 border font-bold text-emerald-600">${item.total || item.total_amount || '$0'}</td>
+                        <td class="p-3 border">${item.pu || item.pu_payments || '-'}</td>
                         <td class="p-3 border font-medium">${destVal}</td>
                         <td class="p-3 border text-emerald-700">${dieselVal}</td>
                         <td class="p-3 border text-indigo-700">${hotelVal}</td>
@@ -662,7 +709,7 @@ function generateDetailedReportData() {
                     <td class="p-3 border font-medium">${r.date || '-'}</td>
                     <td class="p-3 border font-semibold text-slate-800">${r.truckLabel || 'Truck Rental'}</td>
                     <td class="p-3 border">${r.paidBy || '-'}</td>
-                    <td class="p-3 border">${r.paymentType || 'Cash'}</td>
+                    <td class="p-3 border">${r.paymentType || r.paymentMethod || 'Cash'}</td>
                     <td class="p-3 border text-right font-bold text-amber-600">$${parseCurrency(r.amount).toLocaleString('en-US')}</td>
                 </tr>
             `).join('');
@@ -691,7 +738,7 @@ function generateDetailedReportData() {
                     <td class="p-3 border font-medium">${w.date || '-'}</td>
                     <td class="p-3 border font-semibold text-slate-800">${w.services || 'Warehouse Expense'}</td>
                     <td class="p-3 border">${w.details || '-'}</td>
-                    <td class="p-3 border">${w.paymentType || 'Cash'}</td>
+                    <td class="p-3 border">${w.paymentType || w.paymentMethod || 'Cash'}</td>
                     <td class="p-3 border text-right font-bold text-purple-600">$${parseCurrency(w.amount).toLocaleString('en-US')}</td>
                 </tr>
             `).join('');
@@ -700,7 +747,6 @@ function generateDetailedReportData() {
 }
 window.generateDetailedReportData = generateDetailedReportData;
 
-// دالة التصدير والطباعة الرسمية المنسقة
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
@@ -734,36 +780,37 @@ function exportOfficialPDF() {
     let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
 
     jobs.forEach(item => {
-        const totalVal = parseCurrency(item.total);
+        const totalVal = parseCurrency(item.total || item.total_amount);
         sumTotalAfterDeposit += totalVal;
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-        sumHelpers += parseCurrency(item.helpers);
-        sumDrivers += parseCurrency(item.drivers);
+        sumHelpers += parseCurrency(item.helpers || item.helpers_cost);
+        sumDrivers += parseCurrency(item.drivers || item.drivers_cost);
 
-        if (item.diesel && item.diesel !== '-') {
-            let dieselStr = String(item.diesel);
+        const dieselValStr = item.diesel || item.diesel_expense;
+        if (dieselValStr && dieselValStr !== '-') {
+            let dieselStr = String(dieselValStr);
             let dieselSum = dieselStr.split('+').reduce((s, p) => s + parseCurrency(p), 0);
             if (dieselStr.toLowerCase().includes('cash') || !dieselStr.toLowerCase().includes('penske')) {
                 sumCashDiesel += dieselSum;
             }
         }
 
-        const puStr = String(item.pu || '').toLowerCase();
+        const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
         let cashPuVal = 0;
         if (puStr.includes('cash')) {
             const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            cashPuVal = cashMatch ? parseCurrency(cashMatch[1]) : parseCurrency(item.pu);
+            cashPuVal = cashMatch ? parseCurrency(cashMatch[1]) : parseCurrency(item.pu || item.pu_payments);
             sumCashPu += cashPuVal;
         }
 
         let pmoPuVal = 0;
         if (puStr.includes('pmo')) {
             const pmoMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*pmo/);
-            pmoPuVal = pmoMatch ? parseCurrency(pmoMatch[1]) : parseCurrency(item.pu);
+            pmoPuVal = pmoMatch ? parseCurrency(pmoMatch[1]) : parseCurrency(item.pu || item.pu_payments);
             sumPmoPu += pmoPuVal;
         }
 
-        const rawPuVal = parseCurrency(item.pu);
+        const rawPuVal = parseCurrency(item.pu || item.pu_payments);
         const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
 
         let netPuWithoutCashPmo = puVal;
@@ -772,14 +819,14 @@ function exportOfficialPDF() {
 
         if (netPuWithoutCashPmo > 0) sumZellePu += netPuWithoutCashPmo;
 
-        const destStr = String(item.dest || item.destination || '').toLowerCase();
+        const destStr = String(item.dest || item.destination || item.destination_payments || '').toLowerCase();
         let cashDestVal = 0;
         if (destStr.includes('cash')) {
             const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            cashDestVal = cashDestMatch ? parseCurrency(cashDestMatch[1]) : parseCurrency(item.dest || item.destination);
+            cashDestVal = cashDestMatch ? parseCurrency(cashDestMatch[1]) : parseCurrency(item.dest || item.destination || item.destination_payments);
         }
 
-        const rawDestVal = parseCurrency(item.dest || item.destination);
+        const rawDestVal = parseCurrency(item.dest || item.destination || item.destination_payments);
         const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
 
         if (destStr.includes('cash')) {
@@ -791,18 +838,18 @@ function exportOfficialPDF() {
             sumDestNoCashPmo += destVal;
         }
 
-        if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
+        if ((item.jobNo || item.job_no) && String(item.jobNo || item.job_no).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
             sumPmoDeliveries += puVal;
         }
     });
 
     let rentalPdfDays = 0, rentalPdfCash = 0, rentalPdfOther = 0, rentalPdfTotal = 0;
     filteredRentals.forEach(r => {
-        const daysNum = parseInt(String(r.days || '0').replace(/[^0-9]/g, '')) || 0;
+        const daysNum = parseInt(String(r.days || r.Days || '0').replace(/[^0-9]/g, '')) || 0;
         rentalPdfDays += daysNum;
         const amt = parseCurrency(r.amount);
         rentalPdfTotal += amt;
-        const pType = String(r.paymentType || '').toLowerCase();
+        const pType = String(r.paymentType || r.paymentMethod || '').toLowerCase();
         if (pType.includes('cash')) rentalPdfCash += amt;
         else rentalPdfOther += amt;
     });
@@ -811,7 +858,7 @@ function exportOfficialPDF() {
     filteredWarehouse.forEach(w => {
         const amt = parseCurrency(w.amount);
         warehousePdfTotal += amt;
-        const pType = String(w.paymentType || '').toLowerCase();
+        const pType = String(w.paymentType || w.paymentMethod || '').toLowerCase();
         if (pType.includes('cash')) warehousePdfCash += amt;
         else warehousePdfOthers += amt;
     });
@@ -947,24 +994,24 @@ function exportOfficialPDF() {
                     </thead>
                     <tbody>
                         ${jobs.map(j => {
-                            const totalNum = parseCurrency(j.total);
+                            const totalNum = parseCurrency(j.total || j.total_amount);
                             const foreman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
-                            const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers) : (j.helpers || '-');
-                            const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers) : (j.drivers || '-');
+                            const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers || j.helpers_cost) : (j.helpers || j.helpers_cost || '-');
+                            const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers || j.drivers_cost) : (j.drivers || j.drivers_cost || '-');
 
                             return `
                                 <tr>
                                     <td>${j.date || '-'}</td>
-                                    <td class="font-bold">${j.jobNo || '-'}</td>
-                                    <td>${j.route ? j.route.split('→')[0] : '-'}</td>
-                                    <td>${j.route ? j.route.split('→')[1] || '-' : '-'}</td>
-                                    <td>${j.foreman || '-'}</td>
+                                    <td class="font-bold">${j.jobNo || j.job_no || '-'}</td>
+                                    <td>${j.route ? j.route.split('→')[0] : (j.route_from || '-')}</td>
+                                    <td>${j.route ? j.route.split('→')[1] || '-' : (j.route_to || '-')}</td>
+                                    <td>${j.foreman || j.foreman_name || '-'}</td>
                                     <td class="font-bold text-emerald-700">${foreman10}</td>
                                     <td>${helpersDisplay}</td>
                                     <td>${driversDisplay}</td>
-                                    <td class="font-bold text-emerald-600">${j.total || '$0'}</td>
-                                    <td>${j.pu || '-'}</td>
-                                    <td>${j.dest || j.destination || '-'}</td>
+                                    <td class="font-bold text-emerald-600">${j.total || j.total_amount || '$0'}</td>
+                                    <td>${j.pu || j.pu_payments || '-'}</td>
+                                    <td>${j.dest || j.destination || j.destination_payments || '-'}</td>
                                 </tr>
                             `;
                         }).join('')}
