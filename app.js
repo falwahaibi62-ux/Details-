@@ -42,7 +42,14 @@ async function initMasterJobsData() {
             console.error("Supabase client is not initialized!");
             return;
         }
+const { data, error } = await window.supabaseClient
+    .from('jobs_report')
+    .select('*')
+    .eq('is_deleted', false) // جلب السجلات النشطة فقط
+    .order('id', { ascending: false });
 
+
+        
         const { data, error } = await window.supabaseClient
             .from('jobs_report')
             .select('*');
@@ -689,6 +696,61 @@ async function saveJob(event) {
     }
 }
 window.saveJob = saveJob;
+
+
+async function renderTrashBin() {
+    try {
+        if (!window.supabaseClient) {
+            console.error("Supabase client not initialized!");
+            return;
+        }
+
+        // 🌟 ضعي الكود هنا لجلب الطلبات الموجودة في سلة المهملات فقط (is_deleted = true)
+        const { data, error } = await window.supabaseClient
+            .from('jobs_report')
+            .select('*')
+            .eq('is_deleted', true) 
+            .order('id', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching trash records:', error.message);
+            alert('Failed to load trash bin: ' + error.message);
+            return;
+        }
+
+        const trashContainer = document.getElementById('trashTableBody') || document.getElementById('trashContainer');
+        if (!trashContainer) return;
+
+        // إذا لم تكن هناك سجلات محذوفة
+        if (!data || data.length === 0) {
+            trashContainer.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">Trash bin is empty</td></tr>`;
+            return;
+        }
+
+        // رسم السجلات المحذوفة مع أزرار الاسترجاع والحذف النهائي
+        trashContainer.innerHTML = data.map(job => `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="px-4 py-3 font-medium text-slate-800">${job.job_no || '-'}</td>
+                <td class="px-4 py-3 text-slate-600">${job.route || '-'}</td>
+                <td class="px-4 py-3 text-slate-600">${job.foreman_name || '-'}</td>
+                <td class="px-4 py-3 text-slate-600">${job.total_amount || '-'}</td>
+                <td class="px-4 py-3 text-right space-x-2">
+                    <button onclick="restoreJob('${job.id}')" class="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> Restore
+                    </button>
+                    <button onclick="permanentDeleteJob('${job.id}')" class="px-3 py-1 bg-rose-600 text-white rounded-lg text-xs hover:bg-rose-700 transition">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Delete Forever
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (e) {
+        console.error("Error in renderTrashBin:", e);
+    }
+}
+window.renderTrashBin = renderTrashBin;
+
 
 async function deleteJob(jobIdOrNo) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return;
