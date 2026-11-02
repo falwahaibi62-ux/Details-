@@ -119,16 +119,16 @@ function getFilteredJobsData() {
 }
 window.getFilteredJobsData = getFilteredJobsData;
 
-// دالة التصنيف الدقيقة: حصر Others للكلمات الصريحة فقط، وتوجيه الباقي لـ Unspecified
-// دالة تصنيف وتحليل المبالغ: تحافظ على Others للكلمات الصريحة، وتوجه المبهم لـ Unspecified
-// دالة التصنيف المالية النهائية (تعزل الأرقام الصرفة إلى Unspecified وتحافظ على Others للكلمات الصريحة)
-// دالة تحليل وتصنيف المبالغ (نسخة مطورة لضمان دقة الفرز بين الأرقام الصرفة والنصوص)
+
+
+
+// دالة التصنيف المالي المحسنة لمعالجة الشيكات، Others، و Unspecified بدقة
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     if (amount <= 0) return;
 
     const rawStr = String(methodStr || '').trim();
 
-    // 1. إذا كان الحقل فارغاً، شرطة، أو عبارة عن أرقام صرفة فقط (مثل: 500 أو 1,200.00) -> يوجه حصرياً إلى Unspecified
+    // 1. إذا كان الحقل فارغاً، شرطة، أو أرقام صرفة فقط -> يوجه حصرياً إلى Unspecified
     if (!rawStr || rawStr === '-' || rawStr === '---' || /^[\d,.\s]+$/.test(rawStr)) {
         map.Unspecified += amount;
         return;
@@ -136,14 +136,15 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
 
     const upperPay = rawStr.toUpperCase();
 
-    // 2. المطابقة الدقيقة لطرق الدفع المعتمدة
+    // 2. المطابقة الدقيقة لطرق الدفع (مع تغطية كافة اختصارات الشيكات)
     if (upperPay.includes('CASH')) { 
         map.Cash += amount; 
     }
     else if (upperPay.includes('ZELLE')) { 
         map.Zelle += amount; 
     }
-    else if (upperPay.includes('CHEQUE') || upperPay.includes('CHECK') || upperPay.includes('CK')) { 
+    // تغطية كافة صيغ وإملاءات الشيكات الممكنة
+    else if (upperPay.includes('CHEQUE') || upperPay.includes('CHECK') || upperPay.includes('CK') || upperPay.includes('CHQ') || upperPay.includes('CHEQ')) { 
         map.Cheque += amount; 
     }
     else if (upperPay.includes('PMO')) { 
@@ -161,15 +162,19 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
     else if (upperPay.includes('WT')) { 
         map.WT += amount; 
     }
-    // 3. خانة Others مخصصة حصرياً لمن كتب كلمة OTHER أو OTHERS صراحة
-    else if (upperPay === 'OTHER' || upperPay === 'OTHERS' || upperPay.startsWith('OTHER') || upperPay.startsWith('OTHERS')) { 
+    // 3. خانة Others تُحتسب فقط إذا كتب المصطلح صراحة
+    else if (upperPay === 'OTHER' || upperPay === 'OTHERS' || upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { 
         map.Others += amount; 
     }
-    // 4. أي نصوص أخرى (ملاحظات، أسماء، أو بيانات غير معروفة) توجّه إلى Unspecified لتتمكنِ من مراجعتها بوضوح
+    // 4. أي نصوص أخرى مبهمة (ملاحظات، أسماء، إلخ) تذهب حصرياً إلى Unspecified لتفريغ Others وضبط التقرير
     else {
         map.Unspecified += amount;
     }
 }
+
+
+
+
 // جدول ملخص إيجارات الشاحنات
 function generateTruckRentalSummaryTableHTML() {
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
