@@ -576,20 +576,41 @@ async function saveJob(event) {
         return;
     }
 
-    const { error } = await window.supabaseClient
-        .from('jobs_report')
-        .insert([supabasePayload]);
+    // التحقق مما إذا كنا نقوم بالتعديل (وجود معرف مخفي أو مطابقة عبر رقم الوظيفة)
+    const jobForm = document.getElementById('jobForm');
+    const editRecordId = jobForm ? jobForm.getAttribute('data-edit-id') : null;
+
+    let error = null;
+
+    if (editRecordId) {
+        // --- تحديث سجل موجود مسبقاً (UPDATE) ---
+        const { error: updateError } = await window.supabaseClient
+            .from('jobs_report')
+            .update(supabasePayload)
+            .eq('id', editRecordId);
+        error = updateError;
+    } else {
+        // --- إضافة سجل جديد (INSERT) ---
+        const { error: insertError } = await window.supabaseClient
+            .from('jobs_report')
+            .insert([supabasePayload]);
+        error = insertError;
+    }
 
     if (error) {
         console.error('Error saving to Supabase:', error.message);
         alert('Supabase Error: ' + error.message);
     } else {
+        // مسح علامة التعديل إن وجدت
+        if (jobForm) jobForm.removeAttribute('data-edit-id');
+
         closeModal();
         initMasterJobsData();
-        alert('تم حفظ السجل بنجاح في السحابة!');
+        alert('Record saved successfully!');
     }
 }
 window.saveJob = saveJob;
+
 
 async function deleteJob(jobNo) {
     if (!confirm('Are you sure you want to delete this dispatch record from cloud?')) return;
