@@ -403,79 +403,87 @@ function openAddModal(isEdit = false) {
 window.openAddModal = openAddModal;
 
 function openEditJobModal(jobIdOrNo) {
-    // 1. البحث عن الوظيفة المراد تعديلها من الـ masterJobs أو التخزين المحلي
+    console.log("Editing Job ID/No:", jobIdOrNo); // للتأكد من القيمة المرسلة
+
+    // 1. جلب البيانات من الذاكرة أو مصفوفة النظام
     const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
-    const job = jobs.find(j => j.id == jobIdOrNo || j.jobNo == jobIdOrNo || j.job_no == jobIdOrNo);
+    
+    // 2. بحث مرن يتجاهل اختلاف النوع (String أو Number) وحالة الحروف
+    const targetId = String(jobIdOrNo).trim();
+    const job = jobs.find(j => {
+        const jId = String(j.id || '').trim();
+        const jNo = String(j.jobNo || j.job_no || '').trim();
+        return jId === targetId || jNo.toLowerCase() === targetId.toLowerCase();
+    });
 
     if (!job) {
-        alert("Job record not found!");
+        alert("Job record not found! Check console for ID.");
+        console.warn("Available jobs:", jobs);
         return;
     }
 
-    // 2. فتح المودال مع وضع الوضع على تفعيل التعديل (true)
+    // 3. فتح النافذة المنبثقة وضع التعديل (true)
     openAddModal(true);
 
-    // 3. تعبئة كافة الحقول بالبيانات القديمة مطابقة لأعمدة Supabase
+    // 4. تعبئة الحقول مطابقة لأسماء الـ Inputs والـ IDs المتوقعة في النموذج
     const jobForm = document.getElementById('jobForm');
     if (jobForm) {
-        // حقل المعرّف (id) إن وجد كحقل مخفي للتحديث
+        // تعبئة الـ ID المخفي إن وجد
         const idInput = jobForm.querySelector('[name="id"]') || document.getElementById('jobIdInput');
         if (idInput) idInput.value = job.id || '';
 
-        // حقل التاريخ (date)
+        // التاريخ
         const dateInput = jobForm.querySelector('[name="date"]') || document.getElementById('dateInput');
         if (dateInput) dateInput.value = job.date || '';
 
-        // حقل رقم الوظيفة (job_no)
+        // رقم الوظيفة
         const jobNoInput = jobForm.querySelector('[name="job_no"]') || jobForm.querySelector('[name="jobNo"]') || document.getElementById('jobNoInput');
         if (jobNoInput) jobNoInput.value = job.job_no || job.jobNo || '';
 
-        // حقل من مسار (route_from)
+        // المسار من وإلى
         const routeFromInput = jobForm.querySelector('[name="route_from"]') || document.getElementById('routeFromInput');
         if (routeFromInput) routeFromInput.value = job.route_from || '';
 
-        // حقل إلى مسار (route_to)
         const routeToInput = jobForm.querySelector('[name="route_to"]') || document.getElementById('routeToInput');
         if (routeToInput) routeToInput.value = job.route_to || '';
 
-        // حقل اسم الفورمان (foreman_name)
+        // اسم الفورمان
         const foremanInput = jobForm.querySelector('[name="foreman_name"]') || jobForm.querySelector('[name="foreman"]') || document.getElementById('foremanInput');
         if (foremanInput) foremanInput.value = job.foreman_name || job.foreman || '';
 
-        // حقل تكلفة العمال (helpers_cost)
+        // تكلفة العمال والسائقين
         const helpersInput = jobForm.querySelector('[name="helpers_cost"]') || jobForm.querySelector('[name="helpers"]') || document.getElementById('helpersInput');
         if (helpersInput) helpersInput.value = job.helpers_cost || job.helpers || '';
 
-        // حقل تكلفة السائقين (drivers_cost)
         const driversInput = jobForm.querySelector('[name="drivers_cost"]') || jobForm.querySelector('[name="drivers"]') || document.getElementById('driversInput');
         if (driversInput) driversInput.value = job.drivers_cost || job.drivers || '';
 
-        // حقل الإجمالي (total_amount)
+        // إجمالي المبلغ
         const totalInput = jobForm.querySelector('[name="total_amount"]') || jobForm.querySelector('[name="total"]') || document.getElementById('totalInput');
         if (totalInput) totalInput.value = job.total_amount || job.total || '';
 
-        // حقل مدفوعات الاستلام (pu_payments)
+        // مدفوعات الاستلام والوجهة
         const puInput = jobForm.querySelector('[name="pu_payments"]') || jobForm.querySelector('[name="pu"]') || document.getElementById('puPaymentsInput');
         if (puInput) puInput.value = job.pu_payments || job.pu || '';
 
-        // حقل مدفوعات الوجهة (destination_payments)
         const destInput = jobForm.querySelector('[name="destination_payments"]') || jobForm.querySelector('[name="destination"]') || jobForm.querySelector('[name="dest"]') || document.getElementById('destinationInput');
         if (destInput) destInput.value = job.destination_payments || job.destination || job.dest || '';
 
-        // حقل مصاريف الديزل (diesel_expense)
+        // مصاريف الديزل والفندق
         const dieselInput = jobForm.querySelector('[name="diesel_expense"]') || jobForm.querySelector('[name="diesel"]') || document.getElementById('dieselInput');
         if (dieselInput) dieselInput.value = job.diesel_expense || job.diesel || '';
 
-        // حقل مصاريف الفندق (hotel_expense)
         const hotelInput = jobForm.querySelector('[name="hotel_expense"]') || jobForm.querySelector('[name="hotel"]') || document.getElementById('hotelInput');
         if (hotelInput) hotelInput.value = job.hotel_expense || job.hotel || '';
 
-        // حقل التخزين (storage)
+        // التخزين
         const storageInput = jobForm.querySelector('[name="storage"]') || document.getElementById('storageInput');
         if (storageInput) storageInput.value = job.storage || '';
     }
 }
 window.openEditJobModal = openEditJobModal;
+
+
 
 function parseAndSumDiesel(val) {
     if (!val || val === '-' || val === '0' || val === 0) return 0;
