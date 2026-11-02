@@ -793,16 +793,32 @@ window.switchTab = switchTab;
 // ==========================================
 // 9. INITIALIZATION
 // ==========================================
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     try {
         window.currentUserRole = 'Admin';
-        checkPermissions();
-        renderUsers();
         
-        // جلب البيانات مرة واحدة فقط عند بدء التشغيل
-        initMasterJobsData().then(() => {
+        if (typeof checkPermissions === 'function') checkPermissions();
+        if (typeof renderUsers === 'function') renderUsers();
+        
+        // 🌟 جلب البيانات لكل الأقسام عند بدء التشغيل لتجنب الشاشات الفارغة
+        const promises = [];
+        
+        if (typeof initMasterJobsData === 'function') {
+            promises.push(initMasterJobsData());
+        }
+        if (typeof loadPrivateTruckRentals === 'function') {
+            promises.push(loadPrivateTruckRentals());
+        }
+        if (typeof loadWarehouseData === 'function') {
+            promises.push(loadWarehouseData());
+        }
+
+        // انتظار انتهاء جلب كافة البيانات ثم فتح الداشبورد
+        await Promise.all(promises);
+
+        if (typeof switchTab === 'function') {
             switchTab('dashboard');
-        });
+        }
 
         if (typeof updateSummaryReportView === 'function') {
             updateSummaryReportView();
