@@ -1,12 +1,10 @@
-
-
 if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
 if (typeof window.currentLoggedInUser === 'undefined') window.currentLoggedInUser = null;
 if (typeof window.revenueChartInstance === 'undefined') window.revenueChartInstance = null;
 if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChartInstance = null;
 
 // ==========================================
-// 1. DATA INITIALIZATION & SUPABASE CLOUD SYNC (Sorted Newest to Oldest)
+// 1. DATA INITIALIZATION & SUPABASE CLOUD SYNC
 // ==========================================
 function formatJobDateForInput(dateStr) {
     if (!dateStr) return '';
@@ -37,7 +35,7 @@ function formatJobDateToSlash(dateStr) {
     return dateStr;
 }
 
-// 🌟 تعديل دالة التهيئة لجلب البيانات سحابياً من جدول jobs_report في Supabase
+// 🌟 جلب البيانات سحابياً من جدول jobs_report مع استخراج الشهر والسنة بدقة تامة
 async function initMasterJobsData() {
     try {
         if (!window.supabaseClient) {
@@ -55,7 +53,6 @@ async function initMasterJobsData() {
             return;
         }
 
-        // مطابقة أعمدة سوبابيس واستخراج الشهر والسنة من التاريخ للفلترة والداشبورد
         window.masterJobs = (data || []).map(item => {
             let dVal = item.date || '';
             let mVal = 1;
@@ -77,6 +74,8 @@ async function initMasterJobsData() {
 
             return {
                 date: dVal,
+                month: mVal,
+                year: yVal,
                 jobNo: item.job_no || '',
                 route: (item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : (item.route || ''),
                 foreman: item.foreman_name || '',
@@ -109,22 +108,19 @@ async function initMasterJobsData() {
     }
 }
 window.initMasterJobsData = initMasterJobsData;
-// 🌟 دالة لحفظ وتحديث البيانات مباشرة في Supabase
+
 async function saveMasterJobsData(jobs) {
     window.masterJobs = jobs;
-    // يتم تحديث الواجهة محلياً فوراً لضمان سرعة الاستجابة
     filterJobsTable();
     updateDashboardAnalytics();
 }
 window.saveMasterJobsData = saveMasterJobsData;
 
-
-
 function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
     if (!yearSelect) return;
 
-    initMasterJobsData();
+    if (!window.masterJobs) return;
     const uniqueYears = [...new Set(window.masterJobs.map(item => item.year))].filter(y => y).sort((a, b) => b - a);
     const currentSelected = yearSelect.value;
 
@@ -141,15 +137,13 @@ window.populateYearFilter = populateYearFilter;
 // 2. CRUD TABLE & FILTERING
 // ==========================================
 function filterJobsTable() {
-    initMasterJobsData();
-
     const monthEl = document.getElementById('filterMonth');
     const yearEl = document.getElementById('filterYear');
     
     const monthVal = monthEl ? monthEl.value : 'ALL';
     const yearVal = yearEl ? yearEl.value : 'ALL';
 
-    let filtered = window.masterJobs;
+    let filtered = window.masterJobs || [];
 
     if (monthVal && monthVal !== 'ALL' && monthVal !== 'All Months') {
         filtered = filtered.filter(job => job.month && job.month.toString() === monthVal);
@@ -161,7 +155,7 @@ function filterJobsTable() {
 
     const countText = document.getElementById('filteredCountText');
     if (countText) {
-        countText.innerText = `Showing ${filtered.length} of ${window.masterJobs.length} records`;
+        countText.innerText = `Showing ${filtered.length} of ${(window.masterJobs || []).length} records`;
     }
     
     renderJobsCRUD(filtered);
@@ -212,10 +206,7 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
         container = document.getElementById('destContextContainer');
     }
     
-    if (!container) {
-        console.error("Payment container not found:", containerId);
-        return;
-    }
+    if (!container) return;
 
     const rowId = 'payment_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
     const rowDiv = document.createElement('div');
@@ -233,7 +224,7 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
             <option value="PC" ${method.toUpperCase() === 'PC' ? 'selected' : ''}>PC</option>
             <option value="CC" ${method.toUpperCase() === 'CC' ? 'selected' : ''}>CC</option>
             <option value="WT" ${method.toUpperCase() === 'WT' ? 'selected' : ''}>WT</option>
-            <option value="Others" ${method.toLowerCase() === 'others' ? 'selected' : ''}>Others</option>
+            <option value="Others" ${['others', 'other'].includes(method.toLowerCase()) ? 'selected' : ''}>Others</option>
         </select>
         <button type="button" onclick="removePaymentRow('${rowId}')" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer delete-payment-btn" title="Remove">
             <i class="fa-solid fa-xmark pointer-events-none"></i>
@@ -271,7 +262,7 @@ function extractPaymentsFromContainer(containerId) {
 }
 
 // ==========================================
-// 4. HELPERS & DRIVERS STRICT MAPPERS
+// 4. HELPERS & DRIVERS MAPPERS
 // ==========================================
 function parseHelpersDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
@@ -298,7 +289,6 @@ function parseHelpersDisplay(val) {
     }
 
     if (isNaN(num) || num === 0) return strVal.includes('(') ? strVal : '-';
-
     return helpersMap[num] || strVal;
 }
 
@@ -332,10 +322,7 @@ window.parseDriversDisplay = parseDriversDisplay;
 // ==========================================
 function renderJobsCRUD(dataToRender) {
     const tbody = document.getElementById('jobsTableBody');
-    if (!tbody) {
-        console.error("Target element 'jobsTableBody' not found in DOM!");
-        return;
-    }
+    if (!tbody) return;
     
     const records = dataToRender || window.masterJobs || [];
 
@@ -353,7 +340,6 @@ function renderJobsCRUD(dataToRender) {
         if (window.currentUserRole === 'Admin') {
             actions = `
                 <div class="flex items-center space-x-1 justify-center">
-                    <button type="button" onclick="editJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer" title="Edit Dispatch"><i class="fa-solid fa-pen-to-square"></i></button>
                     <button type="button" onclick="deleteJob('${item.jobNo}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             `;
@@ -364,10 +350,8 @@ function renderJobsCRUD(dataToRender) {
         const helpersVal = parseHelpersDisplay(item.helpers);
         const driversVal = parseDriversDisplay(item.drivers); 
         const puVal = (item.pu && item.pu !== '-') ? item.pu : '-';
-        
         const rawDest = item.destination || item.dest;
         const destVal = (rawDest && rawDest !== '-') ? rawDest : '-';
-        
         const totalVal = (item.total && item.total !== '-') ? item.total : '-';
 
         let totalNum = parseFloat(String(totalVal).replace(/[^0-9.]/g, '')) || 0;
@@ -395,9 +379,9 @@ function renderJobsCRUD(dataToRender) {
 window.renderJobsCRUD = renderJobsCRUD;
 
 // ==========================================
-// 6. MODAL & SUPABASE CRUD ACTIONS (Save, Edit, Delete)
+// 6. MODAL & SUPABASE CRUD ACTIONS
 // ==========================================
-function openAddModal(isEdit = false, recordData = null, index = -1) {
+function openAddModal(isEdit = false) {
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -407,14 +391,8 @@ function openAddModal(isEdit = false, recordData = null, index = -1) {
     }
 
     const jobForm = document.getElementById('jobForm');
-    const modalTitle = document.getElementById('modalTitle');
-    const editIndex = document.getElementById('editIndex');
-
     if (!isEdit) {
         if (jobForm) jobForm.reset();
-        if (editIndex) editIndex.value = '-1';
-        if (modalTitle) modalTitle.innerText = 'Add New Job Dispatch';
-
         const puContainer = document.getElementById('puContainer');
         const destContainer = document.getElementById('destContainer') || document.getElementById('destContextContainer');
         if (puContainer) puContainer.innerHTML = '';
@@ -422,7 +400,6 @@ function openAddModal(isEdit = false, recordData = null, index = -1) {
     }
 }
 window.openAddModal = openAddModal;
-
 
 function parseAndSumDiesel(val) {
     if (!val || val === '-' || val === '0' || val === 0) return 0;
@@ -438,12 +415,9 @@ function parseAndSumDiesel(val) {
         });
         return sum;
     }
-
     return parseFloat(strVal.replace(/[^0-9.]/g, '')) || 0;
 }
 window.parseAndSumDiesel = parseAndSumDiesel;
-
-
 
 function closeModal() {
     const modal = document.getElementById('jobModal');
@@ -466,14 +440,9 @@ async function saveJob(event) {
     }
 
     const jobNoVal = jobNoInput.value.trim();
-
     const dateInput = document.getElementById('jobDate');
     const dateRaw = dateInput ? dateInput.value : '';
-    let dateVal = dateRaw;
-
-    if (dateRaw) {
-        dateVal = formatJobDateToSlash(dateRaw);
-    }
+    let dateVal = dateRaw ? formatJobDateToSlash(dateRaw) : '';
 
     let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
     let totalFormatted = totalRaw && totalRaw !== '-' && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
@@ -501,7 +470,6 @@ async function saveJob(event) {
     const driversSelect = document.getElementById('driversCost');
     const driversFormatted = driversSelect && driversSelect.selectedIndex > 0 ? driversSelect.options[driversSelect.selectedIndex].text : '-';
 
-    // 🌟 حقول السحابة المطابقة تماماً لجدولك (تضمين date, destination_payments, storage وعدم استخدام month/year)
     const supabasePayload = {
         date: dateVal,
         job_no: jobNoVal,
@@ -529,7 +497,7 @@ async function saveJob(event) {
         .insert([supabasePayload]);
 
     if (error) {
-        console.error('Error saving to Supabase:', error.message, error.details, error.hint);
+        console.error('Error saving to Supabase:', error.message);
         alert('Supabase Error: ' + error.message);
     } else {
         closeModal();
@@ -539,7 +507,6 @@ async function saveJob(event) {
 }
 window.saveJob = saveJob;
 
-// 🌟 دالة الحذف المباشرة من Supabase
 async function deleteJob(jobNo) {
     if (!confirm('Are you sure you want to delete this dispatch record from cloud?')) return;
 
@@ -557,29 +524,24 @@ async function deleteJob(jobNo) {
         console.error('Error deleting from Supabase:', error);
         alert('Failed to delete record from cloud database.');
     } else {
-        // إعادة جلب البيانات وتحديث الجدول بعد الحذف
         initMasterJobsData();
     }
 }
 window.deleteJob = deleteJob;
 
-
 // ==========================================
-// 7. DASHBOARD ANALYTICS & CHARTS
+// 7. DASHBOARD ANALYTICS & CHARTS (مصحح لتجميع مبالغ الدفع بدقة)
 // ==========================================
 function updateDashboardAnalytics() {
     try {
-        if (!window.masterJobs || window.masterJobs.length === 0) {
-            if (typeof initMasterJobsData === 'function') initMasterJobsData();
-        }
         if (!window.masterJobs || window.masterJobs.length === 0) return;
 
         let totalRev = 0;
         let totalDieselCost = 0;
-        let validJobsCount = 0;  
+        let validJobsCount = 0; 
         const routeRevenueMap = {};
         
-        // 🌟 تهيئة كائن طرق الدفع لتجميع المبالغ المالية بدقة
+        // تجميع المبالغ المالية لكل طريقة دفع وليس العدّ
         const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 };
         const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -588,64 +550,45 @@ function updateDashboardAnalytics() {
                 return; 
             }
 
-            validJobsCount++;  
+            validJobsCount++; 
             totalDieselCost += parseAndSumDiesel(job.diesel);
 
-            // استخراج المبلغ الإجمالي للرحلة بدقة
             let amt = 0;
             if (job.total) {
                 amt = parseFloat(String(job.total).replace(/[^0-9.]/g, '')) || 0;
             }
             totalRev += amt;
 
-            // استخراج الشهر بدقة
-            let monthIdx = parseInt(job.month) - 1;
-            if ((isNaN(monthIdx) || monthIdx < 0 || monthIdx > 11) && job.date) {
-                const dateParts = job.date.split('/');
-                if (dateParts.length === 3) {
-                    monthIdx = parseInt(dateParts[0]) - 1;
-                }
+            if (job.month && job.month >= 1 && job.month <= 12) {
+                monthlyRev[job.month - 1] += amt;
             }
-            if (!isNaN(monthIdx) && monthIdx >= 0 && monthIdx <= 11) {
-                monthlyRev[monthIdx] += amt;
+            
+            if (job.route) {
+                routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
             }
 
-            // تجميع مسارات الإيرادات
-            let routeKey = job.route;
-            if (!routeKey && job.route_from && job.route_to) {
-                routeKey = `${job.route_from} → ${job.route_to}`;
-            }
-            if (routeKey && routeKey.trim() !== '') {
-                routeRevenueMap[routeKey] = (routeRevenueMap[routeKey] || 0) + amt;
-            }
-
-            // 🌟 معالجة الأطراف بدقة (استخراج المبالغ المستقلة لـ PU و Dest)
+            // استخراج المبالغ وطرق الدفع من حقول PU و Dest بدقة
             let puStr = String(job.pu || '').trim();
             let destStr = String(job.dest || '').trim();
 
             let hasPu = puStr !== '' && puStr !== '-' && puStr !== '---';
             let hasDest = destStr !== '' && destStr !== '-' && destStr !== '---';
 
-            // إذا وجد طرف واحد فقط وآخر فارغ، يُعزى المبلغ بالكامل لهذا الطرف
             if (hasPu && !hasDest) {
-                assignPaymentMethod(puStr, amt, paymentMethodMap);
+                assignPaymentMethodRevenue(puStr, amt, paymentMethodMap);
             } else if (!hasPu && hasDest) {
-                assignPaymentMethod(destStr, amt, paymentMethodMap);
+                assignPaymentMethodRevenue(destStr, amt, paymentMethodMap);
             } else if (hasPu && hasDest) {
-                // إذا وجد الطرفان معاً، نوزع المبلغ بالتساوي أو نقسمه إن لم توجد مبالغ مفصلة
-                assignPaymentMethod(puStr, amt / 2, paymentMethodMap);
-                assignPaymentMethod(destStr, amt / 2, paymentMethodMap);
+                assignPaymentMethodRevenue(puStr, amt / 2, paymentMethodMap);
+                assignPaymentMethodRevenue(destStr, amt / 2, paymentMethodMap);
             } else {
                 paymentMethodMap.Unspecified += amt;
             }
         });
 
-        // حفظ خريطة طرق الدفع في النافذة العامة
         window.currentPaymentMethodMap = paymentMethodMap;
-
         const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
-        
-        // تحديث البطاقات العلوية
+
         const revEl = document.getElementById('dashTotalRevenue');
         if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
@@ -658,142 +601,87 @@ function updateDashboardAnalytics() {
         const dieselEl = document.getElementById('dashTotalDiesel');
         if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
 
-        // تحديث قسم مسارات الإيرادات الأعلى (Top Revenue Corridors)
         const topCorridorsContainer = document.getElementById('topCorridorsContainer');
         if (topCorridorsContainer) {
             const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
-            if (sortedRoutes.length > 0) {
-                topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border mb-2">
-                        <div class="flex items-center space-x-2">
-                            <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
-                            <span class="font-bold text-emerald-800">${route}</span>
-                        </div>
-                        <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
+            topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
+                        <span class="font-bold text-emerald-800">${route}</span>
                     </div>
-                `).join('');
-            } else {
-                topCorridorsContainer.innerHTML = `<p class="text-xs text-slate-400 text-center p-6">No corridor data available</p>`;
-            }
+                    <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
+                </div>
+            `).join('');
         }
 
-        // 🌟 استدعاء دالة رسم المخططات البيانية في النهاية
         renderDashboardCharts(monthlyRev, paymentMethodMap);
-
     } catch (e) {
         console.error("Error updating dashboard analytics:", e);
     }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
 
-// 🌟 دالة مساعدة لتصنيف وتوزيع المبالغ المالية على طرق الدفع
-function assignPaymentMethod(methodStr, amount, map) {
+function assignPaymentMethodRevenue(methodStr, amount, map) {
     const upperPay = String(methodStr).toUpperCase();
     let matched = false;
 
-    if (upperPay.includes('CASH')) { 
-        map.Cash += amount; 
-        matched = true; 
-    } else if (upperPay.includes('ZELLE')) { 
-        map.Zelle += amount; 
-        matched = true; 
-    } else if (upperPay.includes('CHEQUE') || upperPay.includes('CK') || upperPay.includes('CHECK')) { 
-        map.Cheque += amount; 
-        matched = true; 
-    } else if (upperPay.includes('PMO')) { 
-        map.PMO += amount; 
-        matched = true; 
-    } else if (upperPay.includes('BC')) { 
-        map.BC += amount; 
-        matched = true; 
-    } else if (upperPay.includes('PC')) { 
-        map.PC += amount; 
-        matched = true; 
-    } else if (upperPay.includes('CC')) { 
-        map.CC += amount; 
-        matched = true; 
-    } else if (upperPay.includes('WT')) { 
-        map.WT += amount; 
-        matched = true; 
-    } else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) {
-        map.Others += amount;
-        matched = true;
-    }
+    if (upperPay.includes('CASH')) { map.Cash += amount; matched = true; }
+    else if (upperPay.includes('ZELLE')) { map.Zelle += amount; matched = true; }
+    else if (upperPay.includes('CHEQUE') || upperPay.includes('CK') || upperPay.includes('CHECK')) { map.Cheque += amount; matched = true; }
+    else if (upperPay.includes('PMO')) { map.PMO += amount; matched = true; }
+    else if (upperPay.includes('BC')) { map.BC += amount; matched = true; }
+    else if (upperPay.includes('PC')) { map.PC += amount; matched = true; }
+    else if (upperPay.includes('CC')) { map.CC += amount; matched = true; }
+    else if (upperPay.includes('WT')) { map.WT += amount; matched = true; }
+    else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { map.Others += amount; matched = true; }
 
     if (!matched) {
         map.Others += amount;
     }
 }
-function renderDashboardCharts(monthlyRev, paymentMethodMap) {
-    try {
-        // 1. رسم مخطط الإيرادات الشهرية (Monthly Revenue Bar/Line Chart)
-        const revenueCanvas = document.getElementById('monthlyRevenueChart');
-        if (revenueCanvas) {
-            // تدمير الرسم القديم إن وجد لتجنب التداخل
-            if (window.myRevenueChart instanceof Chart) {
-                window.myRevenueChart.destroy();
-            }
 
-            const ctxRev = revenueCanvas.getContext('2d');
-            window.myRevenueChart = new Chart(ctxRev, {
+function renderDashboardCharts(monthlyData, paymentData) {
+    try {
+        const ctxRevenue = document.getElementById('revenueChart');
+        if (ctxRevenue && typeof Chart !== 'undefined') {
+            if (window.revenueChartInstance) window.revenueChartInstance.destroy();
+            window.revenueChartInstance = new Chart(ctxRevenue, {
                 type: 'bar',
                 data: {
-                    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                     datasets: [{
                         label: 'Monthly Revenue ($)',
-                        data: monthlyRev,
-                        backgroundColor: '#10b981', // لون أخضر متناسق مع التصميم
+                        data: monthlyData,
+                        backgroundColor: 'rgba(5, 150, 105, 0.85)',
                         borderRadius: 8,
-                        borderSkipped: false,
+                        hoverBackgroundColor: '#047857'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: '#f1f5f9' },
-                            ticks: { font: { size: 10 } }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { font: { size: 10 } }
-                        }
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
                     }
                 }
             });
         }
 
-        // 2. رسم مخطط طرق الدفع الدائري (Payment Methods Pie/Doughnut Chart)
-        const paymentCanvas = document.getElementById('paymentMethodChart');
-        if (paymentCanvas) {
-            if (window.myPaymentChart instanceof Chart) {
-                window.myPaymentChart.destroy();
-            }
+        const ctxPayment = document.getElementById('paymentMixChart');
+        if (ctxPayment && typeof Chart !== 'undefined') {
+            if (window.paymentMixChartInstance) window.paymentMixChartInstance.destroy();
+            const paymentColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b', '#cbd5e1'];
 
-            const ctxPay = paymentCanvas.getContext('2d');
-            window.myPaymentChart = new Chart(ctxPay, {
+            window.paymentMixChartInstance = new Chart(ctxPayment, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(paymentMethodMap),
+                    labels: Object.keys(paymentData),
                     datasets: [{
-                        data: Object.values(paymentMethodMap),
-                        backgroundColor: [
-                            '#10b981', // Cash - Emerald
-                            '#3b82f6', // Zelle - Blue
-                            '#6366f1', // Cheque - Indigo
-                            '#f59e0b', // PMO - Amber
-                            '#8b5cf6', // BC - Purple
-                            '#ec4899', // PC - Pink
-                            '#14b8a6', // CC - Teal
-                            '#64748b', // WT - Slate
-                            '#f97316', // Others - Orange
-                            '#94a3b8'  // Unspecified - Gray
-                        ],
+                        data: Object.values(paymentData),
+                        backgroundColor: paymentColors,
                         borderWidth: 2,
                         borderColor: '#ffffff'
                     }]
@@ -801,20 +689,13 @@ function renderDashboardCharts(monthlyRev, paymentMethodMap) {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                font: { size: 10 },
-                                boxWidth: 12
-                            }
-                        }
-                    }
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+                    cutout: '65%'
                 }
             });
         }
-    } catch (err) {
-        console.error("Error rendering dashboard charts:", err);
+    } catch (e) {
+        console.error("Error rendering charts:", e);
     }
 }
 window.renderDashboardCharts = renderDashboardCharts;
@@ -826,7 +707,6 @@ function switchTab(tabName) {
     try {
         const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
         
-        // إخفاء جميع التبويبات وإعادة تعيين الأزرار الجانبية
         tabs.forEach(t => {
             const tabEl = document.getElementById(`tab-${t}`) || document.getElementById(`${t}-view`);
             const navEl = document.getElementById(`nav-${t}`) || document.getElementById(`nav-${t}-btn`);
@@ -841,7 +721,6 @@ function switchTab(tabName) {
             }
         });
 
-        // إظهار التبويب المطلوب وتنشيط الزر الخاص به
         const activeTab = document.getElementById(`tab-${tabName}`) || document.getElementById(`${tabName}-view`);
         const activeNav = document.getElementById(`nav-${tabName}`) || document.getElementById(`nav-${tabName}-btn`);
         
@@ -854,7 +733,6 @@ function switchTab(tabName) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
-       // تنفيذ دوال التحديث التلقائي حسب التبويب النشط
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
@@ -862,7 +740,6 @@ function switchTab(tabName) {
         } else if (tabName === 'reports' && typeof renderReportsTab === 'function') {
             renderReportsTab();
         } else if (tabName === 'summaryReport' || tabName === 'summary') {
-            // 🌟 تحديث مؤشرات وتقارير الملخص المالي فوراً عند النقر على تبويب التقارير
             if (typeof updateSummaryReportView === 'function') {
                 updateSummaryReportView();
             }
@@ -871,9 +748,8 @@ function switchTab(tabName) {
         } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
             renderPrivateTruckRentalTab();
         } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
-            renderWarehouseTab(); // 🌟 تحميل وعرض بيانات المستودع فوراً عند النقر
+            renderWarehouseTab();
         } else if (tabName === 'pdf-report') {
-            // 🌟 إدراج جدول وإجمالي المستودع تلقائياً في صفحة تقارير الـ PDF دون تكرار
             const pdfContainer = document.getElementById('pdfReportContent') || document.getElementById('tab-pdf-report');
             if (pdfContainer && typeof generateWarehousePDFSummaryHTML === 'function') {
                 if (!document.getElementById('warehousePDFSummarySection')) {
@@ -892,28 +768,23 @@ function switchTab(tabName) {
 }
 window.switchTab = switchTab;
 
-
 // ==========================================
 // 9. INITIALIZATION
 // ==========================================
 window.addEventListener('DOMContentLoaded', () => {
     try {
-        initMasterJobsData();
         window.currentUserRole = 'Admin';
-        
         checkPermissions();
         renderUsers();
-        populateYearFilter();
         
-        updateDashboardAnalytics();
-        filterJobsTable();
+        // جلب البيانات مرة واحدة فقط عند بدء التشغيل
+        initMasterJobsData().then(() => {
+            switchTab('dashboard');
+        });
 
-        // 🌟 تحديث وحساب ملخص التقارير المالي فور تحميل الصفحة
         if (typeof updateSummaryReportView === 'function') {
             updateSummaryReportView();
         }
-
-        switchTab('dashboard');
     } catch (error) {
         console.error("Initialization error on DOMContentLoaded:", error);
     }
