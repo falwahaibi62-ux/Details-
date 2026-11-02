@@ -43,11 +43,11 @@ async function initMasterJobsData() {
             return;
         }
 
-        // 🌟 جلب السجلات النشطة فقط (غير المحذوفة) مع الترتيب
+        // 🌟 جلب السجلات النشطة (غير المحذوفة وتضم السجلات القديمة التي لم يُحدد لها قيمة بعد)
         const { data: jobsData, error } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
-            .eq('is_deleted', false)
+            .not('is_deleted', 'eq', true) // تجلب false و null وتستبعد المحذوفة true فقط
             .order('id', { ascending: false });
 
         if (error) {
