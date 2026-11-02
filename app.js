@@ -579,7 +579,7 @@ function updateDashboardAnalytics() {
         let validJobsCount = 0; 
         const routeRevenueMap = {};
         
-        // 🌟 تهيئة كائن طرق الدفع ليشمل كافة الخيارات بما فيها Unspecified
+        // 🌟 تهيئة كائن طرق الدفع لتجميع المبالغ المالية بدقة
         const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 };
         const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -619,55 +619,95 @@ function updateDashboardAnalytics() {
                 routeRevenueMap[routeKey] = (routeRevenueMap[routeKey] || 0) + amt;
             }
 
-            // 🌟 تجميع طرق الدفع حصرياً من عمودي pu و dest (dest balance)
+            // 🌟 توزيع المبالغ المالية حصرياً على طرق الدفع بناءً على pu و dest (مع قسمة المبلغ على عمودين لتجنب التكرار المزدوج)
             [job.pu, job.dest].forEach(payStr => {
                 if (!payStr || payStr === '-' || payStr === '---' || String(payStr).trim() === '') {
-                    paymentMethodMap.Unspecified += 1;
+                    paymentMethodMap.Unspecified += (amt / 2);
                 } else {
                     const upperPay = String(payStr).toUpperCase();
                     let matched = false;
 
                     if (upperPay.includes('CASH')) { 
-                        paymentMethodMap.Cash += 1; 
+                        paymentMethodMap.Cash += (amt / 2); 
                         matched = true; 
                     } else if (upperPay.includes('ZELLE')) { 
-                        paymentMethodMap.Zelle += 1; 
+                        paymentMethodMap.Zelle += (amt / 2); 
                         matched = true; 
                     } else if (upperPay.includes('CHEQUE') || upperPay.includes('CK') || upperPay.includes('CHECK')) { 
-                        paymentMethodMap.Cheque += 1; 
+                        paymentMethodMap.Cheque += (amt / 2); 
                         matched = true; 
                     } else if (upperPay.includes('PMO')) { 
-                        paymentMethodMap.PMO += 1; 
+                        paymentMethodMap.PMO += (amt / 2); 
                         matched = true; 
                     } else if (upperPay.includes('BC')) { 
-                        paymentMethodMap.BC += 1; 
+                        paymentMethodMap.BC += (amt / 2); 
                         matched = true; 
                     } else if (upperPay.includes('PC')) { 
-                        paymentMethodMap.PC += 1; 
+                        paymentMethodMap.PC += (amt / 2); 
                         matched = true; 
                     } else if (upperPay.includes('CC')) { 
-                        paymentMethodMap.CC += 1; 
+                        paymentMethodMap.CC += (amt / 2); 
                         matched = true; 
                     } else if (upperPay.includes('WT')) { 
-                        paymentMethodMap.WT += 1; 
+                        paymentMethodMap.WT += (amt / 2); 
                         matched = true; 
                     } else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) {
-                        paymentMethodMap.Others += 1;
+                        paymentMethodMap.Others += (amt / 2);
                         matched = true;
                     }
 
                     if (!matched) {
-                        paymentMethodMap.Others += 1;
+                        paymentMethodMap.Others += (amt / 2);
                     }
                 }
             });
         });
 
-        // حفظ خريطة طرق الدفع في النافذة العامة لكي تستخدمها الرسوم البيانية أو التقارير الأخرى
+        // حفظ خريطة طرق الدفع في النافذة العامة لاستخدامها في الرسوم والتقارير
         window.currentPaymentMethodMap = paymentMethodMap;
 
         const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
         
+        // تحديث البطاقات العلوية
+        const revEl = document.getElementById('dashTotalRevenue');
+        if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
+
+        const jobsTextEl = document.getElementById('dashCompletedJobsText');
+        if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${validJobsCount} Active Dispatches`;
+
+        const avgEl = document.getElementById('dashAvgJobValue');
+        if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
+
+        const dieselEl = document.getElementById('dashTotalDiesel');
+        if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
+
+        // تحديث مسارات الإيرادات الأعلى
+        const topCorridorsContainer = document.getElementById('topCorridorsContainer');
+        if (topCorridorsContainer) {
+            const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
+            if (sortedRoutes.length > 0) {
+                topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border mb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
+                            <span class="font-bold text-emerald-800">${route}</span>
+                        </div>
+                        <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
+                    </div>
+                `).join('');
+            } else {
+                topCorridorsContainer.innerHTML = `<p class="text-xs text-slate-400 text-center p-6">No corridor data available</p>`;
+            }
+        }
+
+        // 🌟 استدعاء دالة رسم المخططات البيانية في النهاية
+        renderDashboardCharts(monthlyRev, paymentMethodMap);
+
+    } catch (e) {
+        console.error("Error updating dashboard analytics:", e);
+    }
+}
+window.updateDashboardAnalytics = updateDashboardAnalytics;
         // تحديث البطاقات العلوية
         const revEl = document.getElementById('dashTotalRevenue');
         if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
