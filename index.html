@@ -179,36 +179,22 @@
             </div>
         </div>
 
-       <!-- 1. صندوق مخطط الإيرادات الشهرية -->
-<div class="glass-panel p-6 rounded-2xl col-span-12 lg:col-span-8">
-    <div class="flex items-center justify-between mb-4">
+      <!-- صندوق مخطط الإيرادات الشهرية -->
+<div class="glass-panel p-6 rounded-2xl col-span-12 lg:col-span-8 w-full">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 class="font-bold text-slate-800 text-sm flex items-center">
             <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
             Monthly Revenue & Volume Trend
         </h3>
         <span class="text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full font-medium">Live Telemetry</span>
     </div>
-    <!-- الـ Container الثابت وعنصر الـ Canvas -->
-    <div class="chart-container">
+    <p class="text-[11px] text-slate-400 mb-4">Real-time performance distribution derived from active ledger</p>
+    
+    <!-- الـ Container الثابت للرسم البياني -->
+    <div class="chart-container" style="height: 240px; position: relative; width: 100%;">
         <canvas id="revenueChart"></canvas>
     </div>
 </div>
-
-<!-- 2. صندوق مخطط توزيع طرق الدفع -->
-<div class="glass-panel p-6 rounded-2xl col-span-12 lg:col-span-4">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="font-bold text-slate-800 text-sm flex items-center">
-            <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-            Payment Channels Mix
-        </h3>
-        <span class="text-xs text-slate-400">Distribution</span>
-    </div>
-    <!-- الـ Container الثابت وعنصر الـ Canvas -->
-    <div class="chart-container">
-        <canvas id="paymentMixChart"></canvas>
-    </div>
-</div>
-
             <!-- Business Intelligence & Strategic Recommendations -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Top Corridors -->
