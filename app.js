@@ -415,8 +415,12 @@ function openEditJobModal(jobIdOrNo) {
 
     if (!job) {
         alert("Job record not found!");
+        console.warn("Target ID requested:", targetId, "Available jobs:", jobs);
         return;
     }
+
+    // طباعة بيانات الوظيفة المطلوبة داخل الكونسول بطريقة آمنة
+    console.log("Successfully Loaded Job Data for Edit:", job);
 
     // 1. فتح النافذة المنبثقة في وضع التعديل
     openAddModal(true);
@@ -427,11 +431,11 @@ function openEditJobModal(jobIdOrNo) {
         jobForm.setAttribute('data-edit-id', job.id || '');
     }
 
-    // --- دالة مساعدة لتنسيق التاريخ إلى yyyy-MM-dd إذا لزم الأمر ---
+    // --- دالة تنسيق التاريخ ---
     function formatDateForInput(dateStr) {
         if (!dateStr) return '';
         try {
-            const cleanDate = dateStr.split(' ')[0]; // إزالة الوقت إن وجد مثل "0:00"
+            const cleanDate = dateStr.split(' ')[0];
             const parts = cleanDate.split('/');
             if (parts.length === 3) {
                 return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
@@ -447,39 +451,38 @@ function openEditJobModal(jobIdOrNo) {
         if (el) el.value = val !== undefined && val !== null ? val : '';
     };
 
-    // تعبئة التاريخ بالتنسيق المقبول للـ input type="date"
-    const formattedDate = formatDateForInput(job.date || '');
-    setVal('jobDate', formattedDate);
+    // تعبئة التاريخ
+    setVal('jobDate', formatDateForInput(job.date || job.job_date || ''));
 
-    setVal('jobNo', job.jobNo || job.job_no || '');
+    // تعبئة رقم الوظيفة
+    setVal('jobNo', job.jobNo || job.job_no || job.job_number || '');
 
-    // --- [تم التعديل] تعبئة حقول المسار ببحث مرن ومباشر ---
-    let fromVal = job.route_from || '';
-    let toVal = job.route_to || '';
+    // تعبئة المسار (From & To) مع فحص شامل لكل الاحتمالات
+    let fromVal = job.route_from || job.from || '';
+    let toVal = job.route_to || job.to || '';
     
-    if ((!fromVal || !toVal) && job.route) {
-        const parts = job.route.split(/→|->/);
+    if ((!fromVal || !toVal) && (job.route || job.route_str)) {
+        const routeStr = job.route || job.route_str;
+        const parts = routeStr.split(/→|->/);
         if (parts.length >= 2) {
             fromVal = parts[0].trim();
             toVal = parts[1].trim();
         } else {
-            fromVal = job.route;
+            fromVal = routeStr;
         }
     }
 
-    // البحث المباشر عن حقل From بالـ ID أو الـ Name
     const fromEl = document.getElementById('routeFrom') || document.querySelector('[name="routeFrom"]') || document.querySelector('[name="route_from"]');
     if (fromEl) fromEl.value = fromVal;
 
-    // البحث المباشر عن حقل To بالـ ID أو الـ Name
     const toEl = document.getElementById('routeTo') || document.querySelector('[name="routeTo"]') || document.querySelector('[name="route_to"]');
     if (toEl) toEl.value = toVal;
-    // ----------------------------------------------------
 
-    setVal('jobForeman', job.foreman || job.foreman_name || '');
-    setVal('jobTotal', job.total || job.total_amount || '');
+    // تعبئة الفورمان والإجمالي
+    setVal('jobForeman', job.foreman || job.foreman_name || job.foremanName || '');
+    setVal('jobTotal', job.total || job.total_amount || job.totalAmount || '');
 
-    // --- تعبئة قوائم العمال والسائقين (Helpers & Drivers Selects) ---
+    // تعبئة العمال والسائقين
     const setSelectVal = (selectId, val) => {
         const select = document.getElementById(selectId);
         if (select && val) {
@@ -495,8 +498,8 @@ function openEditJobModal(jobIdOrNo) {
     setSelectVal('helpersCost', job.helpers || job.helpers_cost);
     setSelectVal('driversCost', job.drivers || job.drivers_cost);
 
-    // --- تعبئة مصاريف الديزل (Amount + Method) ---
-    const dieselValStr = String(job.diesel || job.diesel_expense || '');
+    // تعبئة الديزل
+    const dieselValStr = String(job.diesel || job.diesel_expense || job.dieselExpense || '');
     const dieselParts = dieselValStr.split(' ');
     setVal('dieselAmount', dieselParts[0] !== '-' ? dieselParts[0] : '');
     if (dieselParts.length > 1) {
@@ -504,8 +507,8 @@ function openEditJobModal(jobIdOrNo) {
         if (dieselMethod) dieselMethod.value = dieselParts[1];
     }
 
-    // --- تعبئة مصاريف الفندق (Amount + Method) ---
-    const hotelValStr = String(job.hotel || job.hotel_expense || '');
+    // تعبئة الفندق
+    const hotelValStr = String(job.hotel || job.hotel_expense || job.hotelExpense || '');
     const hotelParts = hotelValStr.split(' ');
     setVal('hotelAmount', hotelParts[0] !== '-' ? hotelParts[0] : '');
     if (hotelParts.length > 1) {
@@ -513,7 +516,7 @@ function openEditJobModal(jobIdOrNo) {
         if (hotelMethod) hotelMethod.value = hotelParts[1];
     }
 
-    // --- تعبئة الدفعات المركبة (PU & Destination Payments) إن توفرت دالة مخصصة ---
+    // الدفعات المركبة
     if (typeof populatePaymentContainer === 'function') {
         if (job.pu || job.pu_payments) populatePaymentContainer('puContainer', job.pu || job.pu_payments);
         if (job.destination || job.dest || job.destination_payments) populatePaymentContainer('destContainer', job.destination || job.dest || job.destination_payments);
