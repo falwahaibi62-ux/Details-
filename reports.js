@@ -119,86 +119,60 @@ function getFilteredJobsData() {
 }
 window.getFilteredJobsData = getFilteredJobsData;
 
+// دالة تحليل وتحلّي المدفوعات (متوافقة 100% مع صيغ Supabase المعقدة والشرائط المائلة وفصل الأرقام الصرفة)
+function processPaymentString(str, map) {
+    if (!str) return;
+    const raw = String(str).trim();
+    if (!raw || raw === '-' || raw === '---' || raw.toUpperCase() === 'NULL') return;
 
+    // تفكيك النص بناءً على الفواصل (,) والشرائط المائلة (/) معاً
+    const parts = raw.split(/[,/]+/);
 
+    parts.forEach(part => {
+        const sub = part.trim();
+        if (!sub) return;
 
-// دالة تحليل وتصنيف المبالغ (نسخة ذكية تتعامل مع النصوص المركبة، الفواصل، والشرائط المائلة)
-function assignPaymentMethodRevenue(methodStr, amount, map) {
-    if (!methodStr) return;
+        // استخراج الرقم المالي من هذا الجزء الفرعي
+        const numMatch = sub.match(/([0-9,.]+)/);
+        if (!numMatch) return;
 
-    const rawStr = String(methodStr).trim();
-    if (rawStr === '-' || rawStr === '---') return;
+        const amount = parseCurrency(numMatch[1]);
+        if (amount <= 0 || amount >= 50000) return;
 
-    // إذا كانت الخانة تحتوي على فواصل أو شرائط مائلة (مثل "400 Cash / 466" أو "1750 Zelle, 500 Cash")
-    // نقوم بتفكيكها إلى أجزاء لمعالجة كل جزء على حدة بدقة متناهية
-    if (rawStr.includes(',') || rawStr.includes('/')) {
-        // استبدال الشرائط المائلة بفواصل لتوحيد عملية التقسيم
-        const normalizedStr = rawStr.replace(/\//g, ',');
-        const parts = normalizedStr.split(',');
-        
-        parts.forEach(part => {
-            const subPart = part.trim();
-            if (!subPart) return;
+        // استخراج النص المتبقي لمعرفة طريقة الدفع
+        const textWithoutNum = sub.replace(numMatch[1], '').trim().toUpperCase();
 
-            // استخراج الرقم المالي من هذا الجزء الفرعي
-            const numMatch = subPart.match(/([0-9,.]+)/);
-            const subAmount = numMatch ? parseCurrency(numMatch[1]) : 0;
-
-            if (subAmount > 0) {
-                // استدعاء نفس الدالة recursively لكل جزء فرعي
-                assignPaymentMethodRevenue(subPart.replace(/([0-9,.]+)/, '').trim(), subAmount, map);
-            }
-        });
-        return;
-    }
-
-    // تنظيف النص لفحص ما إذا كان المدخل رقماً بحتاً فقط (بدون أي حروف أو كلمات)
-    const upperPay = rawStr.toUpperCase();
-    const isPureNumber = /^[0-9,.\s$]+$/.test(rawStr) && !/[A-Z]/.test(upperPay);
-
-    // إذا كان رقماً بحتاً (مثل 1960 أو 466) -> يذهب حصرياً إلى Unspecified
-    if (isPureNumber) {
-        map.Unspecified += amount;
-        return;
-    }
-
-    // المطابقة الدقيقة لطرق الدفع المعروفة
-    if (upperPay.includes('CASH')) { 
-        map.Cash += amount; 
-    }
-    else if (upperPay.includes('ZELLE')) { 
-        map.Zelle += amount; 
-    }
-    else if (upperPay.includes('CHEQUE') || upperPay.includes('CHECK') || upperPay.includes('CK') || upperPay.includes('CHQ') || upperPay.includes('CHEQ')) { 
-        map.Cheque += amount; 
-    }
-    else if (upperPay.includes('PMO')) { 
-        map.PMO += amount; 
-    }
-    else if (upperPay.includes('BC')) { 
-        map.BC += amount; 
-    }
-    else if (upperPay.includes('PC')) { 
-        map.PC += amount; 
-    }
-    else if (upperPay.includes('CC')) { 
-        map.CC += amount; 
-    }
-    else if (upperPay.includes('WT')) { 
-        map.WT += amount; 
-    }
-    // خانة Others مخصصة حصرياً لمن كتب كلمة OTHER أو OTHERS صراحة
-    else if (upperPay === 'OTHER' || upperPay === 'OTHERS' || upperPay.startsWith('OTHER') || upperPay.startsWith('OTHERS')) { 
-        map.Others += amount; 
-    }
-    // أي نصوص مبهمة أخرى لا تحتوي على طريقة دفع معروفة تذهب إلى Unspecified
-    else {
-        map.Unspecified += amount;
-    }
+        if (!textWithoutNum) {
+            // إذا كان رقماً بحتاً بدون طريقة دفع (مثل 466 أو 2746) -> يذهب حصرياً إلى Unspecified
+            map.Unspecified += amount;
+        } else if (textWithoutNum.includes('CASH')) {
+            map.Cash += amount;
+        } else if (textWithoutNum.includes('ZELLE')) {
+            map.Zelle += amount;
+        } else if (textWithoutNum.includes('CHEQUE') || textWithoutNum.includes('CHECK') || textWithoutNum.includes('CK') || textWithoutNum.includes('CHQ') || textWithoutNum.includes('CHEQ')) {
+            map.Cheque += amount;
+        } else if (textWithoutNum.includes('PMO')) {
+            map.PMO += amount;
+        } else if (textWithoutNum.includes('BC')) {
+            map.BC += amount;
+        } else if (textWithoutNum.includes('PC')) {
+            map.PC += amount;
+        } else if (textWithoutNum.includes('CC')) {
+            map.CC += amount;
+        } else if (textWithoutNum.includes('WT')) {
+            map.WT += amount;
+        } else if (textWithoutNum.includes('OTHER') || textWithoutNum.includes('OTHERS')) {
+            map.Others += amount;
+        } else {
+            // أي نص آخر غير معروف مع رقم -> Unspecified
+            map.Unspecified += amount;
+        }
+    });
 }
 
-
-
+function assignPaymentMethodRevenue(methodStr, amount, map) {
+    processPaymentString(methodStr, map);
+}
 
 // جدول ملخص إيجارات الشاحنات
 function generateTruckRentalSummaryTableHTML() {
@@ -402,15 +376,15 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
 
-        // 1. معالجة PU Payments
+        // 1. معالجة PU Payments باستخدام المحلل الجديد
         const puRawStr = String(item.pu || item.pu_payments || '').trim();
         if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
+            processPaymentString(puRawStr, payMap);
+
             const puParts = puRawStr.split(',');
             puParts.forEach(part => {
                 const partVal = parseCurrency(part);
                 if (partVal > 0 && partVal < 50000) {
-                    assignPaymentMethodRevenue(part, partVal, payMap);
-
                     const pLower = part.toLowerCase();
                     if (pLower.includes('cash')) {
                         sumCashPu += partVal;
@@ -431,15 +405,15 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
         
-        // 2. معالجة Destination / Dest Balance
+        // 2. معالجة Destination / Dest Balance باستخدام المحلل الجديد
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
+            processPaymentString(destRawStr, payMap);
+
             const destParts = destRawStr.split(',');
             destParts.forEach(part => {
                 const partVal = parseCurrency(part);
                 if (partVal > 0 && partVal < 50000) {
-                    assignPaymentMethodRevenue(part, partVal, payMap);
-
                     const dLower = part.toLowerCase();
                     if (dLower.includes('cash')) {
                         sumCashDest += partVal;
