@@ -427,13 +427,32 @@ function openEditJobModal(jobIdOrNo) {
         jobForm.setAttribute('data-edit-id', job.id || '');
     }
 
-    // --- تعبئة الحقول النصية البسيطة ---
+    // --- دالة مساعدة لتنسيق التاريخ إلى yyyy-MM-dd إذا لزم الأمر ---
+    function formatDateForInput(dateStr) {
+        if (!dateStr) return '';
+        // إذا كان التاريخ مخزناً كـ MM/dd/yyyy أو يحتوي على وقت
+        try {
+            const cleanDate = dateStr.split(' ')[0]; // إزالة الوقت إن وجد مثل "0:00"
+            const parts = cleanDate.split('/');
+            if (parts.length === 3) {
+                // تحويل من mm/dd/yyyy إلى yyyy-mm-dd
+                return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+            }
+            return cleanDate;
+        } catch (e) {
+            return dateStr;
+        }
+    }
+
     const setVal = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.value = val !== undefined && val !== null ? val : '';
     };
 
-    setVal('jobDate', job.date || '');
+    // تعبئة التاريخ بالتنسيق المقبول للـ input type="date"
+    const formattedDate = formatDateForInput(job.date || '');
+    setVal('jobDate', formattedDate);
+
     setVal('jobNo', job.jobNo || job.job_no || '');
     setVal('routeFrom', job.route_from || '');
     setVal('routeTo', job.route_to || '');
@@ -474,7 +493,7 @@ function openEditJobModal(jobIdOrNo) {
         if (hotelMethod) hotelMethod.value = hotelParts[1];
     }
 
-    // --- إعادة تعبئة الحاويات المركبة للدفعات (PU & Destination Payments) إن توفرت دالة مخصصة ---
+    // --- تعبئة الدفعات المركبة (PU & Destination Payments) إن توفرت دالة مخصصة ---
     if (typeof populatePaymentContainer === 'function') {
         if (job.pu || job.pu_payments) populatePaymentContainer('puContainer', job.pu || job.pu_payments);
         if (job.destination || job.dest || job.destination_payments) populatePaymentContainer('destContainer', job.destination || job.dest || job.destination_payments);
