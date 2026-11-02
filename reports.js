@@ -1,5 +1,5 @@
 /**
- * MovePro - Financial & Operations Reports Module (Production Ready & Syntax Fixed)
+ * MovePro - Financial & Operations Reports Module (Production Ready & Strict Classification)
  */
 
 function switchReportMode(mode) {
@@ -119,14 +119,13 @@ function getFilteredJobsData() {
 }
 window.getFilteredJobsData = getFilteredJobsData;
 
-// دالة تصنيف وتحليل المبالغ بطريقة دقيقة جداً:
-// دالة تصنيف وتحليل المبالغ بطريقة دقيقة ومحسنة 100%
+// دالة التصنيف الدقيقة: حصر Others للكلمات الصريحة فقط، وتوجيه الباقي لـ Unspecified
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     if (amount <= 0) return;
 
     const rawStr = String(methodStr || '').trim();
 
-    // 1. إذا كان الحقل فارغاً، شرطة، أو رقماً بحتاً (سواء بوجود فواصل مثل 1,500 أو بدونها) -> يذهب مباشرة إلى UNSPECIFIED
+    // إذا كان الحقل فارغاً، شرطة، أو رقماً بحتاً -> Unspecified
     if (!rawStr || rawStr === '-' || rawStr === '---' || /^[\d,]+(\.\d+)?$/.test(rawStr)) {
         map.Unspecified += amount;
         return;
@@ -134,7 +133,6 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
 
     const upperPay = rawStr.toUpperCase();
 
-    // 2. الفحص والمطابقة الدقيقة مع طرق الدفع المعتمدة
     if (upperPay.includes('CASH')) { 
         map.Cash += amount; 
     }
@@ -159,11 +157,11 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
     else if (upperPay.includes('WT')) { 
         map.WT += amount; 
     }
-    // 3. احتساب Others فقط إذا تم كتابة الكلمة صراحة بشكل دقيق
+    // Others تُحتسب فقط إذا كتبت الكلمة صراحة
     else if (upperPay === 'OTHER' || upperPay === 'OTHERS' || upperPay.startsWith('OTHER') || upperPay.startsWith('OTHERS')) { 
         map.Others += amount; 
     }
-    // 4. أي نص أو وصف آخر غير معروف يتم توجيهه حصرياً إلى Unspecified لضمان نظافة تقرير Others
+    // أي نص آخر غير معروف يذهب إلى Unspecified بدلاً من تضخيم Others
     else {
         map.Unspecified += amount;
     }
@@ -400,7 +398,7 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
         
-        // 2. معالجة Destination / Dest Balance والتأكد من تحويل المبالغ الصرفة إلى Unspecified
+        // 2. معالجة Destination / Dest Balance
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             const destParts = destRawStr.split(',');
