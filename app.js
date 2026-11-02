@@ -430,12 +430,10 @@ function openEditJobModal(jobIdOrNo) {
     // --- دالة مساعدة لتنسيق التاريخ إلى yyyy-MM-dd إذا لزم الأمر ---
     function formatDateForInput(dateStr) {
         if (!dateStr) return '';
-        // إذا كان التاريخ مخزناً كـ MM/dd/yyyy أو يحتوي على وقت
         try {
             const cleanDate = dateStr.split(' ')[0]; // إزالة الوقت إن وجد مثل "0:00"
             const parts = cleanDate.split('/');
             if (parts.length === 3) {
-                // تحويل من mm/dd/yyyy إلى yyyy-mm-dd
                 return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
             }
             return cleanDate;
@@ -454,8 +452,24 @@ function openEditJobModal(jobIdOrNo) {
     setVal('jobDate', formattedDate);
 
     setVal('jobNo', job.jobNo || job.job_no || '');
-    setVal('routeFrom', job.route_from || '');
-    setVal('routeTo', job.route_to || '');
+
+    // --- تعبئة حقول المسار (Route From & To) بذكاء ---
+    let fromVal = job.route_from || '';
+    let toVal = job.route_to || '';
+    
+    if ((!fromVal || !toVal) && job.route) {
+        const parts = job.route.split(/→|->/);
+        if (parts.length >= 2) {
+            fromVal = parts[0].trim();
+            toVal = parts[1].trim();
+        } else {
+            fromVal = job.route;
+        }
+    }
+
+    setVal('routeFrom', fromVal);
+    setVal('routeTo', toVal);
+
     setVal('jobForeman', job.foreman || job.foreman_name || '');
     setVal('jobTotal', job.total || job.total_amount || '');
 
