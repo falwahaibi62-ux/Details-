@@ -636,7 +636,7 @@ async function saveJob(event) {
     const supabasePayload = {
         date: dateVal,
         job_no: jobNoVal,
-        route: routeValue, // تم التصحيح هنا لربط القيمة المدمجة الصحيحة
+        route: routeValue,
         foreman_name: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
         foreman_cost: foreman10Val,
         total_amount: totalFormatted,
@@ -654,21 +654,20 @@ async function saveJob(event) {
         return;
     }
 
-    // التحقق مما إذا كنا نقوم بالتعديل (وجود معرف مخفي أو مطابقة عبر رقم الوظيفة)
     const jobForm = document.getElementById('jobForm');
     const editRecordId = jobForm ? jobForm.getAttribute('data-edit-id') : null;
 
     let error = null;
 
-    if (editRecordId) {
-        // --- تحديث سجل موجود مسبقاً (UPDATE) ---
+    if (editRecordId && editRecordId !== '') {
+        // --- تحديث السجل الحالي حصرياً وعدم إنشاء سجل جديد ---
         const { error: updateError } = await window.supabaseClient
             .from('jobs_report')
             .update(supabasePayload)
             .eq('id', editRecordId);
         error = updateError;
     } else {
-        // --- إضافة سجل جديد (INSERT) ---
+        // --- إضافة سجل جديد فقط في حال لم يكن هناك معرف تعديل ---
         const { error: insertError } = await window.supabaseClient
             .from('jobs_report')
             .insert([supabasePayload]);
@@ -679,18 +678,20 @@ async function saveJob(event) {
         console.error('Error saving to Supabase:', error.message);
         alert('Supabase Error: ' + error.message);
     } else {
-        // مسح علامة التعديل إن وجدت
+        // تفريغ معرف التعديل لضمان عدم تكراره لاحقاً
         if (jobForm) jobForm.removeAttribute('data-edit-id');
 
         closeModal();
-        initMasterJobsData();
+        if (typeof initMasterJobsData === 'function') {
+            initMasterJobsData();
+        }
         alert('Record saved successfully!');
     }
 }
 window.saveJob = saveJob;
 
 async function deleteJob(jobIdOrNo) {
-    if (!confirm('Are you sure you want to delete this dispatch record from cloud?')) return;
+    if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return;
 
     if (!window.supabaseClient) {
         alert("Supabase client not initialized!");
@@ -699,10 +700,9 @@ async function deleteJob(jobIdOrNo) {
 
     const target = String(jobIdOrNo).trim();
     
-    // محاولة الحذف بالـ id إذا كان رقماً أو معرف UUID، وإلا الحذف بالـ job_no
-    let query = window.supabaseClient.from('jobs_report').delete();
+    // بدلاً من الحذف النهائي (.delete())، نقوم بتحديث الحالة إلى محذوف (Soft Delete)
+    let query = window.supabaseClient.from('jobs_report').update({ is_deleted: true });
     
-    // إذا كان يحتوي على أرقام أو حروف تشبه المعرفات، يمكنك تحديد الشرط بدقة:
     if (target.length > 10 || target.includes('-')) {
         query = query.eq('id', target);
     } else {
@@ -712,16 +712,56 @@ async function deleteJob(jobIdOrNo) {
     const { error } = await query;
 
     if (error) {
-        console.error('Error deleting from Supabase:', error.message);
-        alert('Failed to delete record from cloud database: ' + error.message);
+        console.error('Error moving to Recycle Bin:', error.message);
+        alert('Failed to move record to recycle bin: ' + error.message);
     } else {
-        alert('Record deleted successfully!');
+        alert('Record moved to Recycle Bin successfully!');
         if (typeof initMasterJobsData === 'function') {
             initMasterJobsData();
         }
     }
 }
 window.deleteJob = deleteJob;
+
+
+async function restoreJob(jobId) {
+    if (!window.supabaseClient) return;
+
+    const { error } = await window.supabaseClient
+        .from('jobs_report')
+        .update({ is_deleted: false })
+        .eq('id', jobId);
+
+    if (error) {
+        alert('Failed to restore record: ' + error.message);
+    } else {
+        alert('Record restored successfully!');
+        if (typeof renderTrashBin === 'function') renderTrashBin();
+        if (typeof initMasterJobsData === 'function') initMasterJobsData();
+    }
+}
+window.restoreJob = restoreJob;
+
+// الحذف النهائي من قاعدة البيانات
+async function permanentDeleteJob(jobId) {
+    if (!confirm('Are you sure you want to permanently delete this record? This action cannot be undone.')) return;
+    if (!window.supabaseClient) return;
+
+    const { error } = await window.supabaseClient
+        .from('jobs_report')
+        .delete()
+        .eq('id', jobId);
+
+    if (error) {
+        alert('Failed to delete permanently: ' + error.message);
+    } else {
+        alert('Record permanently deleted!');
+        if (typeof renderTrashBin === 'function') renderTrashBin();
+    }
+}
+window.permanentDeleteJob = permanentDeleteJob;
+
+
 // ==========================================
 // 7. DASHBOARD ANALYTICS & CHARTS (مصحح لتجميع مبالغ الدفع بدقة)
 // ==========================================
