@@ -72,12 +72,12 @@ async function initMasterJobsData() {
                 }
             }
 
-            return {
+          return {
                 date: dVal,
                 month: mVal,
                 year: yVal,
                 jobNo: item.job_no || '',
-                route: (item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : (item.route || ''),
+                route: item.route || ((item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : ''),
                 foreman: item.foreman_name || '',
                 foreman10pct: item.foreman_cost || '0',
                 total: item.total_amount || '$0',
@@ -241,25 +241,34 @@ function removePaymentRow(rowId) {
 window.removePaymentRow = removePaymentRow;
 
 function extractPaymentsFromContainer(containerId) {
-    let container = document.getElementById(containerId);
-    if (!container && containerId === 'destContextContainer') container = document.getElementById('destContainer');
-    if (!container && containerId === 'destContainer') container = document.getElementById('destContextContainer');
-
+    const container = document.getElementById(containerId);
     if (!container) return '-';
 
     const rows = container.querySelectorAll('.payment-row');
     const paymentsList = [];
 
     rows.forEach(row => {
-        const amt = row.querySelector('.payment-amount')?.value.trim() || '';
-        const mth = row.querySelector('.payment-method')?.value || 'Cash';
-        if (amt !== '') {
-            paymentsList.push(`${amt} ${mth}`);
+        const amountInput = row.querySelector('.payment-amount');
+        const methodSelect = row.querySelector('.payment-method');
+
+        const amount = amountInput ? amountInput.value.trim() : '';
+        
+        // التحقق من طريقة الدفع، وإذا لم يتم اختيارها أو كانت فارغة يتم تعيينها إلى "unspecified"
+        let method = methodSelect ? methodSelect.value.trim() : '';
+        if (!method) {
+            method = 'unspecified';
+        }
+
+        // إذا أدخل المستخدم مبلغاً، يتم دمج المبلغ مع طريقة الدفع في نص واحد (مثال: 500 Cash)
+        if (amount) {
+            paymentsList.push(`${amount} ${method}`);
         }
     });
 
+    // إذا كانت القائمة مليئة بالدفعات يتم دمجها بفاصل، وإذا لم تكن هناك دفعات يُعاد "-" أو قيمة فارغة
     return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
 }
+window.extractPaymentsFromContainer = extractPaymentsFromContainer;
 
 // ==========================================
 // 4. HELPERS & DRIVERS MAPPERS
@@ -675,16 +684,20 @@ window.deleteJob = deleteJob;
 // ==========================================
 // 7. DASHBOARD ANALYTICS & CHARTS (مصحح لتجميع مبالغ الدفع بدقة)
 // ==========================================
+// دالة تحليل وتحديث إحصائيات لوحة التحكم والرسوم البيانية
 function updateDashboardAnalytics() {
     try {
-        if (!window.masterJobs || window.masterJobs.length === 0) return;
+        if (!window.masterJobs || window.masterJobs.length === 0) {
+            console.warn("No masterJobs available for dashboard analytics.");
+            return;
+        }
 
         let totalRev = 0;
         let totalDieselCost = 0;
         let validJobsCount = 0; 
         const routeRevenueMap = {};
         
-        // تجميع المبالغ المالية لكل طريقة دفع وليس العدّ
+        // تجميع المبالغ المالية لكل طريقة دفع بدقة
         const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 };
         const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -694,11 +707,12 @@ function updateDashboardAnalytics() {
             }
 
             validJobsCount++; 
-            totalDieselCost += parseAndSumDiesel(job.diesel);
+            totalDieselCost += parseAndSumDiesel(job.diesel || job.diesel_expense);
 
             let amt = 0;
-            if (job.total) {
-                amt = parseFloat(String(job.total).replace(/[^0-9.]/g, '')) || 0;
+            const rawTotal = job.total || job.total_amount || 0;
+            if (rawTotal) {
+                amt = parseFloat(String(rawTotal).replace(/[^0-9.]/g, '')) || 0;
             }
             totalRev += amt;
 
@@ -706,24 +720,29 @@ function updateDashboardAnalytics() {
                 monthlyRev[job.month - 1] += amt;
             }
             
-            if (job.route) {
-                routeRevenueMap[job.route] = (routeRevenueMap[job.route] || 0) + amt;
+            const jobRoute = job.route || (job.route_from && job.route_to ? `${job.route_from} → ${job.route_to}` : '');
+            if (jobRoute) {
+                routeRevenueMap[jobRoute] = (routeRevenueMap[jobRoute] || 0) + amt;
             }
 
             // استخراج المبالغ وطرق الدفع من حقول PU و Dest بدقة
-            let puStr = String(job.pu || '').trim();
-            let destStr = String(job.dest || '').trim();
+            let puStr = String(job.pu || job.pu_payments || '').trim();
+            let destStr = String(job.dest || job.destination_payments || '').trim();
 
             let hasPu = puStr !== '' && puStr !== '-' && puStr !== '---';
             let hasDest = destStr !== '' && destStr !== '-' && destStr !== '---';
 
-            if (hasPu && !hasDest) {
-                assignPaymentMethodRevenue(puStr, amt, paymentMethodMap);
-            } else if (!hasPu && hasDest) {
-                assignPaymentMethodRevenue(destStr, amt, paymentMethodMap);
-            } else if (hasPu && hasDest) {
-                assignPaymentMethodRevenue(puStr, amt / 2, paymentMethodMap);
-                assignPaymentMethodRevenue(destStr, amt / 2, paymentMethodMap);
+            if (typeof assignPaymentMethodRevenue === 'function') {
+                if (hasPu && !hasDest) {
+                    assignPaymentMethodRevenue(puStr, amt, paymentMethodMap);
+                } else if (!hasPu && hasDest) {
+                    assignPaymentMethodRevenue(destStr, amt, paymentMethodMap);
+                } else if (hasPu && hasDest) {
+                    assignPaymentMethodRevenue(puStr, amt / 2, paymentMethodMap);
+                    assignPaymentMethodRevenue(destStr, amt / 2, paymentMethodMap);
+                } else {
+                    paymentMethodMap.Unspecified += amt;
+                }
             } else {
                 paymentMethodMap.Unspecified += amt;
             }
@@ -732,6 +751,7 @@ function updateDashboardAnalytics() {
         window.currentPaymentMethodMap = paymentMethodMap;
         const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
 
+        // تحديث عناصر الـ UI في لوحة التحكم
         const revEl = document.getElementById('dashTotalRevenue');
         if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
@@ -744,6 +764,7 @@ function updateDashboardAnalytics() {
         const dieselEl = document.getElementById('dashTotalDiesel');
         if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
 
+        // تحديث قائمة الممرات والمسارات الأكثر ربحية
         const topCorridorsContainer = document.getElementById('topCorridorsContainer');
         if (topCorridorsContainer) {
             const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
@@ -758,44 +779,25 @@ function updateDashboardAnalytics() {
             `).join('');
         }
 
-        renderDashboardCharts(monthlyRev, paymentMethodMap);
+        // استدعاء دالة رسم المخططات البيانية
+        if (typeof renderDashboardCharts === 'function') {
+            renderDashboardCharts(monthlyRev, paymentMethodMap);
+        }
     } catch (e) {
         console.error("Error updating dashboard analytics:", e);
     }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
 
-function assignPaymentMethodRevenue(methodStr, amount, map) {
-    // 🌟 إذا كانت سلسلة طريقة الدفع فارغة أو غير متوفرة، تُصنف فوراً تحت Unspecified
-    if (!methodStr || methodStr === '-' || methodStr === '---' || String(methodStr).trim() === '') {
-        map.Unspecified = (map.Unspecified || 0) + amount;
-        return;
-    }
-
-    const upperPay = String(methodStr).toUpperCase();
-    let matched = false;
-
-    if (upperPay.includes('CASH')) { map.Cash += amount; matched = true; }
-    else if (upperPay.includes('ZELLE')) { map.Zelle += amount; matched = true; }
-    else if (upperPay.includes('CHEQUE') || upperPay.includes('CK') || upperPay.includes('CHECK')) { map.Cheque += amount; matched = true; }
-    else if (upperPay.includes('PMO')) { map.PMO += amount; matched = true; }
-    else if (upperPay.includes('BC')) { map.BC += amount; matched = true; }
-    else if (upperPay.includes('PC')) { map.PC += amount; matched = true; }
-    else if (upperPay.includes('CC')) { map.CC += amount; matched = true; }
-    else if (upperPay.includes('WT')) { map.WT += amount; matched = true; }
-    else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { map.Others += amount; matched = true; }
-
-    // إذا كانت تحتوي على نص غير معروف ضمن القائمة، تذهب إلى Others
-    if (!matched) {
-        map.Others += amount;
-    }
-}
-
+// دالة رسم وتحديث المخططات البيانية باستخدام Chart.js
 function renderDashboardCharts(monthlyData, paymentData) {
     try {
+        // 1. رسم مخطط الإيرادات الشهرية (Bar Chart)
         const ctxRevenue = document.getElementById('revenueChart');
         if (ctxRevenue && typeof Chart !== 'undefined') {
-            if (window.revenueChartInstance) window.revenueChartInstance.destroy();
+            if (window.revenueChartInstance) {
+                window.revenueChartInstance.destroy();
+            }
             window.revenueChartInstance = new Chart(ctxRevenue, {
                 type: 'bar',
                 data: {
@@ -820,9 +822,12 @@ function renderDashboardCharts(monthlyData, paymentData) {
             });
         }
 
+        // 2. رسم مخطط توزيع طرق الدفع (Doughnut Chart)
         const ctxPayment = document.getElementById('paymentMixChart');
         if (ctxPayment && typeof Chart !== 'undefined') {
-            if (window.paymentMixChartInstance) window.paymentMixChartInstance.destroy();
+            if (window.paymentMixChartInstance) {
+                window.paymentMixChartInstance.destroy();
+            }
             const paymentColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b', '#cbd5e1'];
 
             window.paymentMixChartInstance = new Chart(ctxPayment, {
@@ -849,7 +854,6 @@ function renderDashboardCharts(monthlyData, paymentData) {
     }
 }
 window.renderDashboardCharts = renderDashboardCharts;
-
 // ==========================================
 // 8. NAVIGATION & TABS
 // ==========================================
