@@ -121,19 +121,21 @@ window.getFilteredJobsData = getFilteredJobsData;
 
 // دالة التصنيف الدقيقة: حصر Others للكلمات الصريحة فقط، وتوجيه الباقي لـ Unspecified
 // دالة تصنيف وتحليل المبالغ: تحافظ على Others للكلمات الصريحة، وتوجه المبهم لـ Unspecified
+// دالة التصنيف المالية النهائية (تعزل الأرقام الصرفة إلى Unspecified وتحافظ على Others للكلمات الصريحة)
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     if (amount <= 0) return;
 
     const rawStr = String(methodStr || '').trim();
 
-    // إذا كان الحقل فارغاً، شرطة، أو رقماً بحتاً (بدون نص) -> يذهب إلى Unspecified
-    if (!rawStr || rawStr === '-' || rawStr === '---' || /^[\d,]+(\.\d+)?$/.test(rawStr)) {
+    // 1. إذا كان الحقل فارغاً، شرطة، أو عبارة عن أرقام صرفة فقط (مثل: 500 أو 1,200.00) -> يوجه حصرياً إلى Unspecified
+    if (!rawStr || rawStr === '-' || rawStr === '---' || /^[\d,.\s]+$/.test(rawStr)) {
         map.Unspecified += amount;
         return;
     }
 
     const upperPay = rawStr.toUpperCase();
 
+    // 2. المطابقة لطرق الدفع المعروفة
     if (upperPay.includes('CASH')) { 
         map.Cash += amount; 
     }
@@ -158,16 +160,15 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
     else if (upperPay.includes('WT')) { 
         map.WT += amount; 
     }
-    // الاحتفاظ بخانة Others للمبالغ التي تحتوي صراحة على كلمة OTHER أو OTHERS
+    // 3. خانة Others تبقى فقط للنصوص التي تحتوي صراحة على كلمة OTHER أو OTHERS
     else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { 
         map.Others += amount; 
     }
-    // أي نصوص أو وصف آخر غير معروف يتم توجيهه حصرياً إلى Unspecified
+    // 4. أي نصوص أخرى مبهمة لا تحتوي على طريقة دفع صريحة تذهب إلى Unspecified
     else {
         map.Unspecified += amount;
     }
 }
-
 // جدول ملخص إيجارات الشاحنات
 function generateTruckRentalSummaryTableHTML() {
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
