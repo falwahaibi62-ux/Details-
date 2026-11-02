@@ -120,12 +120,13 @@ function getFilteredJobsData() {
 window.getFilteredJobsData = getFilteredJobsData;
 
 // دالة التصنيف الدقيقة: حصر Others للكلمات الصريحة فقط، وتوجيه الباقي لـ Unspecified
+// دالة تصنيف وتحليل المبالغ: تحافظ على Others للكلمات الصريحة، وتوجه المبهم لـ Unspecified
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     if (amount <= 0) return;
 
     const rawStr = String(methodStr || '').trim();
 
-    // إذا كان الحقل فارغاً، شرطة، أو رقماً بحتاً -> Unspecified
+    // إذا كان الحقل فارغاً، شرطة، أو رقماً بحتاً (بدون نص) -> يذهب إلى Unspecified
     if (!rawStr || rawStr === '-' || rawStr === '---' || /^[\d,]+(\.\d+)?$/.test(rawStr)) {
         map.Unspecified += amount;
         return;
@@ -157,11 +158,11 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
     else if (upperPay.includes('WT')) { 
         map.WT += amount; 
     }
-    // Others تُحتسب فقط إذا كتبت الكلمة صراحة
-    else if (upperPay === 'OTHER' || upperPay === 'OTHERS' || upperPay.startsWith('OTHER') || upperPay.startsWith('OTHERS')) { 
+    // الاحتفاظ بخانة Others للمبالغ التي تحتوي صراحة على كلمة OTHER أو OTHERS
+    else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { 
         map.Others += amount; 
     }
-    // أي نص آخر غير معروف يذهب إلى Unspecified بدلاً من تضخيم Others
+    // أي نصوص أو وصف آخر غير معروف يتم توجيهه حصرياً إلى Unspecified
     else {
         map.Unspecified += amount;
     }
