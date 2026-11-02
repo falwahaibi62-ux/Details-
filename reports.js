@@ -1,5 +1,5 @@
 /**
- * MovePro - Financial & Operations Reports Module (Production Ready & Extended Payment Methods Categorization)
+ * MovePro - Financial & Operations Reports Module (Production Ready & Syntax Fixed)
  */
 
 function switchReportMode(mode) {
@@ -119,7 +119,6 @@ function getFilteredJobsData() {
 }
 window.getFilteredJobsData = getFilteredJobsData;
 
-// دالة تصنيف وطرح المبالغ بناءً على القائمة المحددة وتصنيف الفراغات إلى Unspecified
 // دالة تصنيف وتحليل المبالغ بطريقة دقيقة جداً:
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     if (amount <= 0) return;
@@ -163,7 +162,7 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
     else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { 
         map.Others += amount; 
     }
-    // أي طريقة دفع أخرى غير معروفة أو لم تذكر في القائمة تصنف كـ UNSPECIFIED لضمان عدم الخلط
+    // أي طريقة دفع أخرى غير معروفة تصنف كـ UNSPECIFIED
     else {
         map.Unspecified += amount;
     }
@@ -397,33 +396,19 @@ function generateOfficialSummaryTable(filteredJobs) {
                 }
             });
         } else {
-            // إضافة قيمة فارغة إذا كانت مسجلة بدقائق ولكن لا توجد طريقة دفع
             const puNumOnly = parseCurrency(item.pu || item.pu_payments);
             if (puNumOnly > 0) {
                 assignPaymentMethodRevenue('', puNumOnly, payMap);
             }
         }
         
-       // 2. معالجة Destination / Dest Balance (مع معالجة المبالغ الصرفة بدون طريقة دفع لتظهر في Unspecified)
+        // 2. معالجة Destination / Dest Balance
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             const destParts = destRawStr.split(',');
-            let hasValidPaymentText = false;
-
             destParts.forEach(part => {
                 const partVal = parseCurrency(part);
                 if (partVal > 0 && partVal < 50000) {
-                    // فحص ما إذا كان الجزء يحتوي على كلمات تدل على طريقة دفع
-                    const pUp = part.toUpperCase();
-                    const hasMethod = pUp.includes('CASH') || pUp.includes('ZELLE') || pUp.includes('CHEQUE') || 
-                                      pUp.includes('CHECK') || pUp.includes('CK') || pUp.includes('PMO') || 
-                                      pUp.includes('BC') || pUp.includes('PC') || pUp.includes('CC') || 
-                                      pUp.includes('WT') || pUp.includes('OTHER');
-
-                    if (hasMethod) {
-                        hasValidPaymentText = true;
-                    }
-
                     assignPaymentMethodRevenue(part, partVal, payMap);
 
                     const dLower = part.toLowerCase();
@@ -437,21 +422,20 @@ function generateOfficialSummaryTable(filteredJobs) {
                     }
                 }
             });
-
-            // إذا كانت الأجزاء عبارة عن أرقام صرفة بدون أي نص طريقة دفع، يتم توجيهها بوضوح إلى Unspecified
-            const fullDestNum = parseCurrency(destRawStr);
-            if (fullDestNum > 0 && fullDestNum < 50000 && !hasValidPaymentText && !destRawStr.toUpperCase().includes('CASH') && !destRawStr.toUpperCase().includes('ZELLE')) {
-                // تصفير الأجزاء المكررة إذا تم حسابها بالغلط في مكان آخر وإضافتها حصرياً لـ Unspecified
-                // الكود هنا يضمن رصد القيم التي ليس لها طريقة دفع
-            }
         } else {
-            // إذا كان حقل الوجهة كاملاً عبارة عن مبلغ رقمي بدون نص طريقة دفع أو فارغ
             const destNumOnly = parseCurrency(item.dest || item.destination || item.destination_payments);
-            if (destNumOnly > 0 && destNumOnly < 50000) {
-                payMap.Unspecified += destNumOnly;
+            if (destNumOnly > 0) {
+                assignPaymentMethodRevenue('', destNumOnly, payMap);
             }
         }
-    // جدول إجمالي طرق الدفع المطابق تماماً لجميع الخيارات
+    });
+
+    const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
+    const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
+
+    const payGrandTotal = Object.values(payMap).reduce((a, b) => a + b, 0);
+
+    // جدول إجمالي طرق الدفع
     const paymentMethodsSummaryHTML = `
         <div id="paymentDateRangeSummaryContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
