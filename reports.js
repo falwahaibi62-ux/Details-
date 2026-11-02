@@ -120,20 +120,21 @@ function getFilteredJobsData() {
 window.getFilteredJobsData = getFilteredJobsData;
 
 // دالة تصنيف وتحليل المبالغ بطريقة دقيقة جداً:
+// دالة تصنيف وتحليل المبالغ بطريقة دقيقة ومحسنة 100%
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     if (amount <= 0) return;
 
     const rawStr = String(methodStr || '').trim();
 
-    // 1. إذا كان الحقل فارغاً، أو عبارة عن شرطة (-)، أو يحتوي على رقم فقط بدون نص طريقة الدفع -> تصنف تلقائياً كـ UNSPECIFIED
-    if (!rawStr || rawStr === '-' || rawStr === '---' || /^\d+(\.\d+)?$/.test(rawStr)) {
+    // 1. إذا كان الحقل فارغاً، شرطة، أو رقماً بحتاً (سواء بوجود فواصل مثل 1,500 أو بدونها) -> يذهب مباشرة إلى UNSPECIFIED
+    if (!rawStr || rawStr === '-' || rawStr === '---' || /^[\d,]+(\.\d+)?$/.test(rawStr)) {
         map.Unspecified += amount;
         return;
     }
 
     const upperPay = rawStr.toUpperCase();
 
-    // 2. الفحص والمطابقة الدقيقة مع عناصر القائمة المنسدلة
+    // 2. الفحص والمطابقة الدقيقة مع طرق الدفع المعتمدة
     if (upperPay.includes('CASH')) { 
         map.Cash += amount; 
     }
@@ -158,11 +159,11 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
     else if (upperPay.includes('WT')) { 
         map.WT += amount; 
     }
-    // احتساب Others فقط إذا تم وضع خيار Others صراحةً
-    else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { 
+    // 3. احتساب Others فقط إذا تم كتابة الكلمة صراحة بشكل دقيق
+    else if (upperPay === 'OTHER' || upperPay === 'OTHERS' || upperPay.startsWith('OTHER') || upperPay.startsWith('OTHERS')) { 
         map.Others += amount; 
     }
-    // أي طريقة دفع أخرى غير معروفة تصنف كـ UNSPECIFIED
+    // 4. أي نص أو وصف آخر غير معروف يتم توجيهه حصرياً إلى Unspecified لضمان نظافة تقرير Others
     else {
         map.Unspecified += amount;
     }
