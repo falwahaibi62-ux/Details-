@@ -564,8 +564,7 @@ async function saveJob(event) {
     let totalNum = parseFloat(String(totalFormatted).replace(/[^0-9.]/g, '')) || 0;
     let foreman10Val = totalNum > 0 ? (totalNum * 0.1).toFixed(0) : '0';
 
-   const routeValue = `${document.getElementById('routeFrom').value.trim()} → ${document.getElementById('routeTo').value.trim()}`;
-
+    const routeValue = `${document.getElementById('routeFrom').value.trim()} → ${document.getElementById('routeTo').value.trim()}`;
 
     const puFormatted = extractPaymentsFromContainer('puContainer');
     const destFormatted = extractPaymentsFromContainer('destContainer');
@@ -587,7 +586,7 @@ async function saveJob(event) {
     const supabasePayload = {
         date: dateVal,
         job_no: jobNoVal,
-        route: toVal,
+        route: routeValue, // تم التصحيح هنا لربط القيمة المدمجة الصحيحة
         foreman_name: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
         foreman_cost: foreman10Val,
         total_amount: totalFormatted,
@@ -640,8 +639,7 @@ async function saveJob(event) {
 }
 window.saveJob = saveJob;
 
-
-async function deleteJob(jobNo) {
+async function deleteJob(jobIdOrNo) {
     if (!confirm('Are you sure you want to delete this dispatch record from cloud?')) return;
 
     if (!window.supabaseClient) {
@@ -649,20 +647,31 @@ async function deleteJob(jobNo) {
         return;
     }
 
-    const { error } = await window.supabaseClient
-        .from('jobs_report')
-        .delete()
-        .eq('job_no', jobNo);
+    const target = String(jobIdOrNo).trim();
+    
+    // محاولة الحذف بالـ id إذا كان رقماً أو معرف UUID، وإلا الحذف بالـ job_no
+    let query = window.supabaseClient.from('jobs_report').delete();
+    
+    // إذا كان يحتوي على أرقام أو حروف تشبه المعرفات، يمكنك تحديد الشرط بدقة:
+    if (target.length > 10 || target.includes('-')) {
+        query = query.eq('id', target);
+    } else {
+        query = query.eq('job_no', target);
+    }
+
+    const { error } = await query;
 
     if (error) {
-        console.error('Error deleting from Supabase:', error);
-        alert('Failed to delete record from cloud database.');
+        console.error('Error deleting from Supabase:', error.message);
+        alert('Failed to delete record from cloud database: ' + error.message);
     } else {
-        initMasterJobsData();
+        alert('Record deleted successfully!');
+        if (typeof initMasterJobsData === 'function') {
+            initMasterJobsData();
+        }
     }
 }
 window.deleteJob = deleteJob;
-
 // ==========================================
 // 7. DASHBOARD ANALYTICS & CHARTS (مصحح لتجميع مبالغ الدفع بدقة)
 // ==========================================
