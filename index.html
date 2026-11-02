@@ -32,8 +32,8 @@
             </div>
 
             <nav class="p-4 space-y-1.5 text-sm">
-                <button onclick="switchTab('dashboard')" ="nav-dashboard" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer">
-                    <i class="fa-sol fa-gauge-high w-5 text-center"></i>
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer">
+                    <i class="fa-solid fa-gauge-high w-5 text-center"></i>
                     <span>Dashboard & Analytics</span>
                 </button>
                 <button onclick="switchTab('jobs')" id="nav-jobs-btn" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer">
@@ -158,88 +158,87 @@
                 </div>
             </div>
 
-          <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Monthly Revenue Trend -->
-        <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:col-span-2 space-y-4 hover:shadow-md transition-shadow">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-4">
-                <div>
-                    <h3 class="font-bold text-slate-900 text-sm flex items-center">
-                        <span class="w-2 h-5 bg-emerald-600 rounded-full mr-2"></span>
-                        Monthly Revenue & Volume Trend
-                    </h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Real-time performance distribution derived from active ledger</p>
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Monthly Revenue Trend -->
+                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:col-span-2 space-y-4 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-sm flex items-center">
+                                <span class="w-2 h-5 bg-emerald-600 rounded-full mr-2"></span>
+                                Monthly Revenue & Volume Trend
+                            </h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Real-time performance distribution derived from active ledger</p>
+                        </div>
+                        <span class="text-[11px] bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl border border-emerald-100 flex items-center">
+                            <i class="fa-solid fa-bolt text-amber-500 mr-1.5"></i> Live Telemetry
+                        </span>
+                    </div>
+                    <div class="chart-container" style="height: 260px; position: relative; width: 100%;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
                 </div>
-                <span class="text-[11px] bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl border border-emerald-100 flex items-center">
-                    <i class="fa-solid fa-bolt text-amber-500 mr-1.5"></i> Live Telemetry
-                </span>
+
+                <!-- Payment Channels Mix -->
+                <div class="glass-panel p-6 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 text-sm flex items-center">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                            Payment Channels Mix
+                        </h3>
+                        <span class="text-xs text-slate-400">Distribution</span>
+                    </div>
+                    <div class="chart-container" style="height: 240px; position: relative; width: 100%;">
+                        <canvas id="paymentMixChart"></canvas>
+                    </div>
+                </div>
             </div>
-            <div class="chart-container" style="height: 260px; position: relative; width: 100%;">
-                <canvas id="revenueChart"></canvas>
+
+            <!-- Strategic Business Recommendations -->
+            <div class="glass-panel p-6 rounded-2xl bg-white shadow-xs border border-slate-200 space-y-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>
+                        Strategic Business Recommendations
+                    </h3>
+                    <span class="text-xs bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full font-medium">AI Insights</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                        <h4 class="font-bold text-emerald-800 text-xs mb-1 flex items-center">
+                            <i class="fa-solid fa-chart-line mr-1.5"></i> High Yield Lane Focus
+                        </h4>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">Prioritize dispatch allocations on top-performing corridors to maximize revenue yield and minimize deadhead miles.</p>
+                    </div>
+
+                    <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <h4 class="font-bold text-blue-800 text-xs mb-1 flex items-center">
+                            <i class="fa-solid fa-shield-halved mr-1.5"></i> Liquidity Optimization
+                        </h4>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">Monitor operational cash flows closely and balance upfront pick-up collections to maintain robust financial stability.</p>
+                    </div>
+
+                    <div class="p-4 bg-purple-50/50 rounded-xl border border-purple-100">
+                        <h4 class="font-bold text-purple-800 text-xs mb-1 flex items-center">
+                            <i class="fa-solid fa-wallet mr-1.5"></i> Payment Balancing
+                        </h4>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">Track digital payment channels alongside cash transactions to accelerate bank reconciliations and auditing.</p>
+                    </div>
+
+                    <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100">
+                        <h4 class="font-bold text-amber-800 text-xs mb-1 flex items-center">
+                            <i class="fa-solid fa-user-tie mr-1.5"></i> Dispatch Allocation
+                        </h4>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence.</p>
+                    </div>
+                </div>
             </div>
-        </div>
 
-     <!-- صندوق مخطط توزيع طرق الدفع (Payment Channels Mix) الصحيح في الأسفل -->
-<div class="glass-panel p-6 rounded-2xl col-span-12 lg:col-span-4">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="font-bold text-slate-800 text-sm flex items-center">
-            <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-            Payment Channels Mix
-        </h3>
-        <span class="text-xs text-slate-400">Distribution</span>
-    </div>
-    <div class="chart-container" style="height: 240px; position: relative; width: 100%;">
-        <canvas id="paymentMixChart"></canvas>
-    </div>
-</div>
-         <!-- قسم التوصيات الاستراتيجية -->
-<div class="glass-panel p-6 rounded-2xl col-span-12">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="font-bold text-slate-800 text-sm flex items-center">
-            <i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>
-            Strategic Business Recommendations
-        </h3>
-        <span class="text-xs bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full font-medium">AI Insights</span>
-    </div>
-    
-    <!-- شبكة البطاقات الداخلية لتظهر بجانب بعضها وليست عمودية -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- البطاقة الأولى -->
-        <div class="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-            <h4 class="font-bold text-emerald-800 text-xs mb-1 flex items-center">
-                <i class="fa-solid fa-chart-line mr-1.5"></i> High Yield Lane Focus
-            </h4>
-            <p class="text-[11px] text-slate-600 leading-relaxed">Prioritize dispatch allocations on top-performing corridors to maximize revenue yield and minimize deadhead miles.</p>
-        </div>
-
-        <!-- البطاقة الثانية -->
-        <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-            <h4 class="font-bold text-blue-800 text-xs mb-1 flex items-center">
-                <i class="fa-solid fa-shield-halved mr-1.5"></i> Liquidity Optimization
-            </h4>
-            <p class="text-[11px] text-slate-600 leading-relaxed">Monitor operational cash flows closely and balance upfront pick-up collections to maintain robust financial stability.</p>
-        </div>
-
-        <!-- البطاقة الثالثة -->
-        <div class="p-4 bg-purple-50/50 rounded-xl border border-purple-100">
-            <h4 class="font-bold text-purple-800 text-xs mb-1 flex items-center">
-                <i class="fa-solid fa-wallet mr-1.5"></i> Payment Balancing
-            </h4>
-            <p class="text-[11px] text-slate-600 leading-relaxed">Track digital payment channels alongside cash transactions to accelerate bank reconciliations and auditing.</p>
-        </div>
-
-        <!-- البطاقة الرابعة -->
-        <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100">
-            <h4 class="font-bold text-amber-800 text-xs mb-1 flex items-center">
-                <i class="fa-solid fa-user-tie mr-1.5"></i> Dispatch Allocation
-            </h4>
-            <p class="text-[11px] text-slate-600 leading-relaxed">Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence.</p>
-        </div>
-    </div>
-</div>
+        </div> <!-- END TAB 1 -->
 
         <!-- TAB 2: OPERATIONS LEDGER (CRUD) -->
-        <div id="tab-jobs" class="hidden space-y-6 w-full flex flex-col view-section">
+        <div id="tab-jobs" class="hidden space-y-6 w-full flex-col view-section">
             <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 bg-white shadow-xs">
                 <div>
                     <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
@@ -295,43 +294,71 @@
             </div>
         </div> <!-- END TAB 2 -->
 
-       <!-- TAB 3: PRIVATE TRUCK RENTAL -->
-<div id="tab-rentals" class="hidden space-y-6 w-full flex-col view-section">
-    <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 bg-white shadow-xs border border-slate-200">
-        <div>
-            <h3 class="font-bold text-slate-900 text-base">Private Truck Rental Management</h3>
-            <p class="text-xs text-slate-500">Track and manage external truck rentals and expenses from Supabase</p>
-        </div>
-        <button type="button" onclick="openRentalModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center shadow-sm transition cursor-pointer">
-            <i class="fa-solid fa-plus mr-1.5"></i> Add Rental Record
-        </button>
-    </div>
-    
-    <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs border border-slate-200 flex-1 flex flex-col">
-        <div class="overflow-x-auto flex-1 p-4">
-            <table class="w-full text-left text-xs min-w-[950px]">
-                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
-                    <tr>
-                        <th class="p-3 border">Date</th>
-                        <th class="p-3 border">Truck / Label</th>
-                        <th class="p-3 border text-center">Days</th>
-                        <th class="p-3 border">Paid By</th>
-                        <th class="p-3 border">Payment Type</th>
-                        <th class="p-3 border text-right">Amount</th>
-                        <th class="p-3 border text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="rentalTableBody" class="divide-y text-slate-700 bg-white"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
+        <!-- TAB 3: PRIVATE TRUCK RENTAL -->
+        <div id="tab-rentals" class="hidden space-y-6 w-full flex-col view-section">
+            <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 bg-white shadow-xs border border-slate-200">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Private Truck Rental Management</h3>
+                    <p class="text-xs text-slate-500">Track and manage external truck rentals and expenses from Supabase</p>
+                </div>
+                <button type="button" onclick="openPrivateTruckModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center shadow-sm transition cursor-pointer">
+                    <i class="fa-solid fa-plus mr-1.5"></i> Add Rental Record
+                </button>
+            </div>
+            
+            <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs border border-slate-200 flex-1 flex flex-col">
+                <div class="overflow-x-auto flex-1 p-4">
+                    <table class="w-full text-left text-xs min-w-[950px]">
+                        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="p-3 border">Date</th>
+                                <th class="p-3 border">Truck / Label</th>
+                                <th class="p-3 border text-center">Days</th>
+                                <th class="p-3 border">Paid By</th>
+                                <th class="p-3 border">Payment Type</th>
+                                <th class="p-3 border text-right">Amount</th>
+                                <th class="p-3 border text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="truckRentalTableBody" class="divide-y text-slate-700 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div> <!-- END TAB 3 -->
 
         <!-- TAB 4: WAREHOUSE -->
-        <div id="tab-warehouse" class="hidden space-y-6 w-full flex flex-col view-section"></div>
+        <div id="tab-warehouse" class="hidden space-y-6 w-full flex-col view-section">
+            <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 bg-white shadow-xs border border-slate-200">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Warehouse & Other Expenses</h3>
+                    <p class="text-xs text-slate-500">Manage facility costs, storage units, and miscellaneous expenses</p>
+                </div>
+                <button type="button" onclick="openWarehouseModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center shadow-sm transition cursor-pointer">
+                    <i class="fa-solid fa-plus mr-1.5"></i> Add Expense
+                </button>
+            </div>
+            
+            <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs border border-slate-200 flex-1 flex flex-col">
+                <div class="overflow-x-auto flex-1 p-4">
+                    <table class="w-full text-left text-xs min-w-[900px]">
+                        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="p-3 border">Date</th>
+                                <th class="p-3 border">Category / Type</th>
+                                <th class="p-3 border">Description / Facility</th>
+                                <th class="p-3 border">Payment Method</th>
+                                <th class="p-3 border text-right">Amount</th>
+                                <th class="p-3 border text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="warehouseTableBody" class="divide-y text-slate-700 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div> <!-- END TAB 4 -->
 
         <!-- TAB 5: USERS & ROLES -->
-        <div id="tab-users" class="hidden space-y-6 w-full flex flex-col view-section">
+        <div id="tab-users" class="hidden space-y-6 w-full flex-col view-section">
             <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs border border-slate-200">
                 <div>
                     <h3 class="font-bold text-slate-900 text-base">Users & Roles Control Panel</h3>
@@ -343,9 +370,8 @@
             </div>
         </div> <!-- END TAB 5 -->
 
-        <!-- TAB 6: OFFICIAL PDF REPORT (FULL DETAILED & SUMMARY MODES) -->
-        <div id="tab-reports" class="hidden space-y-6 w-full flex flex-col view-section">
-            <!-- Header & Controls Bar -->
+        <!-- TAB 6: OFFICIAL PDF REPORT -->
+        <div id="tab-reports" class="hidden space-y-6 w-full flex-col view-section">
             <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border border-slate-200">
                 <div>
                     <h3 class="font-bold text-slate-900 text-base">Financial & Operations Reports</h3>
@@ -377,19 +403,19 @@
                         <option value="moving">Moving Jobs</option>
                     </select>
 
-                  <select id="filterPaymentType" onchange="applyReportFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500">
-    <option value="all">All Payments</option>
-    <option value="cash">Cash</option>
-    <option value="zelle">Zelle</option>
-    <option value="cheque">Cheque</option>
-    <option value="pmo">PMO</option>
-    <option value="bc">BC</option>
-    <option value="pc">PC</option>
-    <option value="cc">CC</option>
-    <option value="wt">WT</option>
-    <option value="others">Others</option>
-    <option value="unspecified">Unspecified</option>
-</select>
+                    <select id="filterPaymentType" onchange="applyReportFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500">
+                        <option value="all">All Payments</option>
+                        <option value="cash">Cash</option>
+                        <option value="zelle">Zelle</option>
+                        <option value="cheque">Cheque</option>
+                        <option value="pmo">PMO</option>
+                        <option value="bc">BC</option>
+                        <option value="pc">PC</option>
+                        <option value="cc">CC</option>
+                        <option value="wt">WT</option>
+                        <option value="others">Others</option>
+                        <option value="unspecified">Unspecified</option>
+                    </select>
 
                     <div class="flex space-x-2">
                         <button onclick="switchReportMode('summary')" id="btnSummaryMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer">Summary</button>
@@ -398,38 +424,33 @@
                 </div>
             </div>
 
+            <!-- Summary Report View -->
+            <div id="summaryReportView" class="space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+                        <div class="text-slate-500 text-xs">Total Jobs</div>
+                        <div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+                        <div class="text-slate-500 text-xs">Total Deliveries</div>
+                        <div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+                        <div class="text-slate-500 text-xs">Total Revenue</div>
+                        <div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+                        <div class="text-slate-500 text-xs">Total Expenses</div>
+                        <div id="sumTotalExpenses" class="text-lg font-bold text-rose-600">$0</div>
+                    </div>
+                </div>
 
-<!-- Summary Report View -->
-<div id="summaryReportView" class="space-y-6">
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-            <div class="text-slate-500 text-xs">Total Jobs</div>
-            <div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div>
-        </div>
-        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-            <div class="text-slate-500 text-xs">Total Deliveries</div>
-            <div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div>
-        </div>
-        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-            <div class="text-slate-500 text-xs">Total Revenue</div>
-            <div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div>
-        </div>
-        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-            <div class="text-slate-500 text-xs">Total Expenses</div>
-            <div id="sumTotalExpenses" class="text-lg font-bold text-rose-600">$0</div>
-        </div>
-    </div>
-
-    <!-- حاوية التقارير والجدول العام الديناميكي -->
-    <div id="summaryReportContainer"></div>
-
-    <!-- حاوية الـ PDF والملخصات الرسمية المرتبطة بالـ IDs البرمجية -->
-    <div id="pdfReportContent" class="space-y-6">
-        <div id="warehousePDFSummarySection"></div>
-    </div>
-</div>
+                <div id="summaryReportContainer"></div>
+                <div id="pdfReportContent" class="space-y-6">
+                    <div id="warehousePDFSummarySection"></div>
+                </div>
+            </div>
             
-      
             <!-- Detailed Report View -->
             <div id="detailedReportView" class="hidden space-y-8">
                 <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3">
@@ -463,59 +484,11 @@
                         </table>
                     </div>
                 </div>
-
-                <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-sm">2. Private Truck Rental Ledger</h4>
-                            <p class="text-[11px] text-slate-400">Recorded truck rental expenses for selected period</p>
-                        </div>
-                        <span id="detailedRentalsBadge" class="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-lg border border-amber-200">0 Records</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3 border">Date</th>
-                                    <th class="p-3 border">Vendor / Truck No</th>
-                                    <th class="p-3 border">Description / Notes</th>
-                                    <th class="p-3 border">Payment Method</th>
-                                    <th class="p-3 border text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody id="detailedRentalsBody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-sm">3. Warehouse & Other Expenses Ledger</h4>
-                            <p class="text-[11px] text-slate-400">Warehouse costs, storage units, diesel, and miscellaneous expenses</p>
-                        </div>
-                        <span id="detailedWarehouseBadge" class="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-lg border border-purple-200">0 Records</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3 border">Date</th>
-                                    <th class="p-3 border">Category / Type</th>
-                                    <th class="p-3 border">Description / Facility</th>
-                                    <th class="p-3 border">Payment Method</th>
-                                    <th class="p-3 border text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody id="detailedWarehouseBody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
         </div> <!-- END TAB 6 -->
 
         <!-- TAB 7: RECYCLE BIN -->
-        <div id="tab-trash" class="hidden space-y-6 w-full flex flex-col view-section">
+        <div id="tab-trash" class="hidden space-y-6 w-full flex-col view-section">
             <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs border border-slate-200">
                 <div>
                     <h3 class="font-bold text-slate-900 text-base">Recycle Bin</h3>
@@ -680,6 +653,7 @@
         </div>
     </div>
 
+    <!-- JavaScript Files -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
     <script src="data.js"></script>
@@ -691,6 +665,5 @@
     <script src="reports.js"></script>
     <script src="app.js"></script>
 
-    
 </body>
 </html>
