@@ -562,8 +562,8 @@ async function saveJob(event) {
     let totalNum = parseFloat(String(totalFormatted).replace(/[^0-9.]/g, '')) || 0;
     let foreman10Val = totalNum > 0 ? (totalNum * 0.1).toFixed(0) : '0';
 
-    const fromVal = document.getElementById('routeFrom') ? document.getElementById('routeFrom').value.trim().toUpperCase() : '';
-    const toVal = document.getElementById('routeTo') ? document.getElementById('routeTo').value.trim().toUpperCase() : '';
+   const routeValue = `${document.getElementById('routeFrom').value.trim()} → ${document.getElementById('routeTo').value.trim()}`;
+
 
     const puFormatted = extractPaymentsFromContainer('puContainer');
     const destFormatted = extractPaymentsFromContainer('destContainer');
@@ -585,8 +585,7 @@ async function saveJob(event) {
     const supabasePayload = {
         date: dateVal,
         job_no: jobNoVal,
-        route_from: fromVal,
-        route_to: toVal,
+        route: toVal,
         foreman_name: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
         foreman_cost: foreman10Val,
         total_amount: totalFormatted,
