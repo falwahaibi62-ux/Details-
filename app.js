@@ -681,7 +681,7 @@ function updateDashboardAnalytics() {
         const dieselEl = document.getElementById('dashTotalDiesel');
         if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
 
-        // تحديث قسم مسارات الإيرادات الأعلى (Top Revenue Corridors)
+       // تحديث قسم مسارات الإيرادات الأعلى (Top Revenue Corridors)
         const topCorridorsContainer = document.getElementById('topCorridorsContainer');
         if (topCorridorsContainer) {
             const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
@@ -699,19 +699,15 @@ function updateDashboardAnalytics() {
                 topCorridorsContainer.innerHTML = `<p class="text-xs text-slate-400 text-center p-6">No corridor data available</p>`;
             }
         }
-    } catch (e) {
-        console.error("Error in updateDashboardAnalytics:", e);
-    }
-}
-window.updateDashboardAnalytics = updateDashboardAnalytics;
-        // إعادة رسم المخططات البيانية بقيم صحيحة
+
+        // 🌟 إعادة رسم المخططات البيانية بقيم صحيحة في نهاية الدالة وقبل إغلاق الـ try/catch
         renderDashboardCharts(monthlyRev, paymentMethodMap);
+
     } catch (e) {
         console.error("Error updating dashboard analytics:", e);
     }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
-
 function renderDashboardCharts(monthlyRev, paymentMethodMap) {
     try {
         // 1. رسم مخطط الإيرادات الشهرية (Monthly Revenue Bar/Line Chart)
