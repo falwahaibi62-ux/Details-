@@ -450,19 +450,21 @@ function openEditJobModal(jobIdOrNo) {
     setVal('jobDate', formatDateForInput(job.date || job.job_date || ''));
     setVal('jobNo', job.jobNo || job.job_no || job.job_number || '');
 
-    // --- معالجة وتعبئة المسار بشكل صحيح ودقيق ---
-    let fullRouteStr = job.route_to || job.route || job.route_from || job.from || '';
-    let fromVal = job.route_from && job.route_from !== 'NULL' ? job.route_from : '';
-    let toVal = job.route_to && job.route_to !== 'NULL' ? job.route_to : '';
+    // --- قراءة المسار من عمود route الموحد وفكه تلقائياً ---
+    let routeStr = job.route || job.route_to || '';
+    let fromVal = '';
+    let toVal = '';
 
-    if (fullRouteStr && fullRouteStr.includes('→')) {
-        const parts = fullRouteStr.split('→');
+    if (routeStr.includes('→')) {
+        const parts = routeStr.split('→');
         fromVal = parts[0] ? parts[0].trim() : '';
         toVal = parts[1] ? parts[1].trim() : '';
-    } else if (fullRouteStr && fullRouteStr.includes('->')) {
-        const parts = fullRouteStr.split('->');
+    } else if (routeStr.includes('->')) {
+        const parts = routeStr.split('->');
         fromVal = parts[0] ? parts[0].trim() : '';
         toVal = parts[1] ? parts[1].trim() : '';
+    } else {
+        fromVal = routeStr; 
     }
 
     const fromEl = document.getElementById('routeFrom') || document.querySelector('[name="routeFrom"]') || document.querySelector('[name="route_from"]');
@@ -470,7 +472,7 @@ function openEditJobModal(jobIdOrNo) {
 
     const toEl = document.getElementById('routeTo') || document.querySelector('[name="routeTo"]') || document.querySelector('[name="route_to"]');
     if (toEl) toEl.value = toVal;
-    // ---------------------------------------------
+    // -----------------------------------------------------
 
     setVal('jobForeman', job.foreman || job.foreman_name || job.foremanName || '');
     setVal('jobTotal', job.total || job.total_amount || job.totalAmount || '');
