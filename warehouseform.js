@@ -1,13 +1,9 @@
 /**
- * Warehouse & Others Module - MovePro (Fixed Modal, Edit, Delete & Sorting)
+ * Warehouse & Others Module - MovePro (Supabase Cloud Integrated & Clean Version)
  */
 
 if (typeof window.WAREHOUSE_STORAGE_KEY === 'undefined') {
     window.WAREHOUSE_STORAGE_KEY = 'movepro_warehouse_records';
-}
-
-if (typeof window.initialWarehouseRecords === 'undefined') {
-    window.initialWarehouseRecords = []; // أو القيمة الأصلية للمتغير
 }
 
 // دالة تحويل التاريخ من صيغة الجدول (M/D/YYYY) إلى صيغة حقل الإدخال (YYYY-MM-DD)
@@ -41,32 +37,45 @@ function formatWarehouseDateToSlash(dateStr) {
     return dateStr;
 }
 
-function loadWarehouseRecords() {
-    let saved = localStorage.getItem(window.WAREHOUSE_STORAGE_KEY);
-    let records = [];
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) records = parsed;
-        } catch (e) {
-            console.error('Error parsing warehouse records:', e);
+// جلب البيانات المباشرة من Supabase
+async function loadWarehouseRecords() {
+    try {
+        if (!window.supabaseClient) {
+            console.error("Supabase client is not initialized!");
+            return [];
         }
+
+        const { data, error } = await window.supabaseClient
+            .from('warehouse_expenses')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching warehouse records from Supabase:', error);
+            return [];
+        }
+
+        const formattedRecords = (data || []).map(item => ({
+            id: item.id,
+            date: item.date || '',
+            services: item.services || '',
+            details: item.details || '',
+            paymentType: item.paymentType || 'Cash',
+            amount: parseFloat(item.amount) || 0
+        }));
+
+        // ترتيب السجلات من الأحدث للأقدم
+        formattedRecords.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+        window.currentWarehouseRecords = formattedRecords;
+        return formattedRecords;
+
+    } catch (e) {
+        console.error('Error loading warehouse records from Supabase:', e);
+        return [];
     }
-
-    // ترتيب السجلات تلقائياً من التاريخ الأحدث للأقدم
-    records.sort((a, b) => {
-        const dateA = new Date(a.date || 0);
-        const dateB = new Date(b.date || 0);
-        return dateB - dateA;
-    });
-
-    return records;
 }
 window.loadWarehouseRecords = loadWarehouseRecords;
-
-function saveWarehouseRecords(data) {
-    localStorage.setItem(window.WAREHOUSE_STORAGE_KEY, JSON.stringify(data));
-}
 
 // إنشاء النافذة المنبثقة برمجياً لضمان عدم اختفائها أو فشل فتحها
 function ensureWarehouseModalExists() {
@@ -87,7 +96,7 @@ function ensureWarehouseModalExists() {
                 </div>
 
                 <form id="warehouseForm" onsubmit="handleWarehouseSubmit(event)" class="p-6 space-y-4 text-xs">
-                    <input type="hidden" id="editWarehouseIndex" value="-1">
+                    <input type="hidden" id="editWarehouseId" value="">
 
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Date <span class="text-red-500">*</span></label>
@@ -116,7 +125,7 @@ function ensureWarehouseModalExists() {
                     </div>
 
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Amount <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-slate-700 mb-1">Amount ($) <span class="text-red-500">*</span></label>
                         <input type="number" id="warehouseAmount" value="0" min="0" step="0.01" required class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
                     </div>
 
@@ -139,8 +148,8 @@ function openWarehouseModal(isEdit = false) {
 
     if (form && !isEdit) {
         form.reset();
-        const indexField = document.getElementById('editWarehouseIndex');
-        if (indexField) indexField.value = '-1';
+        const idField = document.getElementById('editWarehouseId');
+        if (idField) idField.value = '';
         if (titleEl) titleEl.innerText = 'Add Warehouse Expense';
     }
 
@@ -162,11 +171,10 @@ function closeWarehouseModal() {
 }
 window.closeWarehouseModal = closeWarehouseModal;
 
-function renderWarehouseTab() {
+// عرض الشاشة والجدول بالكامل
+async function renderWarehouseTab() {
     const container = document.getElementById('tab-warehouse');
     if (!container) return;
-
-    const records = loadWarehouseRecords();
 
     container.innerHTML = `
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs mb-6">
@@ -193,65 +201,83 @@ function renderWarehouseTab() {
                         </tr>
                     </thead>
                     <tbody id="warehouseTableBody" class="divide-y divide-slate-100 text-slate-700">
-                        ${records.length === 0 ? `<tr><td colspan="6" class="p-6 text-center text-slate-400">No warehouse records found</td></tr>` : 
-                          records.map((item, index) => `
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="p-3.5 font-medium">${item.date || '-'}</td>
-                                <td class="p-3.5 font-semibold text-slate-800">${item.services || '-'}</td>
-                                <td class="p-3.5 text-slate-600">${item.details || '-'}</td>
-                                <td class="p-3.5"><span class="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold">${item.paymentType || 'Cash'}</span></td>
-                                <td class="p-3.5 text-right font-bold text-purple-600">$${parseFloat(item.amount || 0).toLocaleString()}</td>
-                                <td class="p-3.5 text-center space-x-1">
-                                    <button type="button" onclick="editWarehouseRecord(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer" title="Edit">
-                                        <i class="fa-solid fa-pen-to-square text-xs"></i>
-                                    </button>
-                                    <button type="button" onclick="deleteWarehouseRecord(${index})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition cursor-pointer" title="Delete">
-                                        <i class="fa-solid fa-trash text-xs"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        `).join('')}
+                        <tr><td colspan="6" class="p-6 text-center text-slate-400">Loading warehouse records...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     `;
+
+    ensureWarehouseModalExists();
+    await refreshWarehouseData();
 }
 window.renderWarehouseTab = renderWarehouseTab;
 
-function deleteWarehouseRecord(index) {
+// تحديث الجدول عند تغير البيانات
+async function refreshWarehouseData() {
+    const records = await loadWarehouseRecords();
+    const tbody = document.getElementById('warehouseTableBody');
+    if (!tbody) return;
+
+    if (records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No warehouse records found</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = records.map((item) => `
+        <tr class="hover:bg-slate-50 transition">
+            <td class="p-3.5 font-medium">${item.date || '-'}</td>
+            <td class="p-3.5 font-semibold text-slate-800">${item.services || '-'}</td>
+            <td class="p-3.5 text-slate-600">${item.details || '-'}</td>
+            <td class="p-3.5"><span class="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold">${item.paymentType || 'Cash'}</span></td>
+            <td class="p-3.5 text-right font-bold text-purple-600">$${item.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="p-3.5 text-center space-x-1">
+                <button type="button" onclick="editWarehouseRecord(${item.id})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer" title="Edit">
+                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                </button>
+                <button type="button" onclick="deleteWarehouseRecord(${item.id})" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition cursor-pointer" title="Delete">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// حذف سجل من Supabase
+async function deleteWarehouseRecord(id) {
     if (!confirm('Are you sure you want to delete this warehouse record?')) return;
 
-    let records = loadWarehouseRecords();
-    if (index < 0 || index >= records.length) return;
+    if (!window.supabaseClient) {
+        alert("Supabase client is not initialized!");
+        return;
+    }
 
-    const deletedItem = records.splice(index, 1)[0];
-    saveWarehouseRecords(records);
+    const { error } = await window.supabaseClient
+        .from('warehouse_expenses')
+        .delete()
+        .eq('id', id);
 
-    const TRASH_KEY = 'movepro_trash_bin';
-    let trashBin = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
-    trashBin.unshift({
-        ...deletedItem,
-        recordType: 'warehouse',
-        deletedAt: new Date().toISOString()
-    });
-    localStorage.setItem(TRASH_KEY, JSON.stringify(trashBin));
-
-    renderWarehouseTab();
-    if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
+    if (error) {
+        console.error('Error deleting warehouse record from Supabase:', error);
+        alert('Supabase Error: ' + error.message);
+    } else {
+        await refreshWarehouseData();
+        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
+    }
 }
 window.deleteWarehouseRecord = deleteWarehouseRecord;
 
-function editWarehouseRecord(index) {
-    let records = loadWarehouseRecords();
-    const item = records[index];
+// تجهيز حقول التعديل بحسب المعرف
+function editWarehouseRecord(id) {
+    const records = window.currentWarehouseRecords || [];
+    const item = records.find(r => r.id === id);
     if (!item) return;
 
     openWarehouseModal(true);
 
     setTimeout(() => {
-        const indexField = document.getElementById('editWarehouseIndex');
-        if (indexField) indexField.value = index;
+        const idField = document.getElementById('editWarehouseId');
+        if (idField) idField.value = item.id;
 
         const titleEl = document.getElementById('warehouseModalTitle');
         if (titleEl) titleEl.innerText = 'Edit Warehouse Record';
@@ -265,16 +291,22 @@ function editWarehouseRecord(index) {
 }
 window.editWarehouseRecord = editWarehouseRecord;
 
-function handleWarehouseSubmit(event) {
+// حفظ أو تحديث السجل في Supabase
+async function handleWarehouseSubmit(event) {
     if (event) event.preventDefault();
 
-    const indexField = document.getElementById('editWarehouseIndex');
-    const index = indexField ? parseInt(indexField.value, 10) : -1;
+    if (!window.supabaseClient) {
+        alert("Supabase client is not initialized!");
+        return;
+    }
+
+    const idField = document.getElementById('editWarehouseId');
+    const editId = idField ? idField.value : '';
 
     const rawDate = document.getElementById('warehouseDate')?.value || '';
     const formattedDate = formatWarehouseDateToSlash(rawDate);
 
-    const newRecord = {
+    const payload = {
         date: formattedDate,
         services: document.getElementById('warehouseService')?.value || '',
         details: document.getElementById('warehouseDetails')?.value || '',
@@ -282,20 +314,25 @@ function handleWarehouseSubmit(event) {
         amount: parseFloat(document.getElementById('warehouseAmount')?.value) || 0
     };
 
-    let records = loadWarehouseRecords();
-
-    if (index >= 0 && index < records.length) {
-        records[index] = newRecord;
+    let response;
+    if (editId) {
+        response = await window.supabaseClient
+            .from('warehouse_expenses')
+            .update(payload)
+            .eq('id', editId);
     } else {
-        records.unshift(newRecord);
+        response = await window.supabaseClient
+            .from('warehouse_expenses')
+            .insert([payload]);
     }
 
-    saveWarehouseRecords(records);
-    closeWarehouseModal();
-    renderWarehouseTab();
-    
-    if (typeof updateDashboardAnalytics === 'function') {
-        updateDashboardAnalytics();
+    if (response.error) {
+        console.error('Error saving warehouse record to Supabase:', response.error);
+        alert('Supabase Error: ' + response.error.message);
+    } else {
+        closeWarehouseModal();
+        await refreshWarehouseData();
+        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
     }
 }
 window.handleWarehouseSubmit = handleWarehouseSubmit;
