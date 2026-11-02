@@ -623,6 +623,12 @@ function updateDashboardAnalytics() {
 window.updateDashboardAnalytics = updateDashboardAnalytics;
 
 function assignPaymentMethodRevenue(methodStr, amount, map) {
+    // 🌟 إذا كانت سلسلة طريقة الدفع فارغة أو غير متوفرة، تُصنف فوراً تحت Unspecified
+    if (!methodStr || methodStr === '-' || methodStr === '---' || String(methodStr).trim() === '') {
+        map.Unspecified = (map.Unspecified || 0) + amount;
+        return;
+    }
+
     const upperPay = String(methodStr).toUpperCase();
     let matched = false;
 
@@ -636,6 +642,7 @@ function assignPaymentMethodRevenue(methodStr, amount, map) {
     else if (upperPay.includes('WT')) { map.WT += amount; matched = true; }
     else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) { map.Others += amount; matched = true; }
 
+    // إذا كانت تحتوي على نص غير معروف ضمن القائمة، تذهب إلى Others
     if (!matched) {
         map.Others += amount;
     }
