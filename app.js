@@ -418,31 +418,69 @@ function openEditJobModal(jobIdOrNo) {
         return;
     }
 
-    // فتح النافذة المنبثقة
+    // 1. فتح النافذة المنبثقة في وضع التعديل
     openAddModal(true);
 
+    // 2. تخزين الـ id في الفورم لعمل التحديث (Update) لاحقاً في Supabase
     const jobForm = document.getElementById('jobForm');
     if (jobForm) {
         jobForm.setAttribute('data-edit-id', job.id || '');
     }
 
-    // تعبئة الحقول
-    const setVal = (selectors, val) => {
-        for (let sel of selectors) {
-            const el = document.querySelector(sel) || (jobForm ? jobForm.querySelector(sel) : null);
-            if (el) { el.value = val !== undefined && val !== null ? val : ''; break; }
+    // --- تعبئة الحقول النصية البسيطة ---
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val !== undefined && val !== null ? val : '';
+    };
+
+    setVal('jobDate', job.date || '');
+    setVal('jobNo', job.jobNo || job.job_no || '');
+    setVal('routeFrom', job.route_from || '');
+    setVal('routeTo', job.route_to || '');
+    setVal('jobForeman', job.foreman || job.foreman_name || '');
+    setVal('jobTotal', job.total || job.total_amount || '');
+
+    // --- تعبئة قوائم العمال والسائقين (Helpers & Drivers Selects) ---
+    const setSelectVal = (selectId, val) => {
+        const select = document.getElementById(selectId);
+        if (select && val) {
+            for (let option of select.options) {
+                if (option.text.trim() === String(val).trim() || option.value.trim() === String(val).trim()) {
+                    select.value = option.value;
+                    break;
+                }
+            }
         }
     };
 
-    setVal(['#jobDate', '[name="date"]', '#dateInput'], job.date || '');
-    setVal(['#jobNo', '[name="jobNo"]', '[name="job_no"]', '#jobNoInput'], job.jobNo || job.job_no || '');
-    setVal(['#routeFrom', '[name="routeFrom"]', '[name="route_from"]', '#routeFromInput'], job.route_from || '');
-    setVal(['#routeTo', '[name="routeTo"]', '[name="route_to"]', '#routeToInput'], job.route_to || '');
-    setVal(['#jobForeman', '[name="foreman"]', '[name="foreman_name"]', '#foremanInput'], job.foreman || job.foreman_name || '');
-    setVal(['#jobTotal', '[name="total"]', '[name="total_amount"]', '#totalInput'], job.total || job.total_amount || '');
+    setSelectVal('helpersCost', job.helpers || job.helpers_cost);
+    setSelectVal('driversCost', job.drivers || job.drivers_cost);
+
+    // --- تعبئة مصاريف الديزل (Amount + Method) ---
+    const dieselValStr = String(job.diesel || job.diesel_expense || '');
+    const dieselParts = dieselValStr.split(' ');
+    setVal('dieselAmount', dieselParts[0] !== '-' ? dieselParts[0] : '');
+    if (dieselParts.length > 1) {
+        const dieselMethod = document.getElementById('dieselMethod');
+        if (dieselMethod) dieselMethod.value = dieselParts[1];
+    }
+
+    // --- تعبئة مصاريف الفندق (Amount + Method) ---
+    const hotelValStr = String(job.hotel || job.hotel_expense || '');
+    const hotelParts = hotelValStr.split(' ');
+    setVal('hotelAmount', hotelParts[0] !== '-' ? hotelParts[0] : '');
+    if (hotelParts.length > 1) {
+        const hotelMethod = document.getElementById('hotelMethod');
+        if (hotelMethod) hotelMethod.value = hotelParts[1];
+    }
+
+    // --- إعادة تعبئة الحاويات المركبة للدفعات (PU & Destination Payments) إن توفرت دالة مخصصة ---
+    if (typeof populatePaymentContainer === 'function') {
+        if (job.pu || job.pu_payments) populatePaymentContainer('puContainer', job.pu || job.pu_payments);
+        if (job.destination || job.dest || job.destination_payments) populatePaymentContainer('destContainer', job.destination || job.dest || job.destination_payments);
+    }
 }
 window.openEditJobModal = openEditJobModal;
-
 
 
 function parseAndSumDiesel(val) {
