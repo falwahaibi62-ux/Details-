@@ -119,7 +119,7 @@ function getFilteredJobsData() {
 }
 window.getFilteredJobsData = getFilteredJobsData;
 
-// دالة تحليل وتحلّي المدفوعات (متوافقة 100% مع صيغ Supabase المعقدة والشرائط المائلة وفصل الأرقام الصرفة)
+// دالة تحليل وتصنيف المدفوعات (محدثة لتتجاهل أرقام الشيكات الطويلة وتلتقط المبالغ المالية بدقة)
 function processPaymentString(str, map) {
     if (!str) return;
     const raw = String(str).trim();
@@ -132,25 +132,44 @@ function processPaymentString(str, map) {
         const sub = part.trim();
         if (!sub) return;
 
-        // استخراج الرقم المالي من هذا الجزء الفرعي
-        const numMatch = sub.match(/([0-9,.]+)/);
-        if (!numMatch) return;
+        const upperSub = sub.toUpperCase();
 
-        const amount = parseCurrency(numMatch[1]);
+        // استخراج جميع الأرقام الموجودة في هذا الجزء
+        const allNums = sub.match(/([0-9,.]+\d)/g);
+        let amount = 0;
+
+        if (allNums && allNums.length > 0) {
+            // إذا كان النص يحتوي على كلمة CHEQUE أو CHECK، غالباً الرقم الأول هو رقم الشيك الطويل
+            if (upperSub.includes('CHEQUE') || upperSub.includes('CHECK') || upperSub.includes('CHQ') || upperSub.includes('CK')) {
+                // نبحث عن رقم منطقي للمبلغ (أقل من 50000)، وإذا لم يوجد، نفترض أن المبلغ غير مذكور أو يبحث بصيغة أخرى
+                const validNum = allNums.map(n => parseCurrency(n)).find(n => n > 0 && n < 50000);
+                amount = validNum || 0; 
+                // ملاحظة: إذا كان المدخل فقط رقم شيك بدون مبلغ (مثل رقم طويل وكلمة Cheque)، يمكن اعتباره كقيمة أو تتبعه، 
+                // لكن إذا كان هناك مبلغ فعلي، سيتم التقاطه. إذا كان الرقم الطويل هو الوحيد، نضع له قيمة افتراضية أو نتجاوزه إذا لم يكن مبلغاً.
+            } else {
+                // للأجزاء العادية (مثل 400 Cash أو Zelle) نأخذ أول رقم صحيح
+                amount = parseCurrency(allNums[0]);
+            }
+        }
+
+        // إذا كان هناك نوع دفع صريح مثل الشيك، حتى لو لم يكتب مبلغ مالي بجانبه، يجب احتسابه أو التعامل معه
+        if (upperSub.includes('CHEQUE') || upperSub.includes('CHECK') || upperSub.includes('CK') || upperSub.includes('CHQ') || upperSub.includes('CHEQ')) {
+            // إذا وجدنا مبلغاً صحيحاً أقل من 50000 نضعه، وإلا إذا كان المدخل للشيك فقط نضيفه أو نتعامل معه
+            map.Cheque += (amount > 0 && amount < 50000) ? amount : 0; // أو يمكن تعديلها حسب قيمة المعاملة الفعلية إذا كان المبلغ مسجلاً في حقل آخر
+            return;
+        }
+
         if (amount <= 0 || amount >= 50000) return;
 
         // استخراج النص المتبقي لمعرفة طريقة الدفع
-        const textWithoutNum = sub.replace(numMatch[1], '').trim().toUpperCase();
+        const textWithoutNum = sub.replace(/([0-9,.]+)/g, '').trim().toUpperCase();
 
         if (!textWithoutNum) {
-            // إذا كان رقماً بحتاً بدون طريقة دفع (مثل 466 أو 2746) -> يذهب حصرياً إلى Unspecified
             map.Unspecified += amount;
         } else if (textWithoutNum.includes('CASH')) {
             map.Cash += amount;
         } else if (textWithoutNum.includes('ZELLE')) {
             map.Zelle += amount;
-        } else if (textWithoutNum.includes('CHEQUE') || textWithoutNum.includes('CHECK') || textWithoutNum.includes('CK') || textWithoutNum.includes('CHQ') || textWithoutNum.includes('CHEQ')) {
-            map.Cheque += amount;
         } else if (textWithoutNum.includes('PMO')) {
             map.PMO += amount;
         } else if (textWithoutNum.includes('BC')) {
@@ -164,11 +183,13 @@ function processPaymentString(str, map) {
         } else if (textWithoutNum.includes('OTHER') || textWithoutNum.includes('OTHERS')) {
             map.Others += amount;
         } else {
-            // أي نص آخر غير معروف مع رقم -> Unspecified
             map.Unspecified += amount;
         }
     });
 }
+
+
+
 
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     processPaymentString(methodStr, map);
