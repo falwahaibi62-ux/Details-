@@ -524,6 +524,47 @@ function openEditJobModal(jobIdOrNo) {
 }
 window.openEditJobModal = openEditJobModal;
 
+function populatePaymentContainer(containerId, paymentStr) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    // تفريغ الحاوية أولاً لمنع تكرار الصفوف القديمة
+    container.innerHTML = '';
+
+    if (!paymentStr || paymentStr === '-' || paymentStr === '---' || paymentStr.toUpperCase() === 'NULL') {
+        return;
+    }
+
+    // دعم الدفعات المتعددة المفصولة بفاصلة (مثل: "8240 Cash, 1000 Zelle" أو "3515")
+    const payments = String(paymentStr).split(',');
+
+    payments.forEach(p => {
+        let trimmed = p.trim();
+        if (!trimmed) return;
+
+        let amount = '';
+        let method = 'Unspecified'; // القيمة الافتراضية إذا لم توجد طريقة دفع
+
+        // فصل المبلغ عن طريقة الدفع (مثال: "8240 Cash" -> المبلغ: 8240، الطريقة: Cash)
+        const parts = trimmed.split(' ');
+        if (parts.length >= 2) {
+            amount = parts[0];
+            method = parts.slice(1).join(' '); // لضمان التقاط اسم الطريقة كاملاً إن وجد مسافات
+        } else {
+            // إذا كان المدخل رقماً فقط بدون طريقة دفع (مثل "3515")
+            amount = trimmed;
+            method = 'unspecified';
+        }
+
+        // استدعاء دالة إضافة صف الدفع مع تمرير المبلغ والطريقة المستخرجة
+        if (typeof addPaymentRow === 'function') {
+            addPaymentRow(containerId, amount, method);
+        }
+    });
+}
+window.populatePaymentContainer = populatePaymentContainer;
+
+
 function parseAndSumDiesel(val) {
     if (!val || val === '-' || val === '0' || val === 0) return 0;
     if (typeof val === 'number') return val;
