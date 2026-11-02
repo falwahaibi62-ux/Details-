@@ -707,60 +707,62 @@ function switchTab(tabName) {
     try {
         const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
         
+        // إخفاء جميع التبويبات بالكامل
         tabs.forEach(t => {
-            const tabEl = document.getElementById(`tab-${t}`) || document.getElementById(`${t}-view`);
-            const navEl = document.getElementById(`nav-${t}`) || document.getElementById(`nav-${t}-btn`);
-            
-            if (tabEl) {
-                tabEl.classList.add('hidden');
-                tabEl.classList.remove('flex', 'block');
-                tabEl.style.setProperty('display', 'none', 'important');
-            }
-            if (navEl) {
-                navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
-            }
+            const possibleElIds = [`tab-${t}`, `${t}-view`, t];
+            possibleElIds.forEach(id => {
+                const tabEl = document.getElementById(id);
+                if (tabEl) {
+                    tabEl.classList.add('hidden');
+                    tabEl.classList.remove('flex', 'block');
+                    tabEl.style.setProperty('display', 'none', 'important');
+                }
+            });
+
+            const possibleNavIds = [`nav-${t}`, `nav-${t}-btn`, t];
+            possibleNavIds.forEach(id => {
+                const navEl = document.getElementById(id);
+                if (navEl && navEl.tagName === 'BUTTON' || navEl.tagName === 'DIV') {
+                    navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
+                }
+            });
         });
 
-        const activeTab = document.getElementById(`tab-${tabName}`) || document.getElementById(`${tabName}-view`);
-        const activeNav = document.getElementById(`nav-${tabName}`) || document.getElementById(`nav-${tabName}-btn`);
-        
+        // إظهار التبويب النشط المطلوب فوراً
+        const targetIds = [`tab-${tabName}`, `${tabName}-view`, tabName];
+        let activeTab = null;
+        for (let id of targetIds) {
+            activeTab = document.getElementById(id);
+            if (activeTab) break;
+        }
+
         if (activeTab) {
             activeTab.classList.remove('hidden');
             activeTab.classList.add('flex');
             activeTab.style.setProperty('display', 'flex', 'important');
+        } else {
+            console.warn("Tab element not found for:", tabName);
         }
+
+        // تنشيط زر القائمة الجانبية
+        const navTargetIds = [`nav-${tabName}`, `nav-${tabName}-btn`];
+        let activeNav = null;
+        for (let id of navTargetIds) {
+            activeNav = document.getElementById(id);
+            if (activeNav) break;
+        }
+
         if (activeNav) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
+        // استدعاء الدوال المرتبطة بالتبويب
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
-            filterJobsTable();
-        } else if (tabName === 'reports' && typeof renderReportsTab === 'function') {
-            renderReportsTab();
-        } else if (tabName === 'summaryReport' || tabName === 'summary') {
-            if (typeof updateSummaryReportView === 'function') {
-                updateSummaryReportView();
-            }
-        } else if (tabName === 'trash' && typeof renderTrashBin === 'function') {
-            renderTrashBin();
-        } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
-            renderPrivateTruckRentalTab();
-        } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
-            renderWarehouseTab();
-        } else if (tabName === 'pdf-report') {
-            const pdfContainer = document.getElementById('pdfReportContent') || document.getElementById('tab-pdf-report');
-            if (pdfContainer && typeof generateWarehousePDFSummaryHTML === 'function') {
-                if (!document.getElementById('warehousePDFSummarySection')) {
-                    const wrapper = document.createElement('div');
-                    wrapper.id = 'warehousePDFSummarySection';
-                    wrapper.innerHTML = generateWarehousePDFSummaryHTML();
-                    pdfContainer.appendChild(wrapper);
-                }
-            }
+            if (typeof filterJobsTable === 'function') filterJobsTable();
         } else if (tabName === 'users') {
-            renderUsers();
+            if (typeof renderUsers === 'function') renderUsers();
         }
     } catch (e) {
         console.error("Error switching tab:", e);
