@@ -712,47 +712,76 @@ window.updateDashboardAnalytics = updateDashboardAnalytics;
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
 
-function renderDashboardCharts(monthlyData, paymentData) {
+function renderDashboardCharts(monthlyRev, paymentMethodMap) {
     try {
-        const ctxRevenue = document.getElementById('revenueChart');
-        if (ctxRevenue && typeof Chart !== 'undefined') {
-            if (window.revenueChartInstance) window.revenueChartInstance.destroy();
-            window.revenueChartInstance = new Chart(ctxRevenue, {
+        // 1. رسم مخطط الإيرادات الشهرية (Monthly Revenue Bar/Line Chart)
+        const revenueCanvas = document.getElementById('monthlyRevenueChart');
+        if (revenueCanvas) {
+            // تدمير الرسم القديم إن وجد لتجنب التداخل
+            if (window.myRevenueChart instanceof Chart) {
+                window.myRevenueChart.destroy();
+            }
+
+            const ctxRev = revenueCanvas.getContext('2d');
+            window.myRevenueChart = new Chart(ctxRev, {
                 type: 'bar',
                 data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
                     datasets: [{
                         label: 'Monthly Revenue ($)',
-                        data: monthlyData,
-                        backgroundColor: 'rgba(5, 150, 105, 0.85)',
+                        data: monthlyRev,
+                        backgroundColor: '#10b981', // لون أخضر متناسق مع التصميم
                         borderRadius: 8,
-                        hoverBackgroundColor: '#047857'
+                        borderSkipped: false,
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { display: false }
+                    },
                     scales: {
-                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { size: 10 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 10 } }
+                        }
                     }
                 }
             });
         }
 
-        const ctxPayment = document.getElementById('paymentMixChart');
-        if (ctxPayment && typeof Chart !== 'undefined') {
-            if (window.paymentMixChartInstance) window.paymentMixChartInstance.destroy();
-            const paymentColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b'];
+        // 2. رسم مخطط طرق الدفع الدائري (Payment Methods Pie/Doughnut Chart)
+        const paymentCanvas = document.getElementById('paymentMethodChart');
+        if (paymentCanvas) {
+            if (window.myPaymentChart instanceof Chart) {
+                window.myPaymentChart.destroy();
+            }
 
-            window.paymentMixChartInstance = new Chart(ctxPayment, {
+            const ctxPay = paymentCanvas.getContext('2d');
+            window.myPaymentChart = new Chart(ctxPay, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(paymentData),
+                    labels: Object.keys(paymentMethodMap),
                     datasets: [{
-                        data: Object.values(paymentData),
-                        backgroundColor: paymentColors,
+                        data: Object.values(paymentMethodMap),
+                        backgroundColor: [
+                            '#10b981', // Cash - Emerald
+                            '#3b82f6', // Zelle - Blue
+                            '#6366f1', // Cheque - Indigo
+                            '#f59e0b', // PMO - Amber
+                            '#8b5cf6', // BC - Purple
+                            '#ec4899', // PC - Pink
+                            '#14b8a6', // CC - Teal
+                            '#64748b', // WT - Slate
+                            '#f97316', // Others - Orange
+                            '#94a3b8'  // Unspecified - Gray
+                        ],
                         borderWidth: 2,
                         borderColor: '#ffffff'
                     }]
@@ -760,13 +789,20 @@ function renderDashboardCharts(monthlyData, paymentData) {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
-                    cutout: '65%'
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 10 },
+                                boxWidth: 12
+                            }
+                        }
+                    }
                 }
             });
         }
-    } catch (e) {
-        console.error("Error rendering charts:", e);
+    } catch (err) {
+        console.error("Error rendering dashboard charts:", err);
     }
 }
 window.renderDashboardCharts = renderDashboardCharts;
