@@ -147,6 +147,31 @@ async function renderPrivateTruckRentalTab() {
 }
 window.renderPrivateTruckRentalTab = renderPrivateTruckRentalTab;
 
+function renderRentalRow(item, index) {
+    return `
+        <tr class="hover:bg-slate-50 border-b border-slate-100">
+            <td class="p-3 border">${item.date || '-'}</td>
+            <td class="p-3 border font-semibold text-slate-800">${item.truckLabel || '-'}</td>
+            <td class="p-3 border text-center">${item.Days ?? '-'}</td>
+            <td class="p-3 border">${item.paidBy || '-'}</td>
+            <td class="p-3 border">
+                <span class="px-2 py-0.5 rounded-md bg-slate-100 font-bold text-slate-700">
+                    ${item.paymentType || item.paymentMethod || '-'}
+                </span>
+            </td>
+            <td class="p-3 border text-right font-bold text-emerald-600">$${item.amount || '0'}</td>
+            <td class="p-3 border text-center space-x-2">
+                <button onclick="editRental(${item.id || index})" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition cursor-pointer" title="Edit">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button onclick="deleteRental(${item.id || index})" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold transition cursor-pointer" title="Delete">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
 // 4. Reload Data & Update UI Components
 async function refreshPrivateTruckData() {
     const rentals = await loadPrivateTruckRentals();
