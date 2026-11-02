@@ -192,61 +192,51 @@
         <canvas id="paymentMixChart"></canvas>
     </div>
 </div>
-            <!-- Business Intelligence & Strategic Recommendations -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Top Corridors -->
-                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 hover:shadow-md transition-shadow">
-                    <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
-                        <h3 class="font-bold text-slate-900 text-sm flex items-center">
-                            <i class="fa-solid fa-route text-emerald-600 mr-2 text-base"></i>Top Revenue Corridors
-                        </h3>
-                        <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-2.5 py-1 rounded-lg">Top 4</span>
-                    </div>
-                    <div id="topCorridorsContainer" class="space-y-3 text-xs"></div>
-                </div>
+         <!-- قسم التوصيات الاستراتيجية -->
+<div class="glass-panel p-6 rounded-2xl col-span-12">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-slate-800 text-sm flex items-center">
+            <i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>
+            Strategic Business Recommendations
+        </h3>
+        <span class="text-xs bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full font-medium">AI Insights</span>
+    </div>
+    
+    <!-- شبكة البطاقات الداخلية لتظهر بجانب بعضها وليست عمودية -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- البطاقة الأولى -->
+        <div class="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+            <h4 class="font-bold text-emerald-800 text-xs mb-1 flex items-center">
+                <i class="fa-solid fa-chart-line mr-1.5"></i> High Yield Lane Focus
+            </h4>
+            <p class="text-[11px] text-slate-600 leading-relaxed">Prioritize dispatch allocations on top-performing corridors to maximize revenue yield and minimize deadhead miles.</p>
+        </div>
 
-                <!-- Strategic Recommendations Section -->
-                <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:col-span-2 space-y-4 hover:shadow-md transition-shadow">
-                    <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
-                        <h3 class="font-bold text-slate-900 text-sm flex items-center">
-                            <i class="fa-solid fa-lightbulb text-amber-500 mr-2 text-base animate-pulse"></i>Strategic Business Recommendations
-                        </h3>
-                        <span class="text-[10px] bg-amber-50 text-amber-700 font-bold px-2.5 py-1 rounded-lg border border-amber-200/50">AI Insights</span>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                        <div class="p-4 bg-gradient-to-br from-emerald-50/60 to-transparent border border-emerald-100/80 rounded-2xl space-y-2 hover:border-emerald-300 transition-all">
-                            <div class="flex items-center gap-2 font-bold text-emerald-800">
-                                <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><i class="fa-solid fa-chart-line text-xs"></i></div>
-                                High Yield Lane Focus
-                            </div>
-                            <p class="text-slate-600 leading-relaxed">Prioritize dispatch allocations on top-performing corridors to maximize revenue yield and minimize deadhead miles.</p>
-                        </div>
-                        <div class="p-4 bg-gradient-to-br from-blue-50/60 to-transparent border border-blue-100/80 rounded-2xl space-y-2 hover:border-blue-300 transition-all">
-                            <div class="flex items-center gap-2 font-bold text-blue-800">
-                                <div class="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center"><i class="fa-solid fa-shield-halved text-xs"></i></div>
-                                Liquidity Optimization
-                            </div>
-                            <p class="text-slate-600 leading-relaxed">Monitor operational cash flows closely and balance upfront pick-up collections to maintain robust financial stability.</p>
-                        </div>
-                        <div class="p-4 bg-gradient-to-br from-purple-50/60 to-transparent border border-purple-100/80 rounded-2xl space-y-2 hover:border-purple-300 transition-all">
-                            <div class="flex items-center gap-2 font-bold text-purple-800">
-                                <div class="w-7 h-7 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center"><i class="fa-solid fa-wallet text-xs"></i></div>
-                                Payment Balancing
-                            </div>
-                            <p class="text-slate-600 leading-relaxed">Track digital payment channels alongside cash transactions to accelerate bank reconciliations and auditing.</p>
-                        </div>
-                        <div class="p-4 bg-gradient-to-br from-amber-50/60 to-transparent border border-amber-100/80 rounded-2xl space-y-2 hover:border-amber-300 transition-all">
-                            <div class="flex items-center gap-2 font-bold text-amber-800">
-                                <div class="w-7 h-7 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center"><i class="fa-solid fa-user-gear text-xs"></i></div>
-                                Dispatch Allocation
-                            </div>
-                            <p class="text-slate-600 leading-relaxed">Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- البطاقة الثانية -->
+        <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+            <h4 class="font-bold text-blue-800 text-xs mb-1 flex items-center">
+                <i class="fa-solid fa-shield-halved mr-1.5"></i> Liquidity Optimization
+            </h4>
+            <p class="text-[11px] text-slate-600 leading-relaxed">Monitor operational cash flows closely and balance upfront pick-up collections to maintain robust financial stability.</p>
+        </div>
 
-        </div> <!-- END TAB 1 -->
+        <!-- البطاقة الثالثة -->
+        <div class="p-4 bg-purple-50/50 rounded-xl border border-purple-100">
+            <h4 class="font-bold text-purple-800 text-xs mb-1 flex items-center">
+                <i class="fa-solid fa-wallet mr-1.5"></i> Payment Balancing
+            </h4>
+            <p class="text-[11px] text-slate-600 leading-relaxed">Track digital payment channels alongside cash transactions to accelerate bank reconciliations and auditing.</p>
+        </div>
+
+        <!-- البطاقة الرابعة -->
+        <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100">
+            <h4 class="font-bold text-amber-800 text-xs mb-1 flex items-center">
+                <i class="fa-solid fa-user-tie mr-1.5"></i> Dispatch Allocation
+            </h4>
+            <p class="text-[11px] text-slate-600 leading-relaxed">Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence.</p>
+        </div>
+    </div>
+</div>
 
         <!-- TAB 2: OPERATIONS LEDGER (CRUD) -->
         <div id="tab-jobs" class="hidden space-y-6 w-full flex flex-col view-section">
