@@ -336,12 +336,13 @@ function renderJobsCRUD(dataToRender) {
             ? `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px]">-</span>` 
             : `<span class="bg-amber-50 text-amber-800 px-2.5 py-1 rounded font-bold text-xs">${item.foreman}</span>`;
         
-        // إظهار أزرار التعديل والحذف مباشرة لضمان ظهورها
         const jobIdentifier = item.jobNo || item.job_no || item.id;
+        
+        // أزرار الإجراءات (تعديل وحذف) تظهر مباشرة
         const actions = `
             <div class="flex items-center space-x-1 justify-center gap-1">
-                <button type="button" onclick="('${jobIdentifier}')" class="px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg cursor-pointer transition" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button type="button" onclick="deleteJob('${item.jobNo || item.job_no}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer transition" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                <button type="button" onclick="openEditJobModal('${jobIdentifier}')" class="px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg cursor-pointer transition" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button type="button" onclick="deleteJob('${jobIdentifier}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer transition" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
             </div>
         `;
 
