@@ -576,7 +576,7 @@ function updateDashboardAnalytics() {
 
         let totalRev = 0;
         let totalDieselCost = 0;
-        let validJobsCount = 0; 
+        let validJobsCount = 0;  
         const routeRevenueMap = {};
         
         // 🌟 تهيئة كائن طرق الدفع لتجميع المبالغ المالية بدقة
@@ -588,10 +588,10 @@ function updateDashboardAnalytics() {
                 return; 
             }
 
-            validJobsCount++; 
+            validJobsCount++;  
             totalDieselCost += parseAndSumDiesel(job.diesel);
 
-            // استخراج المبلغ المالي بدقة
+            // استخراج المبلغ الإجمالي للرحلة بدقة
             let amt = 0;
             if (job.total) {
                 amt = parseFloat(String(job.total).replace(/[^0-9.]/g, '')) || 0;
@@ -619,51 +619,28 @@ function updateDashboardAnalytics() {
                 routeRevenueMap[routeKey] = (routeRevenueMap[routeKey] || 0) + amt;
             }
 
-            // 🌟 توزيع المبالغ المالية حصرياً على طرق الدفع بناءً على pu و dest (مع قسمة المبلغ على عمودين لتجنب التكرار المزدوج)
-            [job.pu, job.dest].forEach(payStr => {
-                if (!payStr || payStr === '-' || payStr === '---' || String(payStr).trim() === '') {
-                    paymentMethodMap.Unspecified += (amt / 2);
-                } else {
-                    const upperPay = String(payStr).toUpperCase();
-                    let matched = false;
+            // 🌟 معالجة الأطراف بدقة (استخراج المبالغ المستقلة لـ PU و Dest)
+            let puStr = String(job.pu || '').trim();
+            let destStr = String(job.dest || '').trim();
 
-                    if (upperPay.includes('CASH')) { 
-                        paymentMethodMap.Cash += (amt / 2); 
-                        matched = true; 
-                    } else if (upperPay.includes('ZELLE')) { 
-                        paymentMethodMap.Zelle += (amt / 2); 
-                        matched = true; 
-                    } else if (upperPay.includes('CHEQUE') || upperPay.includes('CK') || upperPay.includes('CHECK')) { 
-                        paymentMethodMap.Cheque += (amt / 2); 
-                        matched = true; 
-                    } else if (upperPay.includes('PMO')) { 
-                        paymentMethodMap.PMO += (amt / 2); 
-                        matched = true; 
-                    } else if (upperPay.includes('BC')) { 
-                        paymentMethodMap.BC += (amt / 2); 
-                        matched = true; 
-                    } else if (upperPay.includes('PC')) { 
-                        paymentMethodMap.PC += (amt / 2); 
-                        matched = true; 
-                    } else if (upperPay.includes('CC')) { 
-                        paymentMethodMap.CC += (amt / 2); 
-                        matched = true; 
-                    } else if (upperPay.includes('WT')) { 
-                        paymentMethodMap.WT += (amt / 2); 
-                        matched = true; 
-                    } else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) {
-                        paymentMethodMap.Others += (amt / 2);
-                        matched = true;
-                    }
+            let hasPu = puStr !== '' && puStr !== '-' && puStr !== '---';
+            let hasDest = destStr !== '' && destStr !== '-' && destStr !== '---';
 
-                    if (!matched) {
-                        paymentMethodMap.Others += (amt / 2);
-                    }
-                }
-            });
+            // إذا وجد طرف واحد فقط وآخر فارغ، يُعزى المبلغ بالكامل لهذا الطرف
+            if (hasPu && !hasDest) {
+                assignPaymentMethod(puStr, amt, paymentMethodMap);
+            } else if (!hasPu && hasDest) {
+                assignPaymentMethod(destStr, amt, paymentMethodMap);
+            } else if (hasPu && hasDest) {
+                // إذا وجد الطرفان معاً، نوزع المبلغ بالتساوي أو نقسمه إن لم توجد مبالغ مفصلة
+                assignPaymentMethod(puStr, amt / 2, paymentMethodMap);
+                assignPaymentMethod(destStr, amt / 2, paymentMethodMap);
+            } else {
+                paymentMethodMap.Unspecified += amt;
+            }
         });
 
-        // حفظ خريطة طرق الدفع في النافذة العامة لاستخدامها في الرسوم والتقارير
+        // حفظ خريطة طرق الدفع في النافذة العامة
         window.currentPaymentMethodMap = paymentMethodMap;
 
         const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
@@ -681,7 +658,7 @@ function updateDashboardAnalytics() {
         const dieselEl = document.getElementById('dashTotalDiesel');
         if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
 
-        // تحديث مسارات الإيرادات الأعلى
+        // تحديث قسم مسارات الإيرادات الأعلى (Top Revenue Corridors)
         const topCorridorsContainer = document.getElementById('topCorridorsContainer');
         if (topCorridorsContainer) {
             const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
@@ -708,46 +685,45 @@ function updateDashboardAnalytics() {
     }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
-        // تحديث البطاقات العلوية
-        const revEl = document.getElementById('dashTotalRevenue');
-        if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
-        const jobsTextEl = document.getElementById('dashCompletedJobsText');
-        if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${validJobsCount} Active Dispatches`;
+// 🌟 دالة مساعدة لتصنيف وتوزيع المبالغ المالية على طرق الدفع
+function assignPaymentMethod(methodStr, amount, map) {
+    const upperPay = String(methodStr).toUpperCase();
+    let matched = false;
 
-        const avgEl = document.getElementById('dashAvgJobValue');
-        if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
+    if (upperPay.includes('CASH')) { 
+        map.Cash += amount; 
+        matched = true; 
+    } else if (upperPay.includes('ZELLE')) { 
+        map.Zelle += amount; 
+        matched = true; 
+    } else if (upperPay.includes('CHEQUE') || upperPay.includes('CK') || upperPay.includes('CHECK')) { 
+        map.Cheque += amount; 
+        matched = true; 
+    } else if (upperPay.includes('PMO')) { 
+        map.PMO += amount; 
+        matched = true; 
+    } else if (upperPay.includes('BC')) { 
+        map.BC += amount; 
+        matched = true; 
+    } else if (upperPay.includes('PC')) { 
+        map.PC += amount; 
+        matched = true; 
+    } else if (upperPay.includes('CC')) { 
+        map.CC += amount; 
+        matched = true; 
+    } else if (upperPay.includes('WT')) { 
+        map.WT += amount; 
+        matched = true; 
+    } else if (upperPay.includes('OTHER') || upperPay.includes('OTHERS')) {
+        map.Others += amount;
+        matched = true;
+    }
 
-        const dieselEl = document.getElementById('dashTotalDiesel');
-        if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
-
-       // تحديث قسم مسارات الإيرادات الأعلى (Top Revenue Corridors)
-        const topCorridorsContainer = document.getElementById('topCorridorsContainer');
-        if (topCorridorsContainer) {
-            const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
-            if (sortedRoutes.length > 0) {
-                topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border mb-2">
-                        <div class="flex items-center space-x-2">
-                            <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
-                            <span class="font-bold text-emerald-800">${route}</span>
-                        </div>
-                        <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
-                    </div>
-                `).join('');
-            } else {
-                topCorridorsContainer.innerHTML = `<p class="text-xs text-slate-400 text-center p-6">No corridor data available</p>`;
-            }
-        }
-
-        // 🌟 إعادة رسم المخططات البيانية بقيم صحيحة في نهاية الدالة وقبل إغلاق الـ try/catch
-        renderDashboardCharts(monthlyRev, paymentMethodMap);
-
-    } catch (e) {
-        console.error("Error updating dashboard analytics:", e);
+    if (!matched) {
+        map.Others += amount;
     }
 }
-window.updateDashboardAnalytics = updateDashboardAnalytics;
 function renderDashboardCharts(monthlyRev, paymentMethodMap) {
     try {
         // 1. رسم مخطط الإيرادات الشهرية (Monthly Revenue Bar/Line Chart)
