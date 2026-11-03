@@ -249,29 +249,44 @@
                 </button>
             </div>
             
-            <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4 bg-white shadow-xs">
-                <div class="flex items-center space-x-2">
-                    <label class="text-xs font-bold text-slate-600">Filter Month:</label>
-                    <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
-                        <option value="ALL">All Months</option>
-                        <option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option>
-                        <option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option>
-                        <option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
-                    </select>
-                </div>
-                
-                <div class="flex items-center space-x-2">
-                    <label class="text-xs font-bold text-slate-600">Filter Year:</label>
-                    <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white"></select>
-                </div>
-                
-                <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
-            </div>
-            
-            <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs flex-1 flex flex-col">
-                <div class="overflow-x-auto flex-1">
-                    <table class="w-full text-left text-xs min-w-[1100px]">
-                        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+           <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4 bg-white shadow-xs">
+    <!-- Filter Month -->
+    <div class="flex items-center space-x-2">
+        <label class="text-xs font-bold text-slate-600">Filter Month:</label>
+        <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
+            <option value="ALL">All Months</option>
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+    </div>
+    
+    <!-- Filter Year -->
+    <div class="flex items-center space-x-2">
+        <label class="text-xs font-bold text-slate-600">Filter Year:</label>
+        <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white"></select>
+    </div>
+
+    <!-- Filter Day (New) -->
+    <div class="flex items-center space-x-2">
+        <label class="text-xs font-bold text-slate-600">Filter Day:</label>
+        <select id="filterDay" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
+            <option value="ALL">All Days</option>
+            <script>
+                for(let i=1; i<=31; i++) {
+                    document.write(`<option value="${i}">${i}</option>`);
+                }
+            </script>
+        </select>
+    </div>
+    
+    <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
+</div>
+
+<div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs flex-1 flex flex-col">
+    <div class="overflow-x-auto flex-1">
+        <table class="w-full text-left text-xs min-w-[1100px]">
+            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
                            <tr>
                                 <th class="p-3 border">Date</th>
                                 <th class="p-3 border">Job No</th>
