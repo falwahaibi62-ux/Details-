@@ -365,25 +365,15 @@ function generateOfficialSummaryTable(filteredJobs) {
     let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
 
     const payMap = {
-        Cash: 0,
-        Zelle: 0,
-        Cheque: 0,
-        PMO: 0,
-        BC: 0,
-        PC: 0,
-        CC: 0,
-        WT: 0,
-        Others: 0,
-        Unspecified: 0
+        Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0
     };
 
     filteredJobs.forEach(item => {
         const totalVal = parseCurrency(item.total || item.total_amount);
         sumTotalAfterDeposit += totalVal;
-
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
 
-        // 1. استخراج وجمع الأرقام الموجودة داخل الأقواس فقط لخانة Helpers (مثل 3-1 1/2 (750) -> يجمع 750)
+        // 1. Helpers: الأرقام داخل الأقواس فقط
         const helpersStr = String(item.helpers || item.helpers_cost || '');
         const helperMatch = helpersStr.match(/\(([^)]+)\)/);
         if (helperMatch) {
@@ -392,7 +382,7 @@ function generateOfficialSummaryTable(filteredJobs) {
             sumHelpers += parseCurrency(helpersStr);
         }
 
-        // 2. استخراج وجمع الأرقام الموجودة داخل الأقواس فقط لخانة Drivers (مثل 1-1 1/2 (337) -> يجمع 337)
+        // 2. Drivers: الأرقام داخل الأقواس فقط
         const driversStr = String(item.drivers || item.drivers_cost || '');
         const driverMatch = driversStr.match(/\(([^)]+)\)/);
         if (driverMatch) {
@@ -401,52 +391,44 @@ function generateOfficialSummaryTable(filteredJobs) {
             sumDrivers += parseCurrency(driversStr);
         }
 
+        // 3. Cash Diesel: القيم التي تكون طريقة دفعها Cash فقط
         const dieselValStr = item.diesel || item.diesel_expense;
         if (dieselValStr && dieselValStr !== '-') {
             let dieselStr = String(dieselValStr);
-            let dieselSum = dieselStr.split('+').reduce((sum, part) => {
-                let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
-                return sum + (cleanNum < 5000 ? cleanNum : 0);
-            }, 0);
-            if (dieselStr.toLowerCase().includes('cash') || !dieselStr.toLowerCase().includes('penske')) {
-                sumCashDiesel += dieselSum;
-            }
+            let dieselParts = dieselStr.split('+');
+            dieselParts.forEach(part => {
+                let partLower = part.toLowerCase().trim();
+                if (partLower.includes('cash')) {
+                    let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
+                    if (cleanNum > 0 && cleanNum < 5000) {
+                        sumCashDiesel += cleanNum;
+                    }
+                }
+            });
         }
 
         // معالجة PU Payments
         const puRawStr = String(item.pu || item.pu_payments || '').trim();
         if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
             processPaymentString(puRawStr, payMap);
-
             const puParts = puRawStr.split(/[,/]+/);
             puParts.forEach(part => {
                 const partVal = parseCurrency(part);
                 if (partVal > 0 && partVal < 50000) {
                     const pLower = part.toLowerCase();
-                    if (pLower.includes('cash')) {
-                        sumCashPu += partVal;
-                    } else if (pLower.includes('pmo')) {
+                    if (pLower.includes('cash')) sumCashPu += partVal;
+                    else if (pLower.includes('pmo')) {
                         sumPmoPu += partVal;
-                        if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery')) {
-                            sumPmoDeliveries += partVal;
-                        }
-                    } else {
-                        sumZellePu += partVal;
-                    }
+                        if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery')) sumPmoDeliveries += partVal;
+                    } else sumZellePu += partVal;
                 }
             });
-        } else {
-            const puNumOnly = parseCurrency(item.pu || item.pu_payments);
-            if (puNumOnly > 0) {
-                payMap.Unspecified += puNumOnly;
-            }
         }
         
-        // 3. معالجة Destination / Dest Balance (تخصيص Dest Zelle حصرياً لمن يحتوي على zelle)
+        // 4. Dest Balance Zelle: حصراً للمعاملات التي تحتوي على Zelle
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             processPaymentString(destRawStr, payMap);
-
             const destParts = destRawStr.split(/[,/]+/);
             destParts.forEach(part => {
                 const partVal = parseCurrency(part);
@@ -462,69 +444,12 @@ function generateOfficialSummaryTable(filteredJobs) {
                     }
                 }
             });
-        } else {
-            const destNumOnly = parseCurrency(item.dest || item.destination || item.destination_payments);
-            if (destNumOnly > 0) {
-                payMap.Unspecified += destNumOnly;
-            }
         }
     });
 
     const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
     const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
-
     const payGrandTotal = Object.values(payMap).reduce((a, b) => a + b, 0);
-
-    const paymentMethodsSummaryHTML = `
-        <div id="paymentDateRangeSummaryContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
-            <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-800">Payment Methods Summary (PU & Dest Balance)</h3>
-                    <p class="text-[11px] text-slate-400">Aggregated totals categorized by payment type for the selected period</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                        Total Filtered Jobs: <span class="text-emerald-600">${totalJobs}</span>
-                    </span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
-                <div class="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100 text-center">
-                    <span class="text-[10px] uppercase font-bold text-emerald-700 block">Cash Total</span>
-                    <span class="text-base font-extrabold text-emerald-600 mt-1 block">$${payMap.Cash.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                </div>
-                <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-center">
-                    <span class="text-[10px] uppercase font-bold text-blue-700 block">Zelle Total</span>
-                    <span class="text-base font-extrabold text-blue-600 mt-1 block">$${payMap.Zelle.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                </div>
-                <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 text-center">
-                    <span class="text-[10px] uppercase font-bold text-indigo-700 block">Cheque Total</span>
-                    <span class="text-base font-extrabold text-indigo-600 mt-1 block">$${payMap.Cheque.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                </div>
-                <div class="p-3 bg-amber-50/50 rounded-xl border border-amber-100 text-center">
-                    <span class="text-[10px] uppercase font-bold text-amber-700 block">PMO Total</span>
-                    <span class="text-base font-extrabold text-amber-600 mt-1 block">$${payMap.PMO.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                </div>
-                <div class="p-3 bg-teal-50/50 rounded-xl border border-teal-100 text-center">
-                    <span class="text-[10px] uppercase font-bold text-teal-700 block">BC / PC / CC / WT</span>
-                    <span class="text-base font-extrabold text-teal-600 mt-1 block">$${(payMap.BC + payMap.PC + payMap.CC + payMap.WT).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                </div>
-                <div class="p-3 bg-slate-50/50 rounded-xl border border-slate-200 text-center">
-                    <span class="text-[10px] uppercase font-bold text-slate-600 block">Others</span>
-                    <span class="text-base font-extrabold text-slate-700 mt-1 block">$${payMap.Others.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                </div>
-                <div class="p-3 bg-rose-50/50 rounded-xl border border-rose-100 text-center">
-                    <span class="text-[10px] uppercase font-bold text-rose-700 block">Unspecified</span>
-                    <span class="text-base font-extrabold text-rose-600 mt-1 block">$${payMap.Unspecified.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                </div>
-                <div class="p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-center col-span-2 sm:col-span-3 lg:col-span-3">
-                    <span class="text-[10px] uppercase font-bold text-purple-700 block">Grand Total All Methods</span>
-                    <span class="text-base font-black text-purple-700 mt-1 block">$${payGrandTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                </div>
-            </div>
-        </div>
-    `;
 
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
@@ -532,14 +457,6 @@ function generateOfficialSummaryTable(filteredJobs) {
                 <div>
                     <h3 class="text-sm font-bold text-slate-800">Official Period Financial Summary</h3>
                     <p class="text-[11px] text-slate-400">Comprehensive summary of labor fees, cash, Zelle, and PMO breakdown</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                        Total Jobs: <span class="text-emerald-600">${totalJobs}</span>
-                    </span>
-                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                        Total Deliveries: <span class="text-blue-600">${totalDeliveries}</span>
-                    </span>
                 </div>
             </div>
 
@@ -583,7 +500,6 @@ function generateOfficialSummaryTable(filteredJobs) {
 
         ${rentalSummaryObj.html}
         ${warehouseSummaryObj.html}
-        ${paymentMethodsSummaryHTML}
     `;
 }
 window.generateOfficialSummaryTable = generateOfficialSummaryTable;
