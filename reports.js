@@ -382,8 +382,24 @@ function generateOfficialSummaryTable(filteredJobs) {
         sumTotalAfterDeposit += totalVal;
 
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-        sumHelpers += parseCurrency(item.helpers || item.helpers_cost);
-        sumDrivers += parseCurrency(item.drivers || item.drivers_cost);
+
+        // 1. استخراج وجمع الأرقام الموجودة داخل الأقواس فقط لخانة Helpers (مثل 3-1 1/2 (750) -> يجمع 750)
+        const helpersStr = String(item.helpers || item.helpers_cost || '');
+        const helperMatch = helpersStr.match(/\(([^)]+)\)/);
+        if (helperMatch) {
+            sumHelpers += parseCurrency(helperMatch[1]);
+        } else {
+            sumHelpers += parseCurrency(helpersStr);
+        }
+
+        // 2. استخراج وجمع الأرقام الموجودة داخل الأقواس فقط لخانة Drivers (مثل 1-1 1/2 (337) -> يجمع 337)
+        const driversStr = String(item.drivers || item.drivers_cost || '');
+        const driverMatch = driversStr.match(/\(([^)]+)\)/);
+        if (driverMatch) {
+            sumDrivers += parseCurrency(driverMatch[1]);
+        } else {
+            sumDrivers += parseCurrency(driversStr);
+        }
 
         const dieselValStr = item.diesel || item.diesel_expense;
         if (dieselValStr && dieselValStr !== '-') {
@@ -397,12 +413,12 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
 
-        // 1. معالجة PU Payments باستخدام المحلل الجديد
+        // معالجة PU Payments
         const puRawStr = String(item.pu || item.pu_payments || '').trim();
         if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
             processPaymentString(puRawStr, payMap);
 
-            const puParts = puRawStr.split(',');
+            const puParts = puRawStr.split(/[,/]+/);
             puParts.forEach(part => {
                 const partVal = parseCurrency(part);
                 if (partVal > 0 && partVal < 50000) {
@@ -426,12 +442,12 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
         
-        // 2. معالجة Destination / Dest Balance باستخدام المحلل الجديد
+        // 3. معالجة Destination / Dest Balance (تخصيص Dest Zelle حصرياً لمن يحتوي على zelle)
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             processPaymentString(destRawStr, payMap);
 
-            const destParts = destRawStr.split(',');
+            const destParts = destRawStr.split(/[,/]+/);
             destParts.forEach(part => {
                 const partVal = parseCurrency(part);
                 if (partVal > 0 && partVal < 50000) {
@@ -570,6 +586,7 @@ function generateOfficialSummaryTable(filteredJobs) {
         ${paymentMethodsSummaryHTML}
     `;
 }
+window.generateOfficialSummaryTable = generateOfficialSummaryTable;
 
 function generateSummaryReportData() {
     const filteredJobs = getFilteredJobsData();
