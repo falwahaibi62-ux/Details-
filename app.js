@@ -182,7 +182,39 @@ window.filterJobsTable = filterJobsTable;
 
 // دالة فتح نافذة إضافة مستخدم جديد
 // Function to open the add new user prompt / modal
-function openAddUserModal() {
+
+async function fetchUsersFromSupabase() {
+    if (typeof supabaseClient === 'undefined') {
+        console.error("Supabase client is not initialized.");
+        return;
+    }
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('user_role')
+            .select('*')
+            .order('id', { ascending: true });
+
+        if (error) {
+            console.error("Error fetching users:", error.message);
+            return;
+        }
+
+        // تحديث المصفوفة العامة ببيانات السحابة
+        window.systemUsers = data || [];
+        
+        // إعادة رسم الواجهة لتحديث القائمة
+        if (typeof renderUsers === 'function') {
+            renderUsers();
+        }
+    } catch (err) {
+        console.error("Unexpected error fetching users:", err);
+    }
+}
+window.fetchUsersFromSupabase = fetchUsersFromSupabase;
+
+
+async function openAddUserModal() {
     const userName = prompt("Enter new user name:");
     if (!userName) return;
     
@@ -192,18 +224,27 @@ function openAddUserModal() {
     const userRole = prompt("Enter user role (Admin, Member, Viewer):", "Member");
     if (!userRole) return;
 
-    // Add the new user to the global systemUsers array
-    if (typeof window.systemUsers !== 'undefined') {
-        window.systemUsers.push({
-            name: userName,
-            email: userEmail,
-            role: userRole
-        });
-        
-        // Re-render the user list to update the interface instantly
-        if (typeof renderUsers === 'function') {
-            renderUsers();
+    if (typeof supabaseClient === 'undefined') {
+        alert("Supabase client is not initialized.");
+        return;
+    }
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('user_role')
+            .insert([{ name: userName, email: userEmail, role: userRole }])
+            .select();
+
+        if (error) {
+            console.error("Error adding user:", error.message);
+            alert("Failed to add user: " + error.message);
+            return;
         }
+
+        // إعادة جلب البيانات لتحديث الواجهة فوراً من قاعدة البيانات
+        fetchUsersFromSupabase();
+    } catch (err) {
+        console.error("Unexpected error:", err);
     }
 }
 window.openAddUserModal = openAddUserModal;
@@ -212,7 +253,11 @@ window.openAddUserModal = openAddUserModal;
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
     if (!container) return;
-    if (typeof window.systemUsers === 'undefined') return;
+    
+    // إذا كانت المصفوفة غير معرفة، نجعلها فارغة
+    if (typeof window.systemUsers === 'undefined') {
+        window.systemUsers = [];
+    }
 
     let html = `
         <div class="flex justify-between items-center pb-4 mb-3 border-b border-slate-100 px-2">
@@ -229,65 +274,102 @@ function renderUsers() {
         <div class="space-y-3">
     `;
 
-    html += window.systemUsers.map((u, index) => {
-        let roleBadgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-        let roleIcon = 'fa-user-shield';
-        if (u.role === 'Member') {
-            roleBadgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
-            roleIcon = 'fa-user-tie';
-        } else if (u.role === 'Viewer') {
-            roleBadgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
-            roleIcon = 'fa-eye';
-        }
+    if (window.systemUsers.length === 0) {
+        html += `<div class="p-6 text-center text-slate-400 text-xs">No users found in database. Click "Add User" to create one.</div>`;
+    } else {
+        html += window.systemUsers.map((u, index) => {
+            let roleBadgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            let roleIcon = 'fa-user-shield';
+            if (u.role === 'Member') {
+                roleBadgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
+                roleIcon = 'fa-user-tie';
+            } else if (u.role === 'Viewer') {
+                roleBadgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+                roleIcon = 'fa-eye';
+            }
 
-        return `
-            <div class="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500/50 transition-all shadow-2xs group">
-                <div class="flex items-center space-x-3.5">
-                    <div class="w-11 h-11 rounded-xl ${roleBadgeColor} border flex items-center justify-center font-bold text-sm shadow-2xs">
-                        <i class="fa-solid ${roleIcon}"></i>
+            return `
+                <div class="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500/50 transition-all shadow-2xs group">
+                    <div class="flex items-center space-x-3.5">
+                        <div class="w-11 h-11 rounded-xl ${roleBadgeColor} border flex items-center justify-center font-bold text-sm shadow-2xs">
+                            <i class="fa-solid ${roleIcon}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm group-hover:text-emerald-600 transition-colors">${u.name}</h4>
+                            <p class="text-xs text-slate-400 font-medium">${u.email}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="font-bold text-slate-800 text-sm group-hover:text-emerald-600 transition-colors">${u.name}</h4>
-                        <p class="text-xs text-slate-400 font-medium">${u.email}</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <div class="relative">
-                        <select onchange="updateUserRole(${index}, this.value)" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-4 py-2.5 pr-9 focus:outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer">
-                            <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>🛡️ Administrator</option>
-                            <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>💼 Team Member</option>
-                            <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>👁️ Viewer</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                            <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <select onchange="updateUserRoleInSupabase(${u.id}, this.value)" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-4 py-2.5 pr-9 focus:outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer">
+                                <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>🛡️ Administrator</option>
+                                <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>💼 Team Member</option>
+                                <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>👁️ Viewer</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    }
 
     html += `</div>`;
     container.innerHTML = html;
 }
 window.renderUsers = renderUsers;
 
-function updateUserRole(index, newRole) {
-    if (window.systemUsers && window.systemUsers[index]) {
-        window.systemUsers[index].role = newRole;
-        console.log(`Updated user ${window.systemUsers[index].name} role to ${newRole}`);
-        // يمكنك هنا إضافة تنبيه بصري سريع للمستخدم (Toast) إذا رغبت
+async function updateUserRoleInSupabase(userId, newRole) {
+    if (typeof supabaseClient === 'undefined') return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('user_role')
+            .update({ role: newRole })
+            .eq('id', userId);
+
+        if (error) {
+            console.error("Error updating role:", error.message);
+            alert("Failed to update role.");
+        } else {
+            console.log(`User ID ${userId} role updated to ${newRole} in Supabase.`);
+        }
+    } catch (err) {
+        console.error("Unexpected error updating role:", err);
     }
 }
-window.updateUserRole = updateUserRole;
+window.updateUserRoleInSupabase = updateUserRoleInSupabase;
 
+// استدعاء جلب البيانات عند تحميل الصفحة أو فتح التبويب
+document.addEventListener("DOMContentLoaded", () => {
+    fetchUsersFromSupabase();
+});
 
 function checkPermissions() {
-    const addBtn = document.getElementById('addJobBtn');
-    if (window.currentUserRole === 'Viewer') {
-        if (addBtn) addBtn.style.display = 'none';
+    // 1. تحديد العناصر الحساسة التي تتطلب صلاحيات كتابة/إدارة
+    const addJobBtn = document.getElementById('addJobBtn');
+    const addUserBtn = document.getElementById('addUserBtn'); // زر إضافة مستخدم إن وجد
+    const actionButtons = document.querySelectorAll('.admin-only-action'); // أزرار التعديل والحذف العامة
+
+    // 2. التحقق من دور المستخدم الحالي (الافتراضي Viewer كحماية قصوى إذا لم يتم تحديده)
+    const currentRole = window.currentUserRole || 'Viewer';
+
+    if (currentRole === 'Viewer') {
+        // إخفاء أزرار الإضافة والتعديل تماماً للمشاهدين
+        if (addJobBtn) addJobBtn.style.display = 'none';
+        if (addUserBtn) addUserBtn.style.display = 'none';
+        actionButtons.forEach(btn => btn.style.display = 'none');
+        
+        console.log("🔒 Restricted Mode: Viewer privileges active.");
     } else {
-        if (addBtn) addBtn.style.display = 'flex';
+        // إظهار الأزرار للمسؤولين والأعضاء (Admin / Member)
+        if (addJobBtn) addJobBtn.style.display = 'flex';
+        if (addUserBtn) addUserBtn.style.display = 'flex';
+        actionButtons.forEach(btn => btn.style.display = 'flex');
+        
+        console.log(`🔓 Full Access Mode: Active role is ${currentRole}`);
     }
 }
 window.checkPermissions = checkPermissions;
