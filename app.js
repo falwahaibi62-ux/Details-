@@ -183,6 +183,9 @@ window.filterJobsTable = filterJobsTable;
 // دالة فتح نافذة إضافة مستخدم جديد
 // Function to open the add new user prompt / modal
 
+a// ==========================================
+// 1. Fetch Users from Supabase (user_role table)
+// ==========================================
 async function fetchUsersFromSupabase() {
     if (typeof supabaseClient === 'undefined') {
         console.error("Supabase client is not initialized.");
@@ -200,10 +203,8 @@ async function fetchUsersFromSupabase() {
             return;
         }
 
-        // تحديث المصفوفة العامة ببيانات Supabase الحقيقية فقط
         window.systemUsers = data || [];
         
-        // إعادة رسم الواجهة لتظهر المستخدمة (fatma) وحدها
         if (typeof renderUsers === 'function') {
             renderUsers();
         }
@@ -213,42 +214,9 @@ async function fetchUsersFromSupabase() {
 }
 window.fetchUsersFromSupabase = fetchUsersFromSupabase;
 
-async function openAddUserModal() {
-    const userName = prompt("Enter new user name:");
-    if (!userName) return;
-    
-    const userEmail = prompt("Enter user email address:");
-    if (!userEmail) return;
-
-    const userRole = prompt("Enter user role (Admin, Member, Viewer):", "Member");
-    if (!userRole) return;
-
-    if (typeof supabaseClient === 'undefined') {
-        alert("Supabase client is not initialized.");
-        return;
-    }
-
-    try {
-        const { data, error } = await supabaseClient
-            .from('user_role')
-            .insert([{ name: userName, email: userEmail, role: userRole }])
-            .select();
-
-        if (error) {
-            console.error("Error adding user:", error.message);
-            alert("Failed to add user: " + error.message);
-            return;
-        }
-
-        // إعادة جلب البيانات لتحديث الواجهة فوراً من قاعدة البيانات
-        fetchUsersFromSupabase();
-    } catch (err) {
-        console.error("Unexpected error:", err);
-    }
-}
-window.openAddUserModal = openAddUserModal;
-
-
+// ==========================================
+// 2. Render Users UI with Role & Status Controls
+// ==========================================
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
     if (!container) return;
@@ -264,7 +232,7 @@ function renderUsers() {
             </div>
             <div class="flex items-center gap-3">
                 <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Access Controls</span>
-                <button onclick="openAddUserModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+                <button id="addUserBtn" onclick="openAddUserModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-user-plus text-[10px]"></i> Add User
                 </button>
             </div>
@@ -275,8 +243,7 @@ function renderUsers() {
     if (window.systemUsers.length === 0) {
         html += `<div class="p-6 text-center text-slate-400 text-xs">No users found in database. Click "Add User" to create one.</div>`;
     } else {
-        html += window.systemUsers.map((u, index) => {
-            // التحقق من حالة الحساب (افتراضياً enable إذا لم تكن محددة)
+        html += window.systemUsers.map((u) => {
             const userStatus = u.status || 'enable';
             let roleBadgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
             let roleIcon = 'fa-user-shield';
@@ -289,7 +256,6 @@ function renderUsers() {
                 roleIcon = 'fa-eye';
             }
 
-            // إذا كان الحساب معطلاً، نغير لون الأيقونة إلى الأحمر
             if (userStatus === 'disable') {
                 roleBadgeColor = 'bg-rose-50 text-rose-700 border-rose-200';
                 roleIcon = 'fa-user-slash';
@@ -307,9 +273,8 @@ function renderUsers() {
                         </div>
                     </div>
                     
-                    <!-- قوائم التحكم في الصلاحية والحالة -->
                     <div class="flex items-center space-x-2">
-                        <!-- قائمة الصلاحيات -->
+                        <!-- Role Dropdown -->
                         <div class="relative">
                             <select onchange="updateUserField(${u.id}, 'role', this.value)" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:border-emerald-500 transition cursor-pointer">
                                 <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>🛡️ Admin</option>
@@ -318,7 +283,7 @@ function renderUsers() {
                             </select>
                         </div>
 
-                        <!-- قائمة الحالة (Enable / Disable) -->
+                        <!-- Status Dropdown (Enable / Disable) -->
                         <div class="relative">
                             <select onchange="updateUserField(${u.id}, 'status', this.value)" class="appearance-none border text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none transition cursor-pointer ${userStatus === 'disable' ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}">
                                 <option value="enable" ${userStatus === 'enable' ? 'selected' : ''}>🟢 Enable</option>
@@ -333,10 +298,52 @@ function renderUsers() {
 
     html += `</div>`;
     container.innerHTML = html;
+    
+    if (typeof checkPermissions === 'function') {
+        checkPermissions();
+    }
 }
 window.renderUsers = renderUsers;
 
+// ==========================================
+// 3. Add User and Save to Supabase
+// ==========================================
+async function openAddUserModal() {
+    const userName = prompt("Enter new user name:");
+    if (!userName) return;
+    
+    const userEmail = prompt("Enter user email address:");
+    if (!userEmail) return;
 
+    const userRole = prompt("Enter user role (Admin, Member, Viewer):", "Member");
+    if (!userRole) return;
+
+    if (typeof supabaseClient === 'undefined') {
+        alert("Supabase client is not initialized.");
+        return;
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from('user_role')
+            .insert([{ name: userName, email: userEmail, role: userRole, status: 'enable' }]);
+
+        if (error) {
+            console.error("Error adding user:", error.message);
+            alert("Failed to add user: " + error.message);
+            return;
+        }
+
+        fetchUsersFromSupabase();
+    } catch (err) {
+        console.error("Unexpected error:", err);
+    }
+}
+window.openAddUserModal = openAddUserModal;
+
+// ==========================================
+// 4. Update User Field in Supabase
+// ==========================================
 async function updateUserField(userId, fieldName, fieldValue) {
     if (typeof supabaseClient === 'undefined') return;
 
@@ -351,10 +358,10 @@ async function updateUserField(userId, fieldName, fieldValue) {
 
         if (error) {
             console.error(`Error updating ${fieldName}:`, error.message);
-            alert("Failed to update status.");
+            alert("Failed to update.");
         } else {
-            console.log(`User ID ${userId} ${fieldName} updated to ${fieldValue} successfully.`);
-            fetchUsersFromSupabase(); // إعادة جلب البيانات لتحديث الألوان والواجهة فوراً
+            console.log(`User ID ${userId} ${fieldName} updated to ${fieldValue}.`);
+            fetchUsersFromSupabase();
         }
     } catch (err) {
         console.error("Unexpected error:", err);
@@ -362,28 +369,29 @@ async function updateUserField(userId, fieldName, fieldValue) {
 }
 window.updateUserField = updateUserField;
 
-
+// ==========================================
+// 5. Check Permissions (Member = Add Only)
+// ==========================================
 function checkPermissions() {
     const addJobBtn = document.getElementById('addJobBtn');
     const addUserBtn = document.getElementById('addUserBtn');
-    const editButtons = document.querySelectorAll('.edit-action-btn, .btn-edit');       // أزرار التعديل
-    const deleteButtons = document.querySelectorAll('.delete-action-btn, .btn-danger'); // أزرار الحذف
+    const editButtons = document.querySelectorAll('.edit-action-btn, .btn-edit');
+    const deleteButtons = document.querySelectorAll('.delete-action-btn, .btn-danger');
 
     const currentRole = window.currentUserRole || 'Viewer';
 
     if (currentRole === 'Viewer') {
-        // دور المشاهد: إخفاء جميع أزرار الإضافة والتعديل والحذف
+        // Viewer: Read-only (No Add, No Edit, No Delete)
         if (addJobBtn) addJobBtn.style.display = 'none';
         if (addUserBtn) addUserBtn.style.display = 'none';
         editButtons.forEach(btn => btn.style.display = 'none');
         deleteButtons.forEach(btn => btn.style.display = 'none');
         
     } else if (currentRole === 'Member') {
-        // دور العضو: مسموح بالاستعراض والإضافة فقط - ممنوع التعديل وممنوع الحذف!
-        if (addJobBtn) addJobBtn.style.display = 'flex';    // مسموح بالإضافة
+        // Member: Add Only (No Edit, No Delete)
+        if (addJobBtn) addJobBtn.style.display = 'flex';
         if (addUserBtn) addUserBtn.style.display = 'flex';
         
-        // إخفاء وتعطيل أزرار التعديل والحذف نهائياً
         editButtons.forEach(btn => {
             btn.style.display = 'none';
             btn.disabled = true;
@@ -394,7 +402,7 @@ function checkPermissions() {
         });
         
     } else {
-        // دور المسؤول (Admin): صلاحيات كاملة (إضافة، تعديل، حذف)
+        // Admin: Full Access (Add, Edit, Delete)
         if (addJobBtn) addJobBtn.style.display = 'flex';
         if (addUserBtn) addUserBtn.style.display = 'flex';
         editButtons.forEach(btn => {
@@ -409,9 +417,37 @@ function checkPermissions() {
 }
 window.checkPermissions = checkPermissions;
 
+// ==========================================
+// 6. Protected Update Record Guard Function
+// ==========================================
+function updateRecord(recordId, newData) {
+    const currentRole = window.currentUserRole || 'Viewer';
+    if (currentRole === 'Viewer' || currentRole === 'Member') {
+        alert("⚠️ Access Denied: Your account (Member) has Add-only privileges and cannot edit records.");
+        return;
+    }
+    // Admin update logic goes here...
+    console.log("Updating record ID:", recordId);
+}
+window.updateRecord = updateRecord;
 
+// ==========================================
+// 7. Protected Delete Record Guard Function
+// ==========================================
+function deleteRecord(recordId) {
+    const currentRole = window.currentUserRole || 'Viewer';
+    if (currentRole !== 'Admin') {
+        alert("⚠️ Access Denied: Deleting records is restricted to Administrators (Admin) only.");
+        return;
+    }
+    // Admin delete logic goes here...
+    console.log("Deleting record ID:", recordId);
+}
+window.deleteRecord = deleteRecord;
 
-
+// ==========================================
+// 8. Initialize on DOM Load
+// ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     fetchUsersFromSupabase();
 });
