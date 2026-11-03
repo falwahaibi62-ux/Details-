@@ -237,12 +237,12 @@
 
         </div> <!-- END TAB 1 -->
 
-        <!-- TAB 2: OPERATIONS LEDGER (CRUD) -->
+    <!-- TAB 2: OPERATIONS LEDGER (CRUD) -->
         <div id="tab-jobs" class="hidden space-y-6 w-full flex-col view-section">
             <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 bg-white shadow-xs">
                 <div>
                     <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
-                    <p class="text-xs text-slate-500">Filter records by Month and Year</p>
+                    <p class="text-xs text-slate-500">Filter records by Date, Month and Year</p>
                 </div>
                 <button type="button" onclick="openAddModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center shadow-sm transition cursor-pointer">
                     <i class="fa-solid fa-plus mr-1.5"></i> Add New Job
@@ -267,16 +267,11 @@
         <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white"></select>
     </div>
 
-    <!-- Filter Day (New) -->
+    <!-- Filter Day -->
     <div class="flex items-center space-x-2">
         <label class="text-xs font-bold text-slate-600">Filter Day:</label>
         <select id="filterDay" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
             <option value="ALL">All Days</option>
-            <script>
-                for(let i=1; i<=31; i++) {
-                    document.write(`<option value="${i}">${i}</option>`);
-                }
-            </script>
         </select>
     </div>
     
