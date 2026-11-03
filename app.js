@@ -364,28 +364,47 @@ window.updateUserField = updateUserField;
 
 
 function checkPermissions() {
-    // 1. تحديد العناصر الحساسة التي تتطلب صلاحيات كتابة/إدارة
     const addJobBtn = document.getElementById('addJobBtn');
-    const addUserBtn = document.getElementById('addUserBtn'); // زر إضافة مستخدم إن وجد
-    const actionButtons = document.querySelectorAll('.admin-only-action'); // أزرار التعديل والحذف العامة
+    const addUserBtn = document.getElementById('addUserBtn');
+    const editButtons = document.querySelectorAll('.edit-action-btn, .btn-edit');       // أزرار التعديل
+    const deleteButtons = document.querySelectorAll('.delete-action-btn, .btn-danger'); // أزرار الحذف
 
-    // 2. التحقق من دور المستخدم الحالي (الافتراضي Viewer كحماية قصوى إذا لم يتم تحديده)
     const currentRole = window.currentUserRole || 'Viewer';
 
     if (currentRole === 'Viewer') {
-        // إخفاء أزرار الإضافة والتعديل تماماً للمشاهدين
+        // دور المشاهد: إخفاء جميع أزرار الإضافة والتعديل والحذف
         if (addJobBtn) addJobBtn.style.display = 'none';
         if (addUserBtn) addUserBtn.style.display = 'none';
-        actionButtons.forEach(btn => btn.style.display = 'none');
+        editButtons.forEach(btn => btn.style.display = 'none');
+        deleteButtons.forEach(btn => btn.style.display = 'none');
         
-        console.log("🔒 Restricted Mode: Viewer privileges active.");
+    } else if (currentRole === 'Member') {
+        // دور العضو: مسموح بالاستعراض والإضافة فقط - ممنوع التعديل وممنوع الحذف!
+        if (addJobBtn) addJobBtn.style.display = 'flex';    // مسموح بالإضافة
+        if (addUserBtn) addUserBtn.style.display = 'flex';
+        
+        // إخفاء وتعطيل أزرار التعديل والحذف نهائياً
+        editButtons.forEach(btn => {
+            btn.style.display = 'none';
+            btn.disabled = true;
+        });
+        deleteButtons.forEach(btn => {
+            btn.style.display = 'none';
+            btn.disabled = true;
+        });
+        
     } else {
-        // إظهار الأزرار للمسؤولين والأعضاء (Admin / Member)
+        // دور المسؤول (Admin): صلاحيات كاملة (إضافة، تعديل، حذف)
         if (addJobBtn) addJobBtn.style.display = 'flex';
         if (addUserBtn) addUserBtn.style.display = 'flex';
-        actionButtons.forEach(btn => btn.style.display = 'flex');
-        
-        console.log(`🔓 Full Access Mode: Active role is ${currentRole}`);
+        editButtons.forEach(btn => {
+            btn.style.display = 'flex';
+            btn.disabled = false;
+        });
+        deleteButtons.forEach(btn => {
+            btn.style.display = 'flex';
+            btn.disabled = false;
+        });
     }
 }
 window.checkPermissions = checkPermissions;
