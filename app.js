@@ -213,12 +213,15 @@ function renderTable(data) {
     }
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400 font-medium">No records found for the selected range.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-slate-400 font-medium">No records found for the selected range.</td></tr>`;
         return;
     }
 
     let html = '';
     data.forEach(item => {
+        // استخدام المعرف الصحيح (id) للعملية لتمريره لدوال التعديل والحذف
+        const jobId = item.id;
+        
         html += `
             <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                 <td class="p-3 text-slate-600">${item.date || item.created_at || '-'}</td>
@@ -232,6 +235,15 @@ function renderTable(data) {
                 <td class="p-3 text-slate-600">${item.pu || item.pu_payments || '-'}</td>
                 <td class="p-3 text-slate-600">${item.dest || item.destination || '-'}</td>
                 <td class="p-3 text-slate-600">${item.diesel || '-'}</td>
+                <td class="p-3 text-slate-600">${item.hotel || '-'}</td>
+                <td class="p-3 text-center space-x-1">
+                    <button type="button" onclick="openEditModal('${jobId}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button type="button" onclick="deleteJob('${jobId}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
             </tr>
         `;
     });
