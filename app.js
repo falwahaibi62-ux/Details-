@@ -186,24 +186,71 @@ window.filterJobsTable = filterJobsTable;
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
     if (!container) return;
-    if (typeof systemUsers === 'undefined') return;
-    container.innerHTML = systemUsers.map(u => `
-        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border text-xs">
-            <div>
-                <p class="font-bold text-slate-900 text-sm">${u.name}</p>
-                <p class="text-slate-500">${u.email}</p>
-            </div>
-            <div class="flex items-center space-x-3">
-                <select class="p-2 border rounded-lg font-semibold bg-white" disabled>
-                    <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>Admin</option>
-                    <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>Member</option>
-                    <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>Viewer</option>
-                </select>
-            </div>
+    if (typeof window.systemUsers === 'undefined') return;
+
+    // إضافة رأس جدول أو ترويسة بسيطة لتوضيح البيانات
+    let html = `
+        <div class="flex justify-between items-center pb-3 mb-2 border-b border-slate-100 px-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span>User Profile & Credentials</span>
+            <span>Access Privilege Level</span>
         </div>
-    `).join('');
+        <div class="space-y-3">
+    `;
+
+    html += window.systemUsers.map((u, index) => {
+        // تحديد لون مميز للأيقونة حسب الصلاحية
+        let roleBadgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        let roleIcon = 'fa-user-shield';
+        if (u.role === 'Member') {
+            roleBadgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
+            roleIcon = 'fa-user-tie';
+        } else if (u.role === 'Viewer') {
+            roleBadgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+            roleIcon = 'fa-eye';
+        }
+
+        return `
+            <div class="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500/50 transition-all shadow-2xs group">
+                <div class="flex items-center space-x-3.5">
+                    <div class="w-11 h-11 rounded-xl ${roleBadgeColor} border flex items-center justify-center font-bold text-sm shadow-2xs">
+                        <i class="fa-solid ${roleIcon}"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm group-hover:text-emerald-600 transition-colors">${u.name}</h4>
+                        <p class="text-xs text-slate-400 font-medium">${u.email}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <select onchange="updateUserRole(${index}, this.value)" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-4 py-2.5 pr-9 focus:outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer">
+                            <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>🛡️ Administrator</option>
+                            <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>💼 Team Member</option>
+                            <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>👁️ Viewer</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                            <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    html += `</div>`;
+    container.innerHTML = html;
 }
 window.renderUsers = renderUsers;
+
+
+function updateUserRole(index, newRole) {
+    if (window.systemUsers && window.systemUsers[index]) {
+        window.systemUsers[index].role = newRole;
+        console.log(`Updated user ${window.systemUsers[index].name} role to ${newRole}`);
+        // يمكنك هنا حفظ التغييرات في التخزين المحلي أو Supabase إذا لزم الأمر
+    }
+}
+window.updateUserRole = updateUserRole;
+
 
 function checkPermissions() {
     const addBtn = document.getElementById('addJobBtn');
