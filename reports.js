@@ -424,6 +424,33 @@ function generateOfficialSummaryTable(filteredJobs) {
                 }
             });
         }
+
+
+        // التحقق مما إذا كانت الوظيفة Delivery وتحتوي على PMO في PU أو Destination
+        const isDelivery = item.jobNo && String(item.jobNo).toLowerCase().includes('delivery');
+        
+        if (isDelivery) {
+            const puStr = String(item.pu || item.pu_payments || '').toUpperCase();
+            const destStr = String(item.dest || item.destination || item.destination_payments || '').toUpperCase();
+            
+            // فحص وبحث عن كلمة PMO واستخراج المبلغ في PU أو Destination
+            if (puStr.includes('PMO') || destStr.includes('PMO')) {
+                // استخراج أي مبلغ مالي يرافق كلمة PMO في السطرين
+                const combinedStr = puStr + " " + destStr;
+                const pmoMatches = combinedStr.match(/(?:PMO\s*[:\-]?\s*\$?\s*([0-9,.]+))|([0-9,.]+)\s*PMO/i);
+                
+                if (pmoMatches) {
+                    const val = parseCurrency(pmoMatches[1] || pmoMatches[2]);
+                    sumPmoDeliveries += val;
+                } else {
+                    // إذا وجد كلمة PMO ولم يجد رقماً ملتصقاً، يأخذ إجمالي القيمة المتاحة في الحقل
+                    const generalVal = parseCurrency(item.dest || item.destination || item.pu || item.pu_payments);
+                    if (generalVal > 0 && generalVal < 50000) {
+                        sumPmoDeliveries += generalVal;
+                    }
+                }
+            }
+        }
         
         // 4. Dest Balance Zelle: حصراً للمعاملات التي تحتوي على Zelle
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
