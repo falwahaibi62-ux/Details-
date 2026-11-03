@@ -180,7 +180,32 @@ window.filterJobsTable = filterJobsTable;
 
 
 
+// دالة فتح نافذة إضافة مستخدم جديد
+function openAddUserModal() {
+    const userName = prompt("أدخل اسم المستخدم الجديد:");
+    if (!userName) return;
+    
+    const userEmail = prompt("أدخل البريد الإلكتروني للمستخدم:");
+    if (!userEmail) return;
 
+    const userRole = prompt("أدخل دور المستخدم (Admin, Member, Viewer):", "Member");
+    if (!userRole) return;
+
+    // إضافة المستخدم الجديد إلى المصفوفة العامة
+    if (typeof window.systemUsers !== 'undefined') {
+        window.systemUsers.push({
+            name: userName,
+            email: userEmail,
+            role: userRole
+        });
+        
+        // إعادة عرض القائمة لتحديث الواجهة فوراً
+        if (typeof renderUsers === 'function') {
+            renderUsers();
+        }
+    }
+}
+window.openAddUserModal = openAddUserModal;
 
 
 function renderUsers() {
