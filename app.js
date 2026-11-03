@@ -6,6 +6,19 @@ if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChar
 // ==========================================
 // 1. DATA INITIALIZATION & SUPABASE CLOUD SYNC
 // ==========================================
+
+// 🌟 تعريف مصفوفة المستخدمين الافتراضية في المستوى العام
+if (typeof window.systemUsers === 'undefined') {
+    const systemUsers = [
+        { name: "Enterprise Admin", email: "admin@movepro.com", role: "Admin" },
+        { name: "Operations Supervisor", email: "ops@movepro.com", role: "Member" },
+        { name: "Guest Viewer", email: "viewer@movepro.com", role: "Viewer" }
+    ];
+    window.systemUsers = systemUsers;
+}
+
+
+
 function formatJobDateForInput(dateStr) {
     if (!dateStr) return '';
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
