@@ -200,10 +200,10 @@ async function fetchUsersFromSupabase() {
             return;
         }
 
-        // تحديث المصفوفة العامة ببيانات السحابة
+        // تحديث المصفوفة العامة ببيانات Supabase الحقيقية فقط
         window.systemUsers = data || [];
         
-        // إعادة رسم الواجهة لتحديث القائمة
+        // إعادة رسم الواجهة لتظهر المستخدمة (fatma) وحدها
         if (typeof renderUsers === 'function') {
             renderUsers();
         }
@@ -212,7 +212,6 @@ async function fetchUsersFromSupabase() {
     }
 }
 window.fetchUsersFromSupabase = fetchUsersFromSupabase;
-
 
 async function openAddUserModal() {
     const userName = prompt("Enter new user name:");
@@ -390,6 +389,15 @@ function checkPermissions() {
     }
 }
 window.checkPermissions = checkPermissions;
+
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    fetchUsersFromSupabase();
+});
+
+
 
 // ==========================================
 // 3. PAYMENT ROWS MANAGEMENT
