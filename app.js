@@ -828,19 +828,12 @@ window.permanentDeleteJob = permanentDeleteJob;
 // 7. DASHBOARD ANALYTICS & CHARTS (مصحح لتجميع مبالغ الدفع بدقة)
 // ==========================================
 // دالة تحليل وتحديث إحصائيات لوحة التحكم والرسوم البيانية
-async function updateDashboardAnalytics() {
+function updateDashboardAnalytics() {
     try {
-        // إذا كانت المصفوفة فارغة، نحاول جلب البيانات تلقائياً بدلاً من التوقف
+        // التحقق من وجود البيانات بدون الدخول في حلقة تكرارية
         if (!window.masterJobs || window.masterJobs.length === 0) {
-            console.warn("No masterJobs available. Attempting to fetch data...");
-            if (typeof initMasterJobsData === 'function') {
-                await initMasterJobsData();
-            }
-            // التحقق مرة أخرى بعد محاولة الجلب
-            if (!window.masterJobs || window.masterJobs.length === 0) {
-                console.warn("Dashboard analytics: Still no records found after fetch.");
-                return;
-            }
+            console.warn("No masterJobs available for dashboard analytics.");
+            return;
         }
 
         let totalRev = 0;
@@ -848,7 +841,6 @@ async function updateDashboardAnalytics() {
         let validJobsCount = 0; 
         const routeRevenueMap = {};
         
-        // تجميع المبالغ المالية لكل طريقة دفع بدقة
         const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 };
         const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -858,7 +850,6 @@ async function updateDashboardAnalytics() {
             }
 
             validJobsCount++; 
-            // التأكد من وجود دالة parseAndSumDiesel أو استبدالها بقيمة رقمية آمنة
             totalDieselCost += typeof parseAndSumDiesel === 'function' ? parseAndSumDiesel(job.diesel || job.diesel_expense) : 0;
 
             let amt = 0;
@@ -902,7 +893,7 @@ async function updateDashboardAnalytics() {
         window.currentPaymentMethodMap = paymentMethodMap;
         const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
 
-        // تحديث عناصر الـ UI في لوحة التحكم بأمان
+        // تحديث عناصر الـ UI في لوحة التحكم
         const revEl = document.getElementById('dashTotalRevenue');
         if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
@@ -930,7 +921,6 @@ async function updateDashboardAnalytics() {
             `).join('');
         }
 
-        // استدعاء دالة رسم المخططات البيانية
         if (typeof renderDashboardCharts === 'function') {
             renderDashboardCharts(monthlyRev, paymentMethodMap);
         }
@@ -939,7 +929,6 @@ async function updateDashboardAnalytics() {
     }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
-
 // دالة رسم وتحديث المخططات البيانية باستخدام Chart.js
 function renderDashboardCharts(monthlyData, paymentData) {
     try {
