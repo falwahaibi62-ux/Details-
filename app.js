@@ -153,32 +153,66 @@ window.populateYearFilter = populateYearFilter;
 // 2. CRUD TABLE & FILTERING
 // ==========================================
 function filterJobsTable() {
-    initMasterJobsData();
+    const startDateVal = document.getElementById('filterStartDate').value;
+    const endDateVal = document.getElementById('filterEndDate').value;
 
-    const monthEl = document.getElementById('filterMonth');
-    const yearEl = document.getElementById('filterYear');
-    
-    const monthVal = monthEl ? monthEl.value : 'ALL';
-    const yearVal = yearEl ? yearEl.value : 'ALL';
+    const rawData = window.masterJobs || window.allJobsData || [];
 
-    let filtered = window.masterJobs;
+    const filtered = rawData.filter(item => {
+        const itemDateStr = item.date || item.created_at;
+        if (!itemDateStr) return false;
 
-    if (monthVal && monthVal !== 'ALL' && monthVal !== 'All Months') {
-        filtered = filtered.filter(job => job.month && job.month.toString() === monthVal);
+        const itemDate = new Date(itemDateStr);
+        if (isNaN(itemDate)) return false;
+
+        // توحيد وقت السجل إلى منتصف الليل للمقارنة الدقيقة بالأيام
+        const itemTime = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate()).getTime();
+
+        if (startDateVal) {
+            const startParts = startDateVal.split('-');
+            const startTime = new Date(startParts[0], startParts[1] - 1, startParts[2]).getTime();
+            if (itemTime < startTime) return false;
+        }
+
+        if (endDateVal) {
+            const endParts = endDateVal.split('-');
+            const endTime = new Date(endParts[0], endParts[1] - 1, endParts[2]).getTime();
+            if (itemTime > endTime) return false;
+        }
+
+        return true;
+    });
+
+    // تحديث الجدول المعروض
+    if (typeof renderTable === 'function') {
+        renderTable(filtered);
     }
     
-    if (yearVal && yearVal !== 'ALL' && yearVal !== 'All Years') {
-        filtered = filtered.filter(job => job.year && job.year.toString() === yearVal);
-    }
-
+    // تحديث عداد السجلات
     const countText = document.getElementById('filteredCountText');
     if (countText) {
-        countText.innerText = `Showing ${filtered.length} of ${window.masterJobs.length} records`;
+        countText.innerText = `Showing ${filtered.length} of ${rawData.length} records`;
     }
-    
-    renderJobsCRUD(filtered);
+
+    // تحديث الملخص المالي الرسمي تلقائياً بناءً على النطاق الزمني المحدد
+    if (typeof generateOfficialSummaryTable === 'function') {
+        const summaryContainer = document.getElementById('summaryContainer');
+        if (summaryContainer) {
+            summaryContainer.innerHTML = generateOfficialSummaryTable(filtered);
+        }
+    }
 }
+
+function resetDateFilter() {
+    const startInput = document.getElementById('filterStartDate');
+    const endInput = document.getElementById('filterEndDate');
+    if (startInput) startInput.value = '';
+    if (endInput) endInput.value = '';
+    filterJobsTable();
+}
+
 window.filterJobsTable = filterJobsTable;
+window.resetDateFilter = resetDateFilter;
 
 
 
