@@ -1391,8 +1391,13 @@ window.addEventListener('DOMContentLoaded', async () => {
             promises.push(loadWarehouseData());
         }
 
-        // انتظار انتهاء جلب كافة البيانات ثم فتح الداشبورد
+        // انتظار انتهاء جلب كافة البيانات
         await Promise.all(promises);
+
+        // 🌟 الخطوة المفقودة: تشغيل الفلتر لتعبئة وعرض جدول العمليات فور جاهزية البيانات
+        if (typeof filterJobsTable === 'function') {
+            filterJobsTable();
+        }
 
         if (typeof switchTab === 'function') {
             switchTab('dashboard');
