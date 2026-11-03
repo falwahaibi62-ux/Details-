@@ -242,7 +242,7 @@
             <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 bg-white shadow-xs">
                 <div>
                     <h3 class="font-bold text-slate-900 text-base">Operations & Logistics Management</h3>
-                    <p class="text-xs text-slate-500">Filter records by Date, Month and Year</p>
+                    <p class="text-xs text-slate-500">Filter records by custom date range</p>
                 </div>
                 <button type="button" onclick="openAddModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center shadow-sm transition cursor-pointer">
                     <i class="fa-solid fa-plus mr-1.5"></i> Add New Job
@@ -250,30 +250,22 @@
             </div>
             
            <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4 bg-white shadow-xs">
-    <!-- Filter Month -->
+    <!-- From Date Calendar Filter -->
     <div class="flex items-center space-x-2">
-        <label class="text-xs font-bold text-slate-600">Filter Month:</label>
-        <select id="filterMonth" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
-            <option value="ALL">All Months</option>
-            <option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option>
-            <option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option>
-            <option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
-        </select>
+        <label class="text-xs font-bold text-slate-600">From Date:</label>
+        <input type="date" id="filterStartDate" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white cursor-pointer">
     </div>
     
-    <!-- Filter Year -->
+    <!-- To Date Calendar Filter -->
     <div class="flex items-center space-x-2">
-        <label class="text-xs font-bold text-slate-600">Filter Year:</label>
-        <select id="filterYear" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white"></select>
+        <label class="text-xs font-bold text-slate-600">To Date:</label>
+        <input type="date" id="filterEndDate" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white cursor-pointer">
     </div>
 
-    <!-- Filter Day -->
-    <div class="flex items-center space-x-2">
-        <label class="text-xs font-bold text-slate-600">Filter Day:</label>
-        <select id="filterDay" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white">
-            <option value="ALL">All Days</option>
-        </select>
-    </div>
+    <!-- Reset Filter Button -->
+    <button type="button" onclick="resetDateFilter()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition cursor-pointer">
+        <i class="fa-solid fa-rotate-left mr-1"></i> Reset
+    </button>
     
     <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
 </div>
