@@ -157,34 +157,33 @@ window.populateDayFilter = populateDayFilter;
 // 2. CRUD TABLE & FILTERING
 // ==========================================
 function filterJobsTable() {
-    const selectedMonth = document.getElementById('filterMonth').value;
-    const selectedYear = document.getElementById('filterYear').value;
-    const selectedDay = document.getElementById('filterDay') ? document.getElementById('filterDay').value : 'ALL';
+    initMasterJobsData();
 
-    if (!window.masterJobs) return;
+    const monthEl = document.getElementById('filterMonth');
+    const yearEl = document.getElementById('filterYear');
+    
+    const monthVal = monthEl ? monthEl.value : 'ALL';
+    const yearVal = yearEl ? yearEl.value : 'ALL';
 
-    const filtered = window.masterJobs.filter(item => {
-        const itemDate = new Date(item.date || item.created_at);
-        if (isNaN(itemDate)) return false;
+    let filtered = window.masterJobs;
 
-        const itemMonth = (itemDate.getMonth() + 1).toString();
-        const itemYear = itemDate.getFullYear().toString();
-        const itemDay = itemDate.getDate().toString();
-
-        const matchMonth = (selectedMonth === 'ALL' || itemMonth === selectedMonth);
-        const matchYear = (selectedYear === 'ALL' || itemYear === selectedYear);
-        const matchDay = (selectedDay === 'ALL' || itemDay === selectedDay);
-
-        return matchMonth && matchYear && matchDay;
-    });
-
-    // تحديث الجدول والملخص المالي بالبيانات المفلترة
-    renderTable(filtered);
-    if (typeof generateOfficialSummaryTable === 'function') {
-        document.getElementById('summaryContainer').innerHTML = generateOfficialSummaryTable(filtered);
+    if (monthVal && monthVal !== 'ALL' && monthVal !== 'All Months') {
+        filtered = filtered.filter(job => job.month && job.month.toString() === monthVal);
     }
+    
+    if (yearVal && yearVal !== 'ALL' && yearVal !== 'All Years') {
+        filtered = filtered.filter(job => job.year && job.year.toString() === yearVal);
+    }
+
+    const countText = document.getElementById('filteredCountText');
+    if (countText) {
+        countText.innerText = `Showing ${filtered.length} of ${window.masterJobs.length} records`;
+    }
+    
+    renderJobsCRUD(filtered);
 }
 window.filterJobsTable = filterJobsTable;
+
 
 
 
