@@ -254,7 +254,6 @@ function renderUsers() {
     const container = document.getElementById('usersListContainer');
     if (!container) return;
     
-    // إذا كانت المصفوفة غير معرفة، نجعلها فارغة
     if (typeof window.systemUsers === 'undefined') {
         window.systemUsers = [];
     }
@@ -265,7 +264,7 @@ function renderUsers() {
                 <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">User Profile & Credentials</span>
             </div>
             <div class="flex items-center gap-3">
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Access Privilege Level</span>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Access Controls</span>
                 <button onclick="openAddUserModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-user-plus text-[10px]"></i> Add User
                 </button>
@@ -278,14 +277,23 @@ function renderUsers() {
         html += `<div class="p-6 text-center text-slate-400 text-xs">No users found in database. Click "Add User" to create one.</div>`;
     } else {
         html += window.systemUsers.map((u, index) => {
+            // التحقق من حالة الحساب (افتراضياً enable إذا لم تكن محددة)
+            const userStatus = u.status || 'enable';
             let roleBadgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
             let roleIcon = 'fa-user-shield';
+            
             if (u.role === 'Member') {
                 roleBadgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
                 roleIcon = 'fa-user-tie';
             } else if (u.role === 'Viewer') {
                 roleBadgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
                 roleIcon = 'fa-eye';
+            }
+
+            // إذا كان الحساب معطلاً، نغير لون الأيقونة إلى الأحمر
+            if (userStatus === 'disable') {
+                roleBadgeColor = 'bg-rose-50 text-rose-700 border-rose-200';
+                roleIcon = 'fa-user-slash';
             }
 
             return `
@@ -299,16 +307,24 @@ function renderUsers() {
                             <p class="text-xs text-slate-400 font-medium">${u.email}</p>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-3">
+                    
+                    <!-- قوائم التحكم في الصلاحية والحالة -->
+                    <div class="flex items-center space-x-2">
+                        <!-- قائمة الصلاحيات -->
                         <div class="relative">
-                            <select onchange="updateUserRoleInSupabase(${u.id}, this.value)" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-4 py-2.5 pr-9 focus:outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer">
-                                <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>🛡️ Administrator</option>
-                                <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>💼 Team Member</option>
+                            <select onchange="updateUserField(${u.id}, 'role', this.value)" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:border-emerald-500 transition cursor-pointer">
+                                <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>🛡️ Admin</option>
+                                <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>💼 Member</option>
                                 <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>👁️ Viewer</option>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                                <i class="fa-solid fa-chevron-down text-[10px]"></i>
-                            </div>
+                        </div>
+
+                        <!-- قائمة الحالة (Enable / Disable) -->
+                        <div class="relative">
+                            <select onchange="updateUserField(${u.id}, 'status', this.value)" class="appearance-none border text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none transition cursor-pointer ${userStatus === 'disable' ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}">
+                                <option value="enable" ${userStatus === 'enable' ? 'selected' : ''}>🟢 Enable</option>
+                                <option value="disable" ${userStatus === 'disable' ? 'selected' : ''}>🔴 Disable</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -321,31 +337,32 @@ function renderUsers() {
 }
 window.renderUsers = renderUsers;
 
-async function updateUserRoleInSupabase(userId, newRole) {
+
+async function updateUserField(userId, fieldName, fieldValue) {
     if (typeof supabaseClient === 'undefined') return;
 
     try {
+        const updateData = {};
+        updateData[fieldName] = fieldValue;
+
         const { error } = await supabaseClient
             .from('user_role')
-            .update({ role: newRole })
+            .update(updateData)
             .eq('id', userId);
 
         if (error) {
-            console.error("Error updating role:", error.message);
-            alert("Failed to update role.");
+            console.error(`Error updating ${fieldName}:`, error.message);
+            alert("Failed to update status.");
         } else {
-            console.log(`User ID ${userId} role updated to ${newRole} in Supabase.`);
+            console.log(`User ID ${userId} ${fieldName} updated to ${fieldValue} successfully.`);
+            fetchUsersFromSupabase(); // إعادة جلب البيانات لتحديث الألوان والواجهة فوراً
         }
     } catch (err) {
-        console.error("Unexpected error updating role:", err);
+        console.error("Unexpected error:", err);
     }
 }
-window.updateUserRoleInSupabase = updateUserRoleInSupabase;
+window.updateUserField = updateUserField;
 
-// استدعاء جلب البيانات عند تحميل الصفحة أو فتح التبويب
-document.addEventListener("DOMContentLoaded", () => {
-    fetchUsersFromSupabase();
-});
 
 function checkPermissions() {
     // 1. تحديد العناصر الحساسة التي تتطلب صلاحيات كتابة/إدارة
