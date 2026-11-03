@@ -165,6 +165,21 @@ function filterJobsTable() {
 }
 window.filterJobsTable = filterJobsTable;
 
+
+
+// ==========================================
+ تهيئة المستخدمين والصلاحيات للنظام
+// ==========================================
+if (typeof window.systemUsers === 'undefined') {
+    const systemUsers = [
+        { name: "Enterprise Admin", email: "admin@movepro.com", role: "Admin" },
+        { name: "Operations Supervisor", email: "ops@movepro.com", role: "Member" },
+        { name: "Guest Viewer", email: "viewer@movepro.com", role: "Viewer" }
+    ];
+    window.systemUsers = systemUsers;
+}
+
+
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
     if (!container) return;
