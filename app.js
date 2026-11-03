@@ -237,9 +237,9 @@ function renderTable(data) {
                 <td class="p-3 text-slate-600">${item.diesel || '-'}</td>
                 <td class="p-3 text-slate-600">${item.hotel || '-'}</td>
                 <td class="p-3 text-center space-x-1">
-                    <button type="button" onclick="openEditModal('${jobId}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
+                <button type="button" onclick="openEditJobModal('${jobId}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
+    <i class="fa-solid fa-pen-to-square"></i>
+</button>
                     <button type="button" onclick="deleteJob('${jobId}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
                         <i class="fa-solid fa-trash"></i>
                     </button>
