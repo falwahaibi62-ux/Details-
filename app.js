@@ -183,7 +183,7 @@ window.filterJobsTable = filterJobsTable;
 // دالة فتح نافذة إضافة مستخدم جديد
 // Function to open the add new user prompt / modal
 
-a// ==========================================
+// ==========================================
 // 1. Fetch Users from Supabase (user_role table)
 // ==========================================
 async function fetchUsersFromSupabase() {
