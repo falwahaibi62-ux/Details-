@@ -43,11 +43,10 @@ async function initMasterJobsData() {
             return;
         }
 
-        // جلب السجلات غير المحذوفة من Supabase
+        // 🌟 استعلام مباشر وبسيط لجلب كافة البيانات والتأكد من عملها
         const { data: jobsData, error } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
-            .not('is_deleted', 'eq', true)
             .order('id', { ascending: false });
 
         if (error) {
@@ -102,12 +101,9 @@ async function initMasterJobsData() {
             return dateB - dateA;
         });
 
-        // 🌟 تحديث واجهات العرض والتحليلات فور توفر البيانات بنجاح
         if (typeof populateYearFilter === 'function') populateYearFilter();
         if (typeof filterJobsTable === 'function') filterJobsTable();
-        if (typeof updateDashboardAnalytics === 'function') {
-            updateDashboardAnalytics(); // تحديث التحليلات هنا لضمان وجود البيانات
-        }
+        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 
     } catch (e) {
         console.error("Error initializing master jobs from Supabase:", e);
