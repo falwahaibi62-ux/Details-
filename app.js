@@ -132,49 +132,57 @@ async function saveMasterJobsData(jobs) {
 }
 window.saveMasterJobsData = saveMasterJobsData;
 
-function populateYearFilter() {
-    const yearSelect = document.getElementById('filterYear');
-    if (!yearSelect) return;
+function populateDayFilter() {
+    const daySelect = document.getElementById('filterDay');
+    if (!daySelect) return;
 
+    // الحصول على الأيام الفريدة من البيانات
     if (!window.masterJobs) return;
-    const uniqueYears = [...new Set(window.masterJobs.map(item => item.year))].filter(y => y).sort((a, b) => b - a);
-    const currentSelected = yearSelect.value;
+    const uniqueDays = [...new Set(window.masterJobs.map(item => {
+        const itemDate = new Date(item.date || item.created_at);
+        return !isNaN(itemDate) ? itemDate.getDate() : null;
+    }))].filter(d => d).sort((a, b) => a - b);
 
-    let optionsHTML = `<option value="ALL">All Years</option>`;
-    uniqueYears.forEach(year => {
-        optionsHTML += `<option value="${year}" ${year == currentSelected ? 'selected' : ''}>${year}</option>`;
+    const currentSelected = daySelect.value;
+
+    let optionsHTML = `<option value="ALL">All Days</option>`;
+    uniqueDays.forEach(day => {
+        optionsHTML += `<option value="${day}" ${day == currentSelected ? 'selected' : ''}>${day}</option>`;
     });
 
-    yearSelect.innerHTML = optionsHTML;
+    daySelect.innerHTML = optionsHTML;
 }
-window.populateYearFilter = populateYearFilter;
-
+window.populateDayFilter = populateDayFilter;
 // ==========================================
 // 2. CRUD TABLE & FILTERING
 // ==========================================
 function filterJobsTable() {
-    const monthEl = document.getElementById('filterMonth');
-    const yearEl = document.getElementById('filterYear');
-    
-    const monthVal = monthEl ? monthEl.value : 'ALL';
-    const yearVal = yearEl ? yearEl.value : 'ALL';
+    const selectedMonth = document.getElementById('filterMonth').value;
+    const selectedYear = document.getElementById('filterYear').value;
+    const selectedDay = document.getElementById('filterDay') ? document.getElementById('filterDay').value : 'ALL';
 
-    let filtered = window.masterJobs || [];
+    if (!window.masterJobs) return;
 
-    if (monthVal && monthVal !== 'ALL' && monthVal !== 'All Months') {
-        filtered = filtered.filter(job => job.month && job.month.toString() === monthVal);
-    }
-    
-    if (yearVal && yearVal !== 'ALL' && yearVal !== 'All Years') {
-        filtered = filtered.filter(job => job.year && job.year.toString() === yearVal);
-    }
+    const filtered = window.masterJobs.filter(item => {
+        const itemDate = new Date(item.date || item.created_at);
+        if (isNaN(itemDate)) return false;
 
-    const countText = document.getElementById('filteredCountText');
-    if (countText) {
-        countText.innerText = `Showing ${filtered.length} of ${(window.masterJobs || []).length} records`;
+        const itemMonth = (itemDate.getMonth() + 1).toString();
+        const itemYear = itemDate.getFullYear().toString();
+        const itemDay = itemDate.getDate().toString();
+
+        const matchMonth = (selectedMonth === 'ALL' || itemMonth === selectedMonth);
+        const matchYear = (selectedYear === 'ALL' || itemYear === selectedYear);
+        const matchDay = (selectedDay === 'ALL' || itemDay === selectedDay);
+
+        return matchMonth && matchYear && matchDay;
+    });
+
+    // تحديث الجدول والملخص المالي بالبيانات المفلترة
+    renderTable(filtered);
+    if (typeof generateOfficialSummaryTable === 'function') {
+        document.getElementById('summaryContainer').innerHTML = generateOfficialSummaryTable(filtered);
     }
-    
-    renderJobsCRUD(filtered);
 }
 window.filterJobsTable = filterJobsTable;
 
