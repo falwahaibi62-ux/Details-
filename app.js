@@ -188,17 +188,22 @@ function renderUsers() {
     if (!container) return;
     if (typeof window.systemUsers === 'undefined') return;
 
-    // إضافة رأس جدول أو ترويسة بسيطة لتوضيح البيانات
     let html = `
-        <div class="flex justify-between items-center pb-3 mb-2 border-b border-slate-100 px-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-            <span>User Profile & Credentials</span>
-            <span>Access Privilege Level</span>
+        <div class="flex justify-between items-center pb-4 mb-3 border-b border-slate-100 px-2">
+            <div>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">User Profile & Credentials</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Access Privilege Level</span>
+                <button onclick="openAddUserModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-user-plus text-[10px]"></i> Add User
+                </button>
+            </div>
         </div>
         <div class="space-y-3">
     `;
 
     html += window.systemUsers.map((u, index) => {
-        // تحديد لون مميز للأيقونة حسب الصلاحية
         let roleBadgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
         let roleIcon = 'fa-user-shield';
         if (u.role === 'Member') {
@@ -241,12 +246,11 @@ function renderUsers() {
 }
 window.renderUsers = renderUsers;
 
-
 function updateUserRole(index, newRole) {
     if (window.systemUsers && window.systemUsers[index]) {
         window.systemUsers[index].role = newRole;
         console.log(`Updated user ${window.systemUsers[index].name} role to ${newRole}`);
-        // يمكنك هنا حفظ التغييرات في التخزين المحلي أو Supabase إذا لزم الأمر
+        // يمكنك هنا إضافة تنبيه بصري سريع للمستخدم (Toast) إذا رغبت
     }
 }
 window.updateUserRole = updateUserRole;
