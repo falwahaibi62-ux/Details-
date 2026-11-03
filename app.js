@@ -262,7 +262,8 @@ function renderUsers() {
             }
 
             return `
-                <div class="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500/50 transition-all shadow-2xs group">
+                <!-- Glassmorphism Card Design -->
+                <div class="flex items-center justify-between p-4 bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl rounded-2xl hover:border-emerald-500/50 transition-all group">
                     <div class="flex items-center space-x-3.5">
                         <div class="w-11 h-11 rounded-xl ${roleBadgeColor} border flex items-center justify-center font-bold text-sm shadow-2xs">
                             <i class="fa-solid ${roleIcon}"></i>
@@ -276,7 +277,7 @@ function renderUsers() {
                     <div class="flex items-center space-x-2">
                         <!-- Role Dropdown -->
                         <div class="relative">
-                            <select onchange="updateUserField(${u.id}, 'role', this.value)" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:border-emerald-500 transition cursor-pointer">
+                            <select onchange="updateUserField(${u.id}, 'role', this.value)" class="appearance-none bg-slate-50/80 border border-slate-200/60 text-slate-700 text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:border-emerald-500 transition cursor-pointer">
                                 <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>🛡️ Admin</option>
                                 <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>💼 Member</option>
                                 <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>👁️ Viewer</option>
@@ -285,7 +286,7 @@ function renderUsers() {
 
                         <!-- Status Dropdown (Enable / Disable) -->
                         <div class="relative">
-                            <select onchange="updateUserField(${u.id}, 'status', this.value)" class="appearance-none border text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none transition cursor-pointer ${userStatus === 'disable' ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}">
+                            <select onchange="updateUserField(${u.id}, 'status', this.value)" class="appearance-none border text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none transition cursor-pointer ${userStatus === 'disable' ? 'bg-rose-50/80 border-rose-200 text-rose-700' : 'bg-emerald-50/80 border-emerald-200 text-emerald-700'}">
                                 <option value="enable" ${userStatus === 'enable' ? 'selected' : ''}>🟢 Enable</option>
                                 <option value="disable" ${userStatus === 'disable' ? 'selected' : ''}>🔴 Disable</option>
                             </select>
