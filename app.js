@@ -203,6 +203,43 @@ function filterJobsTable() {
     }
 }
 
+
+function renderTable(data) {
+    const tbody = document.getElementById('jobsTableBody') || document.querySelector('#tab-jobs table tbody') || document.querySelector('table tbody');
+    
+    if (!tbody) {
+        console.error("Table body element (tbody) not found!");
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400 font-medium">No records found for the selected range.</td></tr>`;
+        return;
+    }
+
+    let html = '';
+    data.forEach(item => {
+        html += `
+            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="p-3 text-slate-600">${item.date || item.created_at || '-'}</td>
+                <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
+                <td class="p-3 text-slate-600">${item.route || '-'}</td>
+                <td class="p-3 text-slate-600">${item.foreman || item.foreman_name || '-'}</td>
+                <td class="p-3 text-emerald-600 font-medium">${item.foreman10pct || item.foreman_percentage || item.foreman_10 || '-'}</td>
+                <td class="p-3 text-purple-600">${item.helpers || '-'}</td>
+                <td class="p-3 text-blue-600">${item.drivers || '-'}</td>
+                <td class="p-3 font-bold text-slate-900">${item.total || '-'}</td>
+                <td class="p-3 text-slate-600">${item.pu || item.pu_payments || '-'}</td>
+                <td class="p-3 text-slate-600">${item.dest || item.destination || '-'}</td>
+                <td class="p-3 text-slate-600">${item.diesel || '-'}</td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+}
+window.renderTable = renderTable;
+
 function resetDateFilter() {
     const startInput = document.getElementById('filterStartDate');
     const endInput = document.getElementById('filterEndDate');
