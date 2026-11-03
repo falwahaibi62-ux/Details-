@@ -56,7 +56,6 @@ async function initMasterJobsData() {
             return;
         }
 
-        // 🌟 استعلام مباشر وبسيط لجلب كافة البيانات والتأكد من عملها
         const { data: jobsData, error } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
@@ -87,6 +86,8 @@ async function initMasterJobsData() {
                 }
             }
 
+            const foremanVal = item.foreman_name || '';
+
             return {
                 id: item.id,
                 date: dVal,
@@ -94,7 +95,8 @@ async function initMasterJobsData() {
                 year: yVal,
                 jobNo: item.job_no || '',
                 route: item.route || ((item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : ''),
-                foreman: item.foreman_name || '',
+                foreman: foremanVal,          // لتوافق الدوال الأخرى
+                foremanName: foremanVal,      // لتوافق الجدول ونموذج التعديل
                 foreman10pct: item.foreman_cost || '0',
                 total: item.total_amount || '$0',
                 helpers: item.helpers_cost || '-',
@@ -124,7 +126,6 @@ async function initMasterJobsData() {
     }
 }
 window.initMasterJobsData = initMasterJobsData;
-
 async function saveMasterJobsData(jobs) {
     window.masterJobs = jobs;
     filterJobsTable();
