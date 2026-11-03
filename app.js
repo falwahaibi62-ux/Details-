@@ -132,27 +132,23 @@ async function saveMasterJobsData(jobs) {
 }
 window.saveMasterJobsData = saveMasterJobsData;
 
-function populateDayFilter() {
-    const daySelect = document.getElementById('filterDay');
-    if (!daySelect) return;
+function populateYearFilter() {
+    const yearSelect = document.getElementById('filterYear');
+    if (!yearSelect) return;
 
-    // الحصول على الأيام الفريدة من البيانات
-    if (!window.masterJobs) return;
-    const uniqueDays = [...new Set(window.masterJobs.map(item => {
-        const itemDate = new Date(item.date || item.created_at);
-        return !isNaN(itemDate) ? itemDate.getDate() : null;
-    }))].filter(d => d).sort((a, b) => a - b);
+    initMasterJobsData();
+    const uniqueYears = [...new Set(window.masterJobs.map(item => item.year))].filter(y => y).sort((a, b) => b - a);
+    const currentSelected = yearSelect.value;
 
-    const currentSelected = daySelect.value;
-
-    let optionsHTML = `<option value="ALL">All Days</option>`;
-    uniqueDays.forEach(day => {
-        optionsHTML += `<option value="${day}" ${day == currentSelected ? 'selected' : ''}>${day}</option>`;
+    let optionsHTML = `<option value="ALL">All Years</option>`;
+    uniqueYears.forEach(year => {
+        optionsHTML += `<option value="${year}" ${year == currentSelected ? 'selected' : ''}>${year}</option>`;
     });
 
-    daySelect.innerHTML = optionsHTML;
+    yearSelect.innerHTML = optionsHTML;
 }
-window.populateDayFilter = populateDayFilter;
+window.populateYearFilter = populateYearFilter;
+
 // ==========================================
 // 2. CRUD TABLE & FILTERING
 // ==========================================
