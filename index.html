@@ -522,7 +522,7 @@
 
     </main>
 
-    <!-- UNIQUE JOB EDIT / ADD MODAL -->
+  <!-- UNIQUE JOB EDIT / ADD MODAL -->
     <div id="jobModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 overflow-y-auto" style="display: none;">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-auto relative z-10 max-h-[90vh] overflow-y-auto">
             
@@ -536,22 +536,25 @@
             <form id="jobForm" onsubmit="saveJob(event)" class="space-y-3 text-xs">
                 <input type="hidden" id="editIndex" value="-1">
                 
+                <!-- حقل التاريخ: إلزامي -->
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Date</label>
+                    <label class="block font-semibold text-slate-700 mb-1">Date <span class="text-red-500">*</span></label>
                     <input type="date" id="jobDate" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 bg-white">
                 </div>
                 
+                <!-- Job No: اختيارى -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Job No</label>
-                    <input type="text" id="jobNo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="G4648193">
+                    <input type="text" id="jobNo" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="G4648193">
                 </div>
                 
+                <!-- Route: اختيارى -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Route (From → To)</label>
                     <div class="flex items-center gap-2">
-                        <input type="text" id="routeFrom" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="From (e.g. NC)">
+                        <input type="text" id="routeFrom" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="From (e.g. NC)">
                         <span class="text-slate-400 font-bold text-sm px-1">→</span>
-                        <input type="text" id="routeTo" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="To (e.g. NV)">
+                        <input type="text" id="routeTo" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500 uppercase text-xs" placeholder="To (e.g. NV)">
                     </div>
                 </div>
                 
@@ -617,10 +620,10 @@
                     </div>
                 </div>
 
-                <!-- Total Amount -->
+                <!-- Total Amount: اختيارى -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Total Amount</label>
-                    <input type="text" id="jobTotal" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="$3,795">
+                    <input type="text" id="jobTotal" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-emerald-500" placeholder="$3,795">
                 </div>
 
                 <!-- Dynamic Pick Up Payments Section -->
