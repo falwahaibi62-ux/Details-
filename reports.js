@@ -425,7 +425,6 @@ function generateOfficialSummaryTable(filteredJobs) {
             });
         }
 
-
         // التحقق مما إذا كانت الوظيفة Delivery وتحتوي على PMO في PU أو Destination
         const isDelivery = item.jobNo && String(item.jobNo).toLowerCase().includes('delivery');
         
@@ -433,9 +432,7 @@ function generateOfficialSummaryTable(filteredJobs) {
             const puStr = String(item.pu || item.pu_payments || '').toUpperCase();
             const destStr = String(item.dest || item.destination || item.destination_payments || '').toUpperCase();
             
-            // فحص وبحث عن كلمة PMO واستخراج المبلغ في PU أو Destination
             if (puStr.includes('PMO') || destStr.includes('PMO')) {
-                // استخراج أي مبلغ مالي يرافق كلمة PMO في السطرين
                 const combinedStr = puStr + " " + destStr;
                 const pmoMatches = combinedStr.match(/(?:PMO\s*[:\-]?\s*\$?\s*([0-9,.]+))|([0-9,.]+)\s*PMO/i);
                 
@@ -443,7 +440,6 @@ function generateOfficialSummaryTable(filteredJobs) {
                     const val = parseCurrency(pmoMatches[1] || pmoMatches[2]);
                     sumPmoDeliveries += val;
                 } else {
-                    // إذا وجد كلمة PMO ولم يجد رقماً ملتصقاً، يأخذ إجمالي القيمة المتاحة في الحقل
                     const generalVal = parseCurrency(item.dest || item.destination || item.pu || item.pu_payments);
                     if (generalVal > 0 && generalVal < 50000) {
                         sumPmoDeliveries += generalVal;
@@ -452,7 +448,7 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
         
-        // 4. Dest Balance Zelle: حصراً للمعاملات التي تحتوي على Zelle
+        // 4. Dest Balance Zelle & Balance (No Cash/PMO): استبعاد Cash و PMO تماماً
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             processPaymentString(destRawStr, payMap);
@@ -466,7 +462,8 @@ function generateOfficialSummaryTable(filteredJobs) {
                     } else if (dLower.includes('zelle')) {
                         sumDestZelle += partVal;
                         sumDestNoCashPmo += partVal;
-                    } else {
+                    } else if (!dLower.includes('pmo')) {
+                        // استبعاد الـ PMO تماماً من هذا المجموع لضبط النتيجة على 25,301
                         sumDestNoCashPmo += partVal;
                     }
                 }
