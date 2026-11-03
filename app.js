@@ -181,17 +181,18 @@ window.filterJobsTable = filterJobsTable;
 
 
 // دالة فتح نافذة إضافة مستخدم جديد
+// Function to open the add new user prompt / modal
 function openAddUserModal() {
-    const userName = prompt("أدخل اسم المستخدم الجديد:");
+    const userName = prompt("Enter new user name:");
     if (!userName) return;
     
-    const userEmail = prompt("أدخل البريد الإلكتروني للمستخدم:");
+    const userEmail = prompt("Enter user email address:");
     if (!userEmail) return;
 
-    const userRole = prompt("أدخل دور المستخدم (Admin, Member, Viewer):", "Member");
+    const userRole = prompt("Enter user role (Admin, Member, Viewer):", "Member");
     if (!userRole) return;
 
-    // إضافة المستخدم الجديد إلى المصفوفة العامة
+    // Add the new user to the global systemUsers array
     if (typeof window.systemUsers !== 'undefined') {
         window.systemUsers.push({
             name: userName,
@@ -199,7 +200,7 @@ function openAddUserModal() {
             role: userRole
         });
         
-        // إعادة عرض القائمة لتحديث الواجهة فوراً
+        // Re-render the user list to update the interface instantly
         if (typeof renderUsers === 'function') {
             renderUsers();
         }
