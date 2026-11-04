@@ -1341,10 +1341,10 @@ window.addEventListener('DOMContentLoaded', async () => {
             promises.push(loadWarehouseData());
         }
 
-        // انتظار اكتمال جلب كافة البيانات من السحابة
+        // انتظار اكتمال جلب كافة البيانات من السحابة (جلب الـ 396 سجلاً)
         await Promise.all(promises);
 
-        // 🌟 تحديث وعرض جدول العمليات (Ledger) فور جاهزية البيانات
+        // 🌟 تحديث وعرض جدول العمليات فور جاهزية البيانات
         if (typeof filterLedgerTable === 'function') {
             filterLedgerTable();
         }
@@ -1353,10 +1353,16 @@ window.addEventListener('DOMContentLoaded', async () => {
             filterJobsTable();
         }
 
+        // 🌟 إضافة هذا السطر هنا لضمان تحديث اللوحة والرسوم البيانية فور توفر البيانات
+        if (typeof updateDashboardAnalytics === 'function') {
+            updateDashboardAnalytics();
+        }
+
         if (typeof switchTab === 'function') {
             switchTab('dashboard');
         }
     } catch (error) {
         console.error("Initialization error on DOMContentLoaded:", error);
     }
+});
 });
