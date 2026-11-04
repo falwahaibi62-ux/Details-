@@ -7,7 +7,6 @@ if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChar
 // 1. DATA INITIALIZATION & SUPABASE CLOUD SYNC
 // ==========================================
 
-// 🌟 تعريف مصفوفة المستخدمين الافتراضية في المستوى العام
 if (typeof window.systemUsers === 'undefined') {
     const systemUsers = [
         { name: "Enterprise Admin", email: "admin@movepro.com", role: "Admin" },
@@ -16,8 +15,6 @@ if (typeof window.systemUsers === 'undefined') {
     ];
     window.systemUsers = systemUsers;
 }
-
-
 
 function formatJobDateForInput(dateStr) {
     if (!dateStr) return '';
@@ -48,15 +45,8 @@ function formatJobDateToSlash(dateStr) {
     return dateStr;
 }
 
-
-
-
-// ==========================================
-// 1. تعريف المتغيرات المستقلة لكل شاشة
-// ==========================================
 let ledgerFromDate = '';
 let ledgerToDate = '';
-
 let reportFromDate = '';
 let reportToDate = '';
 
@@ -79,18 +69,40 @@ function filterLedgerTable() {
 
     if (ledgerToDate) {
         const tDate = new Date(ledgerToDate);
-        tDate.setHours(23, 59, 59); // لتشمل نهاية اليوم المحدد
+        tDate.setHours(23, 59, 59);
         data = data.filter(item => new Date(item.date) <= tDate);
     }
 
-    // استدعاء دالة عرض الجدول الخاصة بالعمليات
     if (typeof renderTable === 'function') {
         renderTable(data);
     }
 }
+window.filterLedgerTable = filterLedgerTable;
 
-// 🌟 جلب البيانات سحابياً من جدول jobs_report مع استخراج الشهر والسنة بدقة تامة
-// 🌟 جلب البيانات سحابياً من جدول jobs_report مع استخراج الشهر والسنة بدقة تامة
+function assignPaymentMethodRevenue(paymentStr, amount, paymentMethodMap) {
+    if (!paymentStr) {
+        paymentMethodMap.Unspecified = (paymentMethodMap.Unspecified || 0) + amount;
+        return;
+    }
+    const lower = paymentStr.toLowerCase();
+    if (lower.includes('cash')) paymentMethodMap.Cash = (paymentMethodMap.Cash || 0) + amount;
+    else if (lower.includes('zelle')) paymentMethodMap.Zelle = (paymentMethodMap.Zelle || 0) + amount;
+    else if (lower.includes('cheque') || lower.includes('check') || lower.includes('ck')) paymentMethodMap.Cheque = (paymentMethodMap.Cheque || 0) + amount;
+    else if (lower.includes('pmo')) paymentMethodMap.PMO = (paymentMethodMap.PMO || 0) + amount;
+    else if (lower.includes('bc')) paymentMethodMap.BC = (paymentMethodMap.BC || 0) + amount;
+    else if (lower.includes('pc')) paymentMethodMap.PC = (paymentMethodMap.PC || 0) + amount;
+    else if (lower.includes('cc')) paymentMethodMap.CC = (paymentMethodMap.CC || 0) + amount;
+    else if (lower.includes('wt')) paymentMethodMap.WT = (paymentMethodMap.WT || 0) + amount;
+    else if (lower.includes('other')) paymentMethodMap.Others = (paymentMethodMap.Others || 0) + amount;
+    else paymentMethodMap.Unspecified = (paymentMethodMap.Unspecified || 0) + amount;
+}
+window.assignPaymentMethodRevenue = assignPaymentMethodRevenue;
+
+function generateOfficialSummaryTable(filtered) {
+    return `<div class="p-3 bg-slate-50 rounded-xl border text-xs text-slate-700 font-medium">Summary Report: <b>${filtered.length}</b> records matched.</div>`;
+}
+window.generateOfficialSummaryTable = generateOfficialSummaryTable;
+
 async function initMasterJobsData() {
     try {
         if (!window.supabaseClient) {
@@ -101,6 +113,7 @@ async function initMasterJobsData() {
         const { data: jobsData, error } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
+            .eq('is_deleted', false)
             .order('id', { ascending: false });
 
         if (error) {
@@ -135,49 +148,35 @@ async function initMasterJobsData() {
                 date: dVal,
                 month: mVal,
                 year: yVal,
-                
-                // مطابقة تامة لكل أسماء الحقول لكي يقرأها الجدول والنافذة بدون أي اختلاف
                 jobNo: item.job_no || item.jobNo || item.job_number || '',
                 job_no: item.job_no || '',
-                
                 route: item.route || ((item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : ''),
                 route_from: item.route_from || '',
                 route_to: item.route_to || '',
-                
                 foreman: foremanVal,
                 foremanName: foremanVal,
                 foreman_name: foremanVal,
-                
                 foreman10pct: item.foreman_cost || '0',
                 foreman_cost: item.foreman_cost || '0',
-                
                 total: item.total_amount || '$0',
                 total_amount: item.total_amount || '$0',
-                
                 helpers: item.helpers_cost || '-',
                 helpers_cost: item.helpers_cost || '-',
-                
                 drivers: item.drivers_cost || '-',
                 drivers_cost: item.drivers_cost || '-',
-                
                 pu: item.pu_payments || '-',
                 pu_payments: item.pu_payments || '-',
-                
                 dest: item.destination_payments || '-',
                 destination: item.destination_payments || '-',
                 destination_payments: item.destination_payments || '-',
-                
                 diesel: item.diesel_expense || '-',
                 diesel_expense: item.diesel_expense || '-',
-                
                 hotel: item.hotel_expense || '-',
                 hotel_expense: item.hotel_expense || '-',
-                
                 storage: item.storage || '-'
             };
         });
 
-        // ترتيب السجلات تلقائياً من الأحدث للأقدم
         window.masterJobs.sort((a, b) => {
             const dateA = new Date(a.date || 0);
             const dateB = new Date(b.date || 0);
@@ -194,6 +193,7 @@ async function initMasterJobsData() {
     }
 }
 window.initMasterJobsData = initMasterJobsData;
+
 async function saveMasterJobsData(jobs) {
     window.masterJobs = jobs;
     filterJobsTable();
@@ -205,7 +205,6 @@ function populateYearFilter() {
     const yearSelect = document.getElementById('filterYear');
     if (!yearSelect) return;
 
-    initMasterJobsData();
     const uniqueYears = [...new Set(window.masterJobs.map(item => item.year))].filter(y => y).sort((a, b) => b - a);
     const currentSelected = yearSelect.value;
 
@@ -219,11 +218,11 @@ function populateYearFilter() {
 window.populateYearFilter = populateYearFilter;
 
 // ==========================================
-// 2. CRUD TABLE & FILTERING
+// 3. CRUD TABLE & FILTERING
 // ==========================================
 function filterJobsTable() {
-    const startDateVal = document.getElementById('filterStartDate').value;
-    const endDateVal = document.getElementById('filterEndDate').value;
+    const startDateVal = document.getElementById('filterStartDate') ? document.getElementById('filterStartDate').value : '';
+    const endDateVal = document.getElementById('filterEndDate') ? document.getElementById('filterEndDate').value : '';
 
     const rawData = window.masterJobs || window.allJobsData || [];
 
@@ -234,7 +233,6 @@ function filterJobsTable() {
         const itemDate = new Date(itemDateStr);
         if (isNaN(itemDate)) return false;
 
-        // توحيد وقت السجل إلى منتصف الليل للمقارنة الدقيقة بالأيام
         const itemTime = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate()).getTime();
 
         if (startDateVal) {
@@ -252,18 +250,15 @@ function filterJobsTable() {
         return true;
     });
 
-    // تحديث الجدول المعروض
     if (typeof renderTable === 'function') {
         renderTable(filtered);
     }
     
-    // تحديث عداد السجلات
     const countText = document.getElementById('filteredCountText');
     if (countText) {
         countText.innerText = `Showing ${filtered.length} of ${rawData.length} records`;
     }
 
-    // تحديث الملخص المالي الرسمي تلقائياً بناءً على النطاق الزمني المحدد
     if (typeof generateOfficialSummaryTable === 'function') {
         const summaryContainer = document.getElementById('summaryContainer');
         if (summaryContainer) {
@@ -271,7 +266,7 @@ function filterJobsTable() {
         }
     }
 }
-
+window.filterJobsTable = filterJobsTable;
 
 function renderTable(data) {
     const tbody = document.getElementById('jobsTableBody') || document.querySelector('#tab-jobs table tbody') || document.querySelector('table tbody');
@@ -288,9 +283,7 @@ function renderTable(data) {
 
     let html = '';
     data.forEach(item => {
-        // استخدام المعرف الصحيح (id) للعملية لتمريره لدوال التعديل والحذف
         const jobId = item.id;
-        
         html += `
             <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                 <td class="p-3 text-slate-600">${item.date || item.created_at || '-'}</td>
@@ -306,9 +299,9 @@ function renderTable(data) {
                 <td class="p-3 text-slate-600">${item.diesel || '-'}</td>
                 <td class="p-3 text-slate-600">${item.hotel || '-'}</td>
                 <td class="p-3 text-center space-x-1">
-                <button type="button" onclick="openEditJobModal('${jobId}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
-    <i class="fa-solid fa-pen-to-square"></i>
-</button>
+                    <button type="button" onclick="openEditJobModal('${jobId}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
                     <button type="button" onclick="deleteJob('${jobId}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
                         <i class="fa-solid fa-trash"></i>
                     </button>
@@ -328,18 +321,10 @@ function resetDateFilter() {
     if (endInput) endInput.value = '';
     filterJobsTable();
 }
-
-window.filterJobsTable = filterJobsTable;
 window.resetDateFilter = resetDateFilter;
 
-
-
-
-// دالة فتح نافذة إضافة مستخدم جديد
-// Function to open the add new user prompt / modal
-
 // ==========================================
-// 1. Fetch Users from Supabase (user_role table)
+// 4. USERS & PERMISSIONS MANAGEMENT
 // ==========================================
 async function fetchUsersFromSupabase() {
     if (typeof supabaseClient === 'undefined') {
@@ -369,9 +354,6 @@ async function fetchUsersFromSupabase() {
 }
 window.fetchUsersFromSupabase = fetchUsersFromSupabase;
 
-// ==========================================
-// 2. Render Users UI with Role & Status Controls
-// ==========================================
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
     if (!container) return;
@@ -417,7 +399,6 @@ function renderUsers() {
             }
 
             return `
-                <!-- Glassmorphism Card Design -->
                 <div class="flex items-center justify-between p-4 bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl rounded-2xl hover:border-emerald-500/50 transition-all group">
                     <div class="flex items-center space-x-3.5">
                         <div class="w-11 h-11 rounded-xl ${roleBadgeColor} border flex items-center justify-center font-bold text-sm shadow-2xs">
@@ -430,7 +411,6 @@ function renderUsers() {
                     </div>
                     
                     <div class="flex items-center space-x-2">
-                        <!-- Role Dropdown -->
                         <div class="relative">
                             <select onchange="updateUserField(${u.id}, 'role', this.value)" class="appearance-none bg-slate-50/80 border border-slate-200/60 text-slate-700 text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:border-emerald-500 transition cursor-pointer">
                                 <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>🛡️ Admin</option>
@@ -439,7 +419,6 @@ function renderUsers() {
                             </select>
                         </div>
 
-                        <!-- Status Dropdown (Enable / Disable) -->
                         <div class="relative">
                             <select onchange="updateUserField(${u.id}, 'status', this.value)" class="appearance-none border text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none transition cursor-pointer ${userStatus === 'disable' ? 'bg-rose-50/80 border-rose-200 text-rose-700' : 'bg-emerald-50/80 border-emerald-200 text-emerald-700'}">
                                 <option value="enable" ${userStatus === 'enable' ? 'selected' : ''}>🟢 Enable</option>
@@ -461,9 +440,6 @@ function renderUsers() {
 }
 window.renderUsers = renderUsers;
 
-// ==========================================
-// 3. Add User and Save to Supabase
-// ==========================================
 async function openAddUserModal() {
     const userName = prompt("Enter new user name:");
     if (!userName) return;
@@ -497,9 +473,6 @@ async function openAddUserModal() {
 }
 window.openAddUserModal = openAddUserModal;
 
-// ==========================================
-// 4. Update User Field in Supabase
-// ==========================================
 async function updateUserField(userId, fieldName, fieldValue) {
     if (typeof supabaseClient === 'undefined') return;
 
@@ -516,7 +489,6 @@ async function updateUserField(userId, fieldName, fieldValue) {
             console.error(`Error updating ${fieldName}:`, error.message);
             alert("Failed to update.");
         } else {
-            console.log(`User ID ${userId} ${fieldName} updated to ${fieldValue}.`);
             fetchUsersFromSupabase();
         }
     } catch (err) {
@@ -525,9 +497,6 @@ async function updateUserField(userId, fieldName, fieldValue) {
 }
 window.updateUserField = updateUserField;
 
-// ==========================================
-// 5. Check Permissions (Member = Add Only)
-// ==========================================
 function checkPermissions() {
     const addJobBtn = document.getElementById('addJobBtn');
     const addUserBtn = document.getElementById('addUserBtn');
@@ -537,17 +506,13 @@ function checkPermissions() {
     const currentRole = window.currentUserRole || 'Viewer';
 
     if (currentRole === 'Viewer') {
-        // Viewer: Read-only (No Add, No Edit, No Delete)
         if (addJobBtn) addJobBtn.style.display = 'none';
         if (addUserBtn) addUserBtn.style.display = 'none';
         editButtons.forEach(btn => btn.style.display = 'none');
         deleteButtons.forEach(btn => btn.style.display = 'none');
-        
     } else if (currentRole === 'Member') {
-        // Member: Add Only (No Edit, No Delete)
         if (addJobBtn) addJobBtn.style.display = 'flex';
         if (addUserBtn) addUserBtn.style.display = 'flex';
-        
         editButtons.forEach(btn => {
             btn.style.display = 'none';
             btn.disabled = true;
@@ -556,9 +521,7 @@ function checkPermissions() {
             btn.style.display = 'none';
             btn.disabled = true;
         });
-        
     } else {
-        // Admin: Full Access (Add, Edit, Delete)
         if (addJobBtn) addJobBtn.style.display = 'flex';
         if (addUserBtn) addUserBtn.style.display = 'flex';
         editButtons.forEach(btn => {
@@ -574,44 +537,7 @@ function checkPermissions() {
 window.checkPermissions = checkPermissions;
 
 // ==========================================
-// 6. Protected Update Record Guard Function
-// ==========================================
-function updateRecord(recordId, newData) {
-    const currentRole = window.currentUserRole || 'Viewer';
-    if (currentRole === 'Viewer' || currentRole === 'Member') {
-        alert("⚠️ Access Denied: Your account (Member) has Add-only privileges and cannot edit records.");
-        return;
-    }
-    // Admin update logic goes here...
-    console.log("Updating record ID:", recordId);
-}
-window.updateRecord = updateRecord;
-
-// ==========================================
-// 7. Protected Delete Record Guard Function
-// ==========================================
-function deleteRecord(recordId) {
-    const currentRole = window.currentUserRole || 'Viewer';
-    if (currentRole !== 'Admin') {
-        alert("⚠️ Access Denied: Deleting records is restricted to Administrators (Admin) only.");
-        return;
-    }
-    // Admin delete logic goes here...
-    console.log("Deleting record ID:", recordId);
-}
-window.deleteRecord = deleteRecord;
-
-// ==========================================
-// 8. Initialize on DOM Load
-// ==========================================
-document.addEventListener("DOMContentLoaded", () => {
-    fetchUsersFromSupabase();
-});
-
-
-
-// ==========================================
-// 3. PAYMENT ROWS MANAGEMENT
+// 5. PAYMENT ROWS MANAGEMENT
 // ==========================================
 function addPaymentRow(containerId, amount = '', method = 'Cash') {
     let container = document.getElementById(containerId);
@@ -624,7 +550,6 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
     
     if (!container) return;
 
-    // 🌟 حماية المتغيرات لتجنب الأخطاء إذا كانت null أو undefined
     const safeMethod = (method || 'Cash').toString();
     const safeAmount = (amount || '').toString();
 
@@ -672,26 +597,22 @@ function extractPaymentsFromContainer(containerId) {
         const methodSelect = row.querySelector('.payment-method');
 
         const amount = amountInput ? amountInput.value.trim() : '';
-        
-        // التحقق من طريقة الدفع، وإذا لم يتم اختيارها أو كانت فارغة يتم تعيينها إلى "unspecified"
         let method = methodSelect ? methodSelect.value.trim() : '';
         if (!method) {
             method = 'unspecified';
         }
 
-        // إذا أدخل المستخدم مبلغاً، يتم دمج المبلغ مع طريقة الدفع في نص واحد (مثال: 500 Cash)
         if (amount) {
             paymentsList.push(`${amount} ${method}`);
         }
     });
 
-    // إذا كانت القائمة مليئة بالدفعات يتم دمجها بفاصل، وإذا لم تكن هناك دفعات يُعاد "-" أو قيمة فارغة
     return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
 }
 window.extractPaymentsFromContainer = extractPaymentsFromContainer;
 
 // ==========================================
-// 4. HELPERS & DRIVERS MAPPERS
+// 6. HELPERS & DRIVERS MAPPERS
 // ==========================================
 function parseHelpersDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
@@ -747,68 +668,7 @@ window.parseHelpersDisplay = parseHelpersDisplay;
 window.parseDriversDisplay = parseDriversDisplay;
 
 // ==========================================
-// 5. RENDERING CRUD TABLE
-// ==========================================
-function renderJobsCRUD(dataToRender) {
-    const tbody = document.getElementById('jobsTableBody');
-    if (!tbody) return;
-    
-    const records = dataToRender || window.masterJobs || [];
-
-    if (!records || records.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" class="text-center p-6 text-slate-400 text-xs">No dispatch records found</td></tr>`;
-        return;
-    }
-    
-    tbody.innerHTML = records.map((item) => {
-        const foremanDisplay = (!item.foreman || item.foreman.trim() === '') 
-            ? `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px]">-</span>` 
-            : `<span class="bg-amber-50 text-amber-800 px-2.5 py-1 rounded font-bold text-xs">${item.foreman}</span>`;
-        
-        const jobIdentifier = item.jobNo || item.job_no || item.id;
-        
-        // أزرار الإجراءات (تعديل وحذف) تظهر مباشرة
-        const actions = `
-            <div class="flex items-center space-x-1 justify-center gap-1">
-                <button type="button" onclick="openEditJobModal('${jobIdentifier}')" class="px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg cursor-pointer transition" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button type="button" onclick="deleteJob('${jobIdentifier}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg cursor-pointer transition" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
-            </div>
-        `;
-
-        const dieselVal = (item.diesel && item.diesel !== '-') ? item.diesel : (item.diesel_expense || '-');
-        const hotelVal = (item.hotel && item.hotel !== '-') ? item.hotel : (item.hotel_expense || '-');
-        const helpersVal = parseHelpersDisplay(item.helpers || item.helpers_cost);
-        const driversVal = parseDriversDisplay(item.drivers || item.drivers_cost); 
-        const totalVal = item.total || item.total_amount || '-';
-        const puVal = item.pu || item.pu_payments || '-';
-        const destVal = item.destination || item.dest || item.destination_payments || '-';
-
-        let totalNum = parseFloat(String(totalVal).replace(/[^0-9.]/g, '')) || 0;
-        let foreman10Val = item.foreman10pct ? ('$' + item.foreman10pct) : (item.foreman_cost ? '$' + item.foreman_cost : (totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-'));
-
-        return `
-            <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
-                <td class="p-3 text-slate-700 font-medium">${item.date || '-'}</td>
-                <td class="p-3 text-slate-900 font-bold">${item.jobNo || item.job_no || '-'}</td>
-                <td class="p-3 text-slate-700">${item.route || ((item.route_from || '') + ' → ' + (item.route_to || '')) || '-'}</td>
-                <td class="p-3">${foremanDisplay}</td>
-                <td class="p-3 text-emerald-800 font-bold">${foreman10Val}</td>
-                <td class="p-3 text-purple-700 font-semibold">${helpersVal}</td>
-                <td class="p-3 text-blue-700 font-semibold">${driversVal}</td> 
-                <td class="p-3 text-emerald-600 font-bold">${totalVal}</td>
-                <td class="p-3 text-slate-700">${puVal}</td>
-                <td class="p-3 text-slate-700">${destVal}</td>
-                <td class="p-3 text-emerald-700 font-semibold">${dieselVal}</td>
-                <td class="p-3 text-indigo-700 font-semibold">${hotelVal}</td>
-                <td class="p-3 text-center">${actions}</td>
-            </tr>
-        `;
-    }).join('');
-}
-window.renderJobsCRUD = renderJobsCRUD;
-
-// ==========================================
-// 6. MODAL & SUPABASE CRUD ACTIONS
+// 7. MODAL & SUPABASE CRUD ACTIONS
 // ==========================================
 function openAddModal(isEdit = false) {
     const modal = document.getElementById('jobModal');
@@ -831,9 +691,7 @@ function openAddModal(isEdit = false) {
 window.openAddModal = openAddModal;
 
 function openEditJobModal(jobIdOrNo) {
-    console.log("Editing Job ID/No:", jobIdOrNo);
-
-    const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
+    const jobs = window.masterJobs || [];
     const targetId = String(jobIdOrNo).trim();
     
     const job = jobs.find(j => {
@@ -844,11 +702,8 @@ function openEditJobModal(jobIdOrNo) {
 
     if (!job) {
         alert("Job record not found!");
-        console.warn("Target ID requested:", targetId, "Available jobs:", jobs);
         return;
     }
-
-    console.log("Successfully Loaded Job Data for Edit:", job);
 
     openAddModal(true);
 
@@ -879,7 +734,6 @@ function openEditJobModal(jobIdOrNo) {
     setVal('jobDate', formatDateForInput(job.date || job.job_date || ''));
     setVal('jobNo', job.jobNo || job.job_no || job.job_number || '');
 
-    // --- قراءة المسار من عمود route الموحد وفكه تلقائياً ---
     let routeStr = job.route || job.route_to || '';
     let fromVal = '';
     let toVal = '';
@@ -901,7 +755,6 @@ function openEditJobModal(jobIdOrNo) {
 
     const toEl = document.getElementById('routeTo') || document.querySelector('[name="routeTo"]') || document.querySelector('[name="route_to"]');
     if (toEl) toEl.value = toVal;
-    // -----------------------------------------------------
 
     setVal('jobForeman', job.foreman || job.foreman_name || job.foremanName || '');
     setVal('jobTotal', job.total || job.total_amount || job.totalAmount || '');
@@ -921,7 +774,7 @@ function openEditJobModal(jobIdOrNo) {
     setSelectVal('helpersCost', job.helpers || job.helpers_cost);
     setSelectVal('driversCost', job.drivers || job.drivers_cost);
 
-    const dieselValStr = String(job.diesel || job.diesel_expense || job.dieselExpense || '');
+    const dieselValStr = String(job.diesel || job.diesel_expense || '');
     const dieselParts = dieselValStr.split(' ');
     setVal('dieselAmount', dieselParts[0] !== '-' ? dieselParts[0] : '');
     if (dieselParts.length > 1) {
@@ -929,7 +782,7 @@ function openEditJobModal(jobIdOrNo) {
         if (dieselMethod) dieselMethod.value = dieselParts[1];
     }
 
-    const hotelValStr = String(job.hotel || job.hotel_expense || job.hotelExpense || '');
+    const hotelValStr = String(job.hotel || job.hotel_expense || '');
     const hotelParts = hotelValStr.split(' ');
     setVal('hotelAmount', hotelParts[0] !== '-' ? hotelParts[0] : '');
     if (hotelParts.length > 1) {
@@ -948,14 +801,12 @@ function populatePaymentContainer(containerId, paymentStr) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
-    // تفريغ الحاوية أولاً لمنع تكرار الصفوف القديمة
     container.innerHTML = '';
 
     if (!paymentStr || paymentStr === '-' || paymentStr === '---' || paymentStr.toUpperCase() === 'NULL') {
         return;
     }
 
-    // دعم الدفعات المتعددة المفصولة بفاصلة (مثل: "8240 Cash, 1000 Zelle" أو "3515")
     const payments = String(paymentStr).split(',');
 
     payments.forEach(p => {
@@ -963,27 +814,23 @@ function populatePaymentContainer(containerId, paymentStr) {
         if (!trimmed) return;
 
         let amount = '';
-        let method = 'Unspecified'; // القيمة الافتراضية إذا لم توجد طريقة دفع
+        let method = 'Unspecified';
 
-        // فصل المبلغ عن طريقة الدفع (مثال: "8240 Cash" -> المبلغ: 8240، الطريقة: Cash)
         const parts = trimmed.split(' ');
         if (parts.length >= 2) {
             amount = parts[0];
-            method = parts.slice(1).join(' '); // لضمان التقاط اسم الطريقة كاملاً إن وجد مسافات
+            method = parts.slice(1).join(' ');
         } else {
-            // إذا كان المدخل رقماً فقط بدون طريقة دفع (مثل "3515")
             amount = trimmed;
             method = 'unspecified';
         }
 
-        // استدعاء دالة إضافة صف الدفع مع تمرير المبلغ والطريقة المستخرجة
         if (typeof addPaymentRow === 'function') {
             addPaymentRow(containerId, amount, method);
         }
     });
 }
 window.populatePaymentContainer = populatePaymentContainer;
-
 
 function parseAndSumDiesel(val) {
     if (!val || val === '-' || val === '0' || val === 0) return 0;
@@ -1080,14 +927,12 @@ async function saveJob(event) {
     let error = null;
 
     if (editRecordId && editRecordId !== '') {
-        // --- تحديث السجل الحالي حصرياً وعدم إنشاء سجل جديد ---
         const { error: updateError } = await window.supabaseClient
             .from('jobs_report')
             .update(supabasePayload)
             .eq('id', editRecordId);
         error = updateError;
     } else {
-        // --- إضافة سجل جديد فقط في حال لم يكن هناك معرف تعديل ---
         const { error: insertError } = await window.supabaseClient
             .from('jobs_report')
             .insert([supabasePayload]);
@@ -1098,9 +943,7 @@ async function saveJob(event) {
         console.error('Error saving to Supabase:', error.message);
         alert('Supabase Error: ' + error.message);
     } else {
-        // تفريغ معرف التعديل لضمان عدم تكراره لاحقاً
         if (jobForm) jobForm.removeAttribute('data-edit-id');
-
         closeModal();
         if (typeof initMasterJobsData === 'function') {
             initMasterJobsData();
@@ -1110,7 +953,6 @@ async function saveJob(event) {
 }
 window.saveJob = saveJob;
 
-
 async function renderTrashBin() {
     try {
         if (!window.supabaseClient) {
@@ -1118,7 +960,6 @@ async function renderTrashBin() {
             return;
         }
 
-        // 🌟 ضعي الكود هنا لجلب الطلبات الموجودة في سلة المهملات فقط (is_deleted = true)
         const { data, error } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
@@ -1134,13 +975,11 @@ async function renderTrashBin() {
         const trashContainer = document.getElementById('trashTableBody') || document.getElementById('trashContainer');
         if (!trashContainer) return;
 
-        // إذا لم تكن هناك سجلات محذوفة
         if (!data || data.length === 0) {
             trashContainer.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">Trash bin is empty</td></tr>`;
             return;
         }
 
-        // رسم السجلات المحذوفة مع أزرار الاسترجاع والحذف النهائي
         trashContainer.innerHTML = data.map(job => `
             <tr class="border-b hover:bg-slate-50">
                 <td class="px-4 py-3 font-medium text-slate-800">${job.job_no || '-'}</td>
@@ -1164,7 +1003,6 @@ async function renderTrashBin() {
 }
 window.renderTrashBin = renderTrashBin;
 
-
 async function deleteJob(jobIdOrNo) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return;
 
@@ -1174,8 +1012,6 @@ async function deleteJob(jobIdOrNo) {
     }
 
     const target = String(jobIdOrNo).trim();
-    
-    // بدلاً من الحذف النهائي (.delete())، نقوم بتحديث الحالة إلى محذوف (Soft Delete)
     let query = window.supabaseClient.from('jobs_report').update({ is_deleted: true });
     
     if (target.length > 10 || target.includes('-')) {
@@ -1198,7 +1034,6 @@ async function deleteJob(jobIdOrNo) {
 }
 window.deleteJob = deleteJob;
 
-
 async function restoreJob(jobId) {
     if (!window.supabaseClient) return;
 
@@ -1217,7 +1052,6 @@ async function restoreJob(jobId) {
 }
 window.restoreJob = restoreJob;
 
-// الحذف النهائي من قاعدة البيانات
 async function permanentDeleteJob(jobId) {
     if (!confirm('Are you sure you want to permanently delete this record? This action cannot be undone.')) return;
     if (!window.supabaseClient) return;
@@ -1236,14 +1070,11 @@ async function permanentDeleteJob(jobId) {
 }
 window.permanentDeleteJob = permanentDeleteJob;
 
-
 // ==========================================
-// 7. DASHBOARD ANALYTICS & CHARTS (مصحح لتجميع مبالغ الدفع بدقة)
+// 8. DASHBOARD ANALYTICS & CHARTS
 // ==========================================
-// دالة تحليل وتحديث إحصائيات لوحة التحكم والرسوم البيانية
 function updateDashboardAnalytics() {
     try {
-        // التحقق من وجود البيانات بدون الدخول في حلقة تكرارية
         if (!window.masterJobs || window.masterJobs.length === 0) {
             console.warn("No masterJobs available for dashboard analytics.");
             return;
@@ -1306,7 +1137,6 @@ function updateDashboardAnalytics() {
         window.currentPaymentMethodMap = paymentMethodMap;
         const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
 
-        // تحديث عناصر الـ UI في لوحة التحكم
         const revEl = document.getElementById('dashTotalRevenue');
         if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
 
@@ -1319,7 +1149,6 @@ function updateDashboardAnalytics() {
         const dieselEl = document.getElementById('dashTotalDiesel');
         if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
 
-        // تحديث قائمة الممرات والمسارات الأكثر ربحية
         const topCorridorsContainer = document.getElementById('topCorridorsContainer');
         if (topCorridorsContainer) {
             const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
@@ -1342,10 +1171,9 @@ function updateDashboardAnalytics() {
     }
 }
 window.updateDashboardAnalytics = updateDashboardAnalytics;
-// دالة رسم وتحديث المخططات البيانية باستخدام Chart.js
+
 function renderDashboardCharts(monthlyData, paymentData) {
     try {
-        // 1. رسم مخطط الإيرادات الشهرية (Bar Chart)
         const ctxRevenue = document.getElementById('revenueChart');
         if (ctxRevenue && typeof Chart !== 'undefined') {
             if (window.revenueChartInstance) {
@@ -1375,7 +1203,6 @@ function renderDashboardCharts(monthlyData, paymentData) {
             });
         }
 
-        // 2. رسم مخطط توزيع طرق الدفع (Doughnut Chart)
         const ctxPayment = document.getElementById('paymentMixChart');
         if (ctxPayment && typeof Chart !== 'undefined') {
             if (window.paymentMixChartInstance) {
@@ -1407,14 +1234,14 @@ function renderDashboardCharts(monthlyData, paymentData) {
     }
 }
 window.renderDashboardCharts = renderDashboardCharts;
+
 // ==========================================
-// 8. NAVIGATION & TABS
+// 9. NAVIGATION & TABS
 // ==========================================
 function switchTab(tabName) {
     try {
         const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
         
-        // إخفاء جميع التبويبات وإعادة تعيين الأزرار
         tabs.forEach(t => {
             const possibleElIds = [`tab-${t}`, `${t}-view`, t];
             possibleElIds.forEach(id => {
@@ -1435,7 +1262,6 @@ function switchTab(tabName) {
             });
         });
 
-        // إظهار التبويب المطلوب
         const targetIds = [`tab-${tabName}`, `${tabName}-view`, tabName];
         let activeTab = null;
         for (let id of targetIds) {
@@ -1449,7 +1275,6 @@ function switchTab(tabName) {
             activeTab.style.setProperty('display', 'flex', 'important');
         }
 
-        // تنشيط زر القائمة الجانبية
         const navTargetIds = [`nav-${tabName}`, `nav-${tabName}-btn`, tabName];
         let activeNav = null;
         for (let id of navTargetIds) {
@@ -1461,7 +1286,6 @@ function switchTab(tabName) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
-        // استدعاء دالة البيانات الخاصة بكل شاشة عند فتحها
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
@@ -1494,8 +1318,9 @@ function switchTab(tabName) {
     }
 }
 window.switchTab = switchTab;
+
 // ==========================================
-// 9. INITIALIZATION
+// 10. INITIALIZATION
 // ==========================================
 window.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -1504,7 +1329,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (typeof checkPermissions === 'function') checkPermissions();
         if (typeof renderUsers === 'function') renderUsers();
         
-        // 🌟 جلب البيانات لكل الأقسام عند بدء التشغيل لتجنب الشاشات الفارغة
         const promises = [];
         
         if (typeof initMasterJobsData === 'function') {
@@ -1517,20 +1341,14 @@ window.addEventListener('DOMContentLoaded', async () => {
             promises.push(loadWarehouseData());
         }
 
-        // انتظار انتهاء جلب كافة البيانات
         await Promise.all(promises);
 
-        // 🌟 الخطوة المفقودة: تشغيل الفلتر لتعبئة وعرض جدول العمليات فور جاهزية البيانات
         if (typeof filterJobsTable === 'function') {
             filterJobsTable();
         }
 
         if (typeof switchTab === 'function') {
             switchTab('dashboard');
-        }
-
-        if (typeof updateSummaryReportView === 'function') {
-            updateSummaryReportView();
         }
     } catch (error) {
         console.error("Initialization error on DOMContentLoaded:", error);
