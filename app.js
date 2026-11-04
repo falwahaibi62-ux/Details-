@@ -1341,7 +1341,13 @@ window.addEventListener('DOMContentLoaded', async () => {
             promises.push(loadWarehouseData());
         }
 
+        // انتظار اكتمال جلب كافة البيانات من السحابة
         await Promise.all(promises);
+
+        // 🌟 تحديث وعرض جدول العمليات (Ledger) فور جاهزية البيانات
+        if (typeof filterLedgerTable === 'function') {
+            filterLedgerTable();
+        }
 
         if (typeof filterJobsTable === 'function') {
             filterJobsTable();
