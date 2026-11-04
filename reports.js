@@ -2,6 +2,7 @@
  * MovePro - Financial & Operations Reports Module (Production Ready & Strict Classification)
  */
 
+
 function switchReportMode(mode) {
     const summaryView = document.getElementById('summaryReportView');
     const detailedView = document.getElementById('detailedReportView');
@@ -34,6 +35,39 @@ function parseCurrency(val) {
     return isNaN(parsed) ? 0 : parsed;
 }
 window.parseCurrency = parseCurrency;
+
+
+
+function filterReportData() {
+    const fromInput = document.getElementById('reportFromDate');
+    const toInput = document.getElementById('reportToDate');
+    
+    reportFromDate = fromInput ? fromInput.value : '';
+    reportToDate = toInput ? toInput.value : '';
+
+    let data = window.masterJobs || [];
+
+    if (reportFromDate) {
+        const fDate = new Date(reportFromDate);
+        data = data.filter(item => new Date(item.date) >= fDate);
+    }
+
+    if (reportToDate) {
+        const tDate = new Date(reportToDate);
+        tDate.setHours(23, 59, 59);
+        data = data.filter(item => new Date(item.date) <= tDate);
+    }
+
+    // تحديث تحليلات ولوحة البيانات الخاصة بشاشة التقارير حصرياً
+    if (typeof updateDashboardAnalytics === 'function') {
+        updateDashboardAnalytics(data);
+    }
+}
+
+// ربط الدوال بالنطاق العام لضمان عملها بسلاسة عبر الأزرار
+window.filterLedgerTable = filterLedgerTable;
+window.filterReportData = filterReportData;
+
 
 function applyReportFilters() {
     const summaryView = document.getElementById('summaryReportView');
