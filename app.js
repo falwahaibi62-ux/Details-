@@ -106,21 +106,27 @@ window.generateOfficialSummaryTable = generateOfficialSummaryTable;
 async function initMasterJobsData() {
     try {
         if (!window.supabaseClient) {
-            console.error("Supabase client is not initialized!");
-            return;
-        }
-
-        const { data: jobsData, error } = await window.supabaseClient
-            .from('jobs_report')
-            .select('*')
-            .eq('is_deleted', false)
-            .order('id', { ascending: false });
-
-        if (error) {
-            console.error("Error fetching jobs from Supabase:", error);
+            console.error("❌ Supabase client is not initialized!");
             window.masterJobs = [];
             return;
         }
+
+        console.log("🔄 Fetching jobs from Supabase...");
+        
+        // استخدام استعلام مرن للتعامل مع السجلات حتى لو كان حقل is_deleted غير مُعرّف (NULL)
+        const { data: jobsData, error } = await window.supabaseClient
+            .from('jobs_report')
+            .select('*')
+            .or('is_deleted.is.null,is_deleted.eq.false')
+            .order('id', { ascending: false });
+
+        if (error) {
+            console.error("❌ Error fetching jobs from Supabase:", error.message || error);
+            window.masterJobs = [];
+            return;
+        }
+
+        console.log("✅ Success! Total records fetched from Supabase:", jobsData ? jobsData.length : 0);
 
         window.masterJobs = (jobsData || []).map(item => {
             let dVal = item.date || '';
@@ -188,7 +194,7 @@ async function initMasterJobsData() {
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 
     } catch (e) {
-        console.error("Error initializing master jobs from Supabase:", e);
+        console.error("❌ Exception during initializing master jobs from Supabase:", e);
         window.masterJobs = [];
     }
 }
