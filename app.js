@@ -1460,8 +1460,13 @@ function switchTab(tabName) {
         // 🌟 استدعاء دالة البيانات الخاصة بكل شاشة عند فتحها
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
-        } else if (tabName === 'jobs') {
-            if (typeof filterJobsTable === 'function') filterJobsTable();
+       } else if (tabName === 'jobs') {
+            if (typeof filterLedgerTable === 'function') {
+                filterLedgerTable();
+            } else if (typeof filterJobsTable === 'function') {
+                filterJobsTable();
+            }
+        }
         } else if (tabName === 'rentals') {
             if (typeof renderPrivateTruckRentalTab === 'function') {
                 renderPrivateTruckRentalTab();
