@@ -69,6 +69,16 @@ window.filterLedgerTable = filterLedgerTable;
 window.filterReportData = filterReportData;
 
 
+// جسر ذكي لتوجيه نداء filterLedgerTable إلى نظام تقارير الـ PDF لمنع أي خطأ
+if (typeof filterLedgerTable !== 'function') {
+    window.filterLedgerTable = function() {
+        if (typeof applyReportFilters === 'function') {
+            applyReportFilters();
+        }
+    };
+}
+
+
 function applyReportFilters() {
     const summaryView = document.getElementById('summaryReportView');
     if (!summaryView) return;
@@ -1071,3 +1081,5 @@ function renderReportsTab() {
     switchReportMode('summary');
 }
 window.renderReportsTab = renderReportsTab;
+
+
