@@ -253,14 +253,14 @@
     <!-- From Date Calendar Filter -->
     <div class="flex items-center space-x-2">
         <label class="text-xs font-bold text-slate-600">From Date:</label>
-        <input type="date" id="filterStartDate" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white cursor-pointer">
-    </div>
+        <input type="date" id="ledgerFromDate" onchange="filterLedgerTable()">
+<input type="date" id="ledgerToDate" onchange="filterLedgerTable()">
     
     <!-- To Date Calendar Filter -->
     <div class="flex items-center space-x-2">
         <label class="text-xs font-bold text-slate-600">To Date:</label>
-        <input type="date" id="filterEndDate" onchange="filterJobsTable()" class="p-2 border rounded-xl text-xs font-semibold bg-white cursor-pointer">
-    </div>
+        <input type="date" id="ledgerFromDate" onchange="filterLedgerTable()">
+<input type="date" id="ledgerToDate" onchange="filterLedgerTable()">
 
     <!-- Reset Filter Button -->
     <button type="button" onclick="resetDateFilter()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition cursor-pointer">
@@ -373,6 +373,72 @@
         </div> <!-- END TAB 5 -->
 
         <!-- TAB 6: OFFICIAL PDF REPORT -->
+// ==========================================
+// فلاتر وتحليلات الشاشة الرسمية للتقارير (reports.js)
+// ==========================================
+
+function applyReportFilters() {
+    const startDateInput = document.getElementById('filterStartDate');
+    const endDateInput = document.getElementById('filterEndDate');
+    const jobTypeSelect = document.getElementById('filterJobType');
+    const paymentTypeSelect = document.getElementById('filterPaymentType');
+
+    const startDate = startDateInput ? startDateInput.value : '';
+    const endDate = endDateInput ? endDateInput.value : '';
+    const jobType = jobTypeSelect ? jobTypeSelect.value : 'all';
+    const paymentType = paymentTypeSelect ? paymentTypeSelect.value : 'all';
+
+    let data = window.masterJobs || [];
+
+    // 1. تصفية حسب تاريخ البداية
+    if (startDate) {
+        const fDate = new Date(startDate);
+        data = data.filter(item => new Date(item.date) >= fDate);
+    }
+
+    // 2. تصفية حسب تاريخ النهاية
+    if (endDate) {
+        const tDate = new Date(endDate);
+        tDate.setHours(23, 59, 59); // لتشمل نهاية اليوم بالكامل
+        data = data.filter(item => new Date(item.date) <= tDate);
+    }
+
+    // 3. تصفية حسب نوع العمل (Delivery أو Moving)
+    if (jobType !== 'all') {
+        data = data.filter(item => {
+            const jobNoLower = (item.jobNo || item.job_no || '').toLowerCase();
+            if (jobType === 'delivery') {
+                return jobNoLower.includes('delivery') || jobNoLower === '';
+            } else if (jobType === 'moving') {
+                return !jobNoLower.includes('delivery') && jobNoLower !== '';
+            }
+            return true;
+        });
+    }
+
+    // 4. تصفية حسب طريقة الدفع
+    if (paymentType !== 'all') {
+        data = data.filter(item => {
+            const rowText = JSON.stringify(item).toLowerCase();
+            return rowText.includes(paymentType.toLowerCase());
+        });
+    }
+
+    // تحديث اللوحة والتحليلات الخاصة بالتقارير فقط بالبيانات المصفاة
+    if (typeof updateDashboardAnalytics === 'function') {
+        updateDashboardAnalytics(data);
+    }
+}
+
+// ربط الدالة بالنطاق العام لتعمل بسلاسة مع أحداث الـ HTML
+window.applyReportFilters = applyReportFilters;
+
+
+
+
+
+
+               
         <div id="tab-reports" class="hidden space-y-6 w-full flex-col view-section">
             <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border border-slate-200">
                 <div>
