@@ -2,7 +2,6 @@
  * MovePro - Financial & Operations Reports Module (Production Ready & Strict Classification)
  */
 
-
 function switchReportMode(mode) {
     const summaryView = document.getElementById('summaryReportView');
     const detailedView = document.getElementById('detailedReportView');
@@ -36,14 +35,15 @@ function parseCurrency(val) {
 }
 window.parseCurrency = parseCurrency;
 
-
-
+// ==========================================
+// 🌟 Isolated Filter Logic for Reports Tab
+// ==========================================
 function filterReportData() {
-    const fromInput = document.getElementById('reportFromDate');
-    const toInput = document.getElementById('reportToDate');
+    const fromInput = document.getElementById('reportFromDate') || document.getElementById('filterStartDate');
+    const toInput = document.getElementById('reportToDate') || document.getElementById('filterEndDate');
     
-    reportFromDate = fromInput ? fromInput.value : '';
-    reportToDate = toInput ? toInput.value : '';
+    const reportFromDate = fromInput ? fromInput.value : '';
+    const reportToDate = toInput ? toInput.value : '';
 
     let data = window.masterJobs || [];
 
@@ -58,18 +58,12 @@ function filterReportData() {
         data = data.filter(item => new Date(item.date) <= tDate);
     }
 
-    // تحديث تحليلات ولوحة البيانات الخاصة بشاشة التقارير حصرياً
     if (typeof updateDashboardAnalytics === 'function') {
         updateDashboardAnalytics(data);
     }
 }
 
-// ربط الدوال بالنطاق العام لضمان عملها بسلاسة عبر الأزرار
-window.filterLedgerTable = filterLedgerTable;
-window.filterReportData = filterReportData;
-
-
-// جسر ذكي لتوجيه نداء filterLedgerTable إلى نظام تقارير الـ PDF لمنع أي خطأ
+// 🌟 Safety Bridge: Protects against cross-script ReferenceErrors
 if (typeof filterLedgerTable !== 'function') {
     window.filterLedgerTable = function() {
         if (typeof applyReportFilters === 'function') {
@@ -78,10 +72,12 @@ if (typeof filterLedgerTable !== 'function') {
     };
 }
 
-
 function applyReportFilters() {
     const summaryView = document.getElementById('summaryReportView');
-    if (!summaryView) return;
+    if (!summaryView) {
+        generateSummaryReportData();
+        return;
+    }
     
     const isSummaryActive = !summaryView.classList.contains('hidden');
     if (isSummaryActive) {
@@ -90,6 +86,8 @@ function applyReportFilters() {
         generateDetailedReportData();
     }
 }
+
+window.filterReportData = filterReportData;
 window.applyReportFilters = applyReportFilters;
 
 function resetReportFilters() {
@@ -163,13 +161,12 @@ function getFilteredJobsData() {
 }
 window.getFilteredJobsData = getFilteredJobsData;
 
-// دالة تحليل وتصنيف المدفوعات (محدثة لتتجاهل أرقام الشيكات الطويلة وتلتقط المبالغ المالية بدقة)
+// Process and classify payment types
 function processPaymentString(str, map) {
     if (!str) return;
     const raw = String(str).trim();
     if (!raw || raw === '-' || raw === '---' || raw.toUpperCase() === 'NULL') return;
 
-    // تفكيك النص بناءً على الفواصل (,) والشرائط المائلة (/) معاً
     const parts = raw.split(/[,/]+/);
 
     parts.forEach(part => {
@@ -177,35 +174,25 @@ function processPaymentString(str, map) {
         if (!sub) return;
 
         const upperSub = sub.toUpperCase();
-
-        // استخراج جميع الأرقام الموجودة في هذا الجزء
         const allNums = sub.match(/([0-9,.]+\d)/g);
         let amount = 0;
 
         if (allNums && allNums.length > 0) {
-            // إذا كان النص يحتوي على كلمة CHEQUE أو CHECK، غالباً الرقم الأول هو رقم الشيك الطويل
             if (upperSub.includes('CHEQUE') || upperSub.includes('CHECK') || upperSub.includes('CHQ') || upperSub.includes('CK')) {
-                // نبحث عن رقم منطقي للمبلغ (أقل من 50000)، وإذا لم يوجد، نفترض أن المبلغ غير مذكور أو يبحث بصيغة أخرى
                 const validNum = allNums.map(n => parseCurrency(n)).find(n => n > 0 && n < 50000);
                 amount = validNum || 0; 
-                // ملاحظة: إذا كان المدخل فقط رقم شيك بدون مبلغ (مثل رقم طويل وكلمة Cheque)، يمكن اعتباره كقيمة أو تتبعه، 
-                // لكن إذا كان هناك مبلغ فعلي، سيتم التقاطه. إذا كان الرقم الطويل هو الوحيد، نضع له قيمة افتراضية أو نتجاوزه إذا لم يكن مبلغاً.
             } else {
-                // للأجزاء العادية (مثل 400 Cash أو Zelle) نأخذ أول رقم صحيح
                 amount = parseCurrency(allNums[0]);
             }
         }
 
-        // إذا كان هناك نوع دفع صريح مثل الشيك، حتى لو لم يكتب مبلغ مالي بجانبه، يجب احتسابه أو التعامل معه
         if (upperSub.includes('CHEQUE') || upperSub.includes('CHECK') || upperSub.includes('CK') || upperSub.includes('CHQ') || upperSub.includes('CHEQ')) {
-            // إذا وجدنا مبلغاً صحيحاً أقل من 50000 نضعه، وإلا إذا كان المدخل للشيك فقط نضيفه أو نتعامل معه
-            map.Cheque += (amount > 0 && amount < 50000) ? amount : 0; // أو يمكن تعديلها حسب قيمة المعاملة الفعلية إذا كان المبلغ مسجلاً في حقل آخر
+            map.Cheque += (amount > 0 && amount < 50000) ? amount : 0;
             return;
         }
 
         if (amount <= 0 || amount >= 50000) return;
 
-        // استخراج النص المتبقي لمعرفة طريقة الدفع
         const textWithoutNum = sub.replace(/([0-9,.]+)/g, '').trim().toUpperCase();
 
         if (!textWithoutNum) {
@@ -232,14 +219,11 @@ function processPaymentString(str, map) {
     });
 }
 
-
-
-
 function assignPaymentMethodRevenue(methodStr, amount, map) {
     processPaymentString(methodStr, map);
 }
 
-// جدول ملخص إيجارات الشاحنات
+// Summary table for Truck Rentals
 function generateTruckRentalSummaryTableHTML() {
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     
@@ -322,7 +306,7 @@ function generateTruckRentalSummaryTableHTML() {
     };
 }
 
-// جدول ملخص المستودع والمصاريف الأخرى
+// Summary table for Warehouse expenses
 function generateWarehouseSummaryTableHTML() {
     const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
     
@@ -417,7 +401,6 @@ function generateOfficialSummaryTable(filteredJobs) {
         sumTotalAfterDeposit += totalVal;
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
 
-        // 1. Helpers: الأرقام داخل الأقواس فقط
         const helpersStr = String(item.helpers || item.helpers_cost || '');
         const helperMatch = helpersStr.match(/\(([^)]+)\)/);
         if (helperMatch) {
@@ -426,7 +409,6 @@ function generateOfficialSummaryTable(filteredJobs) {
             sumHelpers += parseCurrency(helpersStr);
         }
 
-        // 2. Drivers: الأرقام داخل الأقواس فقط
         const driversStr = String(item.drivers || item.drivers_cost || '');
         const driverMatch = driversStr.match(/\(([^)]+)\)/);
         if (driverMatch) {
@@ -435,7 +417,6 @@ function generateOfficialSummaryTable(filteredJobs) {
             sumDrivers += parseCurrency(driversStr);
         }
 
-        // 3. Cash Diesel: القيم التي تكون طريقة دفعها Cash فقط
         const dieselValStr = item.diesel || item.diesel_expense;
         if (dieselValStr && dieselValStr !== '-') {
             let dieselStr = String(dieselValStr);
@@ -451,7 +432,6 @@ function generateOfficialSummaryTable(filteredJobs) {
             });
         }
 
-        // معالجة PU Payments
         const puRawStr = String(item.pu || item.pu_payments || '').trim();
         if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
             processPaymentString(puRawStr, payMap);
@@ -469,7 +449,6 @@ function generateOfficialSummaryTable(filteredJobs) {
             });
         }
 
-        // التحقق مما إذا كانت الوظيفة Delivery وتحتوي على PMO في PU أو Destination
         const isDelivery = item.jobNo && String(item.jobNo).toLowerCase().includes('delivery');
         
         if (isDelivery) {
@@ -492,7 +471,6 @@ function generateOfficialSummaryTable(filteredJobs) {
             }
         }
         
-        // 4. Dest Balance Zelle & Balance (No Cash/PMO): استبعاد Cash و PMO تماماً
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             processPaymentString(destRawStr, payMap);
@@ -507,7 +485,6 @@ function generateOfficialSummaryTable(filteredJobs) {
                         sumDestZelle += partVal;
                         sumDestNoCashPmo += partVal;
                     } else if (!dLower.includes('pmo')) {
-                        // استبعاد الـ PMO تماماً من هذا المجموع لضبط النتيجة على 25,301
                         sumDestNoCashPmo += partVal;
                     }
                 }
@@ -517,7 +494,6 @@ function generateOfficialSummaryTable(filteredJobs) {
 
     const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
     const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
-    const payGrandTotal = Object.values(payMap).reduce((a, b) => a + b, 0);
 
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
@@ -1081,5 +1057,3 @@ function renderReportsTab() {
     switchReportMode('summary');
 }
 window.renderReportsTab = renderReportsTab;
-
-
