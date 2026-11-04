@@ -48,6 +48,47 @@ function formatJobDateToSlash(dateStr) {
     return dateStr;
 }
 
+
+
+
+// ==========================================
+// 1. تعريف المتغيرات المستقلة لكل شاشة
+// ==========================================
+let ledgerFromDate = '';
+let ledgerToDate = '';
+
+let reportFromDate = '';
+let reportToDate = '';
+
+// ==========================================
+// 2. دالة فلترة جدول العمليات (Operations Ledger)
+// ==========================================
+function filterLedgerTable() {
+    const fromInput = document.getElementById('ledgerFromDate') || document.getElementById('from_date');
+    const toInput = document.getElementById('ledgerToDate') || document.getElementById('to_date');
+    
+    ledgerFromDate = fromInput ? fromInput.value : '';
+    ledgerToDate = toInput ? toInput.value : '';
+
+    let data = window.masterJobs || [];
+
+    if (ledgerFromDate) {
+        const fDate = new Date(ledgerFromDate);
+        data = data.filter(item => new Date(item.date) >= fDate);
+    }
+
+    if (ledgerToDate) {
+        const tDate = new Date(ledgerToDate);
+        tDate.setHours(23, 59, 59); // لتشمل نهاية اليوم المحدد
+        data = data.filter(item => new Date(item.date) <= tDate);
+    }
+
+    // استدعاء دالة عرض الجدول الخاصة بالعمليات
+    if (typeof renderTable === 'function') {
+        renderTable(data);
+    }
+}
+
 // 🌟 جلب البيانات سحابياً من جدول jobs_report مع استخراج الشهر والسنة بدقة تامة
 // 🌟 جلب البيانات سحابياً من جدول jobs_report مع استخراج الشهر والسنة بدقة تامة
 async function initMasterJobsData() {
