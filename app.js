@@ -1070,13 +1070,35 @@ async function permanentDeleteJob(jobId) {
 }
 window.permanentDeleteJob = permanentDeleteJob;
 
+
 // ==========================================
-// 8. DASHBOARD ANALYTICS & CHARTS
+// DASHBOARD ANALYTICS & CHARTS (محدث وآمن)
 // ==========================================
 function updateDashboardAnalytics() {
     try {
         if (!window.masterJobs || window.masterJobs.length === 0) {
-            console.warn("No masterJobs available for dashboard analytics.");
+            console.warn("No masterJobs available for dashboard analytics. Resetting UI.");
+            
+            // تصفير واجهة لوحة التحكم لتجنب بقاء بيانات وهمية
+            const revEl = document.getElementById('dashTotalRevenue');
+            if (revEl) revEl.innerText = '$0';
+
+            const jobsTextEl = document.getElementById('dashCompletedJobsText');
+            if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-fast mr-1"></i>0 Active Dispatches`;
+
+            const avgEl = document.getElementById('dashAvgJobValue');
+            if (avgEl) avgEl.innerText = '$0';
+
+            const dieselEl = document.getElementById('dashTotalDiesel');
+            if (dieselEl) dieselEl.innerText = '$0';
+
+            const topCorridorsContainer = document.getElementById('topCorridorsContainer');
+            if (topCorridorsContainer) topCorridorsContainer.innerHTML = '';
+
+            // تصفير المخططات البيانية إن وجدت
+            if (typeof renderDashboardCharts === 'function') {
+                renderDashboardCharts([0,0,0,0,0,0,0,0,0,0,0,0], { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 });
+            }
             return;
         }
 
@@ -1234,7 +1256,6 @@ function renderDashboardCharts(monthlyData, paymentData) {
     }
 }
 window.renderDashboardCharts = renderDashboardCharts;
-
 // ==========================================
 // 9. NAVIGATION & TABS
 // ==========================================
