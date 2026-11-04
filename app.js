@@ -49,6 +49,7 @@ function formatJobDateToSlash(dateStr) {
 }
 
 // 🌟 جلب البيانات سحابياً من جدول jobs_report مع استخراج الشهر والسنة بدقة تامة
+// 🌟 جلب البيانات سحابياً من جدول jobs_report مع استخراج الشهر والسنة بدقة تامة
 async function initMasterJobsData() {
     try {
         if (!window.supabaseClient) {
@@ -93,18 +94,44 @@ async function initMasterJobsData() {
                 date: dVal,
                 month: mVal,
                 year: yVal,
-                jobNo: item.job_no || '',
+                
+                // مطابقة تامة لكل أسماء الحقول لكي يقرأها الجدول والنافذة بدون أي اختلاف
+                jobNo: item.job_no || item.jobNo || item.job_number || '',
+                job_no: item.job_no || '',
+                
                 route: item.route || ((item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : ''),
-                foreman: foremanVal,          // لتوافق الدوال الأخرى
-                foremanName: foremanVal,      // لتوافق الجدول ونموذج التعديل
+                route_from: item.route_from || '',
+                route_to: item.route_to || '',
+                
+                foreman: foremanVal,
+                foremanName: foremanVal,
+                foreman_name: foremanVal,
+                
                 foreman10pct: item.foreman_cost || '0',
+                foreman_cost: item.foreman_cost || '0',
+                
                 total: item.total_amount || '$0',
+                total_amount: item.total_amount || '$0',
+                
                 helpers: item.helpers_cost || '-',
+                helpers_cost: item.helpers_cost || '-',
+                
                 drivers: item.drivers_cost || '-',
+                drivers_cost: item.drivers_cost || '-',
+                
                 pu: item.pu_payments || '-',
+                pu_payments: item.pu_payments || '-',
+                
                 dest: item.destination_payments || '-',
+                destination: item.destination_payments || '-',
+                destination_payments: item.destination_payments || '-',
+                
                 diesel: item.diesel_expense || '-',
+                diesel_expense: item.diesel_expense || '-',
+                
                 hotel: item.hotel_expense || '-',
+                hotel_expense: item.hotel_expense || '-',
+                
                 storage: item.storage || '-'
             };
         });
