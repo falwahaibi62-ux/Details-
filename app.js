@@ -1364,5 +1364,5 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error("Initialization error on DOMContentLoaded:", error);
     }
-});
+
 });
