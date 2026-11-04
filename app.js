@@ -1457,7 +1457,7 @@ function switchTab(tabName) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
-        // 🌟 استدعاء دالة البيانات الخاصة بكل شاشة عند فتحها
+        // استدعاء دالة البيانات الخاصة بكل شاشة عند فتحها
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
