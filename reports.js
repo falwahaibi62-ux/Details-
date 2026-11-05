@@ -659,6 +659,77 @@ function generateSummaryReportData() {
 }
 window.generateSummaryReportData = generateSummaryReportData;
 
+
+function updateSummaryReportView(filteredData) {
+    try {
+        const container = document.getElementById('summaryReportContainer');
+        if (!container) return;
+
+        // 1. جدول إيجارات الشاحنات
+        let truckHTML = '';
+        if (typeof generateTruckRentalSummaryTableHTML === 'function') {
+            const truckResult = generateTruckRentalSummaryTableHTML();
+            truckHTML = truckResult.html || '';
+        }
+
+        // 2. جدول المستودع والمصروفات
+        let warehouseHTML = '';
+        if (typeof generateWarehouseSummaryTableHTML === 'function') {
+            const warehouseResult = generateWarehouseSummaryTableHTML();
+            warehouseHTML = warehouseResult.html || '';
+        }
+
+        // 3. جدول إجمالي طرق الدفع (Payment Methods Summary / Executive Financial Summary)
+        let paymentMethodsHTML = '';
+        if (typeof generatePaymentMethodSummaryTableHTML === 'function') {
+            const paymentResult = generatePaymentMethodSummaryTableHTML();
+            paymentMethodsHTML = paymentResult.html || '';
+        }
+
+        // حقن جميع الجداول الإجمالية معاً داخل حاوية صفحة التقارير على الشاشة
+        container.innerHTML = `
+            <div class="space-y-6">
+                ${paymentMethodsHTML}
+                ${truckHTML}
+                ${warehouseHTML}
+            </div>
+        `;
+
+        // تحديث عدادات الأرقام العلوية (Total Jobs, Deliveries, Revenue, Expenses)
+        const totalJobsEl = document.getElementById('sumTotalJobs');
+        const totalDeliveriesEl = document.getElementById('sumTotalDeliveries');
+        const totalRevenueEl = document.getElementById('sumTotalRevenue');
+        const totalExpensesEl = document.getElementById('sumTotalExpenses');
+
+        if (totalJobsEl) totalJobsEl.innerText = filteredData.length;
+        
+        let deliveriesCount = filteredData.filter(item => {
+            const jNo = String(item.jobNo || item.job_no || '').toLowerCase();
+            return jNo.includes('delivery') || jNo === '';
+        }).length;
+        if (totalDeliveriesEl) totalDeliveriesEl.innerText = deliveriesCount;
+
+        let totalRev = filteredData.reduce((sum, item) => {
+            const amt = parseFloat(String(item.total || item.total_amount || '0').replace(/[^0-9.]/g, '')) || 0;
+            return sum + amt;
+        }, 0);
+        if (totalRevenueEl) totalRevenueEl.innerText = '$' + totalRev.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+        let totalExp = 0;
+        filteredData.forEach(item => {
+            const diesel = parseFloat(String(item.diesel || item.diesel_expense || '0').replace(/[^0-9.]/g, '')) || 0;
+            const hotel = parseFloat(String(item.hotel || item.hotel_expense || '0').replace(/[^0-9.]/g, '')) || 0;
+            totalExp += (diesel + hotel);
+        });
+        if (totalExpensesEl) totalExpensesEl.innerText = '$' + totalExp.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+    } catch (e) {
+        console.error("Error updating summary report view:", e);
+    }
+}
+window.updateSummaryReportView = updateSummaryReportView;
+
+
 function generateDetailedReportData() {
     const startDateVal = document.getElementById('filterStartDate')?.value;
     const endDateVal = document.getElementById('filterEndDate')?.value;
