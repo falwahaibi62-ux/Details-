@@ -424,7 +424,6 @@ async function deletePrivateTruckRental(id) {
         return;
     }
 
-    // استخدام التحديث (Soft Delete) لتعديل حقل is_deleted إلى true ليذهب السجل إلى سلة المحذوفات
     const { error } = await window.supabaseClient
         .from('truck_rental')
         .update({ is_deleted: true })
@@ -434,8 +433,11 @@ async function deletePrivateTruckRental(id) {
         console.error('Error moving to Recycle Bin:', error);
         alert('Supabase Error: ' + error.message);
     } else {
-        await refreshPrivateTruckData();
-        // تحديث سلة المحذوفات فوراً إذا كانت مفتوحة
+        // 1. إعادة جلب بيانات الشاحنات وتحديث الواجهة فوراً
+        if (typeof refreshPrivateTruckData === 'function') {
+            await refreshPrivateTruckData();
+        }
+        // 2. تحديث سلة المحذوفات
         if (typeof renderTrashBin === 'function') {
             renderTrashBin();
         }
