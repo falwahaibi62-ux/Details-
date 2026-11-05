@@ -1128,3 +1128,100 @@ function renderReportsTab() {
     switchReportMode('summary');
 }
 window.renderReportsTab = renderReportsTab;
+
+async function renderSummaryPageWithDetailedTables() {
+    // 1. تحديد الحاوية الرئيسية لصفحة Summary
+    const container = document.getElementById('tab-summary') || document.getElementById('summaryContainer');
+    if (!container) return;
+
+    // 2. جلب البيانات المحدثة مع استبعاد المحذوفة
+    const rentals = (typeof loadPrivateTruckRentals === 'function') ? await loadPrivateTruckRentals() : [];
+    const warehouse = (typeof loadWarehouseRecords === 'function') ? await loadWarehouseRecords() : [];
+
+    // 3. حساب إجمالية طرق الدفع وتصنيفها
+    let paymentTotals = { Cash: 0, Cheque: 0, Zelle: 0, Card: 0, Other: 0 };
+
+    [...rentals, ...warehouse].forEach(item => {
+        let amt = parseFloat(String(item.amount || '0').replace(/[^0-9.]/g, '')) || 0;
+        let pType = (item.paymentType || '').trim();
+
+        // إذا لم توجد طريقة دفع أو كانت فارغة، تصنف افتراضياً كـ Cash أو بدون طريقة
+        if (!pType || pType === '-') {
+            paymentTotals.Cash += amt;
+        } else if (paymentTotals.hasOwnProperty(pType)) {
+            paymentTotals[pType] += amt;
+        } else {
+            // أي قيمة أخرى تصنف تحت Other
+            paymentTotals.Other += amt;
+        }
+    });
+
+    // 4. بناء هيكل الجداول الإضافية لتتطابق مع تصميم التقرير المرفق
+    const summaryHTML = `
+        <div class="space-y-6 mt-6">
+            <!-- جدول ملخص إيجارات الشاحنات -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                <h3 class="text-sm font-bold text-slate-800 mb-3">Private Truck Rental Financial Summary (${rentals.length} Records)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] border-b">
+                            <tr>
+                                <th class="p-2.5">Total Rental Days</th>
+                                <th class="p-2.5 text-emerald-700">Cash Payments</th>
+                                <th class="p-2.5 text-blue-700">Other Payments (Zelle/Check)</th>
+                                <th class="p-2.5 text-amber-700 font-bold">Grand Total Rental Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y text-slate-700">
+                            <tr>
+                                <td class="p-2.5 font-bold">${rentals.reduce((acc, r) => acc + (r.days || 0), 0)} Days</td>
+                                <td class="p-2.5 text-emerald-600 font-bold">$${rentals.filter(r => (r.paymentType || '').toLowerCase().includes('cash')).reduce((acc, r) => acc + (parseFloat(String(r.amount).replace(/[^0-9.]/g, '')) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 text-blue-600 font-bold">$${rentals.filter(r => !(r.paymentType || '').toLowerCase().includes('cash')).reduce((acc, r) => acc + (parseFloat(String(r.amount).replace(/[^0-9.]/g, '')) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 text-amber-600 font-black">$${rentals.reduce((acc, r) => acc + (parseFloat(String(r.amount).replace(/[^0-9.]/g, '')) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- جدول ملخص طرق الدفع العامة (Payment Methods Breakdown) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+                <h3 class="text-sm font-bold text-slate-800 mb-3">Payment Methods Summary Breakdown</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+                    <div class="p-3 bg-slate-50 rounded-xl border text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Cash</span>
+                        <span class="text-sm font-extrabold text-emerald-600 mt-1 block">$${paymentTotals.Cash.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Cheque</span>
+                        <span class="text-sm font-extrabold text-slate-700 mt-1 block">$${paymentTotals.Cheque.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Zelle</span>
+                        <span class="text-sm font-extrabold text-blue-600 mt-1 block">$${paymentTotals.Zelle.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Card</span>
+                        <span class="text-sm font-extrabold text-purple-600 mt-1 block">$${paymentTotals.Card.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border text-center col-span-2 sm:col-span-1">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Other</span>
+                        <span class="text-sm font-extrabold text-amber-600 mt-1 block">$${paymentTotals.Other.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // حقن الجداول في صفحة Summary دون مسح المحتوى الأصلي
+    let existingExtra = document.getElementById('summaryExtraTables');
+    if (!existingExtra) {
+        const wrapper = document.createElement('div');
+        wrapper.id = 'summaryExtraTables';
+        wrapper.innerHTML = summaryHTML;
+        container.appendChild(wrapper);
+    } else {
+        existingExtra.innerHTML = summaryHTML;
+    }
+}
+window.renderSummaryPageWithDetailedTables = renderSummaryPageWithDetailedTables;
