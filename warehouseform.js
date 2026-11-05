@@ -243,31 +243,7 @@ async function refreshWarehouseData() {
     `).join('');
 }
 
-// حذف سجل من Supabase
-async function deleteWarehouseRecord(id) {
-    if (!confirm('Are you sure you want to move this warehouse record to the Recycle Bin?')) return;
 
-    if (!window.supabaseClient) {
-        alert("Supabase client is not initialized!");
-        return;
-    }
-
-    // تحديث حقل is_deleted إلى true لنقل السجل إلى سلة المحذوفات
-    const { error } = await window.supabaseClient
-        .from('warehouse_expenses')
-        .update({ is_deleted: true })
-        .eq('id', id);
-
-    if (error) {
-        console.error('Error moving warehouse record to Recycle Bin:', error);
-        alert('Supabase Error: ' + error.message);
-    } else {
-        await refreshWarehouseData();
-        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
-        if (typeof renderTrashBin === 'function') renderTrashBin();
-    }
-}
-window.deleteWarehouseRecord = deleteWarehouseRecord;
 
 // تجهيز حقول التعديل بحسب المعرف
 function editWarehouseRecord(id) {
