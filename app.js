@@ -1057,29 +1057,36 @@ async function renderTrashBin() {
         if (!trashContainer) return;
 
         if (allDeletedRecords.length === 0) {
-            trashContainer.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Trash bin is empty</td></tr>`;
+            // تم ضبط الـ colspan ليصبح 9 ليغطي جميع أعمدة الجدول بشكل صحيح
+            trashContainer.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">Trash bin is empty</td></tr>`;
             return;
         }
 
-        // بناء صفوف الجدول للسلة
+        // بناء صفوف الجدول للسلة لتتطابق مع أعمدة الـ HTML الـ 9
         trashContainer.innerHTML = allDeletedRecords.map(item => {
             const identifier = item.job_no || item.services || item.truck_name || item.id || '-';
             const details = item.route || item.details || item.notes || '-';
+            const assigned = item.foreman_name || item.paymentType || item.assigned_to || '-';
+            const helpers = item.helpers || '-';
+            const drivers = item.drivers || '-';
             const amount = item.total_amount || item.amount || item.total || '$0';
 
             return `
                 <tr class="border-b hover:bg-slate-50">
-                    <td class="px-4 py-3 font-medium text-slate-800">${item.date || '-'}</td>
-                    <td class="px-4 py-3"><span class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-semibold">${item.displayType}</span></td>
-                    <td class="px-4 py-3 text-slate-700 font-semibold">${identifier}</td>
-                    <td class="px-4 py-3 text-slate-600 truncate max-w-xs">${details}</td>
-                    <td class="px-4 py-3 text-slate-600 font-bold">${amount}</td>
-                    <td class="px-4 py-3 text-right space-x-2">
-                        <button onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer">
+                    <td class="p-3 text-slate-800 font-medium">${item.date || '-'}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType}</span></td>
+                    <td class="p-3 text-slate-700 font-semibold">${identifier}</td>
+                    <td class="p-3 text-slate-600 truncate max-w-xs">${details}</td>
+                    <td class="p-3 text-slate-600">${assigned}</td>
+                    <td class="p-3 text-purple-700">${helpers}</td>
+                    <td class="p-3 text-blue-700">${drivers}</td>
+                    <td class="p-3 font-bold text-emerald-600">${amount}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer" title="Restore">
                             <i class="fa-solid fa-rotate-left mr-1"></i> Restore
                         </button>
-                        <button onclick="permanentDeleteRecord('${item.tableName}', '${item.id}')" class="px-3 py-1 bg-rose-600 text-white rounded-lg text-xs hover:bg-rose-700 transition cursor-pointer">
-                            <i class="fa-solid fa-trash-can mr-1"></i> Delete Forever
+                        <button onclick="permanentDeleteRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-rose-600 text-white rounded-lg text-xs hover:bg-rose-700 transition cursor-pointer" title="Delete Forever">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Delete
                         </button>
                     </td>
                 </tr>
@@ -1095,87 +1102,7 @@ window.renderTrashBin = renderTrashBin;
 
 
 
-// --- Render Recycle Bin (Fetches deleted records from all 3 tables) ---
-async function renderTrashBin() {
-    try {
-        if (!window.supabaseClient) {
-            console.error("Supabase client not initialized!");
-            return;
-        }
 
-        let allDeletedRecords = [];
-
-        // 1. جلب الوظائف المحذوفة من jobs_report
-        const { data: jobsData, error: jobsError } = await window.supabaseClient
-            .from('jobs_report')
-            .select('*')
-            .eq('is_deleted', true)
-            .order('id', { ascending: false });
-
-        if (!jobsError && jobsData) {
-            allDeletedRecords.push(...jobsData.map(item => ({ ...item, tableName: 'jobs_report', displayType: 'Job' })));
-        }
-
-        // 2. جلب إيجارات الشاحنات المحذوفة من truck_rental
-        const { data: truckData, error: truckError } = await window.supabaseClient
-            .from('truck_rental')
-            .select('*')
-            .eq('is_deleted', true)
-            .order('id', { ascending: false });
-
-        if (!truckError && truckData) {
-            allDeletedRecords.push(...truckData.map(item => ({ ...item, tableName: 'truck_rental', displayType: 'Truck Rental' })));
-        }
-
-        // 3. جلب مصروفات المستودع المحذوفة من warehouse_expenses
-        const { data: warehouseData, error: warehouseError } = await window.supabaseClient
-            .from('warehouse_expenses')
-            .select('*')
-            .eq('is_deleted', true)
-            .order('id', { ascending: false });
-
-        if (!warehouseError && warehouseData) {
-            allDeletedRecords.push(...warehouseData.map(item => ({ ...item, tableName: 'warehouse_expenses', displayType: 'Warehouse' })));
-        }
-
-        const trashContainer = document.getElementById('trashTableBody') || document.getElementById('trashContainer');
-        if (!trashContainer) return;
-
-        if (allDeletedRecords.length === 0) {
-            trashContainer.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Trash bin is empty</td></tr>`;
-            return;
-        }
-
-        // بناء صفوف الجدول للسلة
-        trashContainer.innerHTML = allDeletedRecords.map(item => {
-            const identifier = item.job_no || item.services || item.truck_name || item.id || '-';
-            const details = item.route || item.details || item.notes || '-';
-            const amount = item.total_amount || item.amount || item.total || '$0';
-
-            return `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="px-4 py-3 font-medium text-slate-800">${item.date || '-'}</td>
-                    <td class="px-4 py-3"><span class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-semibold">${item.displayType}</span></td>
-                    <td class="px-4 py-3 text-slate-700 font-semibold">${identifier}</td>
-                    <td class="px-4 py-3 text-slate-600 truncate max-w-xs">${details}</td>
-                    <td class="px-4 py-3 text-slate-600 font-bold">${amount}</td>
-                    <td class="px-4 py-3 text-right space-x-2">
-                        <button onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer">
-                            <i class="fa-solid fa-rotate-left mr-1"></i> Restore
-                        </button>
-                        <button onclick="permanentDeleteRecord('${item.tableName}', '${item.id}')" class="px-3 py-1 bg-rose-600 text-white rounded-lg text-xs hover:bg-rose-700 transition cursor-pointer">
-                            <i class="fa-solid fa-trash-can mr-1"></i> Delete Forever
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-    } catch (e) {
-        console.error("Error in renderTrashBin:", e);
-    }
-}
-window.renderTrashBin = renderTrashBin;
 
 
 // --- Soft Delete (Move to Recycle Bin) ---
