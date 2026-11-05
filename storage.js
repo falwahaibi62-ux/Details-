@@ -1,5 +1,6 @@
 /**
  * MovePro Storage Manager - Synchronized with Supabase and Soft Delete (Recycle Bin)
+ * Fully covers all 3 tables: jobs_report, truck_rental, warehouse_expenses
  */
 
 if (typeof window.saveTrash === 'undefined') {
@@ -49,33 +50,33 @@ function saveMasterJobs(jobsArray) {
 window.masterJobs = loadMasterJobs();
 
 
-// --- Trash Bin Management (Synced with Supabase is_deleted) ---
+// --- Trash Bin Management (Synced with Supabase for all 3 tables) ---
 async function loadTrashBinFromSupabase() {
     try {
         if (!window.supabaseClient) return [];
         
         let allDeleted = [];
 
-        // 1. الوظائف المحذوفة من jobs_report
+    // 1. الوظائف المحذوفة من جدول jobs_report
         const { data: deletedJobs } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
             .eq('is_deleted', true);
-        if (deletedJobs) allDeleted.push(...deletedJobs.map(j => ({ ...j, sourceTable: 'jobs_report' })));
+        if (deletedJobs) allDeleted.push(...deletedJobs.map(j => ({ ...j, tableName: 'jobs_report', displayType: 'Job' })));
 
-        // 2. إيجارات الشاحنات المحذوفة من truck_rental
+    // 2. إيجارات الشاحنات المحذوفة من جدول truck_rental
         const { data: deletedRentals } = await window.supabaseClient
             .from('truck_rental')
             .select('*')
             .eq('is_deleted', true);
-        if (deletedRentals) allDeleted.push(...deletedRentals.map(r => ({ ...r, sourceTable: 'truck_rental' })));
+        if (deletedRentals) allDeleted.push(...deletedRentals.map(r => ({ ...r, tableName: 'truck_rental', displayType: 'Truck Rental' })));
 
-        // 3. مصروفات المستودع المحذوفة من warehouse_expenses
+    // 3. مصروفات المستودع المحذوفة من جدول warehouse_expenses
         const { data: deletedWarehouse } = await window.supabaseClient
             .from('warehouse_expenses')
             .select('*')
             .eq('is_deleted', true);
-        if (deletedWarehouse) allDeleted.push(...deletedWarehouse.map(w => ({ ...w, sourceTable: 'warehouse_expenses' })));
+        if (deletedWarehouse) allDeleted.push(...deletedWarehouse.map(w => ({ ...w, tableName: 'warehouse_expenses', displayType: 'Warehouse' })));
 
         window.masterTrash = allDeleted;
         localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(allDeleted));
@@ -109,7 +110,7 @@ window.saveTrash = saveTrashBin;
 window.masterTrash = loadTrashBin();
 
 
-// --- Soft Delete & Restore Handlers ---
+// --- Soft Delete & Restore Handlers (For All Tables) ---
 async function softDeleteRecord(tableName, recordId) {
     try {
         if (!window.supabaseClient) return false;
@@ -151,21 +152,37 @@ async function restoreRecordFromTrash(tableName, recordId) {
 window.restoreRecordFromTrash = restoreRecordFromTrash;
 
 
-// --- Private Truck Rentals Management ---
-function loadTruckRentals() {
-    const saved = localStorage.getItem(RENTALS_STORAGE_KEY);
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) return parsed;
-        } catch (e) {
-            console.error('Error parsing rentals:', e);
+// --- Private Truck Rentals Management (Direct from Supabase) ---
+async function loadTruckRentals() {
+    try {
+        if (!window.supabaseClient) {
+            const saved = localStorage.getItem(RENTALS_STORAGE_KEY);
+            return saved ? JSON.parse(saved) : [];
         }
+
+        // جلب إيجارات الشاحنات غير المحذوفة فقط من Supabase
+        const { data, error } = await window.supabaseClient
+            .from('truck_rental')
+            .select('*')
+            .or('is_deleted.is.null,is_deleted.eq.false')
+            .order('id', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching truck rentals from Supabase:', error);
+            return [];
+        }
+
+        window.currentTruckRentals = data || [];
+        localStorage.setItem(RENTALS_STORAGE_KEY, JSON.stringify(window.currentTruckRentals));
+        return window.currentTruckRentals;
+    } catch (e) {
+        console.error('Exception in loadTruckRentals:', e);
+        return [];
     }
-    return [];
 }
 
 function saveTruckRentals(data) {
+    window.currentTruckRentals = data;
     localStorage.setItem(RENTALS_STORAGE_KEY, JSON.stringify(data));
 }
 window.loadTruckRentals = loadTruckRentals;
