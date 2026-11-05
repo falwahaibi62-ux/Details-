@@ -545,6 +545,52 @@ window.checkPermissions = checkPermissions;
 // ==========================================
 // 5. PAYMENT ROWS MANAGEMENT
 // ==========================================
+
+function formatToUSDate(dateInput) {
+    if (!dateInput) return '';
+    
+    let dateObj = new Date(dateInput);
+    if (isNaN(dateObj.getTime())) {
+        // إذا كان التاريخ مُدخل كنص (مثل DD/MM/YYYY أو YYYY-MM-DD)
+        const str = String(dateInput).trim();
+        let parts = [];
+        if (str.includes('/')) {
+            parts = str.split('/');
+        } else if (str.includes('-')) {
+            parts = str.split('-');
+        }
+        
+        if (parts.length === 3) {
+            // محاولة التعرف على الترتيب الحالي وتعديله
+            let year, month, day;
+            if (parts[0].length === 4) {
+                // صيغة YYYY-MM-DD
+                year = parts[0];
+                month = parts[1];
+                day = parts[2];
+            } else {
+                // صيغة DD/MM/YYYY الافتراضية
+                day = parts[0];
+                month = parts[1];
+                year = parts[2];
+            }
+            dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else {
+            return str;
+        }
+    }
+    
+    if (isNaN(dateObj.getTime())) return dateInput;
+
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    const yyyy = dateObj.getFullYear();
+
+    // الصيغة الأمريكية: الشهر / اليوم / السنة
+    return `${mm}/${dd}/${yyyy}`;
+}
+window.formatToUSDate = formatToUSDate;
+
 function addPaymentRow(containerId, amount = '', method = '') {
     let container = document.getElementById(containerId);
     if (!container && containerId === 'destContextContainer') {
