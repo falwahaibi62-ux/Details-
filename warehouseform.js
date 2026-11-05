@@ -77,6 +77,19 @@ async function loadWarehouseRecords() {
 }
 window.loadWarehouseRecords = loadWarehouseRecords;
 
+
+async function refreshWarehouseData() {
+    // 1. جلب البيانات المحدثة (التي لا تحتوي على المحذوفة)
+    const records = await loadWarehouseRecords();
+    
+    // 2. إعادة رسم الجدول بالبيانات الجديدة
+    if (typeof renderWarehouseTable === 'function') {
+        renderWarehouseTable(records);
+    }
+}
+window.refreshWarehouseData = refreshWarehouseData;
+
+
 // إنشاء النافذة المنبثقة برمجياً لضمان عدم اختفائها أو فشل فتحها
 function ensureWarehouseModalExists() {
     let modal = document.getElementById('warehouseModal');
