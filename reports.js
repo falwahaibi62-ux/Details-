@@ -613,6 +613,11 @@ function generateSummaryReportData() {
 
     const monthsLabels = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
+    // توليد جداول الإجماليات الإضافية لعرضها في الواجهة
+    const paymentMethodsObj = generatePaymentMethodSummaryTableHTML();
+    const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
+    const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
+
     const container = document.getElementById('summaryReportContainer');
     if (container) {
         container.innerHTML = `
@@ -653,11 +658,131 @@ function generateSummaryReportData() {
                 </div>
             </div>
 
+            ${paymentMethodsObj.html}
+            ${rentalSummaryObj.html}
+            ${warehouseSummaryObj.html}
             ${generateOfficialSummaryTable(filteredJobs)}
         `;
     }
 }
 window.generateSummaryReportData = generateSummaryReportData;
+
+// Summary table for Payment Methods Breakdown (including Unspecified & Other)
+function generatePaymentMethodSummaryTableHTML() {
+    const jobs = getFilteredJobsData();
+    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+
+    let totals = {
+        Cash: 0,
+        Cheque: 0,
+        Zelle: 0,
+        PMO: 0,
+        Card: 0,
+        Other: 0,
+        Unspecified: 0
+    };
+
+    // تجميع القيم من الوظائف (Jobs) عبر حقول الدفع المختلفة
+    jobs.forEach(item => {
+        const puStr = String(item.pu || item.pu_payments || '').trim();
+        const destStr = String(item.dest || item.destination || item.destination_payments || '').trim();
+
+        [puStr, destStr].forEach(str => {
+            if (!str || str === '-' || str === '---') return;
+            const amt = parseCurrency(str);
+            const upper = str.toUpperCase();
+
+            if (amt <= 0 || amt >= 50000) return;
+
+            if (upper.includes('CASH')) {
+                totals.Cash += amt;
+            } else if (upper.includes('CHEQUE') || upper.includes('CHECK') || upper.includes('CHQ')) {
+                totals.Cheque += amt;
+            } else if (upper.includes('ZELLE')) {
+                totals.Zelle += amt;
+            } else if (upper.includes('PMO')) {
+                totals.PMO += amt;
+            } else if (upper.includes('CARD') || upper.includes('CC')) {
+                totals.Card += amt;
+            } else if (upper.includes('OTHER') || upper.includes('OTHERS')) {
+                totals.Other += amt;
+            } else {
+                // القيم التي بدون طريقة دفع صريحة تُصنف هنا
+                totals.Unspecified += amt;
+            }
+        });
+    });
+
+    // تجميع القيم من الإيجارات والمستودع
+    [...rentals, ...warehouse].forEach(item => {
+        const amt = parseCurrency(item.amount);
+        const pType = String(item.paymentType || item.paymentMethod || '').trim().toLowerCase();
+
+        if (amt <= 0) return;
+
+        if (!pType || pType === '-' || pType === 'cash') {
+            totals.Cash += amt;
+        } else if (pType.includes('cheque') || pType.includes('check')) {
+            totals.Cheque += amt;
+        } else if (pType.includes('zelle')) {
+            totals.Zelle += amt;
+        } else if (pType.includes('card')) {
+            totals.Card += amt;
+        } else {
+            totals.Other += amt;
+        }
+    });
+
+    const grandTotalMethods = Object.values(totals).reduce((a, b) => a + b, 0);
+
+    return {
+        totals: totals,
+        html: `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
+                <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">Payment Methods Summary Breakdown</h3>
+                        <p class="text-[11px] text-slate-400">Detailed distribution of revenue and expenses by payment methods (including Unspecified & Other)</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <table class="w-full text-left border-collapse text-[11px]">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700">Cash</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-slate-700">Cheque</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700">Zelle</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-indigo-700">PMO</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-purple-700">Card</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-amber-700">Other</th>
+                                <th class="p-2.5 border-r border-slate-200/60 text-center text-slate-600">Unspecified</th>
+                                <th class="p-2.5 text-center bg-emerald-600 text-white font-extrabold">Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold bg-emerald-50/20">$${totals.Cash.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center font-bold">$${totals.Cheque.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-blue-600 font-bold bg-blue-50/20">$${totals.Zelle.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-indigo-600 font-bold">$${totals.PMO.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-purple-600 font-bold">$${totals.Card.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-amber-600 font-bold bg-amber-50/20">$${totals.Other.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 border-r text-center text-slate-500 font-bold">$${totals.Unspecified.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 text-center bg-emerald-50 text-emerald-900 font-extrabold text-xs">$${grandTotalMethods.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `
+    };
+}
+window.generatePaymentMethodSummaryTableHTML = generatePaymentMethodSummaryTableHTML;
+
+
+
 
 
 function updateSummaryReportView(filteredData) {
