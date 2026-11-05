@@ -64,13 +64,15 @@ async function loadTrashBinFromSupabase() {
             .eq('is_deleted', true);
         if (deletedJobs) allDeleted.push(...deletedJobs.map(j => ({ ...j, tableName: 'jobs_report', displayType: 'Job' })));
 
-    // 2. إيجارات الشاحنات المحذوفة من جدول truck_rental
-        const { data: deletedRentals } = await window.supabaseClient
+        // 2. إيجارات الشاحنات المحذوفة من truck_rental
+        const { data: deletedRentals, error: truckTrashError } = await window.supabaseClient
             .from('truck_rental')
             .select('*')
             .eq('is_deleted', true);
-        if (deletedRentals) allDeleted.push(...deletedRentals.map(r => ({ ...r, tableName: 'truck_rental', displayType: 'Truck Rental' })));
-
+            
+        if (!truckTrashError && deletedRentals) {
+            allDeleted.push(...deletedRentals.map(r => ({ ...r, tableName: 'truck_rental', displayType: 'Truck Rental' })));
+        }
     // 3. مصروفات المستودع المحذوفة من جدول warehouse_expenses
         const { data: deletedWarehouse } = await window.supabaseClient
             .from('warehouse_expenses')
