@@ -45,9 +45,11 @@ async function loadWarehouseRecords() {
             return [];
         }
 
+        // جلب سجلات المستودع غير المحذوفة فقط مباشرة من Supabase
         const { data, error } = await window.supabaseClient
             .from('warehouse_expenses')
             .select('*')
+            .or('is_deleted.is.null,is_deleted.eq.false')
             .order('id', { ascending: false });
 
         if (error) {
