@@ -1194,12 +1194,17 @@ window.deleteTruckRental = deleteTruckRental;
 async function deleteWarehouseRecord(id) {
     const success = await softDeleteRecord('warehouse_expenses', id);
     if (success) {
-        if (typeof loadWarehouseRecords === 'function') {
-            await loadWarehouseRecords();
+        // تحديث بيانات وجدول المستودع
+        if (typeof refreshWarehouseData === 'function') {
+            await refreshWarehouseData();
         }
-        // استبدل renderWarehouseTable بالدالة المسؤولة عن عرض جدول المستودع لديك إن وجدت
-        if (typeof renderWarehouseTable === 'function') {
-            renderWarehouseTable();
+        // تحديث لوحة المؤشرات والتحليلات
+        if (typeof updateDashboardAnalytics === 'function') {
+            updateDashboardAnalytics();
+        }
+        // تحديث سلة المحذوفات فوراً ليرى المستخدم السجل هناك
+        if (typeof renderTrashBin === 'function') {
+            renderTrashBin();
         }
     }
 }
