@@ -1177,39 +1177,26 @@ window.permanentDeleteRecord = permanentDeleteRecord;
 
 
 // --- Specific Section Delete Handlers (Truck Rental & Warehouse) ---
-async function deleteTruckRental(id) {
-    const success = await softDeleteRecord('truck_rental', id);
-    if (success) {
-        if (typeof loadTruckRentals === 'function') {
-            await loadTruckRentals(); // جلب البيانات المحدثة من Supabase
-        }
-        // استبدل renderTruckRentalsTable بالدالة المسؤولة عن عرض وتعبئة جدول الشاحنات لديك إن كانت تسميتها مختلفة
-        if (typeof renderTruckRentalsTable === 'function') {
-            renderTruckRentalsTable(); 
-        }
-    }
-}
-window.deleteTruckRental = deleteTruckRental;
+
 
 async function deleteWarehouseRecord(id) {
     const success = await softDeleteRecord('warehouse_expenses', id);
     if (success) {
-        // تحديث بيانات وجدول المستودع
-        if (typeof refreshWarehouseData === 'function') {
-            await refreshWarehouseData();
+        // 1. إعادة جلب البيانات (التي تستبعد السجلات المحذوفة)
+        if (typeof loadWarehouseRecords === 'function') {
+            await loadWarehouseRecords();
         }
-        // تحديث لوحة المؤشرات والتحليلات
-        if (typeof updateDashboardAnalytics === 'function') {
-            updateDashboardAnalytics();
+        // 2. إعادة رسم جدول المستودع لتحديث الواجهة وإخفاء السجل المحذوف فوراً
+        if (typeof renderWarehouseTable === 'function') {
+            renderWarehouseTable();
         }
-        // تحديث سلة المحذوفات فوراً ليرى المستخدم السجل هناك
+        // 3. تحديث سلة المحذوفات
         if (typeof renderTrashBin === 'function') {
             renderTrashBin();
         }
     }
 }
 window.deleteWarehouseRecord = deleteWarehouseRecord;
-
 
 // --- Backward Compatibility Wrappers (لضمان عدم توقف الدوال القديمة) ---
 async function deleteJob(jobIdOrNo) {
