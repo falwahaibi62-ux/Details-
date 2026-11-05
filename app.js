@@ -1251,14 +1251,30 @@ window.permanentDeleteRecord = permanentDeleteRecord;
 
 // --- Specific Section Delete Handlers (Truck Rental & Warehouse) ---
 async function deleteTruckRental(id) {
-    await softDeleteRecord('truck_rental', id);
-    if (typeof loadTruckRentals === 'function') loadTruckRentals();
+    const success = await softDeleteRecord('truck_rental', id);
+    if (success) {
+        if (typeof loadTruckRentals === 'function') {
+            await loadTruckRentals(); // جلب البيانات المحدثة من Supabase
+        }
+        // استبدل renderTruckRentalsTable بالدالة المسؤولة عن عرض وتعبئة جدول الشاحنات لديك إن كانت تسميتها مختلفة
+        if (typeof renderTruckRentalsTable === 'function') {
+            renderTruckRentalsTable(); 
+        }
+    }
 }
 window.deleteTruckRental = deleteTruckRental;
 
 async function deleteWarehouseRecord(id) {
-    await softDeleteRecord('warehouse_expenses', id);
-    if (typeof loadWarehouseRecords === 'function') loadWarehouseRecords();
+    const success = await softDeleteRecord('warehouse_expenses', id);
+    if (success) {
+        if (typeof loadWarehouseRecords === 'function') {
+            await loadWarehouseRecords();
+        }
+        // استبدل renderWarehouseTable بالدالة المسؤولة عن عرض جدول المستودع لديك إن وجدت
+        if (typeof renderWarehouseTable === 'function') {
+            renderWarehouseTable();
+        }
+    }
 }
 window.deleteWarehouseRecord = deleteWarehouseRecord;
 
