@@ -545,7 +545,7 @@ window.checkPermissions = checkPermissions;
 // ==========================================
 // 5. PAYMENT ROWS MANAGEMENT
 // ==========================================
-function addPaymentRow(containerId, amount = '', method = 'Cash') {
+function addPaymentRow(containerId, amount = '', method = '') {
     let container = document.getElementById(containerId);
     if (!container && containerId === 'destContextContainer') {
         container = document.getElementById('destContainer');
@@ -556,7 +556,7 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
     
     if (!container) return;
 
-    const safeMethod = (method || 'Cash').toString();
+    const safeMethod = (method || '').toString().toLowerCase();
     const safeAmount = (amount || '').toString();
 
     const rowId = 'payment_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
@@ -567,15 +567,16 @@ function addPaymentRow(containerId, amount = '', method = 'Cash') {
     rowDiv.innerHTML = `
         <input type="text" placeholder="Amount (e.g. 500)" value="${safeAmount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
         <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
-            <option value="Cash" ${safeMethod.toLowerCase() === 'cash' ? 'selected' : ''}>Cash</option>
-            <option value="Zelle" ${safeMethod.toLowerCase() === 'zelle' ? 'selected' : ''}>Zelle</option>
-            <option value="Cheque" ${['cheque', 'ck', 'check'].includes(safeMethod.toLowerCase()) ? 'selected' : ''}>Cheque</option>
-            <option value="PMO" ${safeMethod.toUpperCase() === 'PMO' ? 'selected' : ''}>PMO</option>
-            <option value="BC" ${safeMethod.toUpperCase() === 'BC' ? 'selected' : ''}>BC</option>
-            <option value="PC" ${safeMethod.toUpperCase() === 'PC' ? 'selected' : ''}>PC</option>
-            <option value="CC" ${safeMethod.toUpperCase() === 'CC' ? 'selected' : ''}>CC</option>
-            <option value="WT" ${safeMethod.toUpperCase() === 'WT' ? 'selected' : ''}>WT</option>
-            <option value="Others" ${['others', 'other'].includes(safeMethod.toLowerCase()) ? 'selected' : ''}>Others</option>
+            <option value="" ${safeMethod === '' || safeMethod === 'unspecified' ? 'selected' : ''}>Unspecified</option>
+            <option value="Cash" ${safeMethod === 'cash' ? 'selected' : ''}>Cash</option>
+            <option value="Zelle" ${safeMethod === 'zelle' ? 'selected' : ''}>Zelle</option>
+            <option value="Cheque" ${['cheque', 'ck', 'check'].includes(safeMethod) ? 'selected' : ''}>Cheque</option>
+            <option value="PMO" ${safeMethod === 'pmo' ? 'selected' : ''}>PMO</option>
+            <option value="BC" ${safeMethod === 'bc' ? 'selected' : ''}>BC</option>
+            <option value="PC" ${safeMethod === 'pc' ? 'selected' : ''}>PC</option>
+            <option value="CC" ${safeMethod === 'cc' ? 'selected' : ''}>CC</option>
+            <option value="WT" ${safeMethod === 'wt' ? 'selected' : ''}>WT</option>
+            <option value="Others" ${['others', 'other'].includes(safeMethod) ? 'selected' : ''}>Others</option>
         </select>
         <button type="button" onclick="removePaymentRow('${rowId}')" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer delete-payment-btn" title="Remove">
             <i class="fa-solid fa-xmark pointer-events-none"></i>
