@@ -37,9 +37,11 @@ async function loadPrivateTruckRentals() {
             return [];
         }
 
+        // جلب إيجارات الشاحنات غير المحذوفة فقط من Supabase
         const { data, error } = await window.supabaseClient
             .from('truck_rental')
             .select('*')
+            .or('is_deleted.is.null,is_deleted.eq.false')
             .order('id', { ascending: false });
 
         if (error) {
