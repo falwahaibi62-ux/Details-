@@ -417,23 +417,28 @@ function editPrivateTruckRental(id) {
 window.editPrivateTruckRental = editPrivateTruckRental;
 
 async function deletePrivateTruckRental(id) {
-    if (!confirm('Are you sure you want to delete this rental record?')) return;
+    if (!confirm('Are you sure you want to move this rental record to the Recycle Bin?')) return;
 
     if (!window.supabaseClient) {
         alert("Supabase client is not initialized!");
         return;
     }
 
+    // استخدام التحديث (Soft Delete) لتعديل حقل is_deleted إلى true ليذهب السجل إلى سلة المحذوفات
     const { error } = await window.supabaseClient
         .from('truck_rental')
-        .delete()
+        .update({ is_deleted: true })
         .eq('id', id);
 
     if (error) {
-        console.error('Error deleting from Supabase:', error);
+        console.error('Error moving to Recycle Bin:', error);
         alert('Supabase Error: ' + error.message);
     } else {
         await refreshPrivateTruckData();
+        // تحديث سلة المحذوفات فوراً إذا كانت مفتوحة
+        if (typeof renderTrashBin === 'function') {
+            renderTrashBin();
+        }
     }
 }
 window.deletePrivateTruckRental = deletePrivateTruckRental;
