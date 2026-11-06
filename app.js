@@ -591,6 +591,29 @@ function formatToUSDate(dateInput) {
 }
 window.formatToUSDate = formatToUSDate;
 
+function addCustomExpenseField() {
+    const container = document.getElementById('dynamic-expenses-container');
+    
+    const div = document.createElement('div');
+    div.className = 'flex items-center gap-2 pt-2';
+    div.innerHTML = `
+        <input type="text" placeholder="Expense Name" class="w-1/3 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500">
+        <input type="text" placeholder="Amount" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500">
+        <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white">
+            <option value="Unspecified" selected>Unspecified</option>
+            <option value="Cash">Cash</option>
+            <option value="Zelle">Zelle</option>
+            <option value="Diesel">Diesel</option>
+            <option value="Oil">Oil</option>
+            <option value="Penske">Penske</option>
+            <option value="Dif">Dif</option>
+            <option value="Others">Others</option>
+        </select>
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 px-2 font-bold text-sm">×</button>
+    `;
+    
+    container.appendChild(div);
+}
 function addPaymentRow(containerId, amount = '', method = '') {
     let container = document.getElementById(containerId);
     if (!container && containerId === 'destContextContainer') {
