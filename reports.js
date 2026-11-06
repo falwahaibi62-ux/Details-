@@ -75,13 +75,13 @@ if (typeof filterLedgerTable !== 'function') {
 function applyReportFilters() {
     const summaryView = document.getElementById('summaryReportView');
     if (!summaryView) {
-        generateSummaryReportData();
+        ();
         return;
     }
     
     const isSummaryActive = !summaryView.classList.contains('hidden');
     if (isSummaryActive) {
-        generateSummaryReportData();
+        ();
     } else {
         generateDetailedReportData();
     }
@@ -669,7 +669,7 @@ function generateSummaryReportData() {
             sumDestNoCashPmo += destVal;
         }
 
-        // 🌟 التصحيح الدقيق والشامل لحساب PMO Deliveries بناءً على حقل الوجهة والرقم المجاور
+        // حساب PMO Deliveries بدقة
         const jobVal = String(item.jobNo || item.job_no || '').toLowerCase();
         if (jobVal.includes('delivery') && destStr.includes('pmo')) {
             const destParts = destStr.split(/[,/]+/);
@@ -723,9 +723,24 @@ function generateSummaryReportData() {
 
     const monthsLabels = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-    const paymentMethodsObj = typeof generatePaymentMethodSummaryTableHTML === 'function' ? generatePaymentMethodSummaryTableHTML() : { html: '' };
-    const rentalSummaryObj = typeof generateTruckRentalSummaryTableHTML === 'function' ? generateTruckRentalSummaryTableHTML() : { html: '' };
-    const warehouseSummaryObj = typeof generateWarehouseSummaryTableHTML === 'function' ? generateWarehouseSummaryTableHTML() : { html: '' };
+    // 🌟 استدعاء آمن ومحمي للجداول الفرعية لمنع أي توقف فجائي
+    let paymentHtml = '';
+    let rentalHtml = '';
+    let warehouseHtml = '';
+
+    try {
+        if (typeof generatePaymentMethodSummaryTableHTML === 'function') {
+            paymentHtml = generatePaymentMethodSummaryTableHTML().html || '';
+        }
+        if (typeof generateTruckRentalSummaryTableHTML === 'function') {
+            rentalHtml = generateTruckRentalSummaryTableHTML().html || '';
+        }
+        if (typeof generateWarehouseSummaryTableHTML === 'function') {
+            warehouseHtml = generateWarehouseSummaryTableHTML().html || '';
+        }
+    } catch (err) {
+        console.warn("Error loading sub-tables in summary report:", err);
+    }
 
     const container = document.getElementById('summaryReportContainer');
     if (container) {
@@ -767,8 +782,8 @@ function generateSummaryReportData() {
                 </div>
             </div>
 
-            <!-- 🌟 جدول الملخص التنفيذي مبني ومولد بشكل مباشر ليظهر في الواجهة -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-3">
+            <!-- جدول الملخص التنفيذي -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-3 mt-6">
                 <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">EXECUTIVE FINANCIAL SUMMARY</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs">
@@ -808,14 +823,13 @@ function generateSummaryReportData() {
                 </div>
             </div>
 
-            ${paymentMethodsObj.html}
-            ${rentalSummaryObj.html}
-            ${warehouseSummaryObj.html}
+            ${paymentHtml}
+            ${rentalHtml}
+            ${warehouseHtml}
         `;
     }
 }
 window.generateSummaryReportData = generateSummaryReportData;
-
 
 // Summary table for Payment Methods Breakdown (including Unspecified & Other)
 function generatePaymentMethodSummaryTableHTML() {
@@ -837,13 +851,19 @@ function generatePaymentMethodSummaryTableHTML() {
     jobs.forEach(item => {
         const puStr = String(item.pu || item.pu_payments || '').trim();
         const destStr = String(item.dest || item.destination || item.destination_payments || '').trim();
+        const fallbackAmt = parseCurrency(item.total || item.total_amount) / 2; // توزيع افتراضي إذا لم يوجد مبلغ صريح بالنص
 
         [puStr, destStr].forEach(str => {
             if (!str || str === '-' || str === '---') return;
-            const amt = parseCurrency(str);
+            
+            let amt = parseCurrency(str);
             const upper = str.toUpperCase();
 
-            if (amt <= 0 || amt >= 50000) return;
+            // إذا وُجدت الكلمة الدالة ولكن لم يُكتب الرقم بجانبها، نأخذ جزءاً من إجمالي الوظيفة كاحتياط لكي لا تضيع البيانات
+            if (amt <= 0 || amt >= 50000) {
+                amt = fallbackAmt > 0 ? fallbackAmt : 0;
+            }
+            if (amt <= 0) return;
 
             if (upper.includes('CASH')) {
                 totals.Cash += amt;
@@ -858,7 +878,6 @@ function generatePaymentMethodSummaryTableHTML() {
             } else if (upper.includes('OTHER') || upper.includes('OTHERS')) {
                 totals.Other += amt;
             } else {
-                // القيم التي بدون طريقة دفع صريحة تُصنف هنا
                 totals.Unspecified += amt;
             }
         });
