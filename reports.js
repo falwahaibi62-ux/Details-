@@ -973,14 +973,14 @@ function updateSummaryReportView(filteredData) {
             warehouseHTML = warehouseResult.html || '';
         }
 
-        // 3. جدول إجمالي طرق الدفع (Payment Methods Summary / Executive Financial Summary)
+        // 3. جدول إجمالي طرق الدفع
         let paymentMethodsHTML = '';
         if (typeof generatePaymentMethodSummaryTableHTML === 'function') {
             const paymentResult = generatePaymentMethodSummaryTableHTML();
             paymentMethodsHTML = paymentResult.html || '';
         }
 
-        // حقن جميع الجداول الإجمالية معاً داخل حاوية صفحة التقارير على الشاشة
+        // حقن الجداول داخل الحاوية
         container.innerHTML = `
             <div class="space-y-6">
                 ${paymentMethodsHTML}
@@ -989,7 +989,7 @@ function updateSummaryReportView(filteredData) {
             </div>
         `;
 
-        // تحديث عدادات الأرقام العلوية (Total Jobs, Deliveries, Revenue, Expenses)
+        // تحديث عدادات الأرقام العلوية
         const totalJobsEl = document.getElementById('sumTotalJobs');
         const totalDeliveriesEl = document.getElementById('sumTotalDeliveries');
         const totalRevenueEl = document.getElementById('sumTotalRevenue');
@@ -1023,115 +1023,19 @@ function updateSummaryReportView(filteredData) {
 }
 window.updateSummaryReportView = updateSummaryReportView;
 
+// 🌟 دالة شاملة وجسر ربط تضمن استدعاء البيانات وتحديث كل الواجهات فوراً دون أخطاء
+function generateSummaryReportData() {
+    const filteredData = typeof getFilteredJobsData === 'function' ? getFilteredJobsData() : (window.masterJobs || []);
+    
+    // تحديث عرض الملخص
+    updateSummaryReportView(filteredData);
 
-function generateDetailedReportData() {
-    const startDateVal = document.getElementById('filterStartDate')?.value;
-    const endDateVal = document.getElementById('filterEndDate')?.value;
-
-    const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
-    const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59, 999);
-
-    const filteredJobs = getFilteredJobsData();
-    const jobsTbody = document.getElementById('detailedReportBody');
-    const jobsBadge = document.getElementById('detailedJobsBadge');
-
-    if (jobsBadge) jobsBadge.innerText = `${filteredJobs.length} Jobs`;
-    if (jobsTbody) {
-        if (filteredJobs.length === 0) {
-            jobsTbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-slate-400 text-xs">No job records found for selected period.</td></tr>`;
-        } else {
-            jobsTbody.innerHTML = filteredJobs.map(item => {
-                const totalNum = parseCurrency(item.total || item.total_amount);
-                const dynamicForeman10 = totalNum > 0 ? '$' + (totalNum * 0.1).toFixed(2) : '-';
-                
-                const destVal = item.destination || item.dest || item.destination_payments || '-';
-                const dieselVal = item.diesel || item.diesel_expense || '-';
-                const hotelVal = item.hotel || item.hotel_expense || '-';
-
-                const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(item.helpers || item.helpers_cost) : (item.helpers || item.helpers_cost || '-');
-                const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(item.drivers || item.drivers_cost) : (item.drivers || item.drivers_cost || '-');
-
-                return `
-                    <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
-                        <td class="p-3 border font-medium">${item.date || '-'}</td>
-                        <td class="p-3 border font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
-                        <td class="p-3 border">${item.route || (item.route_from ? item.route_from + ' → ' + item.route_to : '-')}</td>
-                        <td class="p-3 border">${item.foreman || item.foreman_name || '-'}</td>
-                        <td class="p-3 border font-bold text-emerald-800">${dynamicForeman10}</td>
-                        <td class="p-3 border text-purple-700 font-semibold">${helpersDisplay}</td>
-                        <td class="p-3 border text-blue-700 font-semibold">${driversDisplay}</td>
-                        <td class="p-3 border font-bold text-emerald-600">${item.total || item.total_amount || '$0'}</td>
-                        <td class="p-3 border">${item.pu || item.pu_payments || '-'}</td>
-                        <td class="p-3 border font-medium">${destVal}</td>
-                        <td class="p-3 border text-emerald-700">${dieselVal}</td>
-                        <td class="p-3 border text-indigo-700">${hotelVal}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-    }
-
-    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-    const filteredRentals = rentals.filter(r => {
-        if (!r.date) return true;
-        const rDate = parseLocalDate(r.date);
-        if (startDate && rDate < startDate) return false;
-        if (endDate && rDate > endDate) return false;
-        return true;
-    });
-
-    const rentalsTbody = document.getElementById('detailedRentalsBody');
-    const rentalsBadge = document.getElementById('detailedRentalsBadge');
-
-    if (rentalsBadge) rentalsBadge.innerText = `${filteredRentals.length} Records`;
-    if (rentalsTbody) {
-        if (filteredRentals.length === 0) {
-            rentalsTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">No truck rental records found for selected period.</td></tr>`;
-        } else {
-            rentalsTbody.innerHTML = filteredRentals.map(r => `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
-                    <td class="p-3 border font-medium">${r.date || '-'}</td>
-                    <td class="p-3 border font-semibold text-slate-800">${r.truckLabel || 'Truck Rental'}</td>
-                    <td class="p-3 border">${r.paidBy || '-'}</td>
-                    <td class="p-3 border">${r.paymentType || r.paymentMethod || 'Cash'}</td>
-                    <td class="p-3 border text-right font-bold text-amber-600">$${parseCurrency(r.amount).toLocaleString('en-US')}</td>
-                </tr>
-            `).join('');
-        }
-    }
-
-    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-    const filteredWarehouse = warehouse.filter(w => {
-        if (!w.date) return true;
-        const wDate = parseLocalDate(w.date);
-        if (startDate && wDate < startDate) return false;
-        if (endDate && wDate > endDate) return false;
-        return true;
-    });
-
-    const warehouseTbody = document.getElementById('detailedWarehouseBody');
-    const warehouseBadge = document.getElementById('detailedWarehouseBadge');
-
-    if (warehouseBadge) warehouseBadge.innerText = `${filteredWarehouse.length} Records`;
-    if (warehouseTbody) {
-        if (filteredWarehouse.length === 0) {
-            warehouseTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">No warehouse records found for selected period.</td></tr>`;
-        } else {
-            warehouseTbody.innerHTML = filteredWarehouse.map(w => `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
-                    <td class="p-3 border font-medium">${w.date || '-'}</td>
-                    <td class="p-3 border font-semibold text-slate-800">${w.services || 'Warehouse Expense'}</td>
-                    <td class="p-3 border">${w.details || '-'}</td>
-                    <td class="p-3 border">${w.paymentType || w.paymentMethod || 'Cash'}</td>
-                    <td class="p-3 border text-right font-bold text-purple-600">$${parseCurrency(w.amount).toLocaleString('en-US')}</td>
-                </tr>
-            `).join('');
-        }
+    // تحديث العرض التفصيلي أيضاً للاحتياط
+    if (typeof generateDetailedReportData === 'function') {
+        generateDetailedReportData();
     }
 }
-window.generateDetailedReportData = generateDetailedReportData;
-
+window.generateSummaryReportData = generateSummaryReportData;
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
