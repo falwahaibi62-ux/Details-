@@ -193,7 +193,6 @@ function processPaymentString(str, map) {
 }
 window.processPaymentString = processPaymentString;
 
-// 🌟 جدول ملخص إيجارات الشاحنات في صفحة Summary (بدون التفاصيل التي تنقل لصفحة details)
 function generateTruckRentalSummaryTableHTML() {
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     
@@ -277,7 +276,6 @@ function generateTruckRentalSummaryTableHTML() {
 }
 window.generateTruckRentalSummaryTableHTML = generateTruckRentalSummaryTableHTML;
 
-// 🌟 جدول ملخص المستودع في صفحة Summary (بدون التفاصيل التي تنقل لصفحة details)
 function generateWarehouseSummaryTableHTML() {
     const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
     
@@ -485,7 +483,6 @@ function generateOfficialSummaryTable(filteredJobs) {
         sumHelpers += parseCurrency(item.helpers || item.helpers_cost);
         sumDrivers += parseCurrency(item.drivers || item.drivers_cost);
 
-        // 🌟 استخراج وقسمة Cash Diesel لحساب القيم الكاش فقط بدون أرقام طويلة
         const dieselValStr = item.diesel || item.diesel_expense;
         if (dieselValStr && dieselValStr !== '-') {
             let dieselStr = String(dieselValStr);
@@ -610,7 +607,6 @@ function generateOfficialSummaryTable(filteredJobs) {
 }
 window.generateOfficialSummaryTable = generateOfficialSummaryTable;
 
-// 🌟 الجداول التفصيلية المجمعة مخصصة فقط لتبويب Details
 function generateDetailedReportData() {
     const container = document.getElementById('detailedReportBody');
     if (!container) return;
@@ -619,7 +615,6 @@ function generateDetailedReportData() {
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
 
-    // 1. جدول عمليات النقل والتوصيل التفصيلي
     const jobsRows = jobs.map(j => {
         const totalNum = parseCurrency(j.total || j.total_amount);
         const foreman10 = totalNum > 0 ? '$' + formatCleanNumber(totalNum * 0.1) : '-';
@@ -647,7 +642,6 @@ function generateDetailedReportData() {
         `;
     }).join('');
 
-    // 2. جدول تفاصيل إيجار الشاحنات
     const rentalRows = rentals.map(r => `
         <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
             <td class="p-2 border-r text-center">${r.date || '-'}</td>
@@ -658,7 +652,6 @@ function generateDetailedReportData() {
         </tr>
     `).join('');
 
-    // 3. جدول تفاصيل المصروفات والمستودع
     const warehouseRows = warehouse.map(w => `
         <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
             <td class="p-2 border-r text-center">${w.date || '-'}</td>
@@ -668,11 +661,10 @@ function generateDetailedReportData() {
         </tr>
     `).join('');
 
-    // بناء الواجهة الكاملة داخل تبويب التفاصيل
     container.innerHTML = `
         <div class="space-y-8">
             <div>
-                <h3 class="text-sm font-bold text-slate-800 mb-3">1. Dispatch Operations Operations Detailed Records</h3>
+                <h3 class="text-sm font-bold text-slate-800 mb-3">1. Dispatch Operations Detailed Records</h3>
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
@@ -765,8 +757,41 @@ function updateSummaryReportView(filteredData) {
         let totalRev = filteredData.reduce((sum, item) => sum + parseCurrency(item.total || item.total_amount), 0);
         if (totalRevenueEl) totalRevenueEl.innerText = '$' + formatCleanNumber(totalRev);
 
-        let totalExp = filteredData.reduce((sum, item) => sum + parseCurrency(item.diesel || item.diesel_expense) + parseCurrency(item.hotel || item.hotel_expense), 0);
-        if (totalExpensesEl) totalExpensesEl.innerText = '$' + formatCleanNumber(totalExp);
+        // 🌟 حساب Total Expenses ليجمع حصرياً قيم الكاش من الجداول الثلاثة (ديزل/مصروفات العمليات + الشاحنات + المستودع)
+        let totalCashExpenses = 0;
+
+        filteredData.forEach(item => {
+            // كاش ديزل عمليات النقل
+            const dieselValStr = item.diesel || item.diesel_expense;
+            if (dieselValStr && dieselValStr !== '-') {
+                String(dieselValStr).split('+').forEach(part => {
+                    if (part.toLowerCase().includes('cash')) {
+                        const cleanNum = parseCurrency(part);
+                        if (cleanNum > 0 && cleanNum < 50000) totalCashExpenses += cleanNum;
+                    }
+                });
+            }
+        });
+
+        // كاش إيجارات الشاحنات
+        const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+        rentals.forEach(r => {
+            const pType = String(r.paymentType || r.paymentMethod || '').toLowerCase();
+            if (pType.includes('cash') || !r.paymentType) {
+                totalCashExpenses += parseCurrency(r.amount);
+            }
+        });
+
+        // كاش المستودع والمصروفات
+        const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+        warehouse.forEach(w => {
+            const pType = String(w.paymentType || w.paymentMethod || '').toLowerCase();
+            if (pType.includes('cash') || !w.paymentType) {
+                totalCashExpenses += parseCurrency(w.amount);
+            }
+        });
+
+        if (totalExpensesEl) totalExpensesEl.innerText = '$' + formatCleanNumber(totalCashExpenses);
 
     } catch (e) {
         console.error("Error updating summary report view:", e);
