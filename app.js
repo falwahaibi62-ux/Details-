@@ -615,6 +615,7 @@ function addCustomExpenseField() {
     container.appendChild(div);
 }
 
+
 // دالة إضافة حقل الديزل (ضعها هنا بجانبها)
 window.addDieselEntryField = function(amount = '', method = 'Unspecified') {
     const container = document.getElementById('diesel-entries-container');
@@ -638,6 +639,26 @@ window.addDieselEntryField = function(amount = '', method = 'Unspecified') {
     `;
     container.appendChild(div);
 };
+
+// دالة لتجميع جميع حقول الديزل ودمجها بنسق واحد (مثل: 999 Unspecified + 8 Zelle)
+function collectDieselDataForSave() {
+    const rows = document.querySelectorAll('#diesel-entries-container .diesel-row');
+    let entries = [];
+
+    rows.forEach(row => {
+        const amount = row.querySelector('.diesel-amount').value.trim();
+        const method = row.querySelector('.diesel-method').value;
+        
+        if (amount) {
+            entries.push(`${amount} ${method}`);
+        }
+    });
+
+    return entries.join(' + ');
+}
+window.collectDieselDataForSave = collectDieselDataForSave;
+
+
 function addPaymentRow(containerId, amount = '', method = '') {
     let container = document.getElementById(containerId);
     if (!container && containerId === 'destContextContainer') {
@@ -986,10 +1007,9 @@ async function saveJob(event) {
     const puFormatted = extractPaymentsFromContainer('puContainer');
     const destFormatted = extractPaymentsFromContainer('destContainer');
 
-    const dieselRaw = document.getElementById('dieselAmount') ? document.getElementById('dieselAmount').value.trim() : '';
-    const dieselMethod = document.getElementById('dieselMethod') ? document.getElementById('dieselMethod').value : 'Cash';
-    const dieselFormatted = dieselRaw ? `${dieselRaw} ${dieselMethod}` : '-';
-
+   const dieselCollected = typeof collectDieselDataForSave === 'function' ? collectDieselDataForSave() : '';
+    const dieselFormatted = dieselCollected ? dieselCollected : '-';
+    
     const hotelRaw = document.getElementById('hotelAmount') ? document.getElementById('hotelAmount').value.trim() : '';
     const hotelMethod = document.getElementById('hotelMethod') ? document.getElementById('hotelMethod').value : 'Cash';
     const hotelFormatted = hotelRaw ? `${hotelRaw} ${hotelMethod}` : '-';
