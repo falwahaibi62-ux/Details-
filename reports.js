@@ -425,42 +425,24 @@ function calculateTotalCashDiesel(jobsList) {
     return sumCashDiesel;
 }
 
-filteredJobs.forEach(item => {
-        const totalVal = parseCurrency(item.total_amount || item.total);
-        sumTotalAfterDeposit += totalVal;
-        sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-
-        const helpersStr = String(item.helpers_cost || item.helpers || '');
-        const helperMatch = helpersStr.match(/\(([^)]+)\)/);
-        if (helperMatch) {
-            sumHelpers += parseCurrency(helperMatch[1]);
-        } else {
-            sumHelpers += parseCurrency(helpersStr);
+const dieselValStr = item.diesel_expense || item.diesel;
+if (dieselValStr && dieselValStr !== '-') {
+    let dieselStr = String(dieselValStr);
+    let dieselParts = dieselStr.split('+');
+    
+    dieselParts.forEach(part => {
+        let partLower = part.toLowerCase().trim();
+        console.log("Checking part:", partLower); // <--- أضف هذا السطر
+        
+        if (partLower.includes('cash')) {
+            let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
+            console.log("Found Cash Diesel amount:", cleanNum); // <--- وأضف هذا
+            if (cleanNum > 0 && cleanNum < 5000) {
+                sumCashDiesel += cleanNum;
+            }
         }
-
-        const driversStr = String(item.drivers_cost || item.drivers || '');
-        const driverMatch = driversStr.match(/\(([^)]+)\)/);
-        if (driverMatch) {
-            sumDrivers += parseCurrency(driverMatch[1]);
-        } else {
-            sumDrivers += parseCurrency(driversStr);
-        }
-
-        const dieselValStr = item.diesel_expense || item.diesel;
-        if (dieselValStr && dieselValStr !== '-') {
-            let dieselStr = String(dieselValStr);
-            let dieselParts = dieselStr.split('+');
-            dieselParts.forEach(part => {
-                let partLower = part.toLowerCase().trim();
-                if (partLower.includes('cash')) {
-                    let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
-                    if (cleanNum > 0 && cleanNum < 5000) {
-                        sumCashDiesel += cleanNum;
-                    }
-                }
-            });
-        }
-
+    });
+}
         const puRawStr = String(item.pu_payments || item.pu || '').trim();
         if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
             processPaymentString(puRawStr, payMap);
