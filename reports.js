@@ -396,6 +396,35 @@ function generateOfficialSummaryTable(filteredJobs) {
         Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0
     };
 
+    // دالة سريعة لحساب إجمالي كاش الديزل فقط من قائمة السجلات
+function calculateTotalCashDiesel(jobsList) {
+    let sumCashDiesel = 0;
+
+    if (!jobsList || !Array.isArray(jobsList)) return sumCashDiesel;
+
+    jobsList.forEach(item => {
+        const dieselValStr = item.diesel_expense || item.diesel;
+        if (dieselValStr && dieselValStr !== '-') {
+            // تقسيم الإدخالات في حال كانت متعددة (مثل: 999 Unspecified + 323 Cash)
+            const dieselParts = String(dieselValStr).split('+');
+            
+            dieselParts.forEach(part => {
+                const partLower = part.toLowerCase().trim();
+                // التحقق السريع من أن الجزء يخص الـ Cash
+                if (partLower.includes('cash')) {
+                    // استخراج الرقم وتجنب القيم الوهمية
+                    const cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
+                    if (cleanNum > 0 && cleanNum < 5000) {
+                        sumCashDiesel += cleanNum;
+                    }
+                }
+            });
+        }
+    });
+
+    return sumCashDiesel;
+}
+
 filteredJobs.forEach(item => {
         const totalVal = parseCurrency(item.total_amount || item.total);
         sumTotalAfterDeposit += totalVal;
