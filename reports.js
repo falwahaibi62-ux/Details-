@@ -1198,7 +1198,7 @@ printWindow.document.write(htmlContent);
 }
 window.exportOfficialPDF = exportOfficialPDF;
 
-// 🌟 التأكد من إغلاق وتصدير كافة الدوال الأساسية بنجاح
+// 🌟 التصدير السليم لكافة الدوال دون أي أسطر تائهة في الخارج
 window.switchReportMode = switchReportMode;
 window.applyReportFilters = applyReportFilters;
 window.filterReportData = filterReportData;
@@ -1209,9 +1209,10 @@ window.generateWarehouseSummaryTableHTML = generateWarehouseSummaryTableHTML;
 window.generateOfficialSummaryTable = generateOfficialSummaryTable;
 window.generateSummaryReportData = generateSummaryReportData;
 window.renderSummaryPageWithDetailedTables = renderSummaryPageWithDetailedTables;
-
-
-
+window.generatePaymentMethodSummaryTableHTML = generatePaymentMethodSummaryTableHTML;
+window.updateSummaryReportView = updateSummaryReportView;
+window.exportOfficialPDF = exportOfficialPDF;
+window.renderReportsTab = renderReportsTab;
 
 
 
