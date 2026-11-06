@@ -1,5 +1,5 @@
 /**
- * MovePro - Financial & Operations Reports Module (Production Ready & Strict Classification)
+ * MovePro - Financial & Operations Reports Module (Production Ready)
  */
 
 function switchReportMode(mode) {
@@ -15,13 +15,13 @@ function switchReportMode(mode) {
         detailedView.classList.add('hidden');
         if (btnSummary) btnSummary.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer';
         if (btnDetailed) btnDetailed.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer';
-        generateSummaryReportData();
+        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
     } else {
         summaryView.classList.add('hidden');
         detailedView.classList.remove('hidden');
         if (btnDetailed) btnDetailed.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer';
         if (btnSummary) btnSummary.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer';
-        generateDetailedReportData();
+        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
     }
 }
 window.switchReportMode = switchReportMode;
@@ -35,60 +35,26 @@ function parseCurrency(val) {
 }
 window.parseCurrency = parseCurrency;
 
-// ==========================================
-// 🌟 Isolated Filter Logic for Reports Tab
-// ==========================================
-function filterReportData() {
-    const fromInput = document.getElementById('reportFromDate') || document.getElementById('filterStartDate');
-    const toInput = document.getElementById('reportToDate') || document.getElementById('filterEndDate');
-    
-    const reportFromDate = fromInput ? fromInput.value : '';
-    const reportToDate = toInput ? toInput.value : '';
-
-    let data = window.masterJobs || [];
-
-    if (reportFromDate) {
-        const fDate = new Date(reportFromDate);
-        data = data.filter(item => new Date(item.date) >= fDate);
-    }
-
-    if (reportToDate) {
-        const tDate = new Date(reportToDate);
-        tDate.setHours(23, 59, 59);
-        data = data.filter(item => new Date(item.date) <= tDate);
-    }
-
-    if (typeof updateDashboardAnalytics === 'function') {
-        updateDashboardAnalytics(data);
-    }
-}
-
-// 🌟 Safety Bridge: Protects against cross-script ReferenceErrors
-if (typeof filterLedgerTable !== 'function') {
-    window.filterLedgerTable = function() {
-        if (typeof applyReportFilters === 'function') {
-            applyReportFilters();
-        }
-    };
-}
-
 function applyReportFilters() {
     const summaryView = document.getElementById('summaryReportView');
     if (!summaryView) {
-        ();
+        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
         return;
     }
     
     const isSummaryActive = !summaryView.classList.contains('hidden');
     if (isSummaryActive) {
-        ();
+        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
     } else {
-        generateDetailedReportData();
+        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
     }
 }
-
-window.filterReportData = filterReportData;
 window.applyReportFilters = applyReportFilters;
+
+function filterReportData() {
+    applyReportFilters();
+}
+window.filterReportData = filterReportData;
 
 function resetReportFilters() {
     const startEl = document.getElementById('filterStartDate');
