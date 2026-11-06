@@ -791,26 +791,6 @@ window.parseDriversDisplay = parseDriversDisplay;
 // ==========================================
 // 7. MODAL & SUPABASE CRUD ACTIONS
 // ==========================================
-function openAddModal(isEdit = false) {
-    const modal = document.getElementById('jobModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('z-index', '99999', 'important');
-    }
-
-    const jobForm = document.getElementById('jobForm');
-    if (!isEdit) {
-        if (jobForm) jobForm.reset();
-        const puContainer = document.getElementById('puContainer');
-        const destContainer = document.getElementById('destContainer') || document.getElementById('destContextContainer');
-        if (puContainer) puContainer.innerHTML = '';
-        if (destContainer) destContainer.innerHTML = '';
-    }
-}
-window.openAddModal = openAddModal;
-
 function openEditJobModal(jobIdOrNo) {
     const jobs = window.masterJobs || [];
     const targetId = String(jobIdOrNo).trim();
@@ -831,8 +811,51 @@ function openEditJobModal(jobIdOrNo) {
     const jobForm = document.getElementById('jobForm');
     if (jobForm) {
         jobForm.setAttribute('data-edit-id', job.id || '');
+        
+        // تعبئة الحقول الأساسية (تأكد من مطابقة أسماء الحقول أو الـ IDs لديك)
+        // مثال: setVal أو تعبئة مباشرة بالعناصر
+        const setFieldVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val !== undefined && val !== null ? val : '';
+        };
+
+        setFieldVal('jobNo', job.jobNo || job.job_no || '');
+        setFieldVal('jobDate', job.date || '');
+        setFieldVal('foremanName', job.foreman_name || job.foremanName || '');
+        setFieldVal('totalAmount', job.total_amount || job.total || '');
+        // ... (أضف بقية حقول النموذج العادية هنا إذا لزم الأمر)
     }
 
+    // ==========================================
+    // 🌟 معالجة وتعبئة حقول الديزل المتعددة عند التعديل
+    // ==========================================
+    const dieselContainer = document.getElementById('diesel-entries-container');
+    if (dieselContainer) dieselContainer.innerHTML = '';
+
+    const dieselValStr = String(job.diesel || job.diesel_expense || '');
+    if (dieselValStr && dieselValStr !== '-') {
+        // تقسيم النص بناءً على علامة الزائد +
+        const dieselEntries = dieselValStr.split('+');
+        
+        dieselEntries.forEach(entry => {
+            const parts = entry.trim().split(' ');
+            const amt = parts[0] !== '-' ? parts[0] : '';
+            const meth = parts.slice(1).join(' ') || 'Unspecified';
+            
+            // استدعاء دالة إضافة الحقل لإنشائه بالقيمة وطريقة الدفع الصحيحة
+            if (typeof window.addDieselEntryField === 'function') {
+                window.addDieselEntryField(amt, meth);
+            }
+        });
+    } else {
+        // إذا لم يكن هناك ديزل مسجل، أضف حقلاً فارغاً افتراضياً
+        if (typeof window.addDieselEntryField === 'function') {
+            window.addDieselEntryField('', 'Unspecified');
+        }
+    }
+    // ==========================================
+}
+window.openEditJobModal = openEditJobModal;
     function formatDateForInput(dateStr) {
         if (!dateStr) return '';
         try {
