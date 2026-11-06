@@ -991,6 +991,10 @@ function exportOfficialPDF() {
         return true;
     });
 
+    const paymentMethodObj = typeof generatePaymentMethodSummaryTableHTML === 'function' 
+        ? generatePaymentMethodSummaryTableHTML() 
+        : { html: '' };
+
     let sumForeman10 = 0, sumHelpers = 0, sumDrivers = 0, sumCashDiesel = 0;
     let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
     let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
