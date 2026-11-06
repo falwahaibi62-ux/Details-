@@ -741,27 +741,32 @@ function updateSummaryReportView(filteredData) {
 
         container.innerHTML = generateOfficialSummaryTable(filteredData);
 
-        const totalJobsEl = document.getElementById('sumTotalJobs');
+        // 🌟 تحديث عداد الوظائف بجميع المعرفات المحتملة لتجنب ظهور 0 Jobs
+        const jobCountValue = filteredData.length;
+        
+        ['sumTotalJobs', 'totalJobsCount', 'summaryTotalJobs'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = jobCountValue;
+        });
+
+        // تحديث العناصر الأخرى في واجهة الملخص إن وجدت
         const totalDeliveriesEl = document.getElementById('sumTotalDeliveries');
         const totalRevenueEl = document.getElementById('sumTotalRevenue');
         const totalExpensesEl = document.getElementById('sumTotalExpenses');
 
-        if (totalJobsEl) totalJobsEl.innerText = filteredData.length;
-        
         let deliveriesCount = filteredData.filter(item => {
             const jNo = String(item.jobNo || item.job_no || '').toLowerCase();
             return jNo.includes('delivery') || jNo === '';
         }).length;
+        
         if (totalDeliveriesEl) totalDeliveriesEl.innerText = deliveriesCount;
 
         let totalRev = filteredData.reduce((sum, item) => sum + parseCurrency(item.total || item.total_amount), 0);
         if (totalRevenueEl) totalRevenueEl.innerText = '$' + formatCleanNumber(totalRev);
 
-        // 🌟 الحسبة الشاملة لـ Total Expenses (مجموع الكاش الكامل من الجداول الثلاثة)
+        // حساب إجمالي المصروفات النقدية (Total Expenses) المحدث بناءً على طلبك السابق
         let totalCashExpenses = 0;
-
         filteredData.forEach(item => {
-            // 1. Cash Diesel
             const dieselValStr = item.diesel || item.diesel_expense;
             if (dieselValStr && dieselValStr !== '-') {
                 String(dieselValStr).split('+').forEach(part => {
@@ -772,7 +777,6 @@ function updateSummaryReportView(filteredData) {
                 });
             }
 
-            // 2. Cash Hotel
             const hotelValStr = item.hotel || item.hotel_expense;
             if (hotelValStr && hotelValStr !== '-') {
                 String(hotelValStr).split('+').forEach(part => {
@@ -783,7 +787,6 @@ function updateSummaryReportView(filteredData) {
                 });
             }
 
-            // 3. Cash PU Payment
             const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
             if (puStr.includes('cash')) {
                 const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
@@ -791,7 +794,6 @@ function updateSummaryReportView(filteredData) {
                 if (cashPuVal > 0 && cashPuVal < 50000) totalCashExpenses += cashPuVal;
             }
 
-            // 4. Cash Dest Balance
             const destStr = String(item.dest || item.destination || item.destination_payments || '').toLowerCase();
             if (destStr.includes('cash')) {
                 const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
@@ -800,7 +802,6 @@ function updateSummaryReportView(filteredData) {
             }
         });
 
-        // 5. Cash Rental Truck
         const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
         rentals.forEach(r => {
             const pType = String(r.paymentType || r.paymentMethod || '').toLowerCase();
@@ -809,7 +810,6 @@ function updateSummaryReportView(filteredData) {
             }
         });
 
-        // 6. Cash Warehouse
         const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
         warehouse.forEach(w => {
             const pType = String(w.paymentType || w.paymentMethod || '').toLowerCase();
