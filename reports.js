@@ -397,7 +397,6 @@ function generateOfficialSummaryTable(filteredJobs) {
     };
 
 filteredJobs.forEach(item => {
-        // استخدام اسم العمود الصحيح total_amount
         const totalVal = parseCurrency(item.total_amount || item.total);
         sumTotalAfterDeposit += totalVal;
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
@@ -448,47 +447,28 @@ filteredJobs.forEach(item => {
             });
         }
 
-        // 🌟 المطابقة الصحيحة مع أسماء أعمدة قاعدة البيانات (job_no و destination_payments)
-        const jobNoStr = String(item.job_no || item.jobNo || '').toLowerCase();
-        const isDeliveryJob = jobNoStr.includes('delivery');
-        const destRawStr = String(item.destination_payments || item.dest || item.destination || '').trim();
-        
-        if (isDeliveryJob && destRawStr.toLowerCase().includes('pmo')) {
-            let foundPmoVal = 0;
-            
-            // استخدام التعبير المنتظم لاستخراج القيمة سواء قبل أو بعد كلمة pmo (مثل: PMO 2736 أو 1000 PMO)
-            const pmoRegex = /(?:pmo\s*[:\-]?\s*\$?\s*([0-9,.]+))|([0-9,.]+)\s*(?:val\s*)?pmo/i;
-            const match = destRawStr.match(pmoRegex);
-            
-            if (match) {
-                const rawNum = match[1] || match[2];
-                foundPmoVal = parseCurrency(rawNum);
-            }
-            
-            if (foundPmoVal <= 0) {
-                const destParts = destRawStr.split(/[,/]+/);
-                destParts.forEach(part => {
-                    if (part.toLowerCase().includes('pmo')) {
-                        const val = parseCurrency(part);
-                        if (val > 0 && val < 50000) {
-                            foundPmoVal = val;
-                        }
+        // 🌟 فحص مباشر لـ PMO Deliveries بأبسط وأضمن طريقة
+        const jobVal = String(item.job_no || item.jobNo || '').toLowerCase();
+        const destVal = String(item.destination_payments || item.dest || '').toLowerCase();
+
+        if (jobVal.includes('delivery') && destVal.includes('pmo')) {
+            // استخراج أي رقم موجود داخل النص مباشرة
+            const extractedNum = parseCurrency(destVal);
+            if (extractedNum > 0 && extractedNum < 50000) {
+                sumPmoDeliveries += extractedNum;
+            } else {
+                // إذا فشل الاستخراج المباشر، نبحث عن الرقم المجاور لكلمة pmo
+                const match = destVal.match(/pmo\s*[:\-]?\s*([0-9,.]+)|([0-9,.]+)\s*pmo/i);
+                if (match) {
+                    const pmoNum = parseCurrency(match[1] || match[2]);
+                    if (pmoNum > 0 && pmoNum < 50000) {
+                        sumPmoDeliveries += pmoNum;
                     }
-                });
-            }
-            
-            if (foundPmoVal <= 0) {
-                const generalVal = parseCurrency(destRawStr);
-                if (generalVal > 0 && generalVal < 50000) {
-                    foundPmoVal = generalVal;
                 }
-            }
-            
-            if (foundPmoVal > 0 && foundPmoVal < 50000) {
-                sumPmoDeliveries += foundPmoVal;
             }
         }
 
+        const destRawStr = String(item.destination_payments || item.dest || item.destination || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             processPaymentString(destRawStr, payMap);
             const destParts = destRawStr.split(/[,/]+/);
