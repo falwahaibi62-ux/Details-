@@ -1518,9 +1518,14 @@ window.addEventListener('DOMContentLoaded', async () => {
             filterJobsTable();
         }
 
-        // 🌟 إضافة هذا السطر هنا لضمان تحديث اللوحة والرسوم البيانية فور توفر البيانات
+        // 🌟 تحديث اللوحة والرسوم البيانية فور توفر البيانات
         if (typeof updateDashboardAnalytics === 'function') {
             updateDashboardAnalytics();
+        }
+
+        // 🌟🌟 أضف هذا السطر هنا لضمان ظهور جدول الملخص التنفيذي في الواجهة فور التحميل
+        if (typeof generateSummaryReportData === 'function') {
+            generateSummaryReportData();
         }
 
         if (typeof switchTab === 'function') {
@@ -1529,5 +1534,4 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error("Initialization error on DOMContentLoaded:", error);
     }
-
 });
