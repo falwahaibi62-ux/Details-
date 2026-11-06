@@ -449,27 +449,21 @@ function generateOfficialSummaryTable(filteredJobs) {
             });
         }
 
-        const isDelivery = item.jobNo && String(item.jobNo).toLowerCase().includes('delivery');
+       const isDelivery = item.jobNo && String(item.jobNo).toLowerCase().includes('delivery');
         
         if (isDelivery) {
-            const puStr = String(item.pu || item.pu_payments || '').toUpperCase();
-            const destStr = String(item.dest || item.destination || item.destination_payments || '').toUpperCase();
+            const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
+            const destStr = String(item.dest || item.destination || item.destination_payments || '').toLowerCase();
             
-            if (puStr.includes('PMO') || destStr.includes('PMO')) {
-                const combinedStr = puStr + " " + destStr;
-                const pmoMatches = combinedStr.match(/(?:PMO\s*[:\-]?\s*\$?\s*([0-9,.]+))|([0-9,.]+)\s*PMO/i);
-                
-                if (pmoMatches) {
-                    const val = parseCurrency(pmoMatches[1] || pmoMatches[2]);
-                    sumPmoDeliveries += val;
-                } else {
-                    const generalVal = parseCurrency(item.dest || item.destination || item.pu || item.pu_payments);
-                    if (generalVal > 0 && generalVal < 50000) {
-                        sumPmoDeliveries += generalVal;
-                    }
+            if (puStr.includes('pmo') || destStr.includes('pmo')) {
+                // استخراج القيمة العددية مباشرة من حقل الـ dest أو pu أو total للوظيفة
+                const pmoVal = parseCurrency(item.dest || item.destination || item.destination_payments || item.pu || item.pu_payments || item.total);
+                if (pmoVal > 0 && pmoVal < 50000) {
+                    sumPmoDeliveries += pmoVal;
                 }
             }
         }
+   
         
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
