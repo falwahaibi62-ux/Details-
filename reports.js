@@ -1315,7 +1315,7 @@ async function renderSummaryPageWithDetailedTables() {
     // 3. حساب إجمالية طرق الدفع وتصنيفها
     let paymentTotals = { Cash: 0, Cheque: 0, Zelle: 0, Card: 0, Other: 0 };
 
-    [...rentals, ...warehouse].forEach(item => {
+     [...rentals, ...warehouse].forEach(item => {
         let amt = parseFloat(String(item.amount || '0').replace(/[^0-9.]/g, '')) || 0;
         let pType = (item.paymentType || '').trim();
 
@@ -1387,18 +1387,15 @@ async function renderSummaryPageWithDetailedTables() {
         </div>
     `;
 
-  let existingExtra = document.getElementById('summaryExtraTables');
-        if (!existingExtra) {
-            const wrapper = document.createElement('div');
-            wrapper.id = 'summaryExtraTables';
-            wrapper.innerHTML = summaryHTML;
-            container.appendChild(wrapper);
-        } else {
-            existingExtra.innerHTML = summaryHTML;
-        }
-    } // <-- قوس إغلاق دالة renderSummaryPageWithDetailedTables
-} 
+    let existingExtra = document.getElementById('summaryExtraTables');
+    if (!existingExtra) {
+        const wrapper = document.createElement('div');
+        wrapper.id = 'summaryExtraTables';
+        wrapper.innerHTML = summaryHTML;
+        container.appendChild(wrapper);
+    } else {
+        existingExtra.innerHTML = summaryHTML;
+    }
+}
 
 window.renderSummaryPageWithDetailedTables = renderSummaryPageWithDetailedTables;
-
-    
