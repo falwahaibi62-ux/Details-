@@ -593,6 +593,7 @@ window.formatToUSDate = formatToUSDate;
 
 function addCustomExpenseField() {
     const container = document.getElementById('dynamic-expenses-container');
+    if (!container) return;
     
     const div = document.createElement('div');
     div.className = 'flex items-center gap-2 pt-2';
@@ -611,9 +612,32 @@ function addCustomExpenseField() {
         </select>
         <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 px-2 font-bold text-sm">×</button>
     `;
-    
     container.appendChild(div);
 }
+
+// دالة إضافة حقل الديزل (ضعها هنا بجانبها)
+window.addDieselEntryField = function(amount = '', method = 'Unspecified') {
+    const container = document.getElementById('diesel-entries-container');
+    if (!container) return;
+    
+    const div = document.createElement('div');
+    div.className = 'flex items-center gap-2 diesel-row pt-2';
+    div.innerHTML = `
+        <input type="text" placeholder="Amount" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 diesel-amount" value="${amount}">
+        <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white diesel-method">
+            <option value="Unspecified" ${method === 'Unspecified' ? 'selected' : ''}>Unspecified</option>
+            <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
+            <option value="Zelle" ${method === 'Zelle' ? 'selected' : ''}>Zelle</option>
+            <option value="Diesel" ${method === 'Diesel' ? 'selected' : ''}>Diesel</option>
+            <option value="Oil" ${method === 'Oil' ? 'selected' : ''}>Oil</option>
+            <option value="Penske" ${method === 'Penske' ? 'selected' : ''}>Penske</option>
+            <option value="Dif" ${method === 'Dif' ? 'selected' : ''}>Dif</option>
+            <option value="Others" ${method === 'Others' ? 'selected' : ''}>Others</option>
+        </select>
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 px-2 font-bold text-sm">×</button>
+    `;
+    container.appendChild(div);
+};
 function addPaymentRow(containerId, amount = '', method = '') {
     let container = document.getElementById(containerId);
     if (!container && containerId === 'destContextContainer') {
