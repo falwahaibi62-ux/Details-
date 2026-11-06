@@ -588,6 +588,75 @@ function generateSummaryReportData() {
     const totalExpenses = totalRentalExp + totalWarehouseExp;
     const netProfit = totalRevenue - totalExpenses;
 
+    // حساب تفاصيل أعمدة الملخص التنفيذي للوظائف
+    let sumForeman10 = 0, sumHelpers = 0, sumDrivers = 0, sumCashDiesel = 0;
+    let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
+    let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
+
+    filteredJobs.forEach(item => {
+        const totalVal = parseCurrency(item.total || item.total_amount);
+        sumTotalAfterDeposit += totalVal;
+        sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
+        sumHelpers += parseCurrency(item.helpers || item.helpers_cost);
+        sumDrivers += parseCurrency(item.drivers || item.drivers_cost);
+
+        const dieselValStr = item.diesel || item.diesel_expense;
+        if (dieselValStr && dieselValStr !== '-') {
+            let dieselStr = String(dieselValStr);
+            let dieselSum = dieselStr.split('+').reduce((s, p) => s + parseCurrency(p), 0);
+            if (dieselStr.toLowerCase().includes('cash') || !dieselStr.toLowerCase().includes('penske')) {
+                sumCashDiesel += dieselSum;
+            }
+        }
+
+        const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
+        let cashPuVal = 0;
+        if (puStr.includes('cash')) {
+            const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
+            cashPuVal = cashMatch ? parseCurrency(cashMatch[1]) : parseCurrency(item.pu || item.pu_payments);
+            sumCashPu += cashPuVal;
+        }
+
+        let pmoPuVal = 0;
+        if (puStr.includes('pmo')) {
+            const pmoMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*pmo/);
+            pmoPuVal = pmoMatch ? parseCurrency(pmoMatch[1]) : parseCurrency(item.pu || item.pu_payments);
+            sumPmoPu += pmoPuVal;
+        }
+
+        const rawPuVal = parseCurrency(item.pu || item.pu_payments);
+        const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
+
+        let netPuWithoutCashPmo = puVal;
+        if (puStr.includes('cash')) netPuWithoutCashPmo -= cashPuVal;
+        if (puStr.includes('pmo')) netPuWithoutCashPmo -= pmoPuVal;
+
+        if (netPuWithoutCashPmo > 0) sumZellePu += netPuWithoutCashPmo;
+
+        const destStr = String(item.dest || item.destination || item.destination_payments || '').toLowerCase();
+        let cashDestVal = 0;
+        if (destStr.includes('cash')) {
+            const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
+            cashDestVal = cashDestMatch ? parseCurrency(cashDestMatch[1]) : parseCurrency(item.dest || item.destination || item.destination_payments);
+        }
+
+        const rawDestVal = parseCurrency(item.dest || item.destination || item.destination_payments);
+        const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
+
+        if (destStr.includes('cash')) {
+            sumCashDest += (cashDestVal > 0 ? cashDestVal : destVal);
+        } else if (destStr.includes('zelle')) {
+            sumDestZelle += destVal;
+            sumDestNoCashPmo += destVal;
+        } else if (!destStr.includes('pmo') && destVal > 0) {
+            sumDestNoCashPmo += destVal;
+        }
+
+        if ((item.jobNo || item.job_no) && String(item.jobNo || item.job_no).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
+            sumPmoDeliveries += puVal;
+        }
+    });
+
     const sumJobsEl = document.getElementById('sumTotalJobs');
     const sumDelivEl = document.getElementById('sumTotalDeliveries');
     const sumRevEl = document.getElementById('sumTotalRevenue');
@@ -613,11 +682,9 @@ function generateSummaryReportData() {
 
     const monthsLabels = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-    // توليد جداول الإجماليات وطرق الدفع لعرضها في الواجهة
     const paymentMethodsObj = typeof generatePaymentMethodSummaryTableHTML === 'function' ? generatePaymentMethodSummaryTableHTML() : { html: '' };
     const rentalSummaryObj = typeof generateTruckRentalSummaryTableHTML === 'function' ? generateTruckRentalSummaryTableHTML() : { html: '' };
     const warehouseSummaryObj = typeof generateWarehouseSummaryTableHTML === 'function' ? generateWarehouseSummaryTableHTML() : { html: '' };
-    const officialSummaryHTML = typeof generateOfficialSummaryTable === 'function' ? generateOfficialSummaryTable(filteredJobs) : '';
 
     const container = document.getElementById('summaryReportContainer');
     if (container) {
@@ -659,8 +726,46 @@ function generateSummaryReportData() {
                 </div>
             </div>
 
-            <!-- جدول الملخص التنفيذي (Executive Financial Summary) يظهر هنا في الواجهة بالترتيب الصحيح -->
-            ${officialSummaryHTML}
+            <!-- 🌟 جدول الملخص التنفيذي مبني ومولد بشكل مباشر ليظهر في الواجهة -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-3">
+                <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">EXECUTIVE FINANCIAL SUMMARY</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-bold text-center">
+                                <th class="border p-2">Foreman 10%</th>
+                                <th class="border p-2">Helpers</th>
+                                <th class="border p-2">Drivers</th>
+                                <th class="border p-2">Cash Diesel</th>
+                                <th class="border p-2">Cash PU</th>
+                                <th class="border p-2">Cash Dest</th>
+                                <th class="border p-2">PMO PU</th>
+                                <th class="border p-2">PU (No Cash/PMO)</th>
+                                <th class="border p-2">Balance (No Cash/PMO)</th>
+                                <th class="border p-2">PMO Deliveries</th>
+                                <th class="border p-2">Dest Zelle</th>
+                                <th class="border p-2 bg-emerald-700 text-white">Total After Deposit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="font-bold text-slate-800 text-center">
+                                <td class="border p-2">$${sumForeman10.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                <td class="border p-2">$${sumHelpers.toLocaleString('en-US')}</td>
+                                <td class="border p-2">$${sumDrivers.toLocaleString('en-US')}</td>
+                                <td class="border p-2">$${sumCashDiesel.toLocaleString('en-US')}</td>
+                                <td class="border p-2">$${sumCashPu.toLocaleString('en-US')}</td>
+                                <td class="border p-2">$${sumCashDest.toLocaleString('en-US')}</td>
+                                <td class="border p-2">$${sumPmoPu.toLocaleString('en-US')}</td>
+                                <td class="border p-2">$${sumZellePu.toLocaleString('en-US')}</td>
+                                <td class="border p-2">$${sumDestNoCashPmo.toLocaleString('en-US')}</td>
+                                <td class="border p-2">$${sumPmoDeliveries.toLocaleString('en-US')}</td>
+                                <td class="border p-2">$${sumDestZelle.toLocaleString('en-US')}</td>
+                                <td class="border p-2 bg-emerald-50 text-emerald-900 font-extrabold">$${sumTotalAfterDeposit.toLocaleString('en-US')}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             ${paymentMethodsObj.html}
             ${rentalSummaryObj.html}
