@@ -447,17 +447,27 @@ filteredJobs.forEach(item => {
             });
         }
 
-        // 🌟 فحص مباشر لـ PMO Deliveries بأبسط وأضمن طريقة
+        // 🌟 فحص دقيق ومباشر لـ PMO Deliveries
         const jobVal = String(item.job_no || item.jobNo || '').toLowerCase();
         const destVal = String(item.destination_payments || item.dest || '').toLowerCase();
 
         if (jobVal.includes('delivery') && destVal.includes('pmo')) {
-            // استخراج أي رقم موجود داخل النص مباشرة
-            const extractedNum = parseCurrency(destVal);
-            if (extractedNum > 0 && extractedNum < 50000) {
-                sumPmoDeliveries += extractedNum;
-            } else {
-                // إذا فشل الاستخراج المباشر، نبحث عن الرقم المجاور لكلمة pmo
+            const destParts = destVal.split(/[,/]+/);
+            let foundMatch = false;
+            destParts.forEach(part => {
+                if (part.includes('pmo')) {
+                    const match = part.match(/([0-9,.]+)/);
+                    if (match) {
+                        const pmoNum = parseCurrency(match[1]);
+                        if (pmoNum > 0 && pmoNum < 50000) {
+                            sumPmoDeliveries += pmoNum;
+                            foundMatch = true;
+                        }
+                    }
+                }
+            });
+            // إذا لم يتم التقاطها عبر الأجزاء، يتم استخدام المطابقة العامة
+            if (!foundMatch) {
                 const match = destVal.match(/pmo\s*[:\-]?\s*([0-9,.]+)|([0-9,.]+)\s*pmo/i);
                 if (match) {
                     const pmoNum = parseCurrency(match[1] || match[2]);
