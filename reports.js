@@ -1191,3 +1191,30 @@ async function renderSummaryPageWithDetailedTables() {
 }
 
 window.renderSummaryPageWithDetailedTables = renderSummaryPageWithDetailedTables;
+
+
+printWindow.document.write(htmlContent);
+    printWindow.document.close();
+}
+window.exportOfficialPDF = exportOfficialPDF;
+
+// 🌟 التأكد من إغلاق وتصدير كافة الدوال الأساسية بنجاح
+window.switchReportMode = switchReportMode;
+window.applyReportFilters = applyReportFilters;
+window.filterReportData = filterReportData;
+window.resetReportFilters = resetReportFilters;
+window.getFilteredJobsData = getFilteredJobsData;
+window.generateTruckRentalSummaryTableHTML = generateTruckRentalSummaryTableHTML;
+window.generateWarehouseSummaryTableHTML = generateWarehouseSummaryTableHTML;
+window.generateOfficialSummaryTable = generateOfficialSummaryTable;
+window.generateSummaryReportData = generateSummaryReportData;
+window.renderSummaryPageWithDetailedTables = renderSummaryPageWithDetailedTables;
+
+
+
+
+
+
+
+
+    
