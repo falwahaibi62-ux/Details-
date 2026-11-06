@@ -261,12 +261,7 @@ function filterJobsTable() {
         countText.innerText = `Showing ${filtered.length} of ${rawData.length} records`;
     }
 
-    if (typeof generateOfficialSummaryTable === 'function') {
-        const summaryContainer = document.getElementById('summaryContainer');
-        if (summaryContainer) {
-            summaryContainer.innerHTML = generateOfficialSummaryTable(filtered);
-        }
-    }
+   
 }
 window.filterJobsTable = filterJobsTable;
 
