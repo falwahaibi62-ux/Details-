@@ -98,10 +98,6 @@ function assignPaymentMethodRevenue(paymentStr, amount, paymentMethodMap) {
 }
 window.assignPaymentMethodRevenue = assignPaymentMethodRevenue;
 
-function generateOfficialSummaryTable(filtered) {
-    return `<div class="p-3 bg-slate-50 rounded-xl border text-xs text-slate-700 font-medium">Summary Report: <b>${filtered.length}</b> records matched.</div>`;
-}
-window.generateOfficialSummaryTable = generateOfficialSummaryTable;
 
 async function initMasterJobsData() {
     try {
