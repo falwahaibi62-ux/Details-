@@ -1575,6 +1575,11 @@ function switchTab(tabName) {
             }
         } else if (tabName === 'reports') {
             if (typeof renderReportsTab === 'function') renderReportsTab();
+            
+            // 🌟🌟 الإضافة المطلوبة هنا لضمان ظهور البيانات والجداول الإضافية فور فتح التقارير
+            if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
+                window.renderSummaryPageWithDetailedTables();
+            }
         } else if (tabName === 'users') {
             if (typeof renderUsers === 'function') renderUsers();
         } else if (tabName === 'trash') {
@@ -1625,9 +1630,14 @@ window.addEventListener('DOMContentLoaded', async () => {
             updateDashboardAnalytics();
         }
 
-        // 🌟🌟 أضف هذا السطر هنا لضمان ظهور جدول الملخص التنفيذي في الواجهة فور التحميل
+        // تحديث بيانات التقرير التنفيذي
         if (typeof generateSummaryReportData === 'function') {
             generateSummaryReportData();
+        }
+
+        // 🌟🌟 استدعاء دالة تفاصيل جداول التقارير لضمان تعبئتها فوراً بعد توفر البيانات
+        if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
+            window.renderSummaryPageWithDetailedTables();
         }
 
         if (typeof switchTab === 'function') {
