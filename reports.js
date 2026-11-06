@@ -127,7 +127,6 @@ function getFilteredJobsData() {
 }
 window.getFilteredJobsData = getFilteredJobsData;
 
-// Process and classify payment types
 function processPaymentString(str, map) {
     if (!str) return;
     const raw = String(str).trim();
@@ -185,11 +184,6 @@ function processPaymentString(str, map) {
     });
 }
 
-function assignPaymentMethodRevenue(methodStr, amount, map) {
-    processPaymentString(methodStr, map);
-}
-
-// Summary table for Truck Rentals
 function generateTruckRentalSummaryTableHTML() {
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     
@@ -271,8 +265,8 @@ function generateTruckRentalSummaryTableHTML() {
         `
     };
 }
+window.generateTruckRentalSummaryTableHTML = generateTruckRentalSummaryTableHTML;
 
-// Summary table for Warehouse expenses
 function generateWarehouseSummaryTableHTML() {
     const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
     
@@ -349,316 +343,50 @@ function generateWarehouseSummaryTableHTML() {
         `
     };
 }
+window.generateWarehouseSummaryTableHTML = generateWarehouseSummaryTableHTML;
 
-function generateOfficialSummaryTable(filteredJobs) {
-    const totalJobs = filteredJobs.length;
-    const totalDeliveries = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
-
-    let sumForeman10 = 0, sumHelpers = 0, sumDrivers = 0, sumCashDiesel = 0;
-    let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
-    let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
-
-    const payMap = {
-        Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0
-    };
-
-    // دالة سريعة لحساب إجمالي كاش الديزل فقط من قائمة السجلات
-function calculateTotalCashDiesel(jobsList) {
-    let sumCashDiesel = 0;
-
-    if (!jobsList || !Array.isArray(jobsList)) return sumCashDiesel;
-
-    jobsList.forEach(item => {
-        const dieselValStr = item.diesel_expense || item.diesel;
-        if (dieselValStr && dieselValStr !== '-') {
-            // تقسيم الإدخالات في حال كانت متعددة (مثل: 999 Unspecified + 323 Cash)
-            const dieselParts = String(dieselValStr).split('+');
-            
-            dieselParts.forEach(part => {
-                const partLower = part.toLowerCase().trim();
-                // التحقق السريع من أن الجزء يخص الـ Cash
-                if (partLower.includes('cash')) {
-                    // استخراج الرقم وتجنب القيم الوهمية
-                    const cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
-                    if (cleanNum > 0 && cleanNum < 5000) {
-                        sumCashDiesel += cleanNum;
-                    }
-                }
-            });
-        }
-    });
-
-    return sumCashDiesel;
-}
-
-const dieselValStr = item.diesel_expense || item.diesel;
-if (dieselValStr && dieselValStr !== '-') {
-    let dieselStr = String(dieselValStr);
-    let dieselParts = dieselStr.split('+');
-    
-    dieselParts.forEach(part => {
-        let partLower = part.toLowerCase().trim();
-        console.log("Checking part:", partLower); // <--- أضف هذا السطر
-        
-        if (partLower.includes('cash')) {
-            let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
-            console.log("Found Cash Diesel amount:", cleanNum); // <--- وأضف هذا
-            if (cleanNum > 0 && cleanNum < 5000) {
-                sumCashDiesel += cleanNum;
-            }
-        }
-    });
-}
-        const puRawStr = String(item.pu_payments || item.pu || '').trim();
-        if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
-            processPaymentString(puRawStr, payMap);
-            const puParts = puRawStr.split(/[,/]+/);
-            puParts.forEach(part => {
-                const partVal = parseCurrency(part);
-                if (partVal > 0 && partVal < 50000) {
-                    const pLower = part.toLowerCase();
-                    if (pLower.includes('cash')) sumCashPu += partVal;
-                    else if (pLower.includes('pmo')) sumPmoPu += partVal;
-                    else sumZellePu += partVal;
-                }
-            });
-        }
-
-        // 🌟 فحص دقيق ومباشر لـ PMO Deliveries
-        const jobVal = String(item.job_no || item.jobNo || '').toLowerCase();
-        const destVal = String(item.destination_payments || item.dest || '').toLowerCase();
-
-        if (jobVal.includes('delivery') && destVal.includes('pmo')) {
-            const destParts = destVal.split(/[,/]+/);
-            let foundMatch = false;
-            destParts.forEach(part => {
-                if (part.includes('pmo')) {
-                    const match = part.match(/([0-9,.]+)/);
-                    if (match) {
-                        const pmoNum = parseCurrency(match[1]);
-                        if (pmoNum > 0 && pmoNum < 50000) {
-                            sumPmoDeliveries += pmoNum;
-                            foundMatch = true;
-                        }
-                    }
-                }
-            });
-            // إذا لم يتم التقاطها عبر الأجزاء، يتم استخدام المطابقة العامة
-            if (!foundMatch) {
-                const match = destVal.match(/pmo\s*[:\-]?\s*([0-9,.]+)|([0-9,.]+)\s*pmo/i);
-                if (match) {
-                    const pmoNum = parseCurrency(match[1] || match[2]);
-                    if (pmoNum > 0 && pmoNum < 50000) {
-                        sumPmoDeliveries += pmoNum;
-                    }
-                }
-            }
-        }
-
-        const destRawStr = String(item.destination_payments || item.dest || item.destination || '').trim();
-        if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
-            processPaymentString(destRawStr, payMap);
-            const destParts = destRawStr.split(/[,/]+/);
-            destParts.forEach(part => {
-                const partVal = parseCurrency(part);
-                if (partVal > 0 && partVal < 50000) {
-                    const dLower = part.toLowerCase();
-                    if (dLower.includes('cash')) {
-                        sumCashDest += partVal;
-                    } else if (dLower.includes('zelle')) {
-                        sumDestZelle += partVal;
-                        sumDestNoCashPmo += partVal;
-                    } else if (!dLower.includes('pmo')) {
-                        sumDestNoCashPmo += partVal;
-                    }
-                }
-            });
- 
-
-
-    const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
-    const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
-    return `
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
-            <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-800">Official Period Financial Summary</h3>
-                    <p class="text-[11px] text-slate-400">Comprehensive summary of labor fees, cash, Zelle, and PMO breakdown</p>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto rounded-xl border border-slate-100">
-                <table class="w-full text-left border-collapse text-[11px]">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">Foreman</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">Helpers</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">Drivers</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-amber-700 bg-amber-50/50">Cash Diesel</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash PU Payment</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700 bg-emerald-50/30">Cash Dest-Balance</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">PMO PU Payment</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">PU (No Cash/PMO)</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700 bg-blue-50/30">Balance (No Cash/PMO)</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center">PMO Deliveries</th>
-                            <th class="p-2.5 border-r border-slate-200/60 text-center text-purple-700 bg-purple-50/30">Dest Balance Zelle</th>
-                            <th class="p-2.5 text-center bg-emerald-600 text-white font-extrabold">Total After Deposit</th>
-                        </tr>
-                    </thead>
-                    <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="p-2.5 border-r text-center">$${sumForeman10.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td class="p-2.5 border-r text-center">$${sumHelpers.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 border-r text-center">$${sumDrivers.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 border-r text-center text-amber-700 font-bold bg-amber-50/20">$${sumCashDiesel.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${sumCashPu.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${sumCashDest.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 border-r text-center">$${sumPmoPu.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${sumZellePu.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${sumDestNoCashPmo.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 border-r text-center">$${sumPmoDeliveries.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 border-r text-center text-purple-600 font-bold">$${sumDestZelle.toLocaleString('en-US')}</td>
-                            <td class="p-2.5 border-r text-center bg-emerald-50 text-emerald-800 font-extrabold text-xs">$${sumTotalAfterDeposit.toLocaleString('en-US')}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        ${rentalSummaryObj.html}
-        ${warehouseSummaryObj.html}
-    `;
-}
-window.generateOfficialSummaryTable = generateOfficialSummaryTable;
-
-function generateSummaryReportData() {
-    const filteredJobs = getFilteredJobsData();
-    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-
-    const totalJobsCount = filteredJobs.length;
-    const totalDeliveriesCount = filteredJobs.filter(j => j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')).length;
-
-    let totalRevenue = 0;
-    filteredJobs.forEach(j => { totalRevenue += parseCurrency(j.total || j.total_amount); });
-
-    const startDateVal = document.getElementById('filterStartDate')?.value;
-    const endDateVal = document.getElementById('filterEndDate')?.value;
-    const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
-    const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59, 999);
-
-    let totalRentalExp = 0;
-    rentals.forEach(r => {
-        if (r.date) {
-            const rDate = parseLocalDate(r.date);
-            if (startDate && rDate < startDate) return;
-            if (endDate && rDate > endDate) return;
-        }
-        totalRentalExp += parseCurrency(r.amount);
-    });
-
-    let totalWarehouseExp = 0;
-    warehouse.forEach(w => {
-        if (w.date) {
-            const wDate = parseLocalDate(w.date);
-            if (startDate && wDate < startDate) return;
-            if (endDate && wDate > endDate) return;
-        }
-        totalWarehouseExp += parseCurrency(w.amount);
-    });
-
-    const totalExpenses = totalRentalExp + totalWarehouseExp;
-    const netProfit = totalRevenue - totalExpenses;
-
-    const sumJobsEl = document.getElementById('sumTotalJobs');
-    const sumDelivEl = document.getElementById('sumTotalDeliveries');
-    const sumRevEl = document.getElementById('sumTotalRevenue');
-    const sumExpEl = document.getElementById('sumTotalExpenses');
-
-    if (sumJobsEl) sumJobsEl.innerText = totalJobsCount.toLocaleString();
-    if (sumDelivEl) sumDelivEl.innerText = totalDeliveriesCount.toLocaleString();
-    if (sumRevEl) sumRevEl.innerText = '$' + totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2});
-    if (sumExpEl) sumExpEl.innerText = '$' + totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2});
-
-    const summaryContainer = document.getElementById('summaryReportContainer');
-    if (summaryContainer) {
-        const officialTableHtml = typeof generateOfficialSummaryTable === 'function' ? generateOfficialSummaryTable(filteredJobs) : '';
-        summaryContainer.innerHTML = officialTableHtml;
-    }
-}
-window.generateSummaryReportData = generateSummaryReportData;
-
-// Summary table for Payment Methods Breakdown (including Unspecified & Other)
 function generatePaymentMethodSummaryTableHTML() {
     const jobs = getFilteredJobsData();
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
 
-    let totals = {
-        Cash: 0,
-        Cheque: 0,
-        Zelle: 0,
-        PMO: 0,
-        Card: 0,
-        Other: 0,
-        Unspecified: 0
-    };
+    let totals = { Cash: 0, Cheque: 0, Zelle: 0, PMO: 0, Card: 0, Other: 0, Unspecified: 0 };
 
-    // تجميع القيم من الوظائف (Jobs) عبر حقول الدفع المختلفة
     jobs.forEach(item => {
         const puStr = String(item.pu || item.pu_payments || '').trim();
         const destStr = String(item.dest || item.destination || item.destination_payments || '').trim();
-        const fallbackAmt = parseCurrency(item.total || item.total_amount) / 2; // توزيع افتراضي إذا لم يوجد مبلغ صريح بالنص
+        const fallbackAmt = parseCurrency(item.total || item.total_amount) / 2;
 
         [puStr, destStr].forEach(str => {
             if (!str || str === '-' || str === '---') return;
-            
             let amt = parseCurrency(str);
             const upper = str.toUpperCase();
 
-            // إذا وُجدت الكلمة الدالة ولكن لم يُكتب الرقم بجانبها، نأخذ جزءاً من إجمالي الوظيفة كاحتياط لكي لا تضيع البيانات
             if (amt <= 0 || amt >= 50000) {
                 amt = fallbackAmt > 0 ? fallbackAmt : 0;
             }
             if (amt <= 0) return;
 
-            if (upper.includes('CASH')) {
-                totals.Cash += amt;
-            } else if (upper.includes('CHEQUE') || upper.includes('CHECK') || upper.includes('CHQ')) {
-                totals.Cheque += amt;
-            } else if (upper.includes('ZELLE')) {
-                totals.Zelle += amt;
-            } else if (upper.includes('PMO')) {
-                totals.PMO += amt;
-            } else if (upper.includes('CARD') || upper.includes('CC')) {
-                totals.Card += amt;
-            } else if (upper.includes('OTHER') || upper.includes('OTHERS')) {
-                totals.Other += amt;
-            } else {
-                totals.Unspecified += amt;
-            }
+            if (upper.includes('CASH')) totals.Cash += amt;
+            else if (upper.includes('CHEQUE') || upper.includes('CHECK') || upper.includes('CHQ')) totals.Cheque += amt;
+            else if (upper.includes('ZELLE')) totals.Zelle += amt;
+            else if (upper.includes('PMO')) totals.PMO += amt;
+            else if (upper.includes('CARD') || upper.includes('CC')) totals.Card += amt;
+            else if (upper.includes('OTHER') || upper.includes('OTHERS')) totals.Other += amt;
+            else totals.Unspecified += amt;
         });
     });
 
-    // تجميع القيم من الإيجارات والمستودع
     [...rentals, ...warehouse].forEach(item => {
         const amt = parseCurrency(item.amount);
         const pType = String(item.paymentType || item.paymentMethod || '').trim().toLowerCase();
-
         if (amt <= 0) return;
 
-        if (!pType || pType === '-' || pType === 'cash') {
-            totals.Cash += amt;
-        } else if (pType.includes('cheque') || pType.includes('check')) {
-            totals.Cheque += amt;
-        } else if (pType.includes('zelle')) {
-            totals.Zelle += amt;
-        } else if (pType.includes('card')) {
-            totals.Card += amt;
-        } else {
-            totals.Other += amt;
-        }
+        if (!pType || pType === '-' || pType === 'cash') totals.Cash += amt;
+        else if (pType.includes('cheque') || pType.includes('check')) totals.Cheque += amt;
+        else if (pType.includes('zelle')) totals.Zelle += amt;
+        else if (pType.includes('card')) totals.Card += amt;
+        else totals.Other += amt;
     });
 
     const grandTotalMethods = Object.values(totals).reduce((a, b) => a + b, 0);
@@ -670,21 +398,20 @@ function generatePaymentMethodSummaryTableHTML() {
                 <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                     <div>
                         <h3 class="text-sm font-bold text-slate-800">Payment Methods Summary Breakdown</h3>
-                        <p class="text-[11px] text-slate-400">Detailed distribution of revenue and expenses by payment methods (including Unspecified & Other)</p>
+                        <p class="text-[11px] text-slate-400">Detailed distribution of revenue and expenses by payment methods</p>
                     </div>
                 </div>
-
                 <div class="overflow-x-auto rounded-xl border border-slate-100">
                     <table class="w-full text-left border-collapse text-[11px]">
                         <thead>
                             <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
-                                <th class="p-2.5 border-r border-slate-200/60 text-center text-emerald-700">Cash</th>
-                                <th class="p-2.5 border-r border-slate-200/60 text-center text-slate-700">Cheque</th>
-                                <th class="p-2.5 border-r border-slate-200/60 text-center text-blue-700">Zelle</th>
-                                <th class="p-2.5 border-r border-slate-200/60 text-center text-indigo-700">PMO</th>
-                                <th class="p-2.5 border-r border-slate-200/60 text-center text-purple-700">Card</th>
-                                <th class="p-2.5 border-r border-slate-200/60 text-center text-amber-700">Other</th>
-                                <th class="p-2.5 border-r border-slate-200/60 text-center text-slate-600">Unspecified</th>
+                                <th class="p-2.5 border-r text-center text-emerald-700">Cash</th>
+                                <th class="p-2.5 border-r text-center text-slate-700">Cheque</th>
+                                <th class="p-2.5 border-r text-center text-blue-700">Zelle</th>
+                                <th class="p-2.5 border-r text-center text-indigo-700">PMO</th>
+                                <th class="p-2.5 border-r text-center text-purple-700">Card</th>
+                                <th class="p-2.5 border-r text-center text-amber-700">Other</th>
+                                <th class="p-2.5 border-r text-center text-slate-600">Unspecified</th>
                                 <th class="p-2.5 text-center bg-emerald-600 text-white font-extrabold">Total Amount</th>
                             </tr>
                         </thead>
@@ -708,37 +435,15 @@ function generatePaymentMethodSummaryTableHTML() {
 }
 window.generatePaymentMethodSummaryTableHTML = generatePaymentMethodSummaryTableHTML;
 
-
-
-
-
 function updateSummaryReportView(filteredData) {
     try {
         const container = document.getElementById('summaryReportContainer');
         if (!container) return;
 
-        // 1. جدول إيجارات الشاحنات
-        let truckHTML = '';
-        if (typeof generateTruckRentalSummaryTableHTML === 'function') {
-            const truckResult = generateTruckRentalSummaryTableHTML();
-            truckHTML = truckResult.html || '';
-        }
+        let truckHTML = (typeof generateTruckRentalSummaryTableHTML === 'function') ? generateTruckRentalSummaryTableHTML().html : '';
+        let warehouseHTML = (typeof generateWarehouseSummaryTableHTML === 'function') ? generateWarehouseSummaryTableHTML().html : '';
+        let paymentMethodsHTML = (typeof generatePaymentMethodSummaryTableHTML === 'function') ? generatePaymentMethodSummaryTableHTML().html : '';
 
-        // 2. جدول المستودع والمصروفات
-        let warehouseHTML = '';
-        if (typeof generateWarehouseSummaryTableHTML === 'function') {
-            const warehouseResult = generateWarehouseSummaryTableHTML();
-            warehouseHTML = warehouseResult.html || '';
-        }
-
-        // 3. جدول إجمالي طرق الدفع
-        let paymentMethodsHTML = '';
-        if (typeof generatePaymentMethodSummaryTableHTML === 'function') {
-            const paymentResult = generatePaymentMethodSummaryTableHTML();
-            paymentMethodsHTML = paymentResult.html || '';
-        }
-
-        // حقن الجداول داخل الحاوية
         container.innerHTML = `
             <div class="space-y-6">
                 ${paymentMethodsHTML}
@@ -747,7 +452,6 @@ function updateSummaryReportView(filteredData) {
             </div>
         `;
 
-        // تحديث عدادات الأرقام العلوية
         const totalJobsEl = document.getElementById('sumTotalJobs');
         const totalDeliveriesEl = document.getElementById('sumTotalDeliveries');
         const totalRevenueEl = document.getElementById('sumTotalRevenue');
@@ -762,17 +466,13 @@ function updateSummaryReportView(filteredData) {
         if (totalDeliveriesEl) totalDeliveriesEl.innerText = deliveriesCount;
 
         let totalRev = filteredData.reduce((sum, item) => {
-            const amt = parseFloat(String(item.total || item.total_amount || '0').replace(/[^0-9.]/g, '')) || 0;
-            return sum + amt;
+            return sum + parseCurrency(item.total || item.total_amount);
         }, 0);
         if (totalRevenueEl) totalRevenueEl.innerText = '$' + totalRev.toLocaleString('en-US', {minimumFractionDigits: 2});
 
-        let totalExp = 0;
-        filteredData.forEach(item => {
-            const diesel = parseFloat(String(item.diesel || item.diesel_expense || '0').replace(/[^0-9.]/g, '')) || 0;
-            const hotel = parseFloat(String(item.hotel || item.hotel_expense || '0').replace(/[^0-9.]/g, '')) || 0;
-            totalExp += (diesel + hotel);
-        });
+        let totalExp = filteredData.reduce((sum, item) => {
+            return sum + parseCurrency(item.diesel || item.diesel_expense) + parseCurrency(item.hotel || item.hotel_expense);
+        }, 0);
         if (totalExpensesEl) totalExpensesEl.innerText = '$' + totalExp.toLocaleString('en-US', {minimumFractionDigits: 2});
 
     } catch (e) {
@@ -781,19 +481,15 @@ function updateSummaryReportView(filteredData) {
 }
 window.updateSummaryReportView = updateSummaryReportView;
 
-// 🌟 دالة شاملة وجسر ربط تضمن استدعاء البيانات وتحديث كل الواجهات فوراً دون أخطاء
 function generateSummaryReportData() {
     const filteredData = typeof getFilteredJobsData === 'function' ? getFilteredJobsData() : (window.masterJobs || []);
-    
-    // تحديث عرض الملخص
     updateSummaryReportView(filteredData);
-
-    // تحديث العرض التفصيلي أيضاً للاحتياط
     if (typeof generateDetailedReportData === 'function') {
         generateDetailedReportData();
     }
 }
 window.generateSummaryReportData = generateSummaryReportData;
+
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
@@ -822,7 +518,6 @@ function exportOfficialPDF() {
         return true;
     });
 
-    // استدعاء دالة جدول طرق الدفع
     const paymentMethodObj = typeof generatePaymentMethodSummaryTableHTML === 'function' 
         ? generatePaymentMethodSummaryTableHTML() 
         : { html: '' };
@@ -897,12 +592,10 @@ function exportOfficialPDF() {
 
     let rentalPdfDays = 0, rentalPdfCash = 0, rentalPdfOther = 0, rentalPdfTotal = 0;
     filteredRentals.forEach(r => {
-        const daysNum = parseInt(String(r.days || r.Days || '0').replace(/[^0-9]/g, '')) || 0;
-        rentalPdfDays += daysNum;
+        rentalPdfDays += parseInt(String(r.days || r.Days || '0').replace(/[^0-9]/g, '')) || 0;
         const amt = parseCurrency(r.amount);
         rentalPdfTotal += amt;
-        const pType = String(r.paymentType || r.paymentMethod || '').toLowerCase();
-        if (pType.includes('cash')) rentalPdfCash += amt;
+        if (String(r.paymentType || r.paymentMethod || '').toLowerCase().includes('cash')) rentalPdfCash += amt;
         else rentalPdfOther += amt;
     });
 
@@ -910,8 +603,7 @@ function exportOfficialPDF() {
     filteredWarehouse.forEach(w => {
         const amt = parseCurrency(w.amount);
         warehousePdfTotal += amt;
-        const pType = String(w.paymentType || w.paymentMethod || '').toLowerCase();
-        if (pType.includes('cash')) warehousePdfCash += amt;
+        if (String(w.paymentType || w.paymentMethod || '').toLowerCase().includes('cash')) warehousePdfCash += amt;
         else warehousePdfOthers += amt;
     });
 
@@ -1024,7 +716,6 @@ function exportOfficialPDF() {
                 </table>
             </div>
 
-            <!-- 🌟🌟 إدراج وحقن جدول إجمالي طرق الدفع هنا ليشمل التقرير المطبوع -->
             <div class="mb-4">
                 ${paymentMethodObj.html}
             </div>
@@ -1095,127 +786,19 @@ function renderReportsTab() {
 }
 window.renderReportsTab = renderReportsTab;
 
-async function renderSummaryPageWithDetailedTables() {
-    // 1. تحديد الحاوية الرئيسية لصفحة Summary
-    const container = document.getElementById('tab-summary') || document.getElementById('summaryContainer');
-    if (!container) return;
-
-    // 2. جلب البيانات المحدثة مع استبعاد المحذوفة
-    const rentals = (typeof loadPrivateTruckRentals === 'function') ? await loadPrivateTruckRentals() : [];
-    const warehouse = (typeof loadWarehouseRecords === 'function') ? await loadWarehouseRecords() : [];
-
-    // 3. حساب إجمالية طرق الدفع وتصنيفها
-    let paymentTotals = { Cash: 0, Cheque: 0, Zelle: 0, Card: 0, Other: 0 };
-
-     [...rentals, ...warehouse].forEach(item => {
-        let amt = parseFloat(String(item.amount || '0').replace(/[^0-9.]/g, '')) || 0;
-        let pType = (item.paymentType || '').trim();
-
-        // إذا لم توجد طريقة دفع أو كانت فارغة، تصنف افتراضياً كـ Cash أو بدون طريقة
-        if (!pType || pType === '-') {
-            paymentTotals.Cash += amt;
-        } else if (paymentTotals.hasOwnProperty(pType)) {
-            paymentTotals[pType] += amt;
-        } else {
-            // أي قيمة أخرى تصنف تحت Other
-            paymentTotals.Other += amt;
-        }
-    });
-
-    // 4. بناء هيكل الجداول الإضافية لتتطابق مع تصميم التقرير المرفق
-    const summaryHTML = `
-        <div class="space-y-6 mt-6">
-            <!-- جدول ملخص إيجارات الشاحنات -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-                <h3 class="text-sm font-bold text-slate-800 mb-3">Private Truck Rental Financial Summary (${rentals.length} Records)</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] border-b">
-                            <tr>
-                                <th class="p-2.5">Total Rental Days</th>
-                                <th class="p-2.5 text-emerald-700">Cash Payments</th>
-                                <th class="p-2.5 text-blue-700">Other Payments (Zelle/Check)</th>
-                                <th class="p-2.5 text-amber-700 font-bold">Grand Total Rental Cost</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y text-slate-700">
-                            <tr>
-                                <td class="p-2.5 font-bold">${rentals.reduce((acc, r) => acc + (r.days || 0), 0)} Days</td>
-                                <td class="p-2.5 text-emerald-600 font-bold">$${rentals.filter(r => (r.paymentType || '').toLowerCase().includes('cash')).reduce((acc, r) => acc + (parseFloat(String(r.amount).replace(/[^0-9.]/g, '')) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                                <td class="p-2.5 text-blue-600 font-bold">$${rentals.filter(r => !(r.paymentType || '').toLowerCase().includes('cash')).reduce((acc, r) => acc + (parseFloat(String(r.amount).replace(/[^0-9.]/g, '')) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                                <td class="p-2.5 text-amber-600 font-black">$${rentals.reduce((acc, r) => acc + (parseFloat(String(r.amount).replace(/[^0-9.]/g, '')) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- جدول ملخص طرق الدفع العامة (Payment Methods Breakdown) -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-                <h3 class="text-sm font-bold text-slate-800 mb-3">Payment Methods Summary Breakdown</h3>
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
-                    <div class="p-3 bg-slate-50 rounded-xl border text-center">
-                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Cash</span>
-                        <span class="text-sm font-extrabold text-emerald-600 mt-1 block">$${paymentTotals.Cash.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                    </div>
-                    <div class="p-3 bg-slate-50 rounded-xl border text-center">
-                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Cheque</span>
-                        <span class="text-sm font-extrabold text-slate-700 mt-1 block">$${paymentTotals.Cheque.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                    </div>
-                    <div class="p-3 bg-slate-50 rounded-xl border text-center">
-                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Zelle</span>
-                        <span class="text-sm font-extrabold text-blue-600 mt-1 block">$${paymentTotals.Zelle.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                    </div>
-                    <div class="p-3 bg-slate-50 rounded-xl border text-center">
-                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Card</span>
-                        <span class="text-sm font-extrabold text-purple-600 mt-1 block">$${paymentTotals.Card.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                    </div>
-                    <div class="p-3 bg-slate-50 rounded-xl border text-center col-span-2 sm:col-span-1">
-                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Other</span>
-                        <span class="text-sm font-extrabold text-amber-600 mt-1 block">$${paymentTotals.Other.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    let existingExtra = document.getElementById('summaryExtraTables');
-    if (!existingExtra) {
-        const wrapper = document.createElement('div');
-        wrapper.id = 'summaryExtraTables';
-        wrapper.innerHTML = summaryHTML;
-        container.appendChild(wrapper);
-    } else {
-        existingExtra.innerHTML = summaryHTML;
-    }
-}
-
-window.renderSummaryPageWithDetailedTables = renderSummaryPageWithDetailedTables;
-
-
-printWindow.document.write(htmlContent);
-    printWindow.document.close();
-}
-window.exportOfficialPDF = exportOfficialPDF;
-
-// 🌟 التصدير السليم لكافة الدوال دون أي أسطر تائهة في الخارج
+// 🌟 تسجيل وتصدير كافة الدوال لتعمل بنظام الوحدات دون أي أخطاء
 window.switchReportMode = switchReportMode;
+window.parseCurrency = parseCurrency;
 window.applyReportFilters = applyReportFilters;
 window.filterReportData = filterReportData;
 window.resetReportFilters = resetReportFilters;
+window.parseLocalDate = parseLocalDate;
 window.getFilteredJobsData = getFilteredJobsData;
+window.processPaymentString = processPaymentString;
 window.generateTruckRentalSummaryTableHTML = generateTruckRentalSummaryTableHTML;
 window.generateWarehouseSummaryTableHTML = generateWarehouseSummaryTableHTML;
-window.generateOfficialSummaryTable = generateOfficialSummaryTable;
-window.generateSummaryReportData = generateSummaryReportData;
-window.renderSummaryPageWithDetailedTables = renderSummaryPageWithDetailedTables;
 window.generatePaymentMethodSummaryTableHTML = generatePaymentMethodSummaryTableHTML;
 window.updateSummaryReportView = updateSummaryReportView;
+window.generateSummaryReportData = generateSummaryReportData;
 window.exportOfficialPDF = exportOfficialPDF;
 window.renderReportsTab = renderReportsTab;
-
-
-
-
-
-    
