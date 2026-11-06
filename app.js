@@ -791,6 +791,39 @@ window.parseDriversDisplay = parseDriversDisplay;
 // ==========================================
 // 7. MODAL & SUPABASE CRUD ACTIONS
 // ==========================================
+
+// تعريف دالة فتح النافذة المفقودة
+function openAddModal(isEdit = false) {
+    const modal = document.getElementById('jobModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '99999', 'important');
+    }
+
+    const jobForm = document.getElementById('jobForm');
+    if (!isEdit) {
+        if (jobForm) jobForm.reset();
+        
+        // تفريغ حاوية الديزل وإضافة حقل فارغ عند الإضافة الجديدة
+        const dieselContainer = document.getElementById('diesel-entries-container');
+        if (dieselContainer) {
+            dieselContainer.innerHTML = '';
+            if (typeof window.addDieselEntryField === 'function') {
+                window.addDieselEntryField('', 'Unspecified');
+            }
+        }
+        
+        const puContainer = document.getElementById('puContainer');
+        const destContainer = document.getElementById('destContainer') || document.getElementById('destContextContainer');
+        if (puContainer) puContainer.innerHTML = '';
+        if (destContainer) destContainer.innerHTML = '';
+    }
+}
+window.openAddModal = openAddModal;
+
+
 function openEditJobModal(jobIdOrNo) {
     const jobs = window.masterJobs || [];
     const targetId = String(jobIdOrNo).trim();
