@@ -991,6 +991,7 @@ function exportOfficialPDF() {
         return true;
     });
 
+    // استدعاء دالة جدول طرق الدفع
     const paymentMethodObj = typeof generatePaymentMethodSummaryTableHTML === 'function' 
         ? generatePaymentMethodSummaryTableHTML() 
         : { html: '' };
@@ -1190,6 +1191,11 @@ function exportOfficialPDF() {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- 🌟🌟 إدراج وحقن جدول إجمالي طرق الدفع هنا ليشمل التقرير المطبوع -->
+            <div class="mb-4">
+                ${paymentMethodObj.html}
             </div>
 
             <div class="page-break"></div>
