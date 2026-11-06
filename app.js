@@ -811,51 +811,14 @@ function openEditJobModal(jobIdOrNo) {
     const jobForm = document.getElementById('jobForm');
     if (jobForm) {
         jobForm.setAttribute('data-edit-id', job.id || '');
-        
-        // تعبئة الحقول الأساسية (تأكد من مطابقة أسماء الحقول أو الـ IDs لديك)
-        // مثال: setVal أو تعبئة مباشرة بالعناصر
-        const setFieldVal = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) el.value = val !== undefined && val !== null ? val : '';
-        };
-
-        setFieldVal('jobNo', job.jobNo || job.job_no || '');
-        setFieldVal('jobDate', job.date || '');
-        setFieldVal('foremanName', job.foreman_name || job.foremanName || '');
-        setFieldVal('totalAmount', job.total_amount || job.total || '');
-        // ... (أضف بقية حقول النموذج العادية هنا إذا لزم الأمر)
     }
 
-    // ==========================================
-    // 🌟 معالجة وتعبئة حقول الديزل المتعددة عند التعديل
-    // ==========================================
-    const dieselContainer = document.getElementById('diesel-entries-container');
-    if (dieselContainer) dieselContainer.innerHTML = '';
+    // دوال مساعدة للتعبئة
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val !== undefined && val !== null ? val : '';
+    };
 
-    const dieselValStr = String(job.diesel || job.diesel_expense || '');
-    if (dieselValStr && dieselValStr !== '-') {
-        // تقسيم النص بناءً على علامة الزائد +
-        const dieselEntries = dieselValStr.split('+');
-        
-        dieselEntries.forEach(entry => {
-            const parts = entry.trim().split(' ');
-            const amt = parts[0] !== '-' ? parts[0] : '';
-            const meth = parts.slice(1).join(' ') || 'Unspecified';
-            
-            // استدعاء دالة إضافة الحقل لإنشائه بالقيمة وطريقة الدفع الصحيحة
-            if (typeof window.addDieselEntryField === 'function') {
-                window.addDieselEntryField(amt, meth);
-            }
-        });
-    } else {
-        // إذا لم يكن هناك ديزل مسجل، أضف حقلاً فارغاً افتراضياً
-        if (typeof window.addDieselEntryField === 'function') {
-            window.addDieselEntryField('', 'Unspecified');
-        }
-    }
-    // ==========================================
-}
-window.openEditJobModal = openEditJobModal;
     function formatDateForInput(dateStr) {
         if (!dateStr) return '';
         try {
@@ -870,14 +833,11 @@ window.openEditJobModal = openEditJobModal;
         }
     }
 
-    const setVal = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val !== undefined && val !== null ? val : '';
-    };
-
+    // تعبئة الحقول الأساسية
     setVal('jobDate', formatDateForInput(job.date || job.job_date || ''));
     setVal('jobNo', job.jobNo || job.job_no || job.job_number || '');
 
+    // معالجة المسار (Route)
     let routeStr = job.route || job.route_to || '';
     let fromVal = '';
     let toVal = '';
@@ -903,6 +863,7 @@ window.openEditJobModal = openEditJobModal;
     setVal('jobForeman', job.foreman || job.foreman_name || job.foremanName || '');
     setVal('jobTotal', job.total || job.total_amount || job.totalAmount || '');
 
+    // تعبئة القوائم المنسدلة
     const setSelectVal = (selectId, val) => {
         const select = document.getElementById(selectId);
         if (select && val) {
@@ -918,14 +879,32 @@ window.openEditJobModal = openEditJobModal;
     setSelectVal('helpersCost', job.helpers || job.helpers_cost);
     setSelectVal('driversCost', job.drivers || job.drivers_cost);
 
-    const dieselValStr = String(job.diesel || job.diesel_expense || '');
-    const dieselParts = dieselValStr.split(' ');
-    setVal('dieselAmount', dieselParts[0] !== '-' ? dieselParts[0] : '');
-    if (dieselParts.length > 1) {
-        const dieselMethod = document.getElementById('dieselMethod');
-        if (dieselMethod) dieselMethod.value = dieselParts[1];
-    }
+    // ==========================================
+    // 🌟 معالجة حقول الديزل المتعددة (النظام الديناميكي الجديد)
+    // ==========================================
+    const dieselContainer = document.getElementById('diesel-entries-container');
+    if (dieselContainer) dieselContainer.innerHTML = ''; // تفريغ الحاوية لمنع التكرار
 
+    const dieselValStr = String(job.diesel || job.diesel_expense || '');
+    if (dieselValStr && dieselValStr !== '-') {
+        const dieselEntries = dieselValStr.split('+');
+        dieselEntries.forEach(entry => {
+            const parts = entry.trim().split(' ');
+            const amt = parts[0] !== '-' ? parts[0] : '';
+            const meth = parts.slice(1).join(' ') || 'Unspecified';
+            
+            if (typeof window.addDieselEntryField === 'function') {
+                window.addDieselEntryField(amt, meth);
+            }
+        });
+    } else {
+        if (typeof window.addDieselEntryField === 'function') {
+            window.addDieselEntryField('', 'Unspecified');
+        }
+    }
+    // ==========================================
+
+    // معالجة الفندق (Hotel) إذا كان بنظام مفرد
     const hotelValStr = String(job.hotel || job.hotel_expense || '');
     const hotelParts = hotelValStr.split(' ');
     setVal('hotelAmount', hotelParts[0] !== '-' ? hotelParts[0] : '');
@@ -934,13 +913,13 @@ window.openEditJobModal = openEditJobModal;
         if (hotelMethod) hotelMethod.value = hotelParts[1];
     }
 
+    // معالجة المدفوعات الأخرى
     if (typeof populatePaymentContainer === 'function') {
         if (job.pu || job.pu_payments) populatePaymentContainer('puContainer', job.pu || job.pu_payments);
         if (job.destination || job.dest || job.destination_payments) populatePaymentContainer('destContainer', job.destination || job.dest || job.destination_payments);
     }
 }
 window.openEditJobModal = openEditJobModal;
-
 function populatePaymentContainer(containerId, paymentStr) {
     const container = document.getElementById(containerId);
     if (!container) return;
