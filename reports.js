@@ -613,10 +613,11 @@ function generateSummaryReportData() {
 
     const monthsLabels = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-    // توليد جداول الإجماليات الإضافية لعرضها في الواجهة
-    const paymentMethodsObj = generatePaymentMethodSummaryTableHTML();
-    const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
-    const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
+    // توليد جداول الإجماليات وطرق الدفع لعرضها في الواجهة
+    const paymentMethodsObj = typeof generatePaymentMethodSummaryTableHTML === 'function' ? generatePaymentMethodSummaryTableHTML() : { html: '' };
+    const rentalSummaryObj = typeof generateTruckRentalSummaryTableHTML === 'function' ? generateTruckRentalSummaryTableHTML() : { html: '' };
+    const warehouseSummaryObj = typeof generateWarehouseSummaryTableHTML === 'function' ? generateWarehouseSummaryTableHTML() : { html: '' };
+    const officialSummaryHTML = typeof generateOfficialSummaryTable === 'function' ? generateOfficialSummaryTable(filteredJobs) : '';
 
     const container = document.getElementById('summaryReportContainer');
     if (container) {
@@ -658,14 +659,17 @@ function generateSummaryReportData() {
                 </div>
             </div>
 
+            <!-- جدول الملخص التنفيذي (Executive Financial Summary) يظهر هنا في الواجهة بالترتيب الصحيح -->
+            ${officialSummaryHTML}
+
             ${paymentMethodsObj.html}
             ${rentalSummaryObj.html}
             ${warehouseSummaryObj.html}
-            ${generateOfficialSummaryTable(filteredJobs)}
         `;
     }
 }
 window.generateSummaryReportData = generateSummaryReportData;
+
 
 // Summary table for Payment Methods Breakdown (including Unspecified & Other)
 function generatePaymentMethodSummaryTableHTML() {
