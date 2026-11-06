@@ -449,7 +449,7 @@ function generateOfficialSummaryTable(filteredJobs) {
             });
         }
 
-       const isDelivery = item.jobNo && String(item.jobNo).toLowerCase().includes('delivery');
+     const isDelivery = item.jobNo && String(item.jobNo).toLowerCase().includes('delivery');
         
         if (isDelivery) {
             const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
@@ -463,8 +463,7 @@ function generateOfficialSummaryTable(filteredJobs) {
                 }
             }
         }
-   
-        
+
         const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             processPaymentString(destRawStr, payMap);
@@ -488,7 +487,6 @@ function generateOfficialSummaryTable(filteredJobs) {
 
     const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
     const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
-
     return `
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
             <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
