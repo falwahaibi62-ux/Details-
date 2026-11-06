@@ -396,12 +396,13 @@ function generateOfficialSummaryTable(filteredJobs) {
         Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0
     };
 
- filteredJobs.forEach(item => {
-        const totalVal = parseCurrency(item.total || item.total_amount);
+filteredJobs.forEach(item => {
+        // استخدام اسم العمود الصحيح total_amount
+        const totalVal = parseCurrency(item.total_amount || item.total);
         sumTotalAfterDeposit += totalVal;
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
 
-        const helpersStr = String(item.helpers || item.helpers_cost || '');
+        const helpersStr = String(item.helpers_cost || item.helpers || '');
         const helperMatch = helpersStr.match(/\(([^)]+)\)/);
         if (helperMatch) {
             sumHelpers += parseCurrency(helperMatch[1]);
@@ -409,7 +410,7 @@ function generateOfficialSummaryTable(filteredJobs) {
             sumHelpers += parseCurrency(helpersStr);
         }
 
-        const driversStr = String(item.drivers || item.drivers_cost || '');
+        const driversStr = String(item.drivers_cost || item.drivers || '');
         const driverMatch = driversStr.match(/\(([^)]+)\)/);
         if (driverMatch) {
             sumDrivers += parseCurrency(driverMatch[1]);
@@ -417,7 +418,7 @@ function generateOfficialSummaryTable(filteredJobs) {
             sumDrivers += parseCurrency(driversStr);
         }
 
-        const dieselValStr = item.diesel || item.diesel_expense;
+        const dieselValStr = item.diesel_expense || item.diesel;
         if (dieselValStr && dieselValStr !== '-') {
             let dieselStr = String(dieselValStr);
             let dieselParts = dieselStr.split('+');
@@ -432,7 +433,7 @@ function generateOfficialSummaryTable(filteredJobs) {
             });
         }
 
-        const puRawStr = String(item.pu || item.pu_payments || '').trim();
+        const puRawStr = String(item.pu_payments || item.pu || '').trim();
         if (puRawStr && puRawStr !== '-' && puRawStr !== '---') {
             processPaymentString(puRawStr, payMap);
             const puParts = puRawStr.split(/[,/]+/);
@@ -447,27 +448,44 @@ function generateOfficialSummaryTable(filteredJobs) {
             });
         }
 
-        // 🌟 حساب PMO Deliveries بناءً على شرطك الدقيق: delivery في رقم الوظيفة + pmo في حقل الـ dest
-        const isDeliveryJob = item.jobNo && String(item.jobNo).toLowerCase().includes('delivery');
-        const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
+        // 🌟 المطابقة الصحيحة مع أسماء أعمدة قاعدة البيانات (job_no و destination_payments)
+        const jobNoStr = String(item.job_no || item.jobNo || '').toLowerCase();
+        const isDeliveryJob = jobNoStr.includes('delivery');
+        const destRawStr = String(item.destination_payments || item.dest || item.destination || '').trim();
         
         if (isDeliveryJob && destRawStr.toLowerCase().includes('pmo')) {
-            const destParts = destRawStr.split(/[,/]+/);
-            let addedPmo = false;
-            destParts.forEach(part => {
-                if (part.toLowerCase().includes('pmo')) {
-                    const val = parseCurrency(part);
-                    if (val > 0 && val < 50000) {
-                        sumPmoDeliveries += val;
-                        addedPmo = true;
+            let foundPmoVal = 0;
+            
+            // استخدام التعبير المنتظم لاستخراج القيمة سواء قبل أو بعد كلمة pmo (مثل: PMO 2736 أو 1000 PMO)
+            const pmoRegex = /(?:pmo\s*[:\-]?\s*\$?\s*([0-9,.]+))|([0-9,.]+)\s*(?:val\s*)?pmo/i;
+            const match = destRawStr.match(pmoRegex);
+            
+            if (match) {
+                const rawNum = match[1] || match[2];
+                foundPmoVal = parseCurrency(rawNum);
+            }
+            
+            if (foundPmoVal <= 0) {
+                const destParts = destRawStr.split(/[,/]+/);
+                destParts.forEach(part => {
+                    if (part.toLowerCase().includes('pmo')) {
+                        const val = parseCurrency(part);
+                        if (val > 0 && val < 50000) {
+                            foundPmoVal = val;
+                        }
                     }
-                }
-            });
-            if (!addedPmo) {
+                });
+            }
+            
+            if (foundPmoVal <= 0) {
                 const generalVal = parseCurrency(destRawStr);
                 if (generalVal > 0 && generalVal < 50000) {
-                    sumPmoDeliveries += generalVal;
+                    foundPmoVal = generalVal;
                 }
+            }
+            
+            if (foundPmoVal > 0 && foundPmoVal < 50000) {
+                sumPmoDeliveries += foundPmoVal;
             }
         }
 
