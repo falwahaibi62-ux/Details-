@@ -658,8 +658,32 @@ function generateSummaryReportData() {
             sumDestNoCashPmo += destVal;
         }
 
-        if ((item.jobNo || item.job_no) && String(item.jobNo || item.job_no).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
-            sumPmoDeliveries += puVal;
+        // 🌟 التصحيح الدقيق والشامل لحساب PMO Deliveries بناءً على حقل الوجهة والرقم المجاور
+        const jobVal = String(item.jobNo || item.job_no || '').toLowerCase();
+        if (jobVal.includes('delivery') && destStr.includes('pmo')) {
+            const destParts = destStr.split(/[,/]+/);
+            let foundMatch = false;
+            destParts.forEach(part => {
+                if (part.includes('pmo')) {
+                    const match = part.match(/([0-9,.]+)/);
+                    if (match) {
+                        const pmoNum = parseCurrency(match[1]);
+                        if (pmoNum > 0 && pmoNum < 50000) {
+                            sumPmoDeliveries += pmoNum;
+                            foundMatch = true;
+                        }
+                    }
+                }
+            });
+            if (!foundMatch) {
+                const match = destStr.match(/pmo\s*[:\-]?\s*([0-9,.]+)|([0-9,.]+)\s*pmo/i);
+                if (match) {
+                    const pmoNum = parseCurrency(match[1] || match[2]);
+                    if (pmoNum > 0 && pmoNum < 50000) {
+                        sumPmoDeliveries += pmoNum;
+                    }
+                }
+            }
         }
     });
 
