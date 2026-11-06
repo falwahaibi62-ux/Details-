@@ -507,8 +507,8 @@ if (dieselValStr && dieselValStr !== '-') {
                     }
                 }
             });
-        }
-    });
+ 
+
 
     const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
     const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
