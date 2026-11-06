@@ -757,11 +757,11 @@ function updateSummaryReportView(filteredData) {
         let totalRev = filteredData.reduce((sum, item) => sum + parseCurrency(item.total || item.total_amount), 0);
         if (totalRevenueEl) totalRevenueEl.innerText = '$' + formatCleanNumber(totalRev);
 
-        // 🌟 حساب Total Expenses ليجمع حصرياً قيم الكاش من الجداول الثلاثة (ديزل/مصروفات العمليات + الشاحنات + المستودع)
+        // 🌟 الحسبة الشاملة لـ Total Expenses (مجموع الكاش الكامل من الجداول الثلاثة)
         let totalCashExpenses = 0;
 
         filteredData.forEach(item => {
-            // كاش ديزل عمليات النقل
+            // 1. Cash Diesel
             const dieselValStr = item.diesel || item.diesel_expense;
             if (dieselValStr && dieselValStr !== '-') {
                 String(dieselValStr).split('+').forEach(part => {
@@ -771,9 +771,36 @@ function updateSummaryReportView(filteredData) {
                     }
                 });
             }
+
+            // 2. Cash Hotel
+            const hotelValStr = item.hotel || item.hotel_expense;
+            if (hotelValStr && hotelValStr !== '-') {
+                String(hotelValStr).split('+').forEach(part => {
+                    if (part.toLowerCase().includes('cash') || !part.toLowerCase().match(/(card|zelle|check|pmo)/)) {
+                        const cleanNum = parseCurrency(part);
+                        if (cleanNum > 0 && cleanNum < 50000) totalCashExpenses += cleanNum;
+                    }
+                });
+            }
+
+            // 3. Cash PU Payment
+            const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
+            if (puStr.includes('cash')) {
+                const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
+                const cashPuVal = cashMatch ? parseCurrency(cashMatch[1]) : parseCurrency(item.pu || item.pu_payments);
+                if (cashPuVal > 0 && cashPuVal < 50000) totalCashExpenses += cashPuVal;
+            }
+
+            // 4. Cash Dest Balance
+            const destStr = String(item.dest || item.destination || item.destination_payments || '').toLowerCase();
+            if (destStr.includes('cash')) {
+                const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
+                const cashDestVal = cashDestMatch ? parseCurrency(cashDestMatch[1]) : parseCurrency(item.dest || item.destination || item.destination_payments);
+                if (cashDestVal > 0 && cashDestVal < 50000) totalCashExpenses += cashDestVal;
+            }
         });
 
-        // كاش إيجارات الشاحنات
+        // 5. Cash Rental Truck
         const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
         rentals.forEach(r => {
             const pType = String(r.paymentType || r.paymentMethod || '').toLowerCase();
@@ -782,7 +809,7 @@ function updateSummaryReportView(filteredData) {
             }
         });
 
-        // كاش المستودع والمصروفات
+        // 6. Cash Warehouse
         const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
         warehouse.forEach(w => {
             const pType = String(w.paymentType || w.paymentMethod || '').toLowerCase();
