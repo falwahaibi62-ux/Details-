@@ -1499,7 +1499,7 @@ async function renderSummaryPageWithDetailedTables() {
     `;
 
     // حقن الجداول في صفحة Summary دون مسح المحتوى الأصلي
-    let existingExtra = document.getElementById('summaryExtraTables');
+ let existingExtra = document.getElementById('summaryExtraTables');
     if (!existingExtra) {
         const wrapper = document.createElement('div');
         wrapper.id = 'summaryExtraTables';
