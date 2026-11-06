@@ -396,7 +396,7 @@ function generateOfficialSummaryTable(filteredJobs) {
         Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0
     };
 
-    filteredJobs.forEach(item => {
+ filteredJobs.forEach(item => {
         const totalVal = parseCurrency(item.total || item.total_amount);
         sumTotalAfterDeposit += totalVal;
         sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
@@ -441,30 +441,36 @@ function generateOfficialSummaryTable(filteredJobs) {
                 if (partVal > 0 && partVal < 50000) {
                     const pLower = part.toLowerCase();
                     if (pLower.includes('cash')) sumCashPu += partVal;
-                    else if (pLower.includes('pmo')) {
-                        sumPmoPu += partVal;
-                        if (item.jobNo && String(item.jobNo).toLowerCase().includes('delivery')) sumPmoDeliveries += partVal;
-                    } else sumZellePu += partVal;
+                    else if (pLower.includes('pmo')) sumPmoPu += partVal;
+                    else sumZellePu += partVal;
                 }
             });
         }
 
-     const isDelivery = item.jobNo && String(item.jobNo).toLowerCase().includes('delivery');
+        // 🌟 حساب PMO Deliveries بناءً على شرطك الدقيق: delivery في رقم الوظيفة + pmo في حقل الـ dest
+        const isDeliveryJob = item.jobNo && String(item.jobNo).toLowerCase().includes('delivery');
+        const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         
-        if (isDelivery) {
-            const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
-            const destStr = String(item.dest || item.destination || item.destination_payments || '').toLowerCase();
-            
-            if (puStr.includes('pmo') || destStr.includes('pmo')) {
-                // استخراج القيمة العددية مباشرة من حقل الـ dest أو pu أو total للوظيفة
-                const pmoVal = parseCurrency(item.dest || item.destination || item.destination_payments || item.pu || item.pu_payments || item.total);
-                if (pmoVal > 0 && pmoVal < 50000) {
-                    sumPmoDeliveries += pmoVal;
+        if (isDeliveryJob && destRawStr.toLowerCase().includes('pmo')) {
+            const destParts = destRawStr.split(/[,/]+/);
+            let addedPmo = false;
+            destParts.forEach(part => {
+                if (part.toLowerCase().includes('pmo')) {
+                    const val = parseCurrency(part);
+                    if (val > 0 && val < 50000) {
+                        sumPmoDeliveries += val;
+                        addedPmo = true;
+                    }
+                }
+            });
+            if (!addedPmo) {
+                const generalVal = parseCurrency(destRawStr);
+                if (generalVal > 0 && generalVal < 50000) {
+                    sumPmoDeliveries += generalVal;
                 }
             }
         }
 
-        const destRawStr = String(item.dest || item.destination || item.destination_payments || '').trim();
         if (destRawStr && destRawStr !== '-' && destRawStr !== '---') {
             processPaymentString(destRawStr, payMap);
             const destParts = destRawStr.split(/[,/]+/);
