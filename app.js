@@ -380,6 +380,7 @@ function renderTable(data) {
 }
 window.renderTable = renderTable;
 
+
 function resetDateFilter() {
     const startInput = document.getElementById('filterStartDate');
     const endInput = document.getElementById('filterEndDate');
