@@ -1722,8 +1722,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         // انتظار اكتمال جلب كافة البيانات من السحابة (جلب الـ 396 سجلاً)
         await Promise.all(promises);
 
-        // 🌟 بما أن initMasterJobsData قامت بالفعل بملء الجدول والملخص والعداد، 
-        // لا نحتاج لتكرار filterLedgerTable هنا إلا إذا كانت حقول الفلترة غير فارغة.
+        // تفعيل الفلترة فقط إذا كان المستخدم قد أدخل تواريخ مسبقاً
         const fromInput = document.getElementById('ledgerFromDate');
         const toInput = document.getElementById('ledgerToDate');
         if ((fromInput && fromInput.value) || (toInput && toInput.value)) {
@@ -1732,7 +1731,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // 🌟 تحديث اللوحة والرسوم البيانية فور توفر البيانات
+        // تحديث اللوحة والرسوم البيانية فور توفر البيانات
         if (typeof updateDashboardAnalytics === 'function') {
             updateDashboardAnalytics();
         }
