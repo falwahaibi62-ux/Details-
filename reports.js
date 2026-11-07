@@ -355,119 +355,126 @@ function generateWarehouseSummaryTableHTML() {
 window.generateWarehouseSummaryTableHTML = generateWarehouseSummaryTableHTML;
 
 function generatePaymentMethodSummaryTableHTML() {
-    const jobs = getFilteredJobsData();
-    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+    const jobs = (typeof getFilteredJobsData === 'function') ? getFilteredJobsData() : (window.masterJobs || []);
 
+    // تهيئة المجاميع للـ 10 أعمدة بدقة
     let totals = {
         Cash: 0,
-        Cheque: 0,
         Zelle: 0,
+        Cheque: 0,
         PMO: 0,
-        Card: 0,
-        Other: 0,
+        BC: 0,
+        PC: 0,
+        CC: 0,
+        WT: 0,
+        Others: 0,
         Unspecified: 0
     };
 
+    // دالة لاستخراج الرقم وتحديد طريقة الدفع من النص الموجود في pu أو dest
+    function parsePaymentEntry(str) {
+        if (!str || str === '-' || str === '___' || str === '' ) return null;
+        
+        const stringVal = String(str).trim();
+        // استخراج القيمة العددية من النص (مثلاً "500 Cash" -> الرقم 500 والنص "Cash")
+        let amt = parseFloat(stringVal.replace(/[^0-9.-]+/g, "")) || 0;
+        if (amt <= 0) return null;
+
+        amt = Math.round(amt);
+        const upper = stringVal.toUpperCase();
+
+        // تحديد طريقة الدفع بناءً الكلمات المفتاحية
+        let method = 'Unspecified';
+
+        if (upper.includes('CASH')) {
+            method = 'Cash';
+        } else if (upper.includes('ZELLE')) {
+            method = 'Zelle';
+        } else if (upper.includes('CHEQUE') || upper.includes('CHECK') || upper.includes('CHQ')) {
+            method = 'Cheque';
+        } else if (upper.includes('PMO')) {
+            method = 'PMO';
+        } else if (upper.includes('BC')) {
+            method = 'BC';
+        } else if (upper.includes('PC')) {
+            method = 'PC';
+        } else if (upper.includes('CC') || upper.includes('CARD')) {
+            method = 'CC';
+        } else if (upper.includes('WT')) {
+            method = 'WT';
+        } else if (upper.includes('OTHER') || upper.includes('OTHERS')) {
+            method = 'Others';
+        } else {
+            // إذا وُجد رقم لكن لم يُذكر اسم طريقة الدفع بوضوح، يصنف تحت Unspecified
+            method = 'Unspecified';
+        }
+
+        return { method, amt };
+    }
+
+    // المرور على جميع الوظائف وجلب البيانات حصراً من pu و dest
     jobs.forEach(item => {
+        // دعم مختلف الأسماء المحتملة للحقول في قاعدة البيانات
         const puStr = String(item.pu || item.pu_payments || '').trim();
         const destStr = String(item.dest || item.destination || item.destination_payments || '').trim();
-        const fallbackAmt = parseCurrency(item.total || item.total_amount) / 2;
 
-        [puStr, destStr].forEach(str => {
-            if (!str || str === '-' || str === '---') return;
-            
-            let amt = parseCurrency(str);
-            const upper = str.toUpperCase();
-
-            if (amt <= 0 || amt >= 50000) {
-                amt = fallbackAmt > 0 ? fallbackAmt : 0;
-            }
-            if (amt <= 0) return;
-
-            amt = Math.round(amt);
-
-            if (upper.includes('CASH')) {
-                totals.Cash += amt;
-            } else if (upper.includes('CHEQUE') || upper.includes('CHECK') || upper.includes('CHQ')) {
-                totals.Cheque += amt;
-            } else if (upper.includes('ZELLE')) {
-                totals.Zelle += amt;
-            } else if (upper.includes('PMO')) {
-                totals.PMO += amt;
-            } else if (upper.includes('CARD') || upper.includes('CC')) {
-                totals.Card += amt;
-            } else if (upper.includes('OTHER') || upper.includes('OTHERS')) {
-                totals.Other += amt;
-            } else {
-                totals.Unspecified += amt;
+        [puStr, destStr].forEach(entryStr => {
+            const res = parsePaymentEntry(entryStr);
+            if (res && totals.hasOwnProperty(res.method)) {
+                totals[res.method] += res.amt;
             }
         });
     });
 
-    [...rentals, ...warehouse].forEach(item => {
-        const amt = parseCurrency(item.amount);
-        const pType = String(item.paymentType || item.paymentMethod || '').trim().toLowerCase();
+    // حساب الإجمالي الكلي للـ 10 أعمدة
+    const grandTotal = Object.values(totals).reduce((sum, val) => sum + val, 0);
 
-        if (amt <= 0) return;
+    const formatCurrency = (num) => '$' + num.toLocaleString();
 
-        if (!pType || pType === '-' || pType === 'cash') {
-            totals.Cash += amt;
-        } else if (pType.includes('cheque') || pType.includes('check')) {
-            totals.Cheque += amt;
-        } else if (pType.includes('zelle')) {
-            totals.Zelle += amt;
-        } else if (pType.includes('card')) {
-            totals.Card += amt;
-        } else {
-            totals.Other += amt;
-        }
-    });
-
-    const grandTotalMethods = Object.values(totals).reduce((a, b) => a + b, 0);
-
-    return {
-        totals: totals,
-        html: `
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
-                <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800">Payment Methods Summary Breakdown</h3>
-                        <p class="text-[11px] text-slate-400">Detailed distribution of revenue and expenses by payment methods</p>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto rounded-xl border border-slate-100">
-                    <table class="w-full text-left border-collapse text-[11px]">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
-                                <th class="p-2.5 border-r text-center text-emerald-700">Cash</th>
-                                <th class="p-2.5 border-r text-center text-slate-700">Cheque</th>
-                                <th class="p-2.5 border-r text-center text-blue-700">Zelle</th>
-                                <th class="p-2.5 border-r text-center text-indigo-700">PMO</th>
-                                <th class="p-2.5 border-r text-center text-purple-700">Card</th>
-                                <th class="p-2.5 border-r text-center text-amber-700">Other</th>
-                                <th class="p-2.5 border-r text-center text-slate-600">Unspecified</th>
-                                <th class="p-2.5 text-center bg-emerald-600 text-white font-extrabold">Total Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold bg-emerald-50/20">$${formatCleanNumber(totals.Cash)}</td>
-                                <td class="p-2.5 border-r text-center font-bold">$${formatCleanNumber(totals.Cheque)}</td>
-                                <td class="p-2.5 border-r text-center text-blue-600 font-bold bg-blue-50/20">$${formatCleanNumber(totals.Zelle)}</td>
-                                <td class="p-2.5 border-r text-center text-indigo-600 font-bold">$${formatCleanNumber(totals.PMO)}</td>
-                                <td class="p-2.5 border-r text-center text-purple-600 font-bold">$${formatCleanNumber(totals.Card)}</td>
-                                <td class="p-2.5 border-r text-center text-amber-600 font-bold bg-amber-50/20">$${formatCleanNumber(totals.Other)}</td>
-                                <td class="p-2.5 border-r text-center text-slate-500 font-bold">$${formatCleanNumber(totals.Unspecified)}</td>
-                                <td class="p-2.5 text-center bg-emerald-50 text-emerald-900 font-extrabold text-xs">$${formatCleanNumber(grandTotalMethods)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `
-    };
+    // بناء جدول الـ HTML بالـ 10 أعمدة + عمود الإجمالي
+    return `
+    <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3">
+        <div>
+            <h3 class="font-bold text-slate-900 text-base">Payment Methods Summary Breakdown</h3>
+            <p class="text-xs text-slate-500">Detailed distribution of revenue from PU Payments and Destination Balances</p>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-center border-collapse text-xs min-w-[1000px]">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                        <th class="p-2 border-r">Cash</th>
+                        <th class="p-2 border-r">Zelle</th>
+                        <th class="p-2 border-r">Cheque</th>
+                        <th class="p-2 border-r">PMO</th>
+                        <th class="p-2 border-r">BC</th>
+                        <th class="p-2 border-r">PC</th>
+                        <th class="p-2 border-r">CC</th>
+                        <th class="p-2 border-r">WT</th>
+                        <th class="p-2 border-r">Others</th>
+                        <th class="p-2 border-r">Unspecified</th>
+                        <th class="p-2 bg-emerald-600 text-white font-bold">Total Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="font-bold text-xs">
+                        <td class="p-3 border-r text-emerald-600">${formatCurrency(totals.Cash)}</td>
+                        <td class="p-3 border-r text-blue-600">${formatCurrency(totals.Zelle)}</td>
+                        <td class="p-3 border-r text-indigo-600">${formatCurrency(totals.Cheque)}</td>
+                        <td class="p-3 border-r text-purple-600">${formatCurrency(totals.PMO)}</td>
+                        <td class="p-3 border-r text-cyan-600">${formatCurrency(totals.BC)}</td>
+                        <td class="p-3 border-r text-teal-600">${formatCurrency(totals.PC)}</td>
+                        <td class="p-3 border-r text-pink-600">${formatCurrency(totals.CC)}</td>
+                        <td class="p-3 border-r text-orange-600">${formatCurrency(totals.WT)}</td>
+                        <td class="p-3 border-r text-amber-600">${formatCurrency(totals.Others)}</td>
+                        <td class="p-3 border-r text-slate-600">${formatCurrency(totals.Unspecified)}</td>
+                        <td class="p-3 bg-emerald-50 text-emerald-800 font-extrabold text-sm">${formatCurrency(grandTotal)}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    `;
 }
 window.generatePaymentMethodSummaryTableHTML = generatePaymentMethodSummaryTableHTML;
 
