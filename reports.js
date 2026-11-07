@@ -1096,7 +1096,7 @@ function exportOfficialPDF() {
 
                             return `
                                 <tr>
-                                    <td>${j.date || '-'}</td>
+                                    <td>${formatDateOnly(j.date)}</td>
                                     <td class="font-bold">${j.jobNo || j.job_no || '-'}</td>
                                     <td>${j.route ? j.route.split('→')[0] : (j.route_from || '-')}</td>
                                     <td>${j.route ? j.route.split('→')[1] || '-' : (j.route_to || '-')}</td>
