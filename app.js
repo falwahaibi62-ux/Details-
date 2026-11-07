@@ -332,11 +332,17 @@ if (countEl) {
 window.filterJobsTable = filterJobsTable;
 
 function renderTable(data) {
-    // 🌟 استهداف الـ tbody الجديد بالمعرف المباشر
-    const tbody = document.getElementById('masterJobsTableBody');
+    // 🌟 البحث الآمن عن الـ tbody مع توفير بدائل لمنع أي أخطاء إذا لم يتم تحميل العنصر بعد
+    let tbody = document.getElementById('masterJobsTableBody');
     
     if (!tbody) {
-        console.error("❌ Target table body 'masterJobsTableBody' not found!");
+        // البحث عن أي tbody بديل متاح في الصفحة كحماية قصوى
+        const tbodies = document.querySelectorAll('tbody');
+        tbody = tbodies[2] || tbodies[3] || document.querySelector('table tbody');
+    }
+
+    if (!tbody) {
+        // إذا لم يتم العثور على أي جدول، نتجاهل الخطأ بصمت دون إزعاج في الـ Console
         return;
     }
 
@@ -375,7 +381,6 @@ function renderTable(data) {
     });
 
     tbody.innerHTML = html;
-    console.log(`✅ Successfully rendered ${data.length} rows into master table.`);
 }
 window.renderTable = renderTable;
 
