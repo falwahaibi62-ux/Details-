@@ -271,8 +271,6 @@
         <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
     </div>
 
-    <!-- 🌟 1. حاوية ملخص طرق الدفع (10 أعمدة + الإجمالي) -->
-    <div id="paymentSummaryContainer"></div>
 
     <!-- جدول الـ CRUD الرئيسي -->
     <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs flex-1 flex flex-col">
@@ -434,32 +432,34 @@
             </div>
 
             <!-- Summary Report View -->
-            <div id="summaryReportView" class="space-y-6">
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                        <div class="text-slate-500 text-xs">Total Jobs</div>
-                        <div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                        <div class="text-slate-500 text-xs">Total Deliveries</div>
-                        <div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                        <div class="text-slate-500 text-xs">Total Revenue</div>
-                        <div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-                        <div class="text-slate-500 text-xs">Total Expenses</div>
-                        <div id="sumTotalExpenses" class="text-lg font-bold text-rose-600">$0</div>
-                    </div>
-                </div>
+<div id="summaryReportView" class="space-y-6">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+            <div class="text-slate-500 text-xs">Total Jobs</div>
+            <div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div>
+        </div>
+        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+            <div class="text-slate-500 text-xs">Total Deliveries</div>
+            <div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div>
+        </div>
+        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+            <div class="text-slate-500 text-xs">Total Revenue</div>
+            <div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div>
+        </div>
+        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+            <div class="text-slate-500 text-xs">Total Expenses</div>
+            <div id="sumTotalExpenses" class="text-lg font-bold text-rose-600">$0</div>
+        </div>
+    </div>
 
-                <div id="summaryReportContainer"></div>
-                <div id="pdfReportContent" class="space-y-6">
-                    <div id="warehousePDFSummarySection"></div>
-                </div>
-            </div>
-            
+    <!-- 🌟 ضع حاوية جدول ملخص طرق الدفع هنا حصراً في صفحة التقارير -->
+    <div id="paymentSummaryContainer"></div>
+
+    <div id="summaryReportContainer"></div>
+    <div id="pdfReportContent" class="space-y-6">
+        <div id="warehousePDFSummarySection"></div>
+    </div>
+</div>
             <!-- Detailed Report View -->
             <div id="detailedReportView" class="hidden space-y-8">
                 <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3">
