@@ -842,10 +842,17 @@ function generateSummaryReportData() {
         generateDetailedReportData();
     }
 
-    // 🌟 تحديث وتعبئة جدول ملخص طرق الدفع في صفحة التقارير تلقائياً
+    // 1. تحديث وتعبئة جدول ملخص طرق الدفع في صفحة التقارير تلقائياً
     const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
     if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
         summaryPaymentContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
+    }
+
+    // 2. 🌟 تحديث وتعبئة جدول المستودع ومصاريف أخرى تلقائياً
+    const warehouseContainer = document.getElementById('warehousePDFSummarySection');
+    if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
+        const warehouseResult = window.generateWarehouseSummaryTableHTML();
+        warehouseContainer.innerHTML = warehouseResult.html; // استخدام .html لأن الدالة تعيد كائن (Object)
     }
 }
 window.generateSummaryReportData = generateSummaryReportData;
