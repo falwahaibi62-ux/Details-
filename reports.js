@@ -837,6 +837,12 @@ function generateSummaryReportData() {
     if (typeof generateDetailedReportData === 'function') {
         generateDetailedReportData();
     }
+
+    // 🌟 تحديث وتعبئة جدول ملخص طرق الدفع في صفحة التقارير تلقائياً
+    const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
+    if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
+        summaryPaymentContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
+    }
 }
 window.generateSummaryReportData = generateSummaryReportData;
 
