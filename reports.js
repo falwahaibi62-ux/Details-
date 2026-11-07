@@ -357,6 +357,7 @@ window.generateWarehouseSummaryTableHTML = generateWarehouseSummaryTableHTML;
 function generatePaymentMethodSummaryTableHTML() {
     const jobs = (typeof getFilteredJobsData === 'function') ? getFilteredJobsData() : (window.currentFilteredJobs || window.masterJobs || []);
 
+    // تهيئة المجاميع للـ 10 أعمدة بدقة
     let totals = {
         Cash: 0,
         Zelle: 0,
@@ -370,18 +371,19 @@ function generatePaymentMethodSummaryTableHTML() {
         Unspecified: 0
     };
 
-    // دالة تحليل آمنة تمنع أخذ أرقام الوظائف والمعرفات الكبيرة
+    // دالة تحليل استخراج القيمة وتحديد طريقة الدفع بدقة
     function parsePaymentEntry(str) {
         if (!str || str === '-' || str === '___' || str === '' || str === '$0' || str === '0') return null;
         
         const stringVal = String(str).trim();
         const upper = stringVal.toUpperCase();
         
-        // استخراج الرقم بداخل النص
+        // استخراج القيمة العددية
         let amt = parseFloat(stringVal.replace(/[^0-9.-]+/g, "")) || 0;
-        
-        // حماية تامة: تصفية الأرقام الوهمية أو المعرفات الكبيرة جداً التي ليست مبالغ مالية (مثل أرقام الوظائف فوق 100,000)
-        if (amt <= 0 || amt > 1000000) return null;
+        if (amt <= 0) return null;
+
+        // جعل الرقم عادياً وصحيحاً بدون كسور عشرية
+        amt = Math.round(amt);
 
         let method = 'Unspecified';
 
@@ -404,18 +406,18 @@ function generatePaymentMethodSummaryTableHTML() {
         } else if (upper.includes('OTHER') || upper.includes('OTHERS')) {
             method = 'Others';
         } else {
-            // إذا كان رقماً مالياً بحتاً بدون كلمة مفتاحية واضحة
             method = 'Unspecified';
         }
 
         return { method, amt };
     }
 
+    // المرور حصراً على عمودي pu_payments و destination_payments في قاعدة البيانات
     jobs.forEach(item => {
-        const puStr = String(item.pu_payments || item.pu || '').trim();
-        const destStr = String(item.destination || item.dest || '').trim();
+        const puPaymentStr = String(item.pu_payments || '').trim();
+        const destPaymentStr = String(item.destination_payments || '').trim();
 
-        [puStr, destStr].forEach(entryStr => {
+        [puPaymentStr, destPaymentStr].forEach(entryStr => {
             const res = parsePaymentEntry(entryStr);
             if (res && totals.hasOwnProperty(res.method)) {
                 totals[res.method] += res.amt;
@@ -423,14 +425,18 @@ function generatePaymentMethodSummaryTableHTML() {
         });
     });
 
+    // حساب الإجمالي الكلي
     const grandTotal = Object.values(totals).reduce((sum, val) => sum + val, 0);
-    const formatCurrency = (num) => '$' + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+    // تنسيق الأرقام كأرقام عادية بدون كسور عشرية (بدون .00)
+    const formatCurrency = (num) => '$' + num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+    // بناء جدول الـ HTML بالـ 10 أعمدة + عمود الإجمالي
     return `
     <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4">
         <div>
             <h3 class="font-bold text-slate-900 text-base">Payment Methods Summary Breakdown</h3>
-            <p class="text-xs text-slate-500">Detailed distribution of revenue from PU Payments and Destination Balances</p>
+            <p class="text-xs text-slate-500">Detailed distribution of revenue from PU Payments and Destination Payments</p>
         </div>
         
         <div class="overflow-x-auto">
@@ -471,7 +477,6 @@ function generatePaymentMethodSummaryTableHTML() {
     `;
 }
 window.generatePaymentMethodSummaryTableHTML = generatePaymentMethodSummaryTableHTML;
-
 
 function generateOfficialSummaryTable(filteredJobs) {
     let sumForeman10 = 0, sumHelpers = 0, sumDrivers = 0, sumCashDiesel = 0;
