@@ -237,7 +237,7 @@ async function initMasterJobsData() {
             };
         });
 
-       window.masterJobs.sort((a, b) => {
+      window.masterJobs.sort((a, b) => {
             const dateA = new Date(a.date || 0);
             const dateB = new Date(b.date || 0);
             return dateB - dateA;
@@ -245,13 +245,11 @@ async function initMasterJobsData() {
 
         if (typeof populateYearFilter === 'function') populateYearFilter();
         
-        // 🌟 استدعاء دالة العرض بمرونة لضمان رسم الجدول فوراً
-        if (typeof filterJobsTable === 'function') {
-            filterJobsTable();
+        // 🌟 استدعاء دالة العرض مباشرة هنا لكي تعمل تلقائياً عند جلب البيانات
+        if (typeof renderTable === 'function') {
+            renderTable(window.masterJobs);
         } else if (typeof filterLedgerTable === 'function') {
             filterLedgerTable();
-        } else if (typeof renderTable === 'function') {
-            renderTable(window.masterJobs); // تمرير البيانات مباشرة للرسم إذا توفرت الدالة
         }
 
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
@@ -262,7 +260,6 @@ async function initMasterJobsData() {
     }
 }
 window.initMasterJobsData = initMasterJobsData;
-
 
 
 
