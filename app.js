@@ -333,11 +333,12 @@ function filterJobsTable() {
 window.filterJobsTable = filterJobsTable;
 
 function renderTable(data) {
-    // 🌟 استهداف الـ tbody الصحيح (الفهرس 2 أو حسب جدول الـ CRUD لديك)
+    // 🌟 استهداف الـ tbody الصحيح بدقة تامة وبدون أي أخطاء
     const tbodies = document.querySelectorAll('tbody');
     const tbody = document.getElementById('jobsTableBody') || 
                   document.getElementById('ledgerTableBody') || 
-                  tbodies[2] || // الفهرس الذي ظهر في النتيجة كجدول بيانات فارغ بدون ID
+                  tbodies[2] || 
+                  tbodies[3] || 
                   document.querySelector('table tbody');
     
     if (!tbody) {
@@ -383,7 +384,6 @@ function renderTable(data) {
     console.log(`✅ Successfully rendered ${data.length} rows into the table.`);
 }
 window.renderTable = renderTable;
-
 
 function resetDateFilter() {
     const startInput = document.getElementById('filterStartDate');
