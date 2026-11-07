@@ -127,6 +127,14 @@ function filterLedgerTable() {
 window.filterLedgerTable = filterLedgerTable;
 
 
+function formatDateOnly(dateStr) {
+    if (!dateStr) return '-';
+    // أخذ الجزء الأول فقط من نص التاريخ (قبل المسافة الخاصة بالوقت)
+    const cleanDate = String(dateStr).trim().split(' ')[0];
+    return cleanDate;
+}
+
+
 
 function assignPaymentMethodRevenue(paymentStr, amount, paymentMethodMap) {
     if (!paymentStr) {
