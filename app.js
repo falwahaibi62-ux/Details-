@@ -54,15 +54,16 @@ let reportToDate = '';
 // 2. دالة فلترة جدول العمليات (Operations Ledger)
 // ==========================================
 function filterLedgerTable() {
-    const fromVal = document.getElementById('ledgerFromDate').value;
-    const toVal = document.getElementById('ledgerToDate').value;
+    // 1. جلب قيم التواريخ بشكل صحيح وآمن
+    const fromInput = document.getElementById('ledgerFromDate');
+    const toInput = document.getElementById('ledgerToDate');
     
     const fromVal = fromInput ? fromInput.value : '';
     const toVal = toInput ? toInput.value : '';
 
     let data = window.masterJobs || [];
 
-    // دالة تحليل التاريخ (نفس الكود السابق لضمان تطابق الأيام)
+    // 2. دالة تحليل التاريخ
     function parseDateObj(dateStr, isEndDate = false) {
         if (!dateStr) return null;
         if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -83,6 +84,7 @@ function filterLedgerTable() {
     const fDate = parseDateObj(fromVal, false);
     const tDate = parseDateObj(toVal, true);
 
+    // 3. فلترة البيانات بناءً على التواريخ
     data = data.filter(item => {
         if (!item.date) return false;
         const itemDate = parseDateObj(item.date, false);
@@ -92,33 +94,17 @@ function filterLedgerTable() {
         return true;
     });
 
-    // 1. تحديث جدول البيانات
+    // 4. تحديث جدول البيانات
     if (typeof renderTable === 'function') {
         renderTable(data);
     }
 
-    // 🌟 2. الحل: تحديث عداد السجلات الظاهر في واجهة المستخدم ليطابق عدد النتائج المفلترة
+    // 5. تحديث العداد بالمعرف الصحيح (filteredCountText) الموجود في الـ HTML
     const totalMasterCount = (window.masterJobs || []).length;
+    const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
     
-    // البحث عن جميع العناصر المحتملة التي تعرض العداد وتحديث نصها
-    const possibleCounterSelectors = [
-        '.text-slate-500.text-sm', // الكلاس المحتمل للنص بجانب الفلتر في الصورة
-        '#recordCountDisplay',
-        '#ledgerCounter'
-    ];
-
-    // تحديث عبر الـ ID المباشر إن وجد
-    const counterEl = document.getElementById('recordCountDisplay');
     if (counterEl) {
         counterEl.innerText = `Showing ${data.length} of ${totalMasterCount} records`;
-    } else {
-        // البحث بالصفة أو النص في الصفحة وتحديثه برمجياً
-        const allTextElements = document.querySelectorAll('div, span, p');
-        allTextElements.forEach(el => {
-            if (el.innerText && el.innerText.includes('Showing') && el.innerText.includes('records')) {
-                el.innerText = `Showing ${data.length} of ${totalMasterCount} records`;
-            }
-        });
     }
 }
 window.filterLedgerTable = filterLedgerTable;
