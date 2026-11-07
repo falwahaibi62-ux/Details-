@@ -54,8 +54,8 @@ let reportToDate = '';
 // 2. دالة فلترة جدول العمليات (Operations Ledger)
 // ==========================================
 function filterLedgerTable() {
-    const fromInput = document.getElementById('ledgerFromDate') || document.getElementById('from_date');
-    const toInput = document.getElementById('ledgerToDate') || document.getElementById('to_date');
+    const fromVal = document.getElementById('ledgerFromDate').value;
+    const toVal = document.getElementById('ledgerToDate').value;
     
     const fromVal = fromInput ? fromInput.value : '';
     const toVal = toInput ? toInput.value : '';
