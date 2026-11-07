@@ -333,14 +333,15 @@ function filterJobsTable() {
 window.filterJobsTable = filterJobsTable;
 
 function renderTable(data) {
-    // 🌟 بحث مرن شامل عن أي جسم جدول (tbody) متاح في الصفحة الحالية
+    // 🌟 استهداف الـ tbody الصحيح (الفهرس 2 أو حسب جدول الـ CRUD لديك)
+    const tbodies = document.querySelectorAll('tbody');
     const tbody = document.getElementById('jobsTableBody') || 
                   document.getElementById('ledgerTableBody') || 
-                  document.querySelector('table tbody') || 
-                  document.querySelector('tbody');
+                  tbodies[2] || // الفهرس الذي ظهر في النتيجة كجدول بيانات فارغ بدون ID
+                  document.querySelector('table tbody');
     
     if (!tbody) {
-        console.error("❌ Table body element (tbody) not found in the DOM!");
+        console.error("❌ Target table body not found!");
         return;
     }
 
