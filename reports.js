@@ -371,16 +371,26 @@ function generatePaymentMethodSummaryTableHTML() {
         Unspecified: 0
     };
 
-    // دالة لاستخراج الرقم وتحديد طريقة الدفع من النص الموجود في pu أو dest
+    // دالة دقيقة لاستخراج الرقم وتحديد طريقة الدفع حصراً من حقول المدفوعات
     function parsePaymentEntry(str) {
-        if (!str || str === '-' || str === '___' || str === '') return null;
+        if (!str || str === '-' || str === '___' || str === '' || str === '$0' || str === '0') return null;
         
         const stringVal = String(str).trim();
-        // استخراج القيمة العددية بدقة مع الاحتفاظ بالكسور العشرية (القروش)
+        
+        // التحقق من أن النص يحتوي على كلمات مفتاحية للدفع أو رقم واضح للمدفوعات
+        const upper = stringVal.toUpperCase();
+        const hasKeyword = ['CASH', 'ZELLE', 'CHEQUE', 'CHECK', 'CHQ', 'PMO', 'BC', 'PC', 'CC', 'CARD', 'WT', 'OTHER', 'OTHERS'].some(k => upper.includes(k));
+        
+        // استخراج القيمة العددية بدقة
         let amt = parseFloat(stringVal.replace(/[^0-9.-]+/g, "")) || 0;
         if (amt <= 0) return null;
 
-        const upper = stringVal.toUpperCase();
+        // إذا كان النص عبارة عن رقم مجرد بدون أي طريقة دفع وبدون كلمات مفتاحية، نتجاهله لكي لا نسحب أرقام عناوين أو معرفات خاطئة
+        if (!hasKeyword && !stringVal.includes('$')) {
+            // إذا أردت تصنيفه تحت Unspecified فقط إذا كان نصاً مالياً صريحاً، يمكنك ضبطه هنا
+            // أما إذا كان مجرد نص عشوائي فنتركه
+        }
+
         let method = 'Unspecified';
 
         if (upper.includes('CASH')) {
@@ -402,18 +412,20 @@ function generatePaymentMethodSummaryTableHTML() {
         } else if (upper.includes('OTHER') || upper.includes('OTHERS')) {
             method = 'Others';
         } else {
+            // إذا وُجد نص مالي صريح بدون تحديد الطريقة
             method = 'Unspecified';
         }
 
         return { method, amt };
     }
 
-    // المرور على جميع الوظائف وجلب البيانات حصراً من pu و dest
+    // المرور على جميع الوظائف وجلب البيانات حصراً من أعمدة المدفوعات الفعليّة
     jobs.forEach(item => {
-        const puStr = String(item.pu || item.pu_payments || '').trim();
-        const destStr = String(item.dest || item.destination || item.destination_payments || '').trim();
+        // قراءة حقول المدفوعات حصراً وتجنب حقول المواقع الجغرافية البحتة
+        const puPaymentStr = String(item.pu_payments || item.puPayment || '').trim();
+        const destPaymentStr = String(item.destination || item.dest || item.destination_payments || '').trim();
 
-        [puStr, destStr].forEach(entryStr => {
+        [puPaymentStr, destPaymentStr].forEach(entryStr => {
             const res = parsePaymentEntry(entryStr);
             if (res && totals.hasOwnProperty(res.method)) {
                 totals[res.method] += res.amt;
