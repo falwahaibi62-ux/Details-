@@ -237,7 +237,7 @@ async function initMasterJobsData() {
             };
         });
 
-      window.masterJobs.sort((a, b) => {
+        window.masterJobs.sort((a, b) => {
             const dateA = new Date(a.date || 0);
             const dateB = new Date(b.date || 0);
             return dateB - dateA;
@@ -245,7 +245,7 @@ async function initMasterJobsData() {
 
         if (typeof populateYearFilter === 'function') populateYearFilter();
         
-        // 🌟 استدعاء دالة العرض مباشرة هنا لكي تعمل تلقائياً عند جلب البيانات
+        // 🌟 استدعاء جدول العرض مباشرة لضمان ظهور البيانات بالكامل في صفحة الـ CRUD
         if (typeof renderTable === 'function') {
             renderTable(window.masterJobs);
         } else if (typeof filterLedgerTable === 'function') {
@@ -260,7 +260,6 @@ async function initMasterJobsData() {
     }
 }
 window.initMasterJobsData = initMasterJobsData;
-
 
 
 
