@@ -323,11 +323,10 @@ function filterJobsTable() {
         renderTable(filtered);
     }
     
-    const countText = document.getElementById('filteredCountText');
-    if (countText) {
-        countText.innerText = `Showing ${filtered.length} of ${rawData.length} records`;
-    }
-
+  const countEl = document.getElementById('filteredCountText');
+if (countEl) {
+    countEl.innerText = `Showing ${data.length} of ${window.masterJobs.length} records`;
+}
    
 }
 window.filterJobsTable = filterJobsTable;
