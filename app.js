@@ -237,22 +237,36 @@ async function initMasterJobsData() {
             };
         });
 
-        window.masterJobs.sort((a, b) => {
+       window.masterJobs.sort((a, b) => {
             const dateA = new Date(a.date || 0);
             const dateB = new Date(b.date || 0);
             return dateB - dateA;
         });
 
         if (typeof populateYearFilter === 'function') populateYearFilter();
-        if (typeof filterJobsTable === 'function') filterJobsTable();
+        
+        // 🌟 استدعاء دالة العرض بمرونة لضمان رسم الجدول فوراً
+        if (typeof filterJobsTable === 'function') {
+            filterJobsTable();
+        } else if (typeof filterLedgerTable === 'function') {
+            filterLedgerTable();
+        } else if (typeof renderTable === 'function') {
+            renderTable(window.masterJobs); // تمرير البيانات مباشرة للرسم إذا توفرت الدالة
+        }
+
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 
-    }	 catch (e) {
+    } catch (e) {
         console.error("❌ Exception during initializing master jobs from Supabase:", e);
         window.masterJobs = [];
     }
 }
 window.initMasterJobsData = initMasterJobsData;
+
+
+
+
+
 async function saveMasterJobsData(jobs) {
     window.masterJobs = jobs;
     filterJobsTable();
