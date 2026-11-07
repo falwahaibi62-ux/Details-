@@ -94,12 +94,21 @@ function filterLedgerTable() {
         return true;
     });
 
-    // 4. تحديث جدول البيانات
+    // حفظ النتائج المفلترة مؤقتاً لكي يقرأها جدول الملخص
+    window.currentFilteredJobs = data;
+
+    // 4. تحديث جدول البيانات الرئيسي
     if (typeof renderTable === 'function') {
         renderTable(data);
     }
 
-    // 5. تحديث العداد بالمعرف الصحيح (filteredCountText) الموجود في الـ HTML
+    // 🌟 5. تحديث جدول ملخص طرق الدفع (10 أعمدة) تلقائياً بناءً على البيانات المفلترة
+    const summaryContainer = document.getElementById('paymentSummaryContainer');
+    if (summaryContainer && typeof generatePaymentMethodSummaryTableHTML === 'function') {
+        summaryContainer.innerHTML = generatePaymentMethodSummaryTableHTML();
+    }
+
+    // 6. تحديث العداد بالمعرف الصحيح (filteredCountText) الموجود في الـ HTML
     const totalMasterCount = (window.masterJobs || []).length;
     const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
     
@@ -108,6 +117,12 @@ function filterLedgerTable() {
     }
 }
 window.filterLedgerTable = filterLedgerTable;
+
+// دالة مساعدة لتوفير البيانات المفلترة لجدول الملخص
+function getFilteredJobsData() {
+    return window.currentFilteredJobs || window.masterJobs || [];
+}
+window.getFilteredJobsData = getFilteredJobsData;
 
 function formatDateOnly(dateStr) {
     if (!dateStr) return '-';
