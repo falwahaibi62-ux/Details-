@@ -64,6 +64,17 @@ function filterLedgerTable() {
     let data = window.masterJobs || [];
 
     // 2. دالة تحليل التاريخ
+   function filterLedgerTable() {
+    // 1. جلب قيم التواريخ بشكل صحيح وآمن
+    const fromInput = document.getElementById('ledgerFromDate');
+    const toInput = document.getElementById('ledgerToDate');
+    
+    const fromVal = fromInput ? fromInput.value : '';
+    const toVal = toInput ? toInput.value : '';
+
+    let data = window.masterJobs || [];
+
+    // 2. دالة تحليل التاريخ
     function parseDateObj(dateStr, isEndDate = false) {
         if (!dateStr) return null;
         if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -117,6 +128,12 @@ function filterLedgerTable() {
     }
 }
 window.filterLedgerTable = filterLedgerTable;
+
+// دالة مساعدة لتوفير البيانات المفلترة لجدول الملخص
+function getFilteredJobsData() {
+    return window.currentFilteredJobs || window.masterJobs || [];
+}
+window.getFilteredJobsData = getFilteredJobsData;
 
 // دالة مساعدة لتوفير البيانات المفلترة لجدول الملخص
 function getFilteredJobsData() {
@@ -181,7 +198,6 @@ async function initMasterJobsData() {
             let rawDate = item.date || '';
             let dVal = '';
             if (rawDate) {
-                // قص النص عند أول مسافة لإزالة الوقت مثل "0:00" أو "12:00:00"
                 dVal = String(rawDate).trim().split(' ')[0];
             }
 
@@ -206,7 +222,7 @@ async function initMasterJobsData() {
 
             return {
                 id: item.id,
-                date: dVal, // التاريخ أصبح نظيفاً بدون ساعة (مثال: 10/15/2026)
+                date: dVal,
                 month: mVal,
                 year: yVal,
                 jobNo: item.job_no || item.jobNo || item.job_number || '',
@@ -244,6 +260,9 @@ async function initMasterJobsData() {
             return dateB - dateA;
         });
 
+        // 🌟 ضبط البيانات المفلترة الأولية لتعادل جميع السجلات المحملة
+        window.currentFilteredJobs = window.masterJobs;
+
         if (typeof populateYearFilter === 'function') populateYearFilter();
         
         // 🌟 استدعاء جدول العرض مباشرة لضمان ظهور البيانات بالكامل في صفحة الـ CRUD
@@ -251,6 +270,18 @@ async function initMasterJobsData() {
             renderTable(window.masterJobs);
         } else if (typeof filterLedgerTable === 'function') {
             filterLedgerTable();
+        }
+
+        // 🌟 تحديث العداد الرئيسي في الواجهة
+        const counterEl = document.getElementById('filteredCountText');
+        if (counterEl) {
+            counterEl.innerText = `Showing ${window.masterJobs.length} of ${window.masterJobs.length} records`;
+        }
+
+        // 🌟 توليد وعرض جدول ملخص طرق الدفع (10 أعمدة) فوراً عند بدء التشغيل
+        const summaryContainer = document.getElementById('paymentSummaryContainer');
+        if (summaryContainer && typeof generatePaymentMethodSummaryTableHTML === 'function') {
+            summaryContainer.innerHTML = generatePaymentMethodSummaryTableHTML();
         }
 
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
@@ -387,11 +418,20 @@ window.renderTable = renderTable;
 
 
 function resetDateFilter() {
-    const startInput = document.getElementById('filterStartDate');
-    const endInput = document.getElementById('filterEndDate');
+    // 1. استخدام المعرفات الصحيحة لحقول التواريخ الموجودة في الـ HTML
+    const startInput = document.getElementById('ledgerFromDate');
+    const endInput = document.getElementById('ledgerToDate');
+    
     if (startInput) startInput.value = '';
     if (endInput) endInput.value = '';
-    filterJobsTable();
+    
+    // 2. إعادة تعيين البيانات المفلترة لتشمل كافة السجلات الأصلية
+    window.currentFilteredJobs = window.masterJobs || [];
+
+    // 3. استدعاء دالة الفلترة والعرض الصحيحة لتحديث الجدول والعداد والملخص
+    if (typeof filterLedgerTable === 'function') {
+        filterLedgerTable();
+    }
 }
 window.resetDateFilter = resetDateFilter;
 
