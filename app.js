@@ -1,4 +1,66 @@
-if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
+function filterLedgerTable() {
+    const fromInput = document.getElementById('ledgerFromDate');
+    const toInput = document.getElementById('ledgerToDate');
+    
+    const fromVal = fromInput ? fromInput.value : '';
+    const toVal = toInput ? toInput.value : '';
+
+    let data = window.masterJobs || [];
+
+    function parseDateObj(dateStr, isEndDate = false) {
+        if (!dateStr) return null;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return isEndDate ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
+        }
+        const cleanDate = String(dateStr).split(' ')[0];
+        const parts = cleanDate.split('/');
+        if (parts.length === 3) {
+            const m = parseInt(parts[0], 10), d = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+            return isEndDate ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
+        }
+        const dObj = new Date(dateStr);
+        if (isNaN(dObj.getTime())) return null;
+        return isEndDate ? new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999) : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
+    }
+
+    const fDate = parseDateObj(fromVal, false);
+    const tDate = parseDateObj(toVal, true);
+
+    data = data.filter(item => {
+        if (!item.date) return false;
+        const itemDate = parseDateObj(item.date, false);
+        if (!itemDate) return false;
+        if (fDate && itemDate < fDate) return false;
+        if (tDate && itemDate > tDate) return false;
+        return true;
+    });
+
+    window.currentFilteredJobs = data;
+
+    if (typeof renderTable === 'function') {
+        renderTable(data);
+    }
+
+    // 🌟 استدعاء جدول الملخص الموجود في ملف reports.js بأمان تام
+    const summaryContainer = document.getElementById('paymentSummaryContainer');
+    if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
+        summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
+    }
+
+    const totalMasterCount = (window.masterJobs || []).length;
+    const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
+    
+    if (counterEl) {
+        counterEl.innerText = `Showing ${data.length} of ${totalMasterCount} records`;
+    }
+}
+window.filterLedgerTable = filterLedgerTable;
+
+function getFilteredJobsData() {
+    return window.currentFilteredJobs || window.masterJobs || [];
+}
+window.getFilteredJobsData = getFilteredJobsData;if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
 if (typeof window.currentLoggedInUser === 'undefined') window.currentLoggedInUser = null;
 if (typeof window.revenueChartInstance === 'undefined') window.revenueChartInstance = null;
 if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChartInstance = null;
@@ -51,7 +113,7 @@ let reportFromDate = '';
 let reportToDate = '';
 
 // ==========================================
-// 2. دالة فلترة جدول العمليات (Operations Ledger)
+// 2. دالة فلترة جدول العمليات (Operations Ledger) - النسخة النهائية الصحيحة
 // ==========================================
 function filterLedgerTable() {
     // 1. جلب قيم التواريخ بشكل صحيح وآمن
@@ -63,18 +125,7 @@ function filterLedgerTable() {
 
     let data = window.masterJobs || [];
 
-    // 2. دالة تحليل التاريخ
-   function filterLedgerTable() {
-    // 1. جلب قيم التواريخ بشكل صحيح وآمن
-    const fromInput = document.getElementById('ledgerFromDate');
-    const toInput = document.getElementById('ledgerToDate');
-    
-    const fromVal = fromInput ? fromInput.value : '';
-    const toVal = toInput ? toInput.value : '';
-
-    let data = window.masterJobs || [];
-
-    // 2. دالة تحليل التاريخ
+    // 2. دالة تحليل التاريخ (مستقلة داخل دالة الفلترة بشكل صحيح)
     function parseDateObj(dateStr, isEndDate = false) {
         if (!dateStr) return null;
         if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -105,21 +156,21 @@ function filterLedgerTable() {
         return true;
     });
 
-    // حفظ النتائج المفلترة مؤقتاً لكي يقرأها جدول الملخص
+    // 4. حفظ النتائج المفلترة مؤقتاً لكي يقرأها جدول الملخص
     window.currentFilteredJobs = data;
 
-    // 4. تحديث جدول البيانات الرئيسي
+    // 5. تحديث جدول البيانات الرئيسي (CRUD)
     if (typeof renderTable === 'function') {
         renderTable(data);
     }
 
-    // 🌟 5. تحديث جدول ملخص طرق الدفع (10 أعمدة) تلقائياً بناءً على البيانات المفلترة
+    // 🌟 6. تحديث جدول ملخص طرق الدفع (10 أعمدة) تلقائياً بناءً على البيانات المفلترة
     const summaryContainer = document.getElementById('paymentSummaryContainer');
-    if (summaryContainer && typeof generatePaymentMethodSummaryTableHTML === 'function') {
-        summaryContainer.innerHTML = generatePaymentMethodSummaryTableHTML();
+    if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
+        summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
     }
 
-    // 6. تحديث العداد بالمعرف الصحيح (filteredCountText) الموجود في الـ HTML
+    // 7. تحديث العداد بالمعرف الصحيح (filteredCountText) الموجود في الـ HTML
     const totalMasterCount = (window.masterJobs || []).length;
     const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
     
@@ -128,6 +179,18 @@ function filterLedgerTable() {
     }
 }
 window.filterLedgerTable = filterLedgerTable;
+
+// دالة مساعدة عامة لتوفير البيانات المفلترة لجدول الملخص
+function getFilteredJobsData() {
+    return window.currentFilteredJobs || window.masterJobs || [];
+}
+window.getFilteredJobsData = getFilteredJobsData;
+
+// دالة مساعدة عامة لتوفير البيانات المفلترة لجدول الملخص
+function getFilteredJobsData() {
+    return window.currentFilteredJobs || window.masterJobs || [];
+}
+window.getFilteredJobsData = getFilteredJobsData;
 
 // دالة مساعدة لتوفير البيانات المفلترة لجدول الملخص
 function getFilteredJobsData() {
