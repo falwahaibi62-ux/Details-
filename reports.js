@@ -625,8 +625,8 @@ function generateDetailedReportData() {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-                <td class="p-2.5 border-r text-center">${j.date || '-'}</td>
-                <td class="p-2.5 border-r text-center font-bold">${j.jobNo || j.job_no || '-'}</td>
+                 <td class="p-2.5 border-r text-center">${formatDateOnly(j.date)}</td>                
+                 <td class="p-2.5 border-r text-center font-bold">${j.jobNo || j.job_no || '-'}</td>
                 <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[0] : (j.route_from || '-')}</td>
                 <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[1] || '-' : (j.route_to || '-')}</td>
                 <td class="p-2.5 border-r text-center">${j.foreman || j.foreman_name || '-'}</td>
