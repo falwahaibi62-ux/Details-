@@ -333,15 +333,19 @@ function filterJobsTable() {
 window.filterJobsTable = filterJobsTable;
 
 function renderTable(data) {
-    const tbody = document.getElementById('jobsTableBody') || document.querySelector('#tab-jobs table tbody') || document.querySelector('table tbody');
+    // 🌟 بحث مرن شامل عن أي جسم جدول (tbody) متاح في الصفحة الحالية
+    const tbody = document.getElementById('jobsTableBody') || 
+                  document.getElementById('ledgerTableBody') || 
+                  document.querySelector('table tbody') || 
+                  document.querySelector('tbody');
     
     if (!tbody) {
-        console.error("Table body element (tbody) not found!");
+        console.error("❌ Table body element (tbody) not found in the DOM!");
         return;
     }
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-slate-400 font-medium">No records found for the selected range.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-slate-400 font-medium">No records found.</td></tr>`;
         return;
     }
 
@@ -350,18 +354,18 @@ function renderTable(data) {
         const jobId = item.id;
         html += `
             <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td>${formatDateOnly(item.date)}</td>
+                <td class="p-3 text-center">${formatDateOnly(item.date)}</td>
                 <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
                 <td class="p-3 text-slate-600">${item.route || '-'}</td>
                 <td class="p-3 text-slate-600">${item.foreman || item.foreman_name || '-'}</td>
-                <td class="p-3 text-emerald-600 font-medium">${item.foreman10pct || item.foreman_percentage || item.foreman_10 || '-'}</td>
-                <td class="p-3 text-purple-600">${item.helpers || '-'}</td>
-                <td class="p-3 text-blue-600">${item.drivers || '-'}</td>
-                <td class="p-3 font-bold text-slate-900">${item.total || '-'}</td>
+                <td class="p-3 text-emerald-600 font-medium">${item.foreman10pct || item.foreman_cost || '-'}</td>
+                <td class="p-3 text-purple-600">${item.helpers || item.helpers_cost || '-'}</td>
+                <td class="p-3 text-blue-600">${item.drivers || item.drivers_cost || '-'}</td>
+                <td class="p-3 font-bold text-slate-900">${item.total || item.total_amount || '-'}</td>
                 <td class="p-3 text-slate-600">${item.pu || item.pu_payments || '-'}</td>
                 <td class="p-3 text-slate-600">${item.dest || item.destination || '-'}</td>
-                <td class="p-3 text-slate-600">${item.diesel || '-'}</td>
-                <td class="p-3 text-slate-600">${item.hotel || '-'}</td>
+                <td class="p-3 text-slate-600">${item.diesel || item.diesel_expense || '-'}</td>
+                <td class="p-3 text-slate-600">${item.hotel || item.hotel_expense || '-'}</td>
                 <td class="p-3 text-center space-x-1">
                     <button type="button" onclick="openEditJobModal('${jobId}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
                         <i class="fa-solid fa-pen-to-square"></i>
@@ -375,8 +379,10 @@ function renderTable(data) {
     });
 
     tbody.innerHTML = html;
+    console.log(`✅ Successfully rendered ${data.length} rows into the table.`);
 }
 window.renderTable = renderTable;
+
 
 function resetDateFilter() {
     const startInput = document.getElementById('filterStartDate');
