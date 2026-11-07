@@ -57,27 +57,76 @@ function filterLedgerTable() {
     const fromInput = document.getElementById('ledgerFromDate') || document.getElementById('from_date');
     const toInput = document.getElementById('ledgerToDate') || document.getElementById('to_date');
     
-    ledgerFromDate = fromInput ? fromInput.value : '';
-    ledgerToDate = toInput ? toInput.value : '';
+    const fromVal = fromInput ? fromInput.value : '';
+    const toVal = toInput ? toInput.value : '';
 
     let data = window.masterJobs || [];
 
-    if (ledgerFromDate) {
-        const fDate = new Date(ledgerFromDate);
-        data = data.filter(item => new Date(item.date) >= fDate);
+    // دالة تحليل وتصفية دقيقة تضمن بدء اليوم من الساعة 00:00 ونهايته 23:59
+    function parseDateObj(dateStr, isEndDate = false) {
+        if (!dateStr) return null;
+        
+        // إذا كان التاريخ بصيغة YYYY-MM-DD (من حقل الإدخال)
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            if (isEndDate) {
+                return new Date(y, m - 1, d, 23, 59, 59, 999); // نهاية اليوم تماماً
+            } else {
+                return new Date(y, m - 1, d, 0, 0, 0, 0);    // بداية اليوم تماماً
+            }
+        }
+        
+        // إذا كان التاريخ بصيغة الجدول المحلي MM/DD/YYYY أو مشابه
+        const cleanDate = String(dateStr).split(' ')[0];
+        const parts = cleanDate.split('/');
+        if (parts.length === 3) {
+            const m = parseInt(parts[0], 10);
+            const d = parseInt(parts[1], 10);
+            const y = parseInt(parts[2], 10);
+            if (isEndDate) {
+                return new Date(y, m - 1, d, 23, 59, 59, 999);
+            } else {
+                return new Date(y, m - 1, d, 0, 0, 0, 0);
+            }
+        }
+        
+        const dObj = new Date(dateStr);
+        if (isNaN(dObj.getTime())) return null;
+        
+        if (isEndDate) {
+            return new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999);
+        } else {
+            return new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
+        }
     }
 
-    if (ledgerToDate) {
-        const tDate = new Date(ledgerToDate);
-        tDate.setHours(23, 59, 59);
-        data = data.filter(item => new Date(item.date) <= tDate);
-    }
+    const fDate = parseDateObj(fromVal, false); // يبدأ من 00:00:00 لنفس اليوم
+    const tDate = parseDateObj(toVal, true);     // ينتهي في 23:59:59 لنفس اليوم
+
+    data = data.filter(item => {
+        if (!item.date) return false;
+        const itemDate = parseDateObj(item.date, false);
+        if (!itemDate) return false;
+
+        // مقارنة أوقات السجلات ضمن النطاق
+        if (fDate && itemDate < fDate) return false;
+        if (tDate && itemDate > tDate) return false;
+        return true;
+    });
 
     if (typeof renderTable === 'function') {
         renderTable(data);
     }
+
+    // تحديث عداد السجلات المعروضة
+    const counterEl = document.getElementById('recordCountDisplay');
+    if (counterEl) {
+        counterEl.innerText = `Showing ${data.length} of ${(window.masterJobs || []).length} records`;
+    }
 }
 window.filterLedgerTable = filterLedgerTable;
+
+
 
 function assignPaymentMethodRevenue(paymentStr, amount, paymentMethodMap) {
     if (!paymentStr) {
