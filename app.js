@@ -161,7 +161,6 @@ async function initMasterJobsData() {
 
         console.log("🔄 Fetching jobs from Supabase...");
         
-        // استخدام استعلام مرن للتعامل مع السجلات حتى لو كان حقل is_deleted غير مُعرّف (NULL)
         const { data: jobsData, error } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
@@ -177,7 +176,14 @@ async function initMasterJobsData() {
         console.log("✅ Success! Total records fetched from Supabase:", jobsData ? jobsData.length : 0);
 
         window.masterJobs = (jobsData || []).map(item => {
-            let dVal = item.date || '';
+            // 🌟 تنظيف التاريخ وإزالة الساعة والوقت نهائياً من المصدر
+            let rawDate = item.date || '';
+            let dVal = '';
+            if (rawDate) {
+                // قص النص عند أول مسافة لإزالة الوقت مثل "0:00" أو "12:00:00"
+                dVal = String(rawDate).trim().split(' ')[0];
+            }
+
             let mVal = 1;
             let yVal = new Date().getFullYear();
 
@@ -199,7 +205,7 @@ async function initMasterJobsData() {
 
             return {
                 id: item.id,
-                date: dVal,
+                date: dVal, // التاريخ أصبح نظيفاً بدون ساعة (مثال: 10/15/2026)
                 month: mVal,
                 year: yVal,
                 jobNo: item.job_no || item.jobNo || item.job_number || '',
@@ -241,13 +247,12 @@ async function initMasterJobsData() {
         if (typeof filterJobsTable === 'function') filterJobsTable();
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 
-    } catch (e) {
+    }	 catch (e) {
         console.error("❌ Exception during initializing master jobs from Supabase:", e);
         window.masterJobs = [];
     }
 }
 window.initMasterJobsData = initMasterJobsData;
-
 async function saveMasterJobsData(jobs) {
     window.masterJobs = jobs;
     filterJobsTable();
@@ -335,7 +340,7 @@ function renderTable(data) {
         const jobId = item.id;
         html += `
             <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="p-3 text-slate-600">${item.date || item.created_at || '-'}</td>
+                <td>${formatDateOnly(item.date)}</td>
                 <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
                 <td class="p-3 text-slate-600">${item.route || '-'}</td>
                 <td class="p-3 text-slate-600">${item.foreman || item.foreman_name || '-'}</td>
