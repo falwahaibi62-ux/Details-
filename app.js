@@ -62,77 +62,72 @@ function filterLedgerTable() {
 
     let data = window.masterJobs || [];
 
-    // دالة تحليل وتصفية دقيقة تضمن بدء اليوم من الساعة 00:00 ونهايته 23:59
+    // دالة تحليل التاريخ (نفس الكود السابق لضمان تطابق الأيام)
     function parseDateObj(dateStr, isEndDate = false) {
         if (!dateStr) return null;
-        
-        // إذا كان التاريخ بصيغة YYYY-MM-DD (من حقل الإدخال)
         if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
             const [y, m, d] = dateStr.split('-').map(Number);
-            if (isEndDate) {
-                return new Date(y, m - 1, d, 23, 59, 59, 999); // نهاية اليوم تماماً
-            } else {
-                return new Date(y, m - 1, d, 0, 0, 0, 0);    // بداية اليوم تماماً
-            }
+            return isEndDate ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
         }
-        
-        // إذا كان التاريخ بصيغة الجدول المحلي MM/DD/YYYY أو مشابه
         const cleanDate = String(dateStr).split(' ')[0];
         const parts = cleanDate.split('/');
         if (parts.length === 3) {
-            const m = parseInt(parts[0], 10);
-            const d = parseInt(parts[1], 10);
-            const y = parseInt(parts[2], 10);
-            if (isEndDate) {
-                return new Date(y, m - 1, d, 23, 59, 59, 999);
-            } else {
-                return new Date(y, m - 1, d, 0, 0, 0, 0);
-            }
+            const m = parseInt(parts[0], 10), d = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+            return isEndDate ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
         }
-        
         const dObj = new Date(dateStr);
         if (isNaN(dObj.getTime())) return null;
-        
-        if (isEndDate) {
-            return new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999);
-        } else {
-            return new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
-        }
+        return isEndDate ? new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999) : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
     }
 
-    const fDate = parseDateObj(fromVal, false); // يبدأ من 00:00:00 لنفس اليوم
-    const tDate = parseDateObj(toVal, true);     // ينتهي في 23:59:59 لنفس اليوم
+    const fDate = parseDateObj(fromVal, false);
+    const tDate = parseDateObj(toVal, true);
 
     data = data.filter(item => {
         if (!item.date) return false;
         const itemDate = parseDateObj(item.date, false);
         if (!itemDate) return false;
-
-        // مقارنة أوقات السجلات ضمن النطاق
         if (fDate && itemDate < fDate) return false;
         if (tDate && itemDate > tDate) return false;
         return true;
     });
 
+    // 1. تحديث جدول البيانات
     if (typeof renderTable === 'function') {
         renderTable(data);
     }
 
-    // تحديث عداد السجلات المعروضة
+    // 🌟 2. الحل: تحديث عداد السجلات الظاهر في واجهة المستخدم ليطابق عدد النتائج المفلترة
+    const totalMasterCount = (window.masterJobs || []).length;
+    
+    // البحث عن جميع العناصر المحتملة التي تعرض العداد وتحديث نصها
+    const possibleCounterSelectors = [
+        '.text-slate-500.text-sm', // الكلاس المحتمل للنص بجانب الفلتر في الصورة
+        '#recordCountDisplay',
+        '#ledgerCounter'
+    ];
+
+    // تحديث عبر الـ ID المباشر إن وجد
     const counterEl = document.getElementById('recordCountDisplay');
     if (counterEl) {
-        counterEl.innerText = `Showing ${data.length} of ${(window.masterJobs || []).length} records`;
+        counterEl.innerText = `Showing ${data.length} of ${totalMasterCount} records`;
+    } else {
+        // البحث بالصفة أو النص في الصفحة وتحديثه برمجياً
+        const allTextElements = document.querySelectorAll('div, span, p');
+        allTextElements.forEach(el => {
+            if (el.innerText && el.innerText.includes('Showing') && el.innerText.includes('records')) {
+                el.innerText = `Showing ${data.length} of ${totalMasterCount} records`;
+            }
+        });
     }
 }
 window.filterLedgerTable = filterLedgerTable;
 
-
 function formatDateOnly(dateStr) {
     if (!dateStr) return '-';
-    // أخذ الجزء الأول فقط من نص التاريخ (قبل المسافة الخاصة بالوقت)
-    const cleanDate = String(dateStr).trim().split(' ')[0];
-    return cleanDate;
+    return String(dateStr).trim().split(' ')[0];
 }
+window.formatDateOnly = formatDateOnly;
 
 
 
