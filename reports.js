@@ -357,7 +357,6 @@ window.generateWarehouseSummaryTableHTML = generateWarehouseSummaryTableHTML;
 function generatePaymentMethodSummaryTableHTML() {
     const jobs = (typeof getFilteredJobsData === 'function') ? getFilteredJobsData() : (window.currentFilteredJobs || window.masterJobs || []);
 
-    // تهيئة المجاميع للـ 10 أعمدة بدقة
     let totals = {
         Cash: 0,
         Zelle: 0,
@@ -371,25 +370,18 @@ function generatePaymentMethodSummaryTableHTML() {
         Unspecified: 0
     };
 
-    // دالة دقيقة لاستخراج الرقم وتحديد طريقة الدفع حصراً من حقول المدفوعات
+    // دالة تحليل آمنة تمنع أخذ أرقام الوظائف والمعرفات الكبيرة
     function parsePaymentEntry(str) {
         if (!str || str === '-' || str === '___' || str === '' || str === '$0' || str === '0') return null;
         
         const stringVal = String(str).trim();
-        
-        // التحقق من أن النص يحتوي على كلمات مفتاحية للدفع أو رقم واضح للمدفوعات
         const upper = stringVal.toUpperCase();
-        const hasKeyword = ['CASH', 'ZELLE', 'CHEQUE', 'CHECK', 'CHQ', 'PMO', 'BC', 'PC', 'CC', 'CARD', 'WT', 'OTHER', 'OTHERS'].some(k => upper.includes(k));
         
-        // استخراج القيمة العددية بدقة
+        // استخراج الرقم بداخل النص
         let amt = parseFloat(stringVal.replace(/[^0-9.-]+/g, "")) || 0;
-        if (amt <= 0) return null;
-
-        // إذا كان النص عبارة عن رقم مجرد بدون أي طريقة دفع وبدون كلمات مفتاحية، نتجاهله لكي لا نسحب أرقام عناوين أو معرفات خاطئة
-        if (!hasKeyword && !stringVal.includes('$')) {
-            // إذا أردت تصنيفه تحت Unspecified فقط إذا كان نصاً مالياً صريحاً، يمكنك ضبطه هنا
-            // أما إذا كان مجرد نص عشوائي فنتركه
-        }
+        
+        // حماية تامة: تصفية الأرقام الوهمية أو المعرفات الكبيرة جداً التي ليست مبالغ مالية (مثل أرقام الوظائف فوق 100,000)
+        if (amt <= 0 || amt > 1000000) return null;
 
         let method = 'Unspecified';
 
@@ -412,20 +404,18 @@ function generatePaymentMethodSummaryTableHTML() {
         } else if (upper.includes('OTHER') || upper.includes('OTHERS')) {
             method = 'Others';
         } else {
-            // إذا وُجد نص مالي صريح بدون تحديد الطريقة
+            // إذا كان رقماً مالياً بحتاً بدون كلمة مفتاحية واضحة
             method = 'Unspecified';
         }
 
         return { method, amt };
     }
 
-    // المرور على جميع الوظائف وجلب البيانات حصراً من أعمدة المدفوعات الفعليّة
     jobs.forEach(item => {
-        // قراءة حقول المدفوعات حصراً وتجنب حقول المواقع الجغرافية البحتة
-        const puPaymentStr = String(item.pu_payments || item.puPayment || '').trim();
-        const destPaymentStr = String(item.destination || item.dest || item.destination_payments || '').trim();
+        const puStr = String(item.pu_payments || item.pu || '').trim();
+        const destStr = String(item.destination || item.dest || '').trim();
 
-        [puPaymentStr, destPaymentStr].forEach(entryStr => {
+        [puStr, destStr].forEach(entryStr => {
             const res = parsePaymentEntry(entryStr);
             if (res && totals.hasOwnProperty(res.method)) {
                 totals[res.method] += res.amt;
@@ -433,13 +423,9 @@ function generatePaymentMethodSummaryTableHTML() {
         });
     });
 
-    // حساب الإجمالي الكلي للـ 10 أعمدة بدقة
     const grandTotal = Object.values(totals).reduce((sum, val) => sum + val, 0);
-
-    // تنسيق العملة ليدعم خانتين عشريتين بانتظام
     const formatCurrency = (num) => '$' + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    // بناء جدول الـ HTML بالـ 10 أعمدة + عمود الإجمالي
     return `
     <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4">
         <div>
@@ -485,7 +471,6 @@ function generatePaymentMethodSummaryTableHTML() {
     `;
 }
 window.generatePaymentMethodSummaryTableHTML = generatePaymentMethodSummaryTableHTML;
-
 
 
 function generateOfficialSummaryTable(filteredJobs) {
