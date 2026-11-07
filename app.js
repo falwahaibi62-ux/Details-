@@ -1722,13 +1722,14 @@ window.addEventListener('DOMContentLoaded', async () => {
         // انتظار اكتمال جلب كافة البيانات من السحابة (جلب الـ 396 سجلاً)
         await Promise.all(promises);
 
-        // 🌟 تحديث وعرض جدول العمليات فور جاهزية البيانات
-        if (typeof filterLedgerTable === 'function') {
-            filterLedgerTable();
-        }
-
-        if (typeof filterJobsTable === 'function') {
-            filterJobsTable();
+        // 🌟 بما أن initMasterJobsData قامت بالفعل بملء الجدول والملخص والعداد، 
+        // لا نحتاج لتكرار filterLedgerTable هنا إلا إذا كانت حقول الفلترة غير فارغة.
+        const fromInput = document.getElementById('ledgerFromDate');
+        const toInput = document.getElementById('ledgerToDate');
+        if ((fromInput && fromInput.value) || (toInput && toInput.value)) {
+            if (typeof filterLedgerTable === 'function') {
+                filterLedgerTable();
+            }
         }
 
         // 🌟 تحديث اللوحة والرسوم البيانية فور توفر البيانات
@@ -1741,7 +1742,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             generateSummaryReportData();
         }
 
-        // 🌟🌟 استدعاء دالة تفاصيل جداول التقارير لضمان تعبئتها فوراً بعد توفر البيانات
+        // استدعاء دالة تفاصيل جداول التقارير لضمان تعبئتها فوراً
         if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
             window.renderSummaryPageWithDetailedTables();
         }
