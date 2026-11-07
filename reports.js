@@ -372,7 +372,7 @@ function generatePaymentMethodSummaryTableHTML() {
     };
 
     // دالة تحليل استخراج القيمة وتحديد طريقة الدفع بدقة
-    function parsePaymentEntry(str) {
+  function parsePaymentEntry(str) {
         if (!str || str === '-' || str === '___' || str === '' || str === '$0' || str === '0') return null;
         
         const stringVal = String(str).trim();
@@ -380,7 +380,9 @@ function generatePaymentMethodSummaryTableHTML() {
         
         // استخراج القيمة العددية
         let amt = parseFloat(stringVal.replace(/[^0-9.-]+/g, "")) || 0;
-        if (amt <= 0) return null;
+        
+        // حماية صارمة: أي مبلغ فردي غير منطقي (أكبر من 20,000) يتم تجاهله تماماً
+        if (amt <= 0 || amt > 20000) return null;
 
         // جعل الرقم عادياً وصحيحاً بدون كسور عشرية
         amt = Math.round(amt);
