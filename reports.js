@@ -41,6 +41,44 @@ function formatCleanNumber(val) {
 }
 window.formatCleanNumber = formatCleanNumber;
 
+
+// 1. الدالة المسؤولة عن معالجة التواريخ بدقة وتوفرها عالمياً
+function parseLocalDate(dateStr) {
+    if (!dateStr) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        const m = parseInt(parts[0], 10);
+        const d = parseInt(parts[1], 10);
+        const y = parseInt(parts[2], 10);
+        return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+    const dObj = new Date(dateStr);
+    return isNaN(dObj.getTime()) ? null : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate());
+}
+window.parseLocalDate = parseLocalDate;
+
+
+// 2. الدالة المسؤولة عن تطبيق الفلتر وتوفيرها عالمياً لمنع خطأ undefined
+function applyReportFilters() {
+    const summaryView = document.getElementById('summaryReportView');
+    if (!summaryView) {
+        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
+        return;
+    }
+    
+    const isSummaryActive = !summaryView.classList.contains('hidden');
+    if (isSummaryActive) {
+        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
+    } else {
+        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
+    }
+}
+window.applyReportFilters = applyReportFilters;
+
 function getFilteredJobsData() {
     const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     
