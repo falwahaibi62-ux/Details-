@@ -885,6 +885,7 @@ window.updateSummaryReportView = updateSummaryReportView;
 function generateSummaryReportData() {
     const filteredData = typeof getFilteredJobsData === 'function' ? getFilteredJobsData() : (window.masterJobs || []);
     updateSummaryReportView(filteredData);
+    
     if (typeof generateDetailedReportData === 'function') {
         generateDetailedReportData();
     }
@@ -892,14 +893,14 @@ function generateSummaryReportData() {
     // 1. تحديث وتعبئة جدول ملخص طرق الدفع
     const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
     if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
-        summaryPaymentContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
+        summaryPaymentContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML(filteredData);
     }
 
-    // 2. تحديث وتعبئة جدول المستودع (المسؤول الوحيد عن رسمه في الصفحة)
+    // 2. تحديث وتعبئة جدول المستودع مع تمرير البيانات المفلترة ليتفاعل مع التواريخ
     const warehouseContainer = document.getElementById('warehousePDFSummarySection');
     if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
-        const warehouseResult = window.generateWarehouseSummaryTableHTML();
-        warehouseContainer.innerHTML = warehouseResult.html;
+        const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
+        warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
     }
 }
 window.generateSummaryReportData = generateSummaryReportData;
