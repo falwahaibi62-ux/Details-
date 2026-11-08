@@ -419,70 +419,125 @@
         </div>
     </div>
 
-            <!-- Summary Report View -->
-<div id="summaryReportView" class="space-y-6">
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-            <div class="text-slate-500 text-xs">Total Jobs</div>
-            <div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div>
+          <!-- TAB 6: OFFICIAL PDF REPORT -->
+<div id="tab-reports" class="hidden space-y-6 w-full flex-col view-section">
+    
+    <!-- Header & Filters Bar -->
+    <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border border-slate-200">
+        <div>
+            <h3 class="font-bold text-slate-900 text-base">Financial & Operations Reports</h3>
+            <p class="text-xs text-slate-500">Summary and Detailed views with advanced telemetry</p>
         </div>
-        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-            <div class="text-slate-500 text-xs">Total Deliveries</div>
-            <div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div>
-        </div>
-        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-            <div class="text-slate-500 text-xs">Total Revenue</div>
-            <div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div>
-        </div>
-        <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
-            <div class="text-slate-500 text-xs">Total Expenses</div>
-            <div id="sumTotalExpenses" class="text-lg font-bold text-rose-600">$0</div>
-        </div>
-    </div>
 
-    <!-- 🌟 ضع حاوية جدول ملخص طرق الدفع هنا حصراً في صفحة التقارير -->
-    <div id="paymentSummaryContainer"></div>
-
-    <div id="summaryReportContainer"></div>
-    <div id="pdfReportContent" class="space-y-6">
-        <div id="warehousePDFSummarySection"></div>
-    </div>
-</div>
-            <!-- Detailed Report View -->
-            <div id="detailedReportView" class="hidden space-y-8">
-                <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-sm">1. Operations Ledger (Master Jobs)</h4>
-                            <p class="text-[11px] text-slate-400">Detailed job operations, crew allocations, and revenues</p>
-                        </div>
-                        <span id="detailedJobsBadge" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">0 Jobs</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3 border">Date</th>
-                                    <th class="p-3 border">Job No</th>
-                                    <th class="p-3 border">Route</th>
-                                    <th class="p-3 border">Foreman Name</th>    
-                                    <th class="p-3 border">Foreman 10%</th>     
-                                    <th class="p-3 border">Helpers</th>
-                                    <th class="p-3 border">Drivers</th>
-                                    <th class="p-3 border">Total</th>
-                                    <th class="p-3 border">P.U Payment</th>
-                                    <th class="p-3 border">Destination</th>
-                                    <th class="p-3 border">Diesel</th>
-                                    <th class="p-3 border">Hotel</th>
-                                    <th class="p-3 border text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="detailedReportBody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
+        <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            <div class="flex items-center space-x-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                <div class="flex items-center space-x-1 px-1">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">From:</span>
+                    <input type="date" id="reportStartDate" onchange="applyReportFilters()" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500">
+                </div>
+                <div class="flex items-center space-x-1 px-1">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">To:</span>
+                    <input type="date" id="reportEndDate" onchange="applyReportFilters()" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500">
                 </div>
             </div>
-        </div> <!-- END TAB 6 -->
+
+            <button onclick="exportOfficialPDF()" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 transition cursor-pointer shadow-sm">
+                <i class="fa-solid fa-file-pdf text-sm"></i>
+                <span>Save PDF</span>
+            </button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <select id="reportJobType" onchange="applyReportFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500">
+                <option value="all">All Types</option>
+                <option value="delivery">Deliveries Only</option>
+                <option value="moving">Moving Jobs</option>
+            </select>
+
+            <div class="flex space-x-2">
+                <button onclick="switchReportMode('summary')" id="btnSummaryMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer">Summary</button>
+                <button onclick="switchReportMode('detailed')" id="btnDetailedMode" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer">Detailed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Report Content Wrapper -->
+    <div id="pdfReportContent" class="space-y-6 w-full">
+
+        <!-- Summary Report View -->
+        <div id="summaryReportView" class="space-y-6">
+            
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+                    <div class="text-slate-500 text-xs">Total Jobs</div>
+                    <div id="sumTotalJobs" class="text-lg font-bold text-slate-800">0</div>
+                </div>
+                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+                    <div class="text-slate-500 text-xs">Total Deliveries</div>
+                    <div id="sumTotalDeliveries" class="text-lg font-bold text-slate-800">0</div>
+                </div>
+                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+                    <div class="text-slate-500 text-xs">Total Revenue</div>
+                    <div id="sumTotalRevenue" class="text-lg font-bold text-emerald-600">$0</div>
+                </div>
+                <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
+                    <div class="text-slate-500 text-xs">Total Expenses</div>
+                    <div id="sumTotalExpenses" class="text-lg font-bold text-rose-600">$0</div>
+                </div>
+            </div>
+
+            <!-- Payment Methods Summary Breakdown -->
+            <div id="paymentSummaryContainer"></div>
+
+            <!-- Summary Container & Warehouse Summary Section -->
+            <div id="summaryReportContainer"></div>
+            <div id="warehousePDFSummarySection"></div>
+
+        </div> <!-- END Summary View -->
+
+        <!-- Detailed Report View -->
+        <div id="detailedReportView" class="hidden space-y-8">
+            <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm">1. Operations Ledger (Master Jobs)</h4>
+                        <p class="text-[11px] text-slate-400">Detailed job operations, crew allocations, and revenues</p>
+                    </div>
+                    <span id="detailedJobsBadge" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">0 Jobs</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-3 border">Date</th>
+                                <th class="p-3 border">Job No</th>
+                                <th class="p-3 border">Route</th>
+                                <th class="p-3 border">Foreman Name</th>    
+                                <th class="p-3 border">Foreman 10%</th>     
+                                <th class="p-3 border">Helpers</th>
+                                <th class="p-3 border">Drivers</th>
+                                <th class="p-3 border">Total</th>
+                                <th class="p-3 border">P.U Payment</th>
+                                <th class="p-3 border">Destination</th>
+                                <th class="p-3 border">Diesel</th>
+                                <th class="p-3 border">Hotel</th>
+                                <th class="p-3 border text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailedReportBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- حاوية الجداول التفصيلية الإضافية (Rental Truck + Warehouse Detailed) -->
+            <div id="detailedReportContainer" class="space-y-6"></div>
+
+        </div> <!-- END Detailed View -->
+
+    </div> <!-- END pdfReportContent -->
+
+</div> <!-- END TAB 6 -->
 
         <!-- TAB 7: RECYCLE BIN -->
         <div id="tab-trash" class="hidden space-y-6 w-full flex-col view-section">
