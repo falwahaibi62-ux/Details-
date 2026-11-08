@@ -1,87 +1,6 @@
-// 1. دالة الفلترة مستقلة بذاتها
-function filterLedgerTable() {
-    const fromInput = document.getElementById('ledgerFromDate');
-    const toInput = document.getElementById('ledgerToDate');
-    
-    const fromVal = fromInput ? fromInput.value : '';
-    const toVal = toInput ? toInput.value : '';
-
-    let data = window.masterJobs || [];
-
-    // منطق الفلترة هنا...
-    
-    window.currentFilteredJobs = data;
-
-    if (typeof renderTable === 'function') {
-        renderTable(data);
-    }
-
-    const summaryContainer = document.getElementById('paymentSummaryContainer');
-    if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
-        summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
-    }
-}
-window.filterLedgerTable = filterLedgerTable;
-
-
-// 2. دالة جلب البيانات المفلترة مستقلة وفي النطاق العام خارج أي دالة أخرى
-function getFilteredJobsData() {
-    return window.currentFilteredJobs || window.masterJobs || [];
-}
-window.getFilteredJobsData = getFilteredJobsData;
-
-
-    function parseDateObj(dateStr, isEndDate = false) {
-        if (!dateStr) return null;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-            const [y, m, d] = dateStr.split('-').map(Number);
-            return isEndDate ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
-        }
-        const cleanDate = String(dateStr).split(' ')[0];
-        const parts = cleanDate.split('/');
-        if (parts.length === 3) {
-            const m = parseInt(parts[0], 10), d = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
-            return isEndDate ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
-        }
-        const dObj = new Date(dateStr);
-        if (isNaN(dObj.getTime())) return null;
-        return isEndDate ? new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999) : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
-    }
-
-    const fDate = parseDateObj(fromVal, false);
-    const tDate = parseDateObj(toVal, true);
-
-    data = data.filter(item => {
-        if (!item.date) return false;
-        const itemDate = parseDateObj(item.date, false);
-        if (!itemDate) return false;
-        if (fDate && itemDate < fDate) return false;
-        if (tDate && itemDate > tDate) return false;
-        return true;
-    });
-
-    window.currentFilteredJobs = data;
-
-    if (typeof renderTable === 'function') {
-        renderTable(data);
-    }
-
-    // 🌟 استدعاء جدول الملخص الموجود في ملف reports.js بأمان تام
-    const summaryContainer = document.getElementById('paymentSummaryContainer');
-    if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
-        summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
-    }
-
-    const totalMasterCount = (window.masterJobs || []).length;
-    const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
-    
-    if (counterEl) {
-        counterEl.innerText = `Showing ${data.length} of ${totalMasterCount} records`;
-    }
-}
-window.filterLedgerTable = filterLedgerTable;
-
-
+/**
+ * MovePro - Core Application & Operations Management (Production Ready & Cleaned)
+ */
 
 if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
 if (typeof window.currentLoggedInUser === 'undefined') window.currentLoggedInUser = null;
@@ -93,12 +12,11 @@ if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChar
 // ==========================================
 
 if (typeof window.systemUsers === 'undefined') {
-    const systemUsers = [
+    window.systemUsers = [
         { name: "Enterprise Admin", email: "admin@movepro.com", role: "Admin" },
         { name: "Operations Supervisor", email: "ops@movepro.com", role: "Member" },
         { name: "Guest Viewer", email: "viewer@movepro.com", role: "Viewer" }
     ];
-    window.systemUsers = systemUsers;
 }
 
 function formatJobDateForInput(dateStr) {
@@ -120,6 +38,7 @@ function formatJobDateForInput(dateStr) {
     }
     return dateStr;
 }
+window.formatJobDateForInput = formatJobDateForInput;
 
 function formatJobDateToSlash(dateStr) {
     if (!dateStr) return '';
@@ -129,26 +48,20 @@ function formatJobDateToSlash(dateStr) {
     }
     return dateStr;
 }
-
-let ledgerFromDate = '';
-let ledgerToDate = '';
-let reportFromDate = '';
-let reportToDate = '';
+window.formatJobDateToSlash = formatJobDateToSlash;
 
 // ==========================================
-// 2. دالة فلترة جدول العمليات (Operations Ledger) - النسخة النهائية الصحيحة
+// 2. دالة فلترة جدول العمليات (Operations Ledger)
 // ==========================================
 function filterLedgerTable() {
-    // 1. جلب قيم التواريخ بشكل صحيح وآمن
-    const fromInput = document.getElementById('ledgerFromDate');
-    const toInput = document.getElementById('ledgerToDate');
+    const fromInput = document.getElementById('ledgerFromDate') || document.getElementById('reportStartDate');
+    const toInput = document.getElementById('ledgerToDate') || document.getElementById('reportEndDate');
     
     const fromVal = fromInput ? fromInput.value : '';
     const toVal = toInput ? toInput.value : '';
 
     let data = window.masterJobs || [];
 
-    // 2. دالة تحليل التاريخ (مستقلة داخل دالة الفلترة بشكل صحيح)
     function parseDateObj(dateStr, isEndDate = false) {
         if (!dateStr) return null;
         if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -169,7 +82,6 @@ function filterLedgerTable() {
     const fDate = parseDateObj(fromVal, false);
     const tDate = parseDateObj(toVal, true);
 
-    // 3. فلترة البيانات بناءً على التواريخ
     data = data.filter(item => {
         if (!item.date) return false;
         const itemDate = parseDateObj(item.date, false);
@@ -179,21 +91,17 @@ function filterLedgerTable() {
         return true;
     });
 
-    // 4. حفظ النتائج المفلترة مؤقتاً لكي يقرأها جدول الملخص
     window.currentFilteredJobs = data;
 
-    // 5. تحديث جدول البيانات الرئيسي (CRUD)
     if (typeof renderTable === 'function') {
         renderTable(data);
     }
 
-    // 🌟 6. تحديث جدول ملخص طرق الدفع (10 أعمدة) تلقائياً بناءً على البيانات المفلترة
     const summaryContainer = document.getElementById('paymentSummaryContainer');
     if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
         summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
     }
 
-    // 7. تحديث العداد بالمعرف الصحيح (filteredCountText) الموجود في الـ HTML
     const totalMasterCount = (window.masterJobs || []).length;
     const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
     
@@ -203,14 +111,16 @@ function filterLedgerTable() {
 }
 window.filterLedgerTable = filterLedgerTable;
 
+function getFilteredJobsData() {
+    return window.currentFilteredJobs || window.masterJobs || [];
+}
+window.getFilteredJobsData = getFilteredJobsData;
 
 function formatDateOnly(dateStr) {
     if (!dateStr) return '-';
     return String(dateStr).trim().split(' ')[0];
 }
 window.formatDateOnly = formatDateOnly;
-
-
 
 function assignPaymentMethodRevenue(paymentStr, amount, paymentMethodMap) {
     if (!paymentStr) {
@@ -231,7 +141,6 @@ function assignPaymentMethodRevenue(paymentStr, amount, paymentMethodMap) {
 }
 window.assignPaymentMethodRevenue = assignPaymentMethodRevenue;
 
-
 async function initMasterJobsData() {
     try {
         if (!window.supabaseClient) {
@@ -240,8 +149,6 @@ async function initMasterJobsData() {
             return;
         }
 
-        console.log("🔄 Fetching jobs from Supabase...");
-        
         const { data: jobsData, error } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
@@ -249,21 +156,13 @@ async function initMasterJobsData() {
             .order('id', { ascending: false });
 
         if (error) {
-            console.error("❌ Error fetching jobs from Supabase:", error.message || error);
             window.masterJobs = [];
             return;
         }
 
-        console.log("✅ Success! Total records fetched from Supabase:", jobsData ? jobsData.length : 0);
-
         window.masterJobs = (jobsData || []).map(item => {
-            // 🌟 تنظيف التاريخ وإزالة الساعة والوقت نهائياً من المصدر
             let rawDate = item.date || '';
-            let dVal = '';
-            if (rawDate) {
-                dVal = String(rawDate).trim().split(' ')[0];
-            }
-
+            let dVal = rawDate ? String(rawDate).trim().split(' ')[0] : '';
             let mVal = 1;
             let yVal = new Date().getFullYear();
 
@@ -317,31 +216,17 @@ async function initMasterJobsData() {
             };
         });
 
-        window.masterJobs.sort((a, b) => {
-            const dateA = new Date(a.date || 0);
-            const dateB = new Date(b.date || 0);
-            return dateB - dateA;
-        });
-
-        // 🌟 ضبط البيانات المفلترة الأولية لتعادل جميع السجلات المحملة
+        window.masterJobs.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
         window.currentFilteredJobs = window.masterJobs;
 
         if (typeof populateYearFilter === 'function') populateYearFilter();
-        
-        // 🌟 استدعاء جدول العرض مباشرة لضمان ظهور البيانات بالكامل في صفحة الـ CRUD
-        if (typeof renderTable === 'function') {
-            renderTable(window.masterJobs);
-        } else if (typeof filterLedgerTable === 'function') {
-            filterLedgerTable();
-        }
+        if (typeof renderTable === 'function') renderTable(window.masterJobs);
 
-        // 🌟 تحديث العداد الرئيسي في الواجهة
         const counterEl = document.getElementById('filteredCountText');
         if (counterEl) {
             counterEl.innerText = `Showing ${window.masterJobs.length} of ${window.masterJobs.length} records`;
         }
 
-        // 🌟 توليد وعرض جدول ملخص طرق الدفع (10 أعمدة) فوراً عند بدء التشغيل
         const summaryContainer = document.getElementById('paymentSummaryContainer');
         if (summaryContainer && typeof generatePaymentMethodSummaryTableHTML === 'function') {
             summaryContainer.innerHTML = generatePaymentMethodSummaryTableHTML();
@@ -350,13 +235,10 @@ async function initMasterJobsData() {
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 
     } catch (e) {
-        console.error("❌ Exception during initializing master jobs from Supabase:", e);
         window.masterJobs = [];
     }
 }
 window.initMasterJobsData = initMasterJobsData;
-
-
 
 async function saveMasterJobsData(jobs) {
     window.masterJobs = jobs;
@@ -418,80 +300,62 @@ function filterJobsTable() {
         renderTable(filtered);
     }
     
-  const countEl = document.getElementById('filteredCountText');
-if (countEl) {
-    countEl.innerText = `Showing ${data.length} of ${window.masterJobs.length} records`;
-}
-   
+    const countEl = document.getElementById('filteredCountText');
+    if (countEl) {
+        countEl.innerText = `Showing ${filtered.length} of ${window.masterJobs.length} records`;
+    }
 }
 window.filterJobsTable = filterJobsTable;
 
 function renderTable(data) {
-    // 🌟 البحث الآمن عن الـ tbody مع توفير بدائل لمنع أي أخطاء إذا لم يتم تحميل العنصر بعد
     let tbody = document.getElementById('masterJobsTableBody');
-    
     if (!tbody) {
-        // البحث عن أي tbody بديل متاح في الصفحة كحماية قصوى
         const tbodies = document.querySelectorAll('tbody');
         tbody = tbodies[2] || tbodies[3] || document.querySelector('table tbody');
     }
 
-    if (!tbody) {
-        // إذا لم يتم العثور على أي جدول، نتجاهل الخطأ بصمت دون إزعاج في الـ Console
-        return;
-    }
+    if (!tbody) return;
 
     if (!data || data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-slate-400 font-medium">No records found.</td></tr>`;
         return;
     }
 
-    let html = '';
-    data.forEach(item => {
-        const jobId = item.id;
-        html += `
-            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="p-3 text-center">${formatDateOnly(item.date)}</td>
-                <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
-                <td class="p-3 text-slate-600">${item.route || '-'}</td>
-                <td class="p-3 text-slate-600">${item.foreman || item.foreman_name || '-'}</td>
-                <td class="p-3 text-emerald-600 font-medium">${item.foreman10pct || item.foreman_cost || '-'}</td>
-                <td class="p-3 text-purple-600">${item.helpers || item.helpers_cost || '-'}</td>
-                <td class="p-3 text-blue-600">${item.drivers || item.drivers_cost || '-'}</td>
-                <td class="p-3 font-bold text-slate-900">${item.total || item.total_amount || '-'}</td>
-                <td class="p-3 text-slate-600">${item.pu || item.pu_payments || '-'}</td>
-                <td class="p-3 text-slate-600">${item.dest || item.destination || '-'}</td>
-                <td class="p-3 text-slate-600">${item.diesel || item.diesel_expense || '-'}</td>
-                <td class="p-3 text-slate-600">${item.hotel || item.hotel_expense || '-'}</td>
-                <td class="p-3 text-center space-x-1">
-                    <button type="button" onclick="openEditJobModal('${jobId}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
-                    <button type="button" onclick="deleteJob('${jobId}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-
-    tbody.innerHTML = html;
+    tbody.innerHTML = data.map(item => `
+        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+            <td class="p-3 text-center">${formatDateOnly(item.date)}</td>
+            <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
+            <td class="p-3 text-slate-600">${item.route || '-'}</td>
+            <td class="p-3 text-slate-600">${item.foreman || item.foreman_name || '-'}</td>
+            <td class="p-3 text-emerald-600 font-medium">${item.foreman10pct || item.foreman_cost || '-'}</td>
+            <td class="p-3 text-purple-600">${item.helpers || item.helpers_cost || '-'}</td>
+            <td class="p-3 text-blue-600">${item.drivers || item.drivers_cost || '-'}</td>
+            <td class="p-3 font-bold text-slate-900">${item.total || item.total_amount || '-'}</td>
+            <td class="p-3 text-slate-600">${item.pu || item.pu_payments || '-'}</td>
+            <td class="p-3 text-slate-600">${item.dest || item.destination || '-'}</td>
+            <td class="p-3 text-slate-600">${item.diesel || item.diesel_expense || '-'}</td>
+            <td class="p-3 text-slate-600">${item.hotel || item.hotel_expense || '-'}</td>
+            <td class="p-3 text-center space-x-1">
+                <button type="button" onclick="openEditJobModal('${item.id}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button type="button" onclick="deleteJob('${item.id}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
 }
 window.renderTable = renderTable;
 
-
 function resetDateFilter() {
-    // 1. استخدام المعرفات الصحيحة لحقول التواريخ الموجودة في الـ HTML
     const startInput = document.getElementById('ledgerFromDate');
     const endInput = document.getElementById('ledgerToDate');
     
     if (startInput) startInput.value = '';
     if (endInput) endInput.value = '';
     
-    // 2. إعادة تعيين البيانات المفلترة لتشمل كافة السجلات الأصلية
     window.currentFilteredJobs = window.masterJobs || [];
-
-    // 3. استدعاء دالة الفلترة والعرض الصحيحة لتحديث الجدول والعداد والملخص
     if (typeof filterLedgerTable === 'function') {
         filterLedgerTable();
     }
@@ -502,10 +366,7 @@ window.resetDateFilter = resetDateFilter;
 // 4. USERS & PERMISSIONS MANAGEMENT
 // ==========================================
 async function fetchUsersFromSupabase() {
-    if (typeof supabaseClient === 'undefined') {
-        console.error("Supabase client is not initialized.");
-        return;
-    }
+    if (typeof supabaseClient === 'undefined') return;
 
     try {
         const { data, error } = await supabaseClient
@@ -513,18 +374,12 @@ async function fetchUsersFromSupabase() {
             .select('*')
             .order('id', { ascending: true });
 
-        if (error) {
-            console.error("Error fetching users:", error.message);
-            return;
-        }
+        if (error) return;
 
         window.systemUsers = data || [];
-        
-        if (typeof renderUsers === 'function') {
-            renderUsers();
-        }
+        if (typeof renderUsers === 'function') renderUsers();
     } catch (err) {
-        console.error("Unexpected error fetching users:", err);
+        console.error("Error fetching users:", err);
     }
 }
 window.fetchUsersFromSupabase = fetchUsersFromSupabase;
@@ -609,9 +464,7 @@ function renderUsers() {
     html += `</div>`;
     container.innerHTML = html;
     
-    if (typeof checkPermissions === 'function') {
-        checkPermissions();
-    }
+    if (typeof checkPermissions === 'function') checkPermissions();
 }
 window.renderUsers = renderUsers;
 
@@ -625,25 +478,16 @@ async function openAddUserModal() {
     const userRole = prompt("Enter user role (Admin, Member, Viewer):", "Member");
     if (!userRole) return;
 
-    if (typeof supabaseClient === 'undefined') {
-        alert("Supabase client is not initialized.");
-        return;
-    }
+    if (typeof supabaseClient === 'undefined') return;
 
     try {
         const { error } = await supabaseClient
             .from('user_role')
             .insert([{ name: userName, email: userEmail, role: userRole, status: 'enable' }]);
 
-        if (error) {
-            console.error("Error adding user:", error.message);
-            alert("Failed to add user: " + error.message);
-            return;
-        }
-
-        fetchUsersFromSupabase();
+        if (!error) fetchUsersFromSupabase();
     } catch (err) {
-        console.error("Unexpected error:", err);
+        console.error("Error adding user:", err);
     }
 }
 window.openAddUserModal = openAddUserModal;
@@ -660,14 +504,9 @@ async function updateUserField(userId, fieldName, fieldValue) {
             .update(updateData)
             .eq('id', userId);
 
-        if (error) {
-            console.error(`Error updating ${fieldName}:`, error.message);
-            alert("Failed to update.");
-        } else {
-            fetchUsersFromSupabase();
-        }
+        if (!error) fetchUsersFromSupabase();
     } catch (err) {
-        console.error("Unexpected error:", err);
+        console.error("Error updating user field:", err);
     }
 }
 window.updateUserField = updateUserField;
@@ -688,74 +527,39 @@ function checkPermissions() {
     } else if (currentRole === 'Member') {
         if (addJobBtn) addJobBtn.style.display = 'flex';
         if (addUserBtn) addUserBtn.style.display = 'flex';
-        editButtons.forEach(btn => {
-            btn.style.display = 'none';
-            btn.disabled = true;
-        });
-        deleteButtons.forEach(btn => {
-            btn.style.display = 'none';
-            btn.disabled = true;
-        });
+        editButtons.forEach(btn => { btn.style.display = 'none'; btn.disabled = true; });
+        deleteButtons.forEach(btn => { btn.style.display = 'none'; btn.disabled = true; });
     } else {
         if (addJobBtn) addJobBtn.style.display = 'flex';
         if (addUserBtn) addUserBtn.style.display = 'flex';
-        editButtons.forEach(btn => {
-            btn.style.display = 'flex';
-            btn.disabled = false;
-        });
-        deleteButtons.forEach(btn => {
-            btn.style.display = 'flex';
-            btn.disabled = false;
-        });
+        editButtons.forEach(btn => { btn.style.display = 'flex'; btn.disabled = false; });
+        deleteButtons.forEach(btn => { btn.style.display = 'flex'; btn.disabled = false; });
     }
 }
 window.checkPermissions = checkPermissions;
 
 // ==========================================
-// 5. PAYMENT ROWS MANAGEMENT
+// 5. PAYMENT & EXPENSES MANAGEMENT
 // ==========================================
-
 function formatToUSDate(dateInput) {
     if (!dateInput) return '';
-    
     let dateObj = new Date(dateInput);
     if (isNaN(dateObj.getTime())) {
-        // إذا كان التاريخ مُدخل كنص (مثل DD/MM/YYYY أو YYYY-MM-DD)
         const str = String(dateInput).trim();
-        let parts = [];
-        if (str.includes('/')) {
-            parts = str.split('/');
-        } else if (str.includes('-')) {
-            parts = str.split('-');
-        }
-        
+        let parts = str.includes('/') ? str.split('/') : (str.includes('-') ? str.split('-') : []);
         if (parts.length === 3) {
-            // محاولة التعرف على الترتيب الحالي وتعديله
-            let year, month, day;
-            if (parts[0].length === 4) {
-                // صيغة YYYY-MM-DD
-                year = parts[0];
-                month = parts[1];
-                day = parts[2];
-            } else {
-                // صيغة DD/MM/YYYY الافتراضية
-                day = parts[0];
-                month = parts[1];
-                year = parts[2];
-            }
+            let year = parts[0].length === 4 ? parts[0] : parts[2];
+            let month = parts[0].length === 4 ? parts[1] : parts[1];
+            let day = parts[0].length === 4 ? parts[2] : parts[0];
             dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
         } else {
             return str;
         }
     }
-    
     if (isNaN(dateObj.getTime())) return dateInput;
-
     const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
     const dd = String(dateObj.getDate()).padStart(2, '0');
     const yyyy = dateObj.getFullYear();
-
-    // الصيغة الأمريكية: الشهر / اليوم / السنة
     return `${mm}/${dd}/${yyyy}`;
 }
 window.formatToUSDate = formatToUSDate;
@@ -784,8 +588,6 @@ function addCustomExpenseField() {
     container.appendChild(div);
 }
 
-
-// دالة إضافة حقل الديزل (ضعها هنا بجانبها)
 window.addDieselEntryField = function(amount = '', method = 'Unspecified') {
     const container = document.getElementById('diesel-entries-container');
     if (!container) return;
@@ -809,39 +611,26 @@ window.addDieselEntryField = function(amount = '', method = 'Unspecified') {
     container.appendChild(div);
 };
 
-// دالة لتجميع جميع حقول الديزل ودمجها بنسق واحد (مثل: 999 Unspecified + 8 Zelle)
 function collectDieselDataForSave() {
     const rows = document.querySelectorAll('#diesel-entries-container .diesel-row');
     let entries = [];
-
     rows.forEach(row => {
         const amount = row.querySelector('.diesel-amount').value.trim();
         const method = row.querySelector('.diesel-method').value;
-        
-        if (amount) {
-            entries.push(`${amount} ${method}`);
-        }
+        if (amount) entries.push(`${amount} ${method}`);
     });
-
     return entries.join(' + ');
 }
 window.collectDieselDataForSave = collectDieselDataForSave;
 
-
 function addPaymentRow(containerId, amount = '', method = '') {
     let container = document.getElementById(containerId);
-    if (!container && containerId === 'destContextContainer') {
-        container = document.getElementById('destContainer');
-    }
-    if (!container && containerId === 'destContainer') {
-        container = document.getElementById('destContextContainer');
-    }
-    
+    if (!container && containerId === 'destContextContainer') container = document.getElementById('destContainer');
+    if (!container && containerId === 'destContainer') container = document.getElementById('destContextContainer');
     if (!container) return;
 
     const safeMethod = (method || '').toString().toLowerCase();
     const safeAmount = (amount || '').toString();
-
     const rowId = 'payment_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
     const rowDiv = document.createElement('div');
     rowDiv.className = 'flex items-center gap-2 payment-row mt-2';
@@ -878,25 +667,15 @@ window.removePaymentRow = removePaymentRow;
 function extractPaymentsFromContainer(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return '-';
-
     const rows = container.querySelectorAll('.payment-row');
     const paymentsList = [];
-
     rows.forEach(row => {
         const amountInput = row.querySelector('.payment-amount');
         const methodSelect = row.querySelector('.payment-method');
-
         const amount = amountInput ? amountInput.value.trim() : '';
-        let method = methodSelect ? methodSelect.value.trim() : '';
-        if (!method) {
-            method = 'unspecified';
-        }
-
-        if (amount) {
-            paymentsList.push(`${amount} ${method}`);
-        }
+        let method = methodSelect ? methodSelect.value.trim() : 'unspecified';
+        if (amount) paymentsList.push(`${amount} ${method}`);
     });
-
     return paymentsList.length > 0 ? paymentsList.join(', ') : '-';
 }
 window.extractPaymentsFromContainer = extractPaymentsFromContainer;
@@ -907,27 +686,14 @@ window.extractPaymentsFromContainer = extractPaymentsFromContainer;
 function parseHelpersDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
     let strVal = String(val).trim();
-    
     const helpersMap = {
-        100: "1/2 (100)",
-        200: "1 (200)",
-        250: "1-1 1/2 (250)",
-        400: "2 (400)",
-        500: "2-1 1/2 (500)",
-        600: "3 (600)",
-        750: "3-1 1/2 (750)",
-        800: "4 (800)",
-        1000: "4-1 1/2 (1000)"
+        100: "1/2 (100)", 200: "1 (200)", 250: "1-1 1/2 (250)", 400: "2 (400)",
+        500: "2-1 1/2 (500)", 600: "3 (600)", 750: "3-1 1/2 (750)", 800: "4 (800)", 1000: "4-1 1/2 (1000)"
     };
-
     let num = 0;
     let match = strVal.match(/\(([\d.]+)\)/);
-    if (match) {
-        num = parseFloat(match[1]);
-    } else {
-        num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
-    }
-
+    if (match) num = parseFloat(match[1]);
+    else num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
     if (isNaN(num) || num === 0) return strVal.includes('(') ? strVal : '-';
     return helpersMap[num] || strVal;
 }
@@ -936,32 +702,20 @@ function parseDriversDisplay(val) {
     if (!val || val === '-' || val === '0' || val === 0) return '-';
     let strVal = String(val).trim();
     if (strVal.includes('(')) return strVal;
-    
     let num = parseFloat(strVal.replace(/[^0-9.]/g, ''));
     if (isNaN(num) || num === 0) return strVal;
-
     const driversMap = {
-        112.5: "1/2 (112.5)",
-        225: "1 (225)",
-        250: "1-1 1/2 (250)",
-        337: "1-1 1/2 (337)",
-        400: "2 (400)",
-        450: "2 (450)",
-        500: "2-1 1/2 (500)",
-        675: "2-1 1/2 (675)"
+        112.5: "1/2 (112.5)", 225: "1 (225)", 250: "1-1 1/2 (250)", 337: "1-1 1/2 (337)",
+        400: "2 (400)", 450: "2 (450)", 500: "2-1 1/2 (500)", 675: "2-1 1/2 (675)"
     };
-
     return driversMap[num] || strVal;
 }
-
 window.parseHelpersDisplay = parseHelpersDisplay;
 window.parseDriversDisplay = parseDriversDisplay;
 
 // ==========================================
-// 7. MODAL & SUPABASE CRUD ACTIONS
+// 7. MODALS & CRUD ACTIONS
 // ==========================================
-
-// تعريف دالة فتح النافذة المفقودة
 function openAddModal(isEdit = false) {
     const modal = document.getElementById('jobModal');
     if (modal) {
@@ -974,16 +728,11 @@ function openAddModal(isEdit = false) {
     const jobForm = document.getElementById('jobForm');
     if (!isEdit) {
         if (jobForm) jobForm.reset();
-        
-        // تفريغ حاوية الديزل وإضافة حقل فارغ عند الإضافة الجديدة
         const dieselContainer = document.getElementById('diesel-entries-container');
         if (dieselContainer) {
             dieselContainer.innerHTML = '';
-            if (typeof window.addDieselEntryField === 'function') {
-                window.addDieselEntryField('', 'Unspecified');
-            }
+            if (typeof window.addDieselEntryField === 'function') window.addDieselEntryField('', 'Unspecified');
         }
-        
         const puContainer = document.getElementById('puContainer');
         const destContainer = document.getElementById('destContainer') || document.getElementById('destContextContainer');
         if (puContainer) puContainer.innerHTML = '';
@@ -992,16 +741,10 @@ function openAddModal(isEdit = false) {
 }
 window.openAddModal = openAddModal;
 
-
 function openEditJobModal(jobIdOrNo) {
     const jobs = window.masterJobs || [];
     const targetId = String(jobIdOrNo).trim();
-    
-    const job = jobs.find(j => {
-        const jId = String(j.id || '').trim();
-        const jNo = String(j.jobNo || j.job_no || '').trim();
-        return jId === targetId || jNo.toLowerCase() === targetId.toLowerCase();
-    });
+    const job = jobs.find(j => String(j.id || '').trim() === targetId || String(j.jobNo || j.job_no || '').trim().toLowerCase() === targetId.toLowerCase());
 
     if (!job) {
         alert("Job record not found!");
@@ -1009,13 +752,9 @@ function openEditJobModal(jobIdOrNo) {
     }
 
     openAddModal(true);
-
     const jobForm = document.getElementById('jobForm');
-    if (jobForm) {
-        jobForm.setAttribute('data-edit-id', job.id || '');
-    }
+    if (jobForm) jobForm.setAttribute('data-edit-id', job.id || '');
 
-    // دوال مساعدة للتعبئة
     const setVal = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.value = val !== undefined && val !== null ? val : '';
@@ -1026,46 +765,38 @@ function openEditJobModal(jobIdOrNo) {
         try {
             const cleanDate = dateStr.split(' ')[0];
             const parts = cleanDate.split('/');
-            if (parts.length === 3) {
-                return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
-            }
+            if (parts.length === 3) return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
             return cleanDate;
         } catch (e) {
             return dateStr;
         }
     }
 
-    // تعبئة الحقول الأساسية
     setVal('jobDate', formatDateForInput(job.date || job.job_date || ''));
     setVal('jobNo', job.jobNo || job.job_no || job.job_number || '');
 
-    // معالجة المسار (Route)
     let routeStr = job.route || job.route_to || '';
-    let fromVal = '';
-    let toVal = '';
-
+    let fromVal = '', toVal = '';
     if (routeStr.includes('→')) {
         const parts = routeStr.split('→');
-        fromVal = parts[0] ? parts[0].trim() : '';
-        toVal = parts[1] ? parts[1].trim() : '';
+        fromVal = parts[0]?.trim() || '';
+        toVal = parts[1]?.trim() || '';
     } else if (routeStr.includes('->')) {
         const parts = routeStr.split('->');
-        fromVal = parts[0] ? parts[0].trim() : '';
-        toVal = parts[1] ? parts[1].trim() : '';
+        fromVal = parts[0]?.trim() || '';
+        toVal = parts[1]?.trim() || '';
     } else {
-        fromVal = routeStr; 
+        fromVal = routeStr;
     }
 
-    const fromEl = document.getElementById('routeFrom') || document.querySelector('[name="routeFrom"]') || document.querySelector('[name="route_from"]');
+    const fromEl = document.getElementById('routeFrom') || document.querySelector('[name="routeFrom"]');
     if (fromEl) fromEl.value = fromVal;
-
-    const toEl = document.getElementById('routeTo') || document.querySelector('[name="routeTo"]') || document.querySelector('[name="route_to"]');
+    const toEl = document.getElementById('routeTo') || document.querySelector('[name="routeTo"]');
     if (toEl) toEl.value = toVal;
 
-    setVal('jobForeman', job.foreman || job.foreman_name || job.foremanName || '');
-    setVal('jobTotal', job.total || job.total_amount || job.totalAmount || '');
+    setVal('jobForeman', job.foreman || job.foreman_name || '');
+    setVal('jobTotal', job.total || job.total_amount || '');
 
-    // تعبئة القوائم المنسدلة
     const setSelectVal = (selectId, val) => {
         const select = document.getElementById(selectId);
         if (select && val) {
@@ -1081,32 +812,20 @@ function openEditJobModal(jobIdOrNo) {
     setSelectVal('helpersCost', job.helpers || job.helpers_cost);
     setSelectVal('driversCost', job.drivers || job.drivers_cost);
 
-    // ==========================================
-    // 🌟 معالجة حقول الديزل المتعددة (النظام الديناميكي الجديد)
-    // ==========================================
     const dieselContainer = document.getElementById('diesel-entries-container');
-    if (dieselContainer) dieselContainer.innerHTML = ''; // تفريغ الحاوية لمنع التكرار
-
+    if (dieselContainer) dieselContainer.innerHTML = '';
     const dieselValStr = String(job.diesel || job.diesel_expense || '');
     if (dieselValStr && dieselValStr !== '-') {
-        const dieselEntries = dieselValStr.split('+');
-        dieselEntries.forEach(entry => {
+        dieselValStr.split('+').forEach(entry => {
             const parts = entry.trim().split(' ');
             const amt = parts[0] !== '-' ? parts[0] : '';
             const meth = parts.slice(1).join(' ') || 'Unspecified';
-            
-            if (typeof window.addDieselEntryField === 'function') {
-                window.addDieselEntryField(amt, meth);
-            }
+            if (typeof window.addDieselEntryField === 'function') window.addDieselEntryField(amt, meth);
         });
     } else {
-        if (typeof window.addDieselEntryField === 'function') {
-            window.addDieselEntryField('', 'Unspecified');
-        }
+        if (typeof window.addDieselEntryField === 'function') window.addDieselEntryField('', 'Unspecified');
     }
-    // ==========================================
 
-    // معالجة الفندق (Hotel) إذا كان بنظام مفرد
     const hotelValStr = String(job.hotel || job.hotel_expense || '');
     const hotelParts = hotelValStr.split(' ');
     setVal('hotelAmount', hotelParts[0] !== '-' ? hotelParts[0] : '');
@@ -1115,32 +834,23 @@ function openEditJobModal(jobIdOrNo) {
         if (hotelMethod) hotelMethod.value = hotelParts[1];
     }
 
-    // معالجة المدفوعات الأخرى
     if (typeof populatePaymentContainer === 'function') {
         if (job.pu || job.pu_payments) populatePaymentContainer('puContainer', job.pu || job.pu_payments);
         if (job.destination || job.dest || job.destination_payments) populatePaymentContainer('destContainer', job.destination || job.dest || job.destination_payments);
     }
 }
 window.openEditJobModal = openEditJobModal;
+
 function populatePaymentContainer(containerId, paymentStr) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    
     container.innerHTML = '';
+    if (!paymentStr || paymentStr === '-' || paymentStr === '---' || paymentStr.toUpperCase() === 'NULL') return;
 
-    if (!paymentStr || paymentStr === '-' || paymentStr === '---' || paymentStr.toUpperCase() === 'NULL') {
-        return;
-    }
-
-    const payments = String(paymentStr).split(',');
-
-    payments.forEach(p => {
+    String(paymentStr).split(',').forEach(p => {
         let trimmed = p.trim();
         if (!trimmed) return;
-
-        let amount = '';
-        let method = 'Unspecified';
-
+        let amount = '', method = 'Unspecified';
         const parts = trimmed.split(' ');
         if (parts.length >= 2) {
             amount = parts[0];
@@ -1149,10 +859,7 @@ function populatePaymentContainer(containerId, paymentStr) {
             amount = trimmed;
             method = 'unspecified';
         }
-
-        if (typeof addPaymentRow === 'function') {
-            addPaymentRow(containerId, amount, method);
-        }
+        if (typeof addPaymentRow === 'function') addPaymentRow(containerId, amount, method);
     });
 }
 window.populatePaymentContainer = populatePaymentContainer;
@@ -1160,15 +867,10 @@ window.populatePaymentContainer = populatePaymentContainer;
 function parseAndSumDiesel(val) {
     if (!val || val === '-' || val === '0' || val === 0) return 0;
     if (typeof val === 'number') return val;
-
     let strVal = String(val).trim();
     if (strVal.includes('+')) {
-        let parts = strVal.split('+');
         let sum = 0;
-        parts.forEach(part => {
-            let cleanNum = parseFloat(part.replace(/[^0-9.]/g, '')) || 0;
-            sum += cleanNum;
-        });
+        strVal.split('+').forEach(part => { sum += parseFloat(part.replace(/[^0-9.]/g, '')) || 0; });
         return sum;
     }
     return parseFloat(strVal.replace(/[^0-9.]/g, '')) || 0;
@@ -1197,23 +899,19 @@ async function saveJob(event) {
 
     const jobNoVal = jobNoInput.value.trim();
     const dateInput = document.getElementById('jobDate');
-    const dateRaw = dateInput ? dateInput.value : '';
-    let dateVal = dateRaw ? formatJobDateToSlash(dateRaw) : '';
+    const dateVal = dateInput && dateInput.value ? formatJobDateToSlash(dateInput.value) : '';
 
     let totalRaw = document.getElementById('jobTotal') ? document.getElementById('jobTotal').value.trim() : '-';
     let totalFormatted = totalRaw && totalRaw !== '-' && !totalRaw.startsWith('$') ? '$' + totalRaw : totalRaw;
-
     let totalNum = parseFloat(String(totalFormatted).replace(/[^0-9.]/g, '')) || 0;
     let foreman10Val = totalNum > 0 ? (totalNum * 0.1).toFixed(0) : '0';
 
     const routeValue = `${document.getElementById('routeFrom').value.trim()} → ${document.getElementById('routeTo').value.trim()}`;
-
     const puFormatted = extractPaymentsFromContainer('puContainer');
     const destFormatted = extractPaymentsFromContainer('destContainer');
-
-   const dieselCollected = typeof collectDieselDataForSave === 'function' ? collectDieselDataForSave() : '';
+    const dieselCollected = typeof collectDieselDataForSave === 'function' ? collectDieselDataForSave() : '';
     const dieselFormatted = dieselCollected ? dieselCollected : '-';
-    
+
     const hotelRaw = document.getElementById('hotelAmount') ? document.getElementById('hotelAmount').value.trim() : '';
     const hotelMethod = document.getElementById('hotelMethod') ? document.getElementById('hotelMethod').value : 'Cash';
     const hotelFormatted = hotelRaw ? `${hotelRaw} ${hotelMethod}` : '-';
@@ -1231,8 +929,8 @@ async function saveJob(event) {
         foreman_name: document.getElementById('jobForeman') ? document.getElementById('jobForeman').value.trim() : '',
         foreman_cost: foreman10Val,
         total_amount: totalFormatted,
-        helpers_cost: helpersFormatted,        
-        drivers_cost: driversFormatted,        
+        helpers_cost: helpersFormatted,
+        drivers_cost: driversFormatted,
         pu_payments: puFormatted,
         destination_payments: destFormatted,
         diesel_expense: dieselFormatted,
@@ -1249,91 +947,50 @@ async function saveJob(event) {
     const editRecordId = jobForm ? jobForm.getAttribute('data-edit-id') : null;
 
     let error = null;
-
     if (editRecordId && editRecordId !== '') {
-        const { error: updateError } = await window.supabaseClient
-            .from('jobs_report')
-            .update(supabasePayload)
-            .eq('id', editRecordId);
+        const { error: updateError } = await window.supabaseClient.from('jobs_report').update(supabasePayload).eq('id', editRecordId);
         error = updateError;
     } else {
-        const { error: insertError } = await window.supabaseClient
-            .from('jobs_report')
-            .insert([supabasePayload]);
+        const { error: insertError } = await window.supabaseClient.from('jobs_report').insert([supabasePayload]);
         error = insertError;
     }
 
     if (error) {
-        console.error('Error saving to Supabase:', error.message);
         alert('Supabase Error: ' + error.message);
     } else {
         if (jobForm) jobForm.removeAttribute('data-edit-id');
         closeModal();
-        if (typeof initMasterJobsData === 'function') {
-            initMasterJobsData();
-        }
+        if (typeof initMasterJobsData === 'function') initMasterJobsData();
         alert('Record saved successfully!');
     }
 }
 window.saveJob = saveJob;
 
-/**
- * MovePro - Recycle Bin & Management Operations (Fully Integrated for All Tables)
- */
-
-// --- Render Recycle Bin (Fetches deleted records from all 3 tables) ---
+// ==========================================
+// 8. RECYCLE BIN & TRASH MANAGEMENT
+// ==========================================
 async function renderTrashBin() {
     try {
-        if (!window.supabaseClient) {
-            console.error("Supabase client not initialized!");
-            return;
-        }
-
+        if (!window.supabaseClient) return;
         let allDeletedRecords = [];
 
-        // 1. جلب الوظائف المحذوفة من jobs_report
-        const { data: jobsData, error: jobsError } = await window.supabaseClient
-            .from('jobs_report')
-            .select('*')
-            .eq('is_deleted', true)
-            .order('id', { ascending: false });
+        const { data: jobsData } = await window.supabaseClient.from('jobs_report').select('*').eq('is_deleted', true).order('id', { ascending: false });
+        if (jobsData) allDeletedRecords.push(...jobsData.map(item => ({ ...item, tableName: 'jobs_report', displayType: 'Job' })));
 
-        if (!jobsError && jobsData) {
-            allDeletedRecords.push(...jobsData.map(item => ({ ...item, tableName: 'jobs_report', displayType: 'Job' })));
-        }
+        const { data: truckData } = await window.supabaseClient.from('truck_rental').select('*').eq('is_deleted', true).order('id', { ascending: false });
+        if (truckData) allDeletedRecords.push(...truckData.map(item => ({ ...item, tableName: 'truck_rental', displayType: 'Truck Rental' })));
 
-        // 2. جلب إيجارات الشاحنات المحذوفة من truck_rental
-        const { data: truckData, error: truckError } = await window.supabaseClient
-            .from('truck_rental')
-            .select('*')
-            .eq('is_deleted', true)
-            .order('id', { ascending: false });
-
-        if (!truckError && truckData) {
-            allDeletedRecords.push(...truckData.map(item => ({ ...item, tableName: 'truck_rental', displayType: 'Truck Rental' })));
-        }
-
-        // 3. جلب مصروفات المستودع المحذوفة من warehouse_expenses
-        const { data: warehouseData, error: warehouseError } = await window.supabaseClient
-            .from('warehouse_expenses')
-            .select('*')
-            .eq('is_deleted', true)
-            .order('id', { ascending: false });
-
-        if (!warehouseError && warehouseData) {
-            allDeletedRecords.push(...warehouseData.map(item => ({ ...item, tableName: 'warehouse_expenses', displayType: 'Warehouse' })));
-        }
+        const { data: warehouseData } = await window.supabaseClient.from('warehouse_expenses').select('*').eq('is_deleted', true).order('id', { ascending: false });
+        if (warehouseData) allDeletedRecords.push(...warehouseData.map(item => ({ ...item, tableName: 'warehouse_expenses', displayType: 'Warehouse' })));
 
         const trashContainer = document.getElementById('trashTableBody') || document.getElementById('trashContainer');
         if (!trashContainer) return;
 
         if (allDeletedRecords.length === 0) {
-            // تم ضبط الـ colspan ليصبح 9 ليغطي جميع أعمدة الجدول بشكل صحيح
             trashContainer.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">Trash bin is empty</td></tr>`;
             return;
         }
 
-        // بناء صفوف الجدول للسلة لتتطابق مع أعمدة الـ HTML الـ 9
         trashContainer.innerHTML = allDeletedRecords.map(item => {
             const identifier = item.job_no || item.services || item.truck_name || item.id || '-';
             const details = item.route || item.details || item.notes || '-';
@@ -1363,35 +1020,18 @@ async function renderTrashBin() {
                 </tr>
             `;
         }).join('');
-
     } catch (e) {
         console.error("Error in renderTrashBin:", e);
     }
 }
 window.renderTrashBin = renderTrashBin;
 
-
-
-
-
-
-
-// --- Soft Delete (Move to Recycle Bin) ---
 async function softDeleteRecord(tableName, recordId) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
+    if (!window.supabaseClient) return false;
 
-    if (!window.supabaseClient) {
-        alert("Supabase client not initialized!");
-        return false;
-    }
-
-    const { error } = await window.supabaseClient
-        .from(tableName)
-        .update({ is_deleted: true })
-        .eq('id', recordId);
-
+    const { error } = await window.supabaseClient.from(tableName).update({ is_deleted: true }).eq('id', recordId);
     if (error) {
-        console.error(`Error moving record from ${tableName} to Recycle Bin:`, error.message);
         alert('Failed to move record to recycle bin: ' + error.message);
         return false;
     } else {
@@ -1404,19 +1044,10 @@ async function softDeleteRecord(tableName, recordId) {
 }
 window.softDeleteRecord = softDeleteRecord;
 
-
-// --- Restore Record from Trash ---
 async function restoreRecord(tableName, recordId) {
     if (!window.supabaseClient) return;
-
-    const { error } = await window.supabaseClient
-        .from(tableName)
-        .update({ is_deleted: false })
-        .eq('id', recordId);
-
-    if (error) {
-        alert('Failed to restore record: ' + error.message);
-    } else {
+    const { error } = await window.supabaseClient.from(tableName).update({ is_deleted: false }).eq('id', recordId);
+    if (!error) {
         alert('Record restored successfully!');
         if (typeof renderTrashBin === 'function') renderTrashBin();
         if (typeof initMasterJobsData === 'function') initMasterJobsData();
@@ -1426,141 +1057,78 @@ async function restoreRecord(tableName, recordId) {
 }
 window.restoreRecord = restoreRecord;
 
-
-// --- Permanent Delete from Trash ---
 async function permanentDeleteRecord(tableName, recordId) {
-    if (!confirm('Are you sure you want to permanently delete this record? This action cannot be undone.')) return;
+    if (!confirm('Are you sure you want to permanently delete this record?')) return;
     if (!window.supabaseClient) return;
-
-    const { error } = await window.supabaseClient
-        .from(tableName)
-        .delete()
-        .eq('id', recordId);
-
-    if (error) {
-        alert('Failed to delete permanently: ' + error.message);
-    } else {
+    const { error } = await window.supabaseClient.from(tableName).delete().eq('id', recordId);
+    if (!error) {
         alert('Record permanently deleted!');
         if (typeof renderTrashBin === 'function') renderTrashBin();
     }
 }
 window.permanentDeleteRecord = permanentDeleteRecord;
 
-
-// --- Specific Section Delete Handlers (Truck Rental & Warehouse) ---
-
-
 async function deleteWarehouseRecord(id) {
     const success = await softDeleteRecord('warehouse_expenses', id);
     if (success) {
-        // 1. إعادة جلب البيانات (التي تستبعد السجلات المحذوفة)
-        if (typeof loadWarehouseRecords === 'function') {
-            await loadWarehouseRecords();
-        }
-        // 2. إعادة رسم جدول المستودع لتحديث الواجهة وإخفاء السجل المحذوف فوراً
-        if (typeof renderWarehouseTable === 'function') {
-            renderWarehouseTable();
-        }
-        // 3. تحديث سلة المحذوفات
-        if (typeof renderTrashBin === 'function') {
-            renderTrashBin();
-        }
+        if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
+        if (typeof renderWarehouseTable === 'function') renderWarehouseTable();
+        if (typeof renderTrashBin === 'function') renderTrashBin();
     }
 }
 window.deleteWarehouseRecord = deleteWarehouseRecord;
 
-// --- Backward Compatibility Wrappers (لضمان عدم توقف الدوال القديمة) ---
-async function deleteJob(jobIdOrNo) {
-    await softDeleteRecord('jobs_report', jobIdOrNo);
-}
+async function deleteJob(jobIdOrNo) { await softDeleteRecord('jobs_report', jobIdOrNo); }
 window.deleteJob = deleteJob;
-
-async function restoreJob(jobId) {
-    await restoreRecord('jobs_report', jobId);
-}
+async function restoreJob(jobId) { await restoreRecord('jobs_report', jobId); }
 window.restoreJob = restoreJob;
-
-async function permanentDeleteJob(jobId) {
-    await permanentDeleteRecord('jobs_report', jobId);
-}
+async function permanentDeleteJob(jobId) { await permanentDeleteRecord('jobs_report', jobId); }
 window.permanentDeleteJob = permanentDeleteJob;
 
-
 // ==========================================
-// DASHBOARD ANALYTICS & CHARTS (محدث وآمن)
+// 9. DASHBOARD ANALYTICS & CHARTS
 // ==========================================
 function updateDashboardAnalytics() {
     try {
         if (!window.masterJobs || window.masterJobs.length === 0) {
-            console.warn("No masterJobs available for dashboard analytics. Resetting UI.");
-            
-            // تصفير واجهة لوحة التحكم لتجنب بقاء بيانات وهمية
             const revEl = document.getElementById('dashTotalRevenue');
             if (revEl) revEl.innerText = '$0';
-
             const jobsTextEl = document.getElementById('dashCompletedJobsText');
             if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-fast mr-1"></i>0 Active Dispatches`;
-
             const avgEl = document.getElementById('dashAvgJobValue');
             if (avgEl) avgEl.innerText = '$0';
-
             const dieselEl = document.getElementById('dashTotalDiesel');
             if (dieselEl) dieselEl.innerText = '$0';
-
-            const topCorridorsContainer = document.getElementById('topCorridorsContainer');
-            if (topCorridorsContainer) topCorridorsContainer.innerHTML = '';
-
-            // تصفير المخططات البيانية إن وجدت
-            if (typeof renderDashboardCharts === 'function') {
-                renderDashboardCharts([0,0,0,0,0,0,0,0,0,0,0,0], { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 });
-            }
             return;
         }
 
-        let totalRev = 0;
-        let totalDieselCost = 0;
-        let validJobsCount = 0; 
+        let totalRev = 0, totalDieselCost = 0, validJobsCount = 0;
         const routeRevenueMap = {};
-        
         const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 };
         const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
         window.masterJobs.forEach(job => {
-            if (job.jobNo && (job.jobNo.toLowerCase().includes('cancel') || job.jobNo.toLowerCase().includes('none'))) {
-                return; 
-            }
-
-            validJobsCount++; 
+            if (job.jobNo && (job.jobNo.toLowerCase().includes('cancel') || job.jobNo.toLowerCase().includes('none'))) return;
+            validJobsCount++;
             totalDieselCost += typeof parseAndSumDiesel === 'function' ? parseAndSumDiesel(job.diesel || job.diesel_expense) : 0;
 
-            let amt = 0;
-            const rawTotal = job.total || job.total_amount || 0;
-            if (rawTotal) {
-                amt = parseFloat(String(rawTotal).replace(/[^0-9.]/g, '')) || 0;
-            }
+            let amt = parseFloat(String(job.total || job.total_amount || 0).replace(/[^0-9.]/g, '')) || 0;
             totalRev += amt;
 
-            if (job.month && job.month >= 1 && job.month <= 12) {
-                monthlyRev[job.month - 1] += amt;
-            }
+            if (job.month && job.month >= 1 && job.month <= 12) monthlyRev[job.month - 1] += amt;
             
             const jobRoute = job.route || (job.route_from && job.route_to ? `${job.route_from} → ${job.route_to}` : '');
-            if (jobRoute) {
-                routeRevenueMap[jobRoute] = (routeRevenueMap[jobRoute] || 0) + amt;
-            }
+            if (jobRoute) routeRevenueMap[jobRoute] = (routeRevenueMap[jobRoute] || 0) + amt;
 
             let puStr = String(job.pu || job.pu_payments || '').trim();
             let destStr = String(job.dest || job.destination_payments || '').trim();
-
             let hasPu = puStr !== '' && puStr !== '-' && puStr !== '---';
             let hasDest = destStr !== '' && destStr !== '-' && destStr !== '---';
 
             if (typeof assignPaymentMethodRevenue === 'function') {
-                if (hasPu && !hasDest) {
-                    assignPaymentMethodRevenue(puStr, amt, paymentMethodMap);
-                } else if (!hasPu && hasDest) {
-                    assignPaymentMethodRevenue(destStr, amt, paymentMethodMap);
-                } else if (hasPu && hasDest) {
+                if (hasPu && !hasDest) assignPaymentMethodRevenue(puStr, amt, paymentMethodMap);
+                else if (!hasPu && hasDest) assignPaymentMethodRevenue(destStr, amt, paymentMethodMap);
+                else if (hasPu && hasDest) {
                     assignPaymentMethodRevenue(puStr, amt / 2, paymentMethodMap);
                     assignPaymentMethodRevenue(destStr, amt / 2, paymentMethodMap);
                 } else {
@@ -1600,9 +1168,7 @@ function updateDashboardAnalytics() {
             `).join('');
         }
 
-        if (typeof renderDashboardCharts === 'function') {
-            renderDashboardCharts(monthlyRev, paymentMethodMap);
-        }
+        if (typeof renderDashboardCharts === 'function') renderDashboardCharts(monthlyRev, paymentMethodMap);
     } catch (e) {
         console.error("Error updating dashboard analytics:", e);
     }
@@ -1613,57 +1179,28 @@ function renderDashboardCharts(monthlyData, paymentData) {
     try {
         const ctxRevenue = document.getElementById('revenueChart');
         if (ctxRevenue && typeof Chart !== 'undefined') {
-            if (window.revenueChartInstance) {
-                window.revenueChartInstance.destroy();
-            }
+            if (window.revenueChartInstance) window.revenueChartInstance.destroy();
             window.revenueChartInstance = new Chart(ctxRevenue, {
                 type: 'bar',
                 data: {
                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: [{
-                        label: 'Monthly Revenue ($)',
-                        data: monthlyData,
-                        backgroundColor: 'rgba(5, 150, 105, 0.85)',
-                        borderRadius: 8,
-                        hoverBackgroundColor: '#047857'
-                    }]
+                    datasets: [{ label: 'Monthly Revenue ($)', data: monthlyData, backgroundColor: 'rgba(5, 150, 105, 0.85)', borderRadius: 8 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
         }
 
         const ctxPayment = document.getElementById('paymentMixChart');
         if (ctxPayment && typeof Chart !== 'undefined') {
-            if (window.paymentMixChartInstance) {
-                window.paymentMixChartInstance.destroy();
-            }
+            if (window.paymentMixChartInstance) window.paymentMixChartInstance.destroy();
             const paymentColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b', '#cbd5e1'];
-
             window.paymentMixChartInstance = new Chart(ctxPayment, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(paymentData),
-                    datasets: [{
-                        data: Object.values(paymentData),
-                        backgroundColor: paymentColors,
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
+                    datasets: [{ data: Object.values(paymentData), backgroundColor: paymentColors, borderWidth: 2, borderColor: '#ffffff' }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
-                    cutout: '65%'
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }, cutout: '65%' }
             });
         }
     } catch (e) {
@@ -1671,16 +1208,15 @@ function renderDashboardCharts(monthlyData, paymentData) {
     }
 }
 window.renderDashboardCharts = renderDashboardCharts;
+
 // ==========================================
-// 9. NAVIGATION & TABS
+// 10. NAVIGATION & TABS
 // ==========================================
 function switchTab(tabName) {
     try {
         const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
-        
         tabs.forEach(t => {
-            const possibleElIds = [`tab-${t}`, `${t}-view`, t];
-            possibleElIds.forEach(id => {
+            [`tab-${t}`, `${t}-view`, t].forEach(id => {
                 const tabEl = document.getElementById(id);
                 if (tabEl) {
                     tabEl.classList.add('hidden');
@@ -1688,36 +1224,28 @@ function switchTab(tabName) {
                     tabEl.style.setProperty('display', 'none', 'important');
                 }
             });
-
-            const possibleNavIds = [`nav-${t}`, `nav-${t}-btn`, t];
-            possibleNavIds.forEach(id => {
+            [`nav-${t}`, `nav-${t}-btn`, t].forEach(id => {
                 const navEl = document.getElementById(id);
-                if (navEl) {
-                    navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
-                }
+                if (navEl) navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
             });
         });
 
-        const targetIds = [`tab-${tabName}`, `${tabName}-view`, tabName];
         let activeTab = null;
-        for (let id of targetIds) {
+        for (let id of [`tab-${tabName}`, `${tabName}-view`, tabName]) {
             activeTab = document.getElementById(id);
             if (activeTab) break;
         }
-
         if (activeTab) {
             activeTab.classList.remove('hidden');
             activeTab.classList.add('flex');
             activeTab.style.setProperty('display', 'flex', 'important');
         }
 
-        const navTargetIds = [`nav-${tabName}`, `nav-${tabName}-btn`, tabName];
         let activeNav = null;
-        for (let id of navTargetIds) {
+        for (let id of [`nav-${tabName}`, `nav-${tabName}-btn`, tabName]) {
             activeNav = document.getElementById(id);
             if (activeNav) break;
         }
-
         if (activeNav) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
@@ -1725,34 +1253,18 @@ function switchTab(tabName) {
         if (tabName === 'dashboard') {
             setTimeout(updateDashboardAnalytics, 50);
         } else if (tabName === 'jobs') {
-            if (typeof filterLedgerTable === 'function') {
-                filterLedgerTable();
-            } else if (typeof filterJobsTable === 'function') {
-                filterJobsTable();
-            }
-        } else if (tabName === 'rentals') {
-            if (typeof renderPrivateTruckRentalTab === 'function') {
-                renderPrivateTruckRentalTab();
-            } else {
-                console.warn("renderPrivateTruckRentalTab function is not loaded yet.");
-            }
-        } else if (tabName === 'warehouse') {
-            if (typeof renderWarehouseTab === 'function') {
-                renderWarehouseTab();
-            } else {
-                console.warn("renderWarehouseTab function is not loaded yet.");
-            }
+            if (typeof filterLedgerTable === 'function') filterLedgerTable();
+        } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
+            renderPrivateTruckRentalTab();
+        } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
+            renderWarehouseTab();
         } else if (tabName === 'reports') {
             if (typeof renderReportsTab === 'function') renderReportsTab();
-            
-            // 🌟🌟 الإضافة المطلوبة هنا لضمان ظهور البيانات والجداول الإضافية فور فتح التقارير
-            if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
-                window.renderSummaryPageWithDetailedTables();
-            }
-        } else if (tabName === 'users') {
-            if (typeof renderUsers === 'function') renderUsers();
-        } else if (tabName === 'trash') {
-            if (typeof renderTrashBin === 'function') renderTrashBin();
+            if (typeof window.renderSummaryPageWithDetailedTables === 'function') window.renderSummaryPageWithDetailedTables();
+        } else if (tabName === 'users' && typeof renderUsers === 'function') {
+            renderUsers();
+        } else if (tabName === 'trash' && typeof renderTrashBin === 'function') {
+            renderTrashBin();
         }
     } catch (e) {
         console.error("Error switching tab:", e);
@@ -1761,58 +1273,32 @@ function switchTab(tabName) {
 window.switchTab = switchTab;
 
 // ==========================================
-// 10. INITIALIZATION
+// 11. INITIALIZATION ON DOM LOADED
 // ==========================================
 window.addEventListener('DOMContentLoaded', async () => {
     try {
         window.currentUserRole = 'Admin';
-        
         if (typeof checkPermissions === 'function') checkPermissions();
         if (typeof renderUsers === 'function') renderUsers();
-        
-        const promises = [];
-        
-        if (typeof initMasterJobsData === 'function') {
-            promises.push(initMasterJobsData());
-        }
-        if (typeof loadPrivateTruckRentals === 'function') {
-            promises.push(loadPrivateTruckRentals());
-        }
-        if (typeof loadWarehouseData === 'function') {
-            promises.push(loadWarehouseData());
-        }
 
-        // انتظار اكتمال جلب كافة البيانات من السحابة (جلب الـ 396 سجلاً)
+        const promises = [];
+        if (typeof initMasterJobsData === 'function') promises.push(initMasterJobsData());
+        if (typeof loadPrivateTruckRentals === 'function') promises.push(loadPrivateTruckRentals());
+        if (typeof loadWarehouseData === 'function') promises.push(loadWarehouseData());
+
         await Promise.all(promises);
 
-        // تفعيل الفلترة فقط إذا كان المستخدم قد أدخل تواريخ مسبقاً
         const fromInput = document.getElementById('ledgerFromDate');
         const toInput = document.getElementById('ledgerToDate');
         if ((fromInput && fromInput.value) || (toInput && toInput.value)) {
-            if (typeof filterLedgerTable === 'function') {
-                filterLedgerTable();
-            }
+            if (typeof filterLedgerTable === 'function') filterLedgerTable();
         }
 
-        // تحديث اللوحة والرسوم البيانية فور توفر البيانات
-        if (typeof updateDashboardAnalytics === 'function') {
-            updateDashboardAnalytics();
-        }
-
-        // تحديث بيانات التقرير التنفيذي
-        if (typeof generateSummaryReportData === 'function') {
-            generateSummaryReportData();
-        }
-
-        // استدعاء دالة تفاصيل جداول التقارير لضمان تعبئتها فوراً
-        if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
-            window.renderSummaryPageWithDetailedTables();
-        }
-
-        if (typeof switchTab === 'function') {
-            switchTab('dashboard');
-        }
+        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
+        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
+        if (typeof window.renderSummaryPageWithDetailedTables === 'function') window.renderSummaryPageWithDetailedTables();
+        if (typeof switchTab === 'function') switchTab('dashboard');
     } catch (error) {
-        console.error("Initialization error on DOMContentLoaded:", error);
+        console.error("Initialization error:", error);
     }
 });
