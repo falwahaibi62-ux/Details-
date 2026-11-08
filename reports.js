@@ -79,44 +79,105 @@ function applyReportFilters() {
 }
 window.applyReportFilters = applyReportFilters;
 
-function getFilteredJobsData() {
-    const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
+function generateDetailedReportData() {
+    const detailedContainer = document.getElementById('detailedReportContainer') || document.getElementById('summaryReportView'); 
+    // (استبدل 'detailedReportContainer' بالمعرف المخصص لعرض محتوى وضع الdetailed لديك)
     
-    // 🌟 استخدام معرفات خاصة بصفحة التقارير لتجنب التداخل مع أي صفحة أخرى
-    const startDateVal = document.getElementById('reportStartDate')?.value || document.getElementById('filterStartDate')?.value;
-    const endDateVal = document.getElementById('reportEndDate')?.value || document.getElementById('filterEndDate')?.value;
-    const jobTypeVal = document.getElementById('reportJobType')?.value || document.getElementById('filterJobType')?.value || 'all';
-    const paymentVal = document.getElementById('reportPaymentType')?.value || document.getElementById('filterPaymentType')?.value || 'all';
+    if (!detailedContainer) return;
 
-    let startDate = startDateVal ? parseLocalDate(startDateVal) : null;
-    let endDate = endDateVal ? parseLocalDate(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59, 999);
+    const filteredJobs = typeof getFilteredReportJobsData === 'function' ? getFilteredReportJobsData() : [];
+    
+    // جلب بيانات الشاحنات والمستودع مع تطبيق فلتر التواريخ عليها أيضاً
+    const truckRentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_truck_rentals')) || [];
+    const warehouseRecords = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
 
-    return jobs.filter(j => {
-        if (j.date) {
-            const jDate = parseLocalDate(j.date);
-            if (!jDate) return false;
-            if (startDate && jDate < startDate) return false;
-            if (endDate && jDate > endDate) return false;
-        } else if (startDate || endDate) {
-            return false;
-        }
+    // بناء HTML الجداول الثلاثة التفصيلية
+    detailedContainer.innerHTML = `
+        <!-- 1. الجدول التفصيلي للـ CRUD (Operations Ledger) -->
+        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-6">
+            <h3 class="font-bold text-slate-900 text-base">Detailed Operations Ledger (CRUD)</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] border-b">
+                            <th class="p-2">Date</th>
+                            <th class="p-2">Job No</th>
+                            <th class="p-2">Route</th>
+                            <th class="p-2">Foreman</th>
+                            <th class="p-2">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredJobs.map(j => `
+                            <tr class="border-b hover:bg-slate-50">
+                                <td class="p-2">${j.date || '-'}</td>
+                                <td class="p-2">${j.jobNo || j.job_no || '-'}</td>
+                                <td class="p-2">${j.route || '-'}</td>
+                                <td class="p-2">${j.foremanName || '-'}</td>
+                                <td class="p-2 font-bold text-emerald-600">$${j.total || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-        if (jobTypeVal === 'delivery') {
-            if (!j.jobNo || !String(j.jobNo).toLowerCase().includes('delivery')) return false;
-        } else if (jobTypeVal === 'moving') {
-            if (j.jobNo && String(j.jobNo).toLowerCase().includes('delivery')) return false;
-        }
+        <!-- 2. الجدول التفصيلي لـ Private Truck Rental -->
+        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-6">
+            <h3 class="font-bold text-slate-900 text-base">Detailed Private Truck Rental</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] border-b">
+                            <th class="p-2">Date</th>
+                            <th class="p-2">Truck Details</th>
+                            <th class="p-2">Rental Days</th>
+                            <th class="p-2">Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${truckRentals.map(t => `
+                            <tr class="border-b hover:bg-slate-50">
+                                <td class="p-2">${t.date || '-'}</td>
+                                <td class="p-2">${t.truckName || t.details || '-'}</td>
+                                <td class="p-2">${t.days || 1} Days</td>
+                                <td class="p-2 font-bold text-purple-600">$${t.amount || t.cost || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-        if (paymentVal !== 'all') {
-            const paymentField = String(j.paymentType || j.pu || j.dest || j.pu_payments || j.destination_payments || '').toLowerCase();
-            if (!paymentField.includes(paymentVal.toLowerCase())) return false;
-        }
-
-        return true;
-    });
+        <!-- 3. الجدول التفصيلي لـ Warehouse and Others -->
+        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3">
+            <h3 class="font-bold text-slate-900 text-base">Detailed Warehouse & Others</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] border-b">
+                            <th class="p-2">Date</th>
+                            <th class="p-2">Item / Description</th>
+                            <th class="p-2">Payment Type</th>
+                            <th class="p-2">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${warehouseRecords.map(w => `
+                            <tr class="border-b hover:bg-slate-50">
+                                <td class="p-2">${w.date || '-'}</td>
+                                <td class="p-2">${w.item || w.description || '-'}</td>
+                                <td class="p-2">${w.paymentType || w.paymentMethod || '-'}</td>
+                                <td class="p-2 font-bold text-blue-600">$${w.amount || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
 }
-window.getFilteredJobsData = getFilteredJobsData;
+window.generateDetailedReportData = generateDetailedReportData;
 
 
 function processPaymentString(str, map) {
