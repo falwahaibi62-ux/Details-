@@ -936,11 +936,30 @@ function updateSummaryReportView(filteredData) {
 window.updateSummaryReportView = updateSummaryReportView;
 
 function generateSummaryReportData() {
-    const filteredData = typeof getFilteredJobsData === 'function' ? getFilteredJobsData() : (window.masterJobs || []);
+    // جلب البيانات مع فحص احتياطي إذا كانت فارغة لجلبها مباشرة من النافذة العامة
+    let filteredData = typeof getFilteredJobsData === 'function' ? getFilteredJobsData() : [];
     
-    // تحديث العرض الرئيسي للملخص
-    updateSummaryReportView(filteredData);
+    if (!filteredData || filteredData.length === 0) {
+        filteredData = window.masterJobs || window.currentFilteredJobs || [];
+    }
 
+    // إذا كانت البيانات فارغة تماماً ولم يتم تحميلها بعد، نحاول إعادة جلبها إذا توفرت دالة التهيئة
+    if (filteredData.length === 0 && typeof initMasterJobsData === 'function') {
+        initMasterJobsData().then(() => {
+            const reloadedData = typeof getFilteredJobsData === 'function' ? getFilteredJobsData() : (window.masterJobs || []);
+            updateSummaryReportView(reloadedData);
+            populateSummaryTables(reloadedData);
+        });
+        return;
+    }
+    
+    updateSummaryReportView(filteredData);
+    populateSummaryTables(filteredData);
+}
+window.generateSummaryReportData = generateSummaryReportData;
+
+// دالة مساعدة لتعبئة جداول الملخص لتنظيم الكود
+function populateSummaryTables(filteredData) {
     // تعبئة جدول طرق الدفع
     const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
     if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
@@ -955,7 +974,6 @@ function generateSummaryReportData() {
         warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
     }
 }
-window.generateSummaryReportData = generateSummaryReportData;
 
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
