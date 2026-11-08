@@ -92,105 +92,129 @@ function applyReportFilters() {
 window.applyReportFilters = applyReportFilters;
 
 function generateDetailedReportData() {
-    const detailedContainer = document.getElementById('detailedReportContainer') || document.getElementById('summaryReportView'); 
-    // (استبدل 'detailedReportContainer' بالمعرف المخصص لعرض محتوى وضع الdetailed لديك)
-    
-    if (!detailedContainer) return;
+    const container = document.getElementById('detailedReportBody') || document.getElementById('detailedReportContainer') || document.getElementById('detailedReportView');
+    if (!container) return;
 
-    const filteredJobs = typeof getFilteredReportJobsData === 'function' ? getFilteredReportJobsData() : [];
-    
-    // جلب بيانات الشاحنات والمستودع مع تطبيق فلتر التواريخ عليها أيضاً
-    const truckRentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_truck_rentals')) || [];
-    const warehouseRecords = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+    const jobs = (typeof getFilteredJobsData === 'function') ? getFilteredJobsData() : (window.masterJobs || []);
+    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || JSON.parse(localStorage.getItem('movepro_truck_rentals')) || [];
+    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
 
-    // بناء HTML الجداول الثلاثة التفصيلية
-    detailedContainer.innerHTML = `
-        <!-- 1. الجدول التفصيلي للـ CRUD (Operations Ledger) -->
-        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-6">
-            <h3 class="font-bold text-slate-900 text-base">Detailed Operations Ledger (CRUD)</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] border-b">
-                            <th class="p-2">Date</th>
-                            <th class="p-2">Job No</th>
-                            <th class="p-2">Route</th>
-                            <th class="p-2">Foreman</th>
-                            <th class="p-2">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${filteredJobs.map(j => `
-                            <tr class="border-b hover:bg-slate-50">
-                                <td class="p-2">${j.date || '-'}</td>
-                                <td class="p-2">${j.jobNo || j.job_no || '-'}</td>
-                                <td class="p-2">${j.route || '-'}</td>
-                                <td class="p-2">${j.foremanName || '-'}</td>
-                                <td class="p-2 font-bold text-emerald-600">$${j.total || 0}</td>
+    const jobsRows = jobs.map(j => {
+        const totalNum = parseCurrency(j.total || j.total_amount);
+        const foreman10 = totalNum > 0 ? '$' + formatCleanNumber(totalNum * 0.1) : '-';
+        const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers || j.helpers_cost) : (j.helpers || j.helpers_cost || '-');
+        const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers || j.drivers_cost) : (j.drivers || j.drivers_cost || '-');
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
+                <td class="p-2.5 border-r text-center">${formatDateOnly(j.date)}</td>                
+                <td class="p-2.5 border-r text-center font-bold">${j.jobNo || j.job_no || '-'}</td>
+                <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[0] : (j.route_from || '-')}</td>
+                <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[1] || '-' : (j.route_to || '-')}</td>
+                <td class="p-2.5 border-r text-center">${j.foreman || j.foreman_name || '-'}</td>
+                <td class="p-2.5 border-r text-center font-bold text-emerald-700">${foreman10}</td>
+                <td class="p-2.5 border-r text-center">${helpersDisplay}</td>
+                <td class="p-2.5 border-r text-center">${driversDisplay}</td>
+                <td class="p-2.5 border-r text-center font-bold text-amber-700 bg-amber-50/20">${j.diesel || j.diesel_expense || '-'}</td>
+                <td class="p-2.5 border-r text-center font-bold text-blue-700 bg-blue-50/20">${j.hotel || j.hotel_expense || '-'}</td>
+                <td class="p-2.5 border-r text-center font-bold text-emerald-600">$${formatCleanNumber(j.total || j.total_amount)}</td>
+                <td class="p-2.5 border-r text-center">${j.pu || j.pu_payments || '-'}</td>
+                <td class="p-2.5 text-center">${j.dest || j.destination || j.destination_payments || '-'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const rentalRows = rentals.map(r => `
+        <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
+            <td class="p-2 border-r text-center">${r.date || '-'}</td>
+            <td class="p-2 border-r text-center font-bold">${r.truckNo || r.truck_no || r.truckName || r.name || '-'}</td>
+            <td class="p-2 border-r text-center">${r.days || '0'} Days</td>
+            <td class="p-2 border-r text-center font-bold text-amber-600">$${formatCleanNumber(r.amount)}</td>
+            <td class="p-2 text-center uppercase font-semibold">${r.paymentType || r.paymentMethod || 'Cash'}</td>
+        </tr>
+    `).join('');
+
+    const warehouseRows = warehouse.map(w => `
+        <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
+            <td class="p-2 border-r text-center">${w.date || '-'}</td>
+            <td class="p-2 border-r text-center font-bold">${w.description || w.item || w.name || '-'}</td>
+            <td class="p-2 border-r text-center font-bold text-purple-600">$${formatCleanNumber(w.amount)}</td>
+            <td class="p-2 text-center uppercase font-semibold">${w.paymentType || w.paymentMethod || 'Cash'}</td>
+        </tr>
+    `).join('');
+
+    container.innerHTML = `
+        <div class="space-y-8">
+            <div>
+                <h3 class="text-sm font-bold text-slate-800 mb-3">1. Dispatch Operations Detailed Records</h3>
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
+                                <th class="p-2.5 border-r text-center">Date</th>
+                                <th class="p-2.5 border-r text-center">Job No</th>
+                                <th class="p-2.5 border-r text-center">From State</th>
+                                <th class="p-2.5 border-r text-center">To State</th>
+                                <th class="p-2.5 border-r text-center">Foreman Name</th>
+                                <th class="p-2.5 border-r text-center">Foreman 10%</th>
+                                <th class="p-2.5 border-r text-center">Helpers</th>
+                                <th class="p-2.5 border-r text-center">Drivers</th>
+                                <th class="p-2.5 border-r text-center text-amber-700">Diesel</th>
+                                <th class="p-2.5 border-r text-center text-blue-700">Hotel</th>
+                                <th class="p-2.5 border-r text-center">Total After Deposit</th>
+                                <th class="p-2.5 border-r text-center">P.U Payment</th>
+                                <th class="p-2.5 text-center">Dest Balance</th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${jobsRows || '<tr><td colspan="13" class="p-4 text-center text-slate-400">No dispatch records found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
 
-        <!-- 2. الجدول التفصيلي لـ Private Truck Rental -->
-        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-6">
-            <h3 class="font-bold text-slate-900 text-base">Detailed Private Truck Rental</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] border-b">
-                            <th class="p-2">Date</th>
-                            <th class="p-2">Truck Details</th>
-                            <th class="p-2">Rental Days</th>
-                            <th class="p-2">Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${truckRentals.map(t => `
-                            <tr class="border-b hover:bg-slate-50">
-                                <td class="p-2">${t.date || '-'}</td>
-                                <td class="p-2">${t.truckName || t.details || '-'}</td>
-                                <td class="p-2">${t.days || 1} Days</td>
-                                <td class="p-2 font-bold text-purple-600">$${t.amount || t.cost || 0}</td>
+            <div>
+                <h3 class="text-sm font-bold text-slate-800 mb-3">2. Private Truck Rental Detailed Records</h3>
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
+                                <th class="p-2 border-r text-center">Date</th>
+                                <th class="p-2 border-r text-center">Truck / Description</th>
+                                <th class="p-2 border-r text-center">Days</th>
+                                <th class="p-2 border-r text-center">Amount</th>
+                                <th class="p-2 text-center">Payment Method</th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${rentalRows || '<tr><td colspan="5" class="p-4 text-center text-slate-400">No rental records found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
 
-        <!-- 3. الجدول التفصيلي لـ Warehouse and Others -->
-        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3">
-            <h3 class="font-bold text-slate-900 text-base">Detailed Warehouse & Others</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] border-b">
-                            <th class="p-2">Date</th>
-                            <th class="p-2">Item / Description</th>
-                            <th class="p-2">Payment Type</th>
-                            <th class="p-2">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${warehouseRecords.map(w => `
-                            <tr class="border-b hover:bg-slate-50">
-                                <td class="p-2">${w.date || '-'}</td>
-                                <td class="p-2">${w.item || w.description || '-'}</td>
-                                <td class="p-2">${w.paymentType || w.paymentMethod || '-'}</td>
-                                <td class="p-2 font-bold text-blue-600">$${w.amount || 0}</td>
+            <div>
+                <h3 class="text-sm font-bold text-slate-800 mb-3">3. Warehouse & Expenses Detailed Records</h3>
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
+                                <th class="p-2 border-r text-center">Date</th>
+                                <th class="p-2 border-r text-center">Description / Item</th>
+                                <th class="p-2 border-r text-center">Amount</th>
+                                <th class="p-2 text-center">Payment Method</th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${warehouseRows || '<tr><td colspan="4" class="p-4 text-center text-slate-400">No warehouse records found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     `;
 }
 window.generateDetailedReportData = generateDetailedReportData;
-
 
 function processPaymentString(str, map) {
     if (!str) return;
@@ -906,20 +930,19 @@ window.updateSummaryReportView = updateSummaryReportView;
 
 function generateSummaryReportData() {
     const filteredData = typeof getFilteredJobsData === 'function' ? getFilteredJobsData() : (window.masterJobs || []);
-    updateSummaryReportView(filteredData);
     
-    if (typeof generateDetailedReportData === 'function') {
-        generateDetailedReportData();
-    }
+    // تحديث العرض الرئيسي للملخص
+    updateSummaryReportView(filteredData);
 
-    // 1. تحديث وتعبئة جدول ملخص طرق الدفع
+    // تعبئة جدول طرق الدفع
     const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
     if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
-        summaryPaymentContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML(filteredData);
+        const paymentRes = window.generatePaymentMethodSummaryTableHTML(filteredData);
+        summaryPaymentContainer.innerHTML = typeof paymentRes === 'object' ? paymentRes.html : paymentRes;
     }
 
-    // 2. تحديث وتعبئة جدول المستودع مع تمرير البيانات المفلترة ليتفاعل مع التواريخ
-    const warehouseContainer = document.getElementById('warehousePDFSummarySection');
+    // تعبئة جدول المستودع
+    const warehouseContainer = document.getElementById('warehousePDFSummarySection') || document.getElementById('warehouseSummaryContainer');
     if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
         const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
         warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
@@ -1224,6 +1247,9 @@ window.exportOfficialPDF = exportOfficialPDF;
 
 function renderReportsTab() {
     switchReportMode('summary');
+    if (typeof generateSummaryReportData === 'function') {
+        generateSummaryReportData();
+    }
 }
 window.renderReportsTab = renderReportsTab;
 
