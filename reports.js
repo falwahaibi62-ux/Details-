@@ -1227,6 +1227,25 @@ function renderReportsTab() {
 }
 window.renderReportsTab = renderReportsTab;
 
+// تعريف دالة تصفية التقارير لمنع توقف ملف reports.js
+function resetReportFilters() {
+    const startInput = document.getElementById('reportStartDate') || document.getElementById('ledgerFromDate');
+    const endInput = document.getElementById('reportEndDate') || document.getElementById('ledgerToDate');
+    
+    if (startInput) startInput.value = '';
+    if (endInput) endInput.value = '';
+    
+    window.currentFilteredJobs = window.masterJobs || [];
+    
+    if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
+        window.renderSummaryPageWithDetailedTables();
+    } else if (typeof filterLedgerTable === 'function') {
+        filterLedgerTable();
+    }
+}
+window.resetReportFilters = resetReportFilters;
+
+
 // 🌟 تسجيل وتصدير جميع الدوال للاستخدام المباشر
 window.switchReportMode = switchReportMode;
 window.parseCurrency = parseCurrency;
