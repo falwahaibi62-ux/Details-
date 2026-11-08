@@ -2,6 +2,18 @@
  * MovePro - Financial & Operations Reports Module (Production Ready)
  */
 
+
+function filterReportData() {
+    if (typeof applyReportFilters === 'function') {
+        applyReportFilters();
+    } else if (typeof generateSummaryReportData === 'function') {
+        generateSummaryReportData();
+    }
+}
+window.filterReportData = filterReportData;
+
+
+
 function switchReportMode(mode) {
     const summaryView = document.getElementById('summaryReportView');
     const detailedView = document.getElementById('detailedReportView');
