@@ -3,6 +3,13 @@
  */
 
 
+// حماية ضمان توفر دالة جلب البيانات عالمياً
+if (typeof window.getFilteredJobsData !== 'function') {
+    window.getFilteredJobsData = function() {
+        return window.currentFilteredJobs || window.masterJobs || [];
+    };
+}
+
 function filterReportData() {
     if (typeof applyReportFilters === 'function') {
         applyReportFilters();
