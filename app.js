@@ -1030,15 +1030,27 @@ async function softDeleteRecord(tableName, recordId) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
     if (!window.supabaseClient) return false;
 
-    const { error } = await window.supabaseClient.from(tableName).update({ is_deleted: true }).eq('id', recordId);
+    // تحويل الـ ID إلى رقم أو نص حسب نوعه في قاعدة البيانات
+    const cleanId = !isNaN(recordId) ? Number(recordId) : recordId;
+
+    const { error } = await window.supabaseClient
+        .from(tableName)
+        .update({ is_deleted: true })
+        .eq('id', cleanId);
+
     if (error) {
         alert('Failed to move record to recycle bin: ' + error.message);
         return false;
     } else {
         alert('Record moved to Recycle Bin successfully!');
-        if (typeof initMasterJobsData === 'function') initMasterJobsData();
-        if (typeof loadWarehouseRecords === 'function') loadWarehouseRecords();
-        if (typeof loadTruckRentals === 'function') loadTruckRentals();
+        
+        // تحديث البيانات المحلية وإعادة الرسم فوراً
+        if (typeof initMasterJobsData === 'function') await initMasterJobsData();
+        if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
+        if (typeof loadTruckRentals === 'function') await loadTruckRentals();
+        if (typeof renderTrashBin === 'function') await renderTrashBin();
+        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
+        
         return true;
     }
 }
