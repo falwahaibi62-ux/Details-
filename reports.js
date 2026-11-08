@@ -41,67 +41,14 @@ function formatCleanNumber(val) {
 }
 window.formatCleanNumber = formatCleanNumber;
 
-function applyReportFilters() {
-    const summaryView = document.getElementById('summaryReportView');
-    if (!summaryView) {
-        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
-        return;
-    }
-    
-    const isSummaryActive = !summaryView.classList.contains('hidden');
-    if (isSummaryActive) {
-        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
-    } else {
-        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
-    }
-}
-window.applyReportFilters = applyReportFilters;
-
-function filterReportData() {
-    applyReportFilters();
-}
-window.filterReportData = filterReportData;
-
-function resetReportFilters() {
-    const startEl = document.getElementById('filterStartDate');
-    const endEl = document.getElementById('filterEndDate');
-    const typeEl = document.getElementById('filterJobType');
-    const payEl = document.getElementById('filterPaymentType');
-
-    if (startEl) startEl.value = '';
-    if (endEl) endEl.value = '';
-    if (typeEl) typeEl.value = 'all';
-    if (payEl) payEl.value = 'all';
-
-    applyReportFilters();
-}
-window.resetReportFilters = resetReportFilters;
-
-function parseLocalDate(dateStr) {
-    if (!dateStr) return null;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        const [y, m, d] = dateStr.split('-').map(Number);
-        return new Date(y, m - 1, d, 0, 0, 0, 0);
-    }
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-        const m = parseInt(parts[0], 10);
-        const d = parseInt(parts[1], 10);
-        const y = parseInt(parts[2], 10);
-        return new Date(y, m - 1, d, 0, 0, 0, 0);
-    }
-    const dObj = new Date(dateStr);
-    return isNaN(dObj.getTime()) ? null : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate());
-}
-window.parseLocalDate = parseLocalDate;
-
 function getFilteredJobsData() {
     const jobs = window.masterJobs || JSON.parse(localStorage.getItem('movePro_masterJobs')) || [];
     
-    const startDateVal = document.getElementById('filterStartDate')?.value;
-    const endDateVal = document.getElementById('filterEndDate')?.value;
-    const jobTypeVal = document.getElementById('filterJobType')?.value || 'all';
-    const paymentVal = document.getElementById('filterPaymentType')?.value || 'all';
+    // 🌟 استخدام معرفات خاصة بصفحة التقارير لتجنب التداخل مع أي صفحة أخرى
+    const startDateVal = document.getElementById('reportStartDate')?.value || document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('reportEndDate')?.value || document.getElementById('filterEndDate')?.value;
+    const jobTypeVal = document.getElementById('reportJobType')?.value || document.getElementById('filterJobType')?.value || 'all';
+    const paymentVal = document.getElementById('reportPaymentType')?.value || document.getElementById('filterPaymentType')?.value || 'all';
 
     let startDate = startDateVal ? parseLocalDate(startDateVal) : null;
     let endDate = endDateVal ? parseLocalDate(endDateVal) : null;
@@ -132,6 +79,7 @@ function getFilteredJobsData() {
     });
 }
 window.getFilteredJobsData = getFilteredJobsData;
+
 
 function processPaymentString(str, map) {
     if (!str) return;
