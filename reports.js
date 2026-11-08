@@ -675,6 +675,16 @@ function generateOfficialSummaryTable(filteredJobs) {
 }
 window.generateOfficialSummaryTable = generateOfficialSummaryTable;
 
+
+function formatDateOnly(dateStr) {
+    const d = parseLocalDate(dateStr);
+    if (!d) return dateStr || '-';
+    return d.toISOString().split('T')[0];
+}
+window.formatDateOnly = formatDateOnly;
+
+
+
 function generateDetailedReportData() {
     const container = document.getElementById('detailedReportBody');
     if (!container) return;
