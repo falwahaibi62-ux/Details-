@@ -60,7 +60,9 @@ window.filterLedgerTable = filterLedgerTable;
 function getFilteredJobsData() {
     return window.currentFilteredJobs || window.masterJobs || [];
 }
-window.getFilteredJobsData = getFilteredJobsData;if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
+window.getFilteredJobsData = getFilteredJobsData;
+
+if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
 if (typeof window.currentLoggedInUser === 'undefined') window.currentLoggedInUser = null;
 if (typeof window.revenueChartInstance === 'undefined') window.revenueChartInstance = null;
 if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChartInstance = null;
@@ -180,29 +182,6 @@ function filterLedgerTable() {
 }
 window.filterLedgerTable = filterLedgerTable;
 
-// دالة مساعدة عامة لتوفير البيانات المفلترة لجدول الملخص
-function getFilteredJobsData() {
-    return window.currentFilteredJobs || window.masterJobs || [];
-}
-window.getFilteredJobsData = getFilteredJobsData;
-
-// دالة مساعدة عامة لتوفير البيانات المفلترة لجدول الملخص
-function getFilteredJobsData() {
-    return window.currentFilteredJobs || window.masterJobs || [];
-}
-window.getFilteredJobsData = getFilteredJobsData;
-
-// دالة مساعدة لتوفير البيانات المفلترة لجدول الملخص
-function getFilteredJobsData() {
-    return window.currentFilteredJobs || window.masterJobs || [];
-}
-window.getFilteredJobsData = getFilteredJobsData;
-
-// دالة مساعدة لتوفير البيانات المفلترة لجدول الملخص
-function getFilteredJobsData() {
-    return window.currentFilteredJobs || window.masterJobs || [];
-}
-window.getFilteredJobsData = getFilteredJobsData;
 
 function formatDateOnly(dateStr) {
     if (!dateStr) return '-';
