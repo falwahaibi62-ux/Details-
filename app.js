@@ -1,3 +1,4 @@
+// 1. دالة الفلترة مستقلة بذاتها
 function filterLedgerTable() {
     const fromInput = document.getElementById('ledgerFromDate');
     const toInput = document.getElementById('ledgerToDate');
@@ -6,6 +7,29 @@ function filterLedgerTable() {
     const toVal = toInput ? toInput.value : '';
 
     let data = window.masterJobs || [];
+
+    // منطق الفلترة هنا...
+    
+    window.currentFilteredJobs = data;
+
+    if (typeof renderTable === 'function') {
+        renderTable(data);
+    }
+
+    const summaryContainer = document.getElementById('paymentSummaryContainer');
+    if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
+        summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
+    }
+}
+window.filterLedgerTable = filterLedgerTable;
+
+
+// 2. دالة جلب البيانات المفلترة مستقلة وفي النطاق العام خارج أي دالة أخرى
+function getFilteredJobsData() {
+    return window.currentFilteredJobs || window.masterJobs || [];
+}
+window.getFilteredJobsData = getFilteredJobsData;
+
 
     function parseDateObj(dateStr, isEndDate = false) {
         if (!dateStr) return null;
@@ -57,10 +81,7 @@ function filterLedgerTable() {
 }
 window.filterLedgerTable = filterLedgerTable;
 
-function getFilteredJobsData() {
-    return window.currentFilteredJobs || window.masterJobs || [];
-}
-window.getFilteredJobsData = getFilteredJobsData;
+
 
 if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
 if (typeof window.currentLoggedInUser === 'undefined') window.currentLoggedInUser = null;
