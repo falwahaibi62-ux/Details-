@@ -989,18 +989,37 @@ window.generateSummaryReportData = generateSummaryReportData;
 
 
 function populateSummaryTables(filteredData) {
-    const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
+ 
+    const revenueContainer = document.getElementById('monthlyRevenueContainer');
+    if (revenueContainer && typeof window.generateMonthlyRevenueTableHTML === 'function') {
+        const revenueResult = window.generateMonthlyRevenueTableHTML(filteredData);
+        revenueContainer.innerHTML = typeof revenueResult === 'object' ? revenueResult.html : revenueResult;
+    }
+    
+    
+    
+        const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
     if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
         const paymentRes = window.generatePaymentMethodSummaryTableHTML(filteredData);
         summaryPaymentContainer.innerHTML = typeof paymentRes === 'object' ? paymentRes.html : paymentRes;
     }
 
+    // 2. الملخص العام للعمليات والتشغيل
+    const summaryContainer = document.getElementById('summaryReportContainer');
+    if (summaryContainer && typeof window.generateOfficialSummaryHTML === 'function') {
+        summaryContainer.innerHTML = window.generateOfficialSummaryHTML(filteredData);
+    }
+
+    // 3. ملخص المستودع والمصاريف الأخرى
     const warehouseContainer = document.getElementById('warehousePDFSummarySection');
     if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
         const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
         warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
     }
 }
+
+  
+
 window.populateSummaryTables = populateSummaryTables;
 
 function exportOfficialPDF() {
