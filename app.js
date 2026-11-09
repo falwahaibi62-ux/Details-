@@ -1350,7 +1350,7 @@ window.renderTable = renderTable;
 // 2. دالة التنقل بين التبويبات (لإصلاح خطأ switchTab is not defined)
 function switchTab(tabName) {
     try {
-        // توحيد الاسم ليتوافق مع الـ ID الحقيقي في الـ HTML وهو tab-trash
+        // توحيد الاسم ليتوافق مع الـ ID الحقيقي في الـ HTML وهو trash
         if (tabName === 'recycle-bin' || tabName === 'trash') {
             tabName = 'trash';
         }
@@ -1376,7 +1376,7 @@ function switchTab(tabName) {
             });
         });
 
-        // إظهار التبويب المطلوب باستخدام الـ ID الصحيح tab-trash
+        // إظهار التبويب المطلوب باستخدام الـ ID الصحيح tab-trash مع استخدام flex
         let activeTab = null;
         const possibleIds = tabName === 'trash' 
             ? ['tab-trash', 'trash', 'trash-view', 'recycle-bin', 'tab-recycle-bin']
@@ -1389,8 +1389,8 @@ function switchTab(tabName) {
 
         if (activeTab) {
             activeTab.classList.remove('hidden');
-            activeTab.classList.add('block');
-            activeTab.style.setProperty('display', 'block', 'important');
+            activeTab.classList.add('flex'); // استخدام flex بدلاً من block لأن العنصر يحتوي على flex-col
+            activeTab.style.setProperty('display', 'flex', 'important');
         }
 
         // تفعيل زر القائمة الجانبية (Recycle Bin)
@@ -1426,7 +1426,6 @@ function switchTab(tabName) {
     }
 }
 window.switchTab = switchTab;
-
 // ==========================================
 // 11. INITIALIZATION ON DOM LOADED
 // ==========================================
