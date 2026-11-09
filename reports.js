@@ -19,15 +19,23 @@ function resetReportFilters() {
     
     window.currentFilteredJobs = window.masterJobs || [];
     
+    // إعادة تعيين الجداول الإجمالية والتفصيلية بالبيانات الكاملة
     if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
         window.renderSummaryPageWithDetailedTables();
     } else if (typeof filterLedgerTable === 'function') {
         filterLedgerTable();
     }
 
-    // 🌟 تحديث وتصفير جدول التصنيفات والأحرف (G, C, P, T, Delivery) ليظهر البيانات الكاملة عند إعادة التعيين
     if (typeof renderMonthlyTableWrapper === 'function') {
         renderMonthlyTableWrapper(window.currentFilteredJobs);
+    }
+    
+    // تحديث العرض الحالي بناءً على الوضع النشط (Summary أو Detailed)
+    const detailedView = document.getElementById('detailedReportView');
+    if (detailedView && !detailedView.classList.contains('hidden')) {
+        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
+    } else {
+        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
     }
 }
 window.resetReportFilters = resetReportFilters;
@@ -1537,30 +1545,27 @@ window.exportOfficialPDF = exportOfficialPDF;
 window.renderReportsTab = renderReportsTab;
 window.filterReportData = filterReportData;
 
-// 🌟 1. الاستماع لإشارة جاهزية البيانات القادمة من Supabase لتحديث الجداول لحظياً ودون تأخير
 document.addEventListener('supabaseDataReady', (e) => {
     const data = e.detail || window.currentFilteredJobs || window.masterJobs || [];
     if (data.length > 0) {
         if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
         if (typeof renderMonthlyTableWrapper === 'function') renderMonthlyTableWrapper(data);
         if (typeof populateSummaryTables === 'function') populateSummaryTables(data);
+        
+        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
     }
 });
 
-// 🌟 2. فحص احتياطي (Fallback) عند تحميل الصفحة إذا كانت البيانات قد جُلبت مسبقاً في الذاكرة
 document.addEventListener('DOMContentLoaded', () => {
     const data = window.currentFilteredJobs || window.masterJobs || [];
     if (data.length > 0) {
         if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
         if (typeof renderMonthlyTableWrapper === 'function') renderMonthlyTableWrapper(data);
         if (typeof populateSummaryTables === 'function') populateSummaryTables(data);
+        
+        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
     }
 });
-
-
-
-
-
 
 
 
