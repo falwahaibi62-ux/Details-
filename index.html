@@ -254,13 +254,13 @@
         <!-- From Date Calendar Filter -->
         <div class="flex items-center space-x-2">
             <label class="text-xs font-bold text-slate-600">From Date:</label>
-            <input type="date" id="ledgerFromDate" onchange="filterLedgerTable()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500">
+            <input type="date" id="ledgerFromDate" onchange="filterJobsTable()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500">
         </div>
         
         <!-- To Date Calendar Filter -->
         <div class="flex items-center space-x-2">
             <label class="text-xs font-bold text-slate-600">To Date:</label>
-            <input type="date" id="ledgerToDate" onchange="filterLedgerTable()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500">
+            <input type="date" id="ledgerToDate" onchange="filterJobsTable()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500">
         </div>
 
         <!-- Reset Filter Button -->
@@ -270,7 +270,6 @@
         
         <div class="text-xs text-slate-500 font-semibold ml-auto" id="filteredCountText">Showing all records</div>
     </div>
-
 
     <!-- جدول الـ CRUD الرئيسي -->
     <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs flex-1 flex flex-col">
@@ -294,7 +293,7 @@
                    </tr>
                 </thead>
                 <tbody id="masterJobsTableBody">
-                    <!-- سيتم حقن الـ 396 سجلاً هنا برمجياً بدقة -->
+                    <!-- سيتم حقن السجلات هنا برمجياً بدقة -->
                 </tbody>
             </table>
         </div>
