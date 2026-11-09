@@ -1537,28 +1537,25 @@ window.exportOfficialPDF = exportOfficialPDF;
 window.renderReportsTab = renderReportsTab;
 window.filterReportData = filterReportData;
 
-// 🌟 الكود الجديد للتأكد من التشغيل التلقائي وتحديث الجداول فوراً عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        const data = window.currentFilteredJobs || window.masterJobs || [];
-        if (data.length > 0) {
-            // 1. تحديث البطاقات العلوية والملخصات
-            if (typeof generateSummaryReportData === 'function') {
-                generateSummaryReportData();
-            }
-            // 2. تحديث جدول الإيرادات والأحرف (G, C, P, T, Delivery)
-            if (typeof renderMonthlyTableWrapper === 'function') {
-                renderMonthlyTableWrapper(data);
-            }
-            // 3. تحديث باقي الجداول الإجمالية
-            if (typeof populateSummaryTables === 'function') {
-                populateSummaryTables(data);
-            }
-        }
-    }, 300);
+// 🌟 1. الاستماع لإشارة جاهزية البيانات القادمة من Supabase لتحديث الجداول لحظياً ودون تأخير
+document.addEventListener('supabaseDataReady', (e) => {
+    const data = e.detail || window.currentFilteredJobs || window.masterJobs || [];
+    if (data.length > 0) {
+        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
+        if (typeof renderMonthlyTableWrapper === 'function') renderMonthlyTableWrapper(data);
+        if (typeof populateSummaryTables === 'function') populateSummaryTables(data);
+    }
 });
 
-
+// 🌟 2. فحص احتياطي (Fallback) عند تحميل الصفحة إذا كانت البيانات قد جُلبت مسبقاً في الذاكرة
+document.addEventListener('DOMContentLoaded', () => {
+    const data = window.currentFilteredJobs || window.masterJobs || [];
+    if (data.length > 0) {
+        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
+        if (typeof renderMonthlyTableWrapper === 'function') renderMonthlyTableWrapper(data);
+        if (typeof populateSummaryTables === 'function') populateSummaryTables(data);
+    }
+});
 
 
 
