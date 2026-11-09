@@ -118,29 +118,45 @@ function renderTable(data) {
 window.renderTable = renderTable;
 
 // ==========================================
-// 3. دالة فلترة جدول العمليات الموحدة والدقيقة
+// 3. CRUD TABLE & FILTERING (الإصدار النهائي المستقر)
 // ==========================================
 function filterJobsTable() {
-    const fromInput = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
-    const toInput = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
+    const startInput = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
+    const endInput = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
 
-    const fromVal = fromInput ? fromInput.value : '';
-    const toVal = toInput ? toInput.value : '';
+    const startValStr = startInput ? startInput.value : ''; 
+    const endValStr = endInput ? endInput.value : '';     
 
     const rawData = window.masterJobs || window.allJobsData || [];
 
-    function parseDateObj(dateStr, isEndDate = false) {
-        if (!dateStr) return null;
+    // إذا كانت حقول التاريخ فارغة تماماً، اعرض جميع الـ 397 سجلاً مباشرة دون فلترة
+    if (!startValStr && !endValStr) {
+        window.currentFilteredJobs = rawData;
+        if (typeof renderTable === 'function') {
+            renderTable(rawData);
+        }
+        const totalMasterCount = rawData.length;
+        const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
+        if (counterEl) {
+            counterEl.innerText = `Showing ${rawData.length} of ${totalMasterCount} records`;
+        }
+        return;
+    }
+
+    // دالة تنظيف ومقارنة التواريخ بدقة لمنع تداخل الشهور
+    function normalizeDateString(dateStr) {
+        if (!dateStr) return '';
         const cleanStr = String(dateStr).trim().split(' ')[0];
-        let y = 0, m = 0, d = 0;
 
         if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
-            const parts = cleanStr.split('-').map(Number);
-            y = parts[0]; m = parts[1]; d = parts[2];
-        } else if (cleanStr.includes('-') || cleanStr.includes('/')) {
-            const separator = cleanStr.includes('-') ? '-' : '/';
+            return cleanStr;
+        }
+
+        if (cleanStr.includes('/') || cleanStr.includes('-')) {
+            const separator = cleanStr.includes('/') ? '/' : '-';
             const parts = cleanStr.split(separator).map(Number);
             if (parts.length === 3) {
+                let y, m, d;
                 if (parts[0] > 1000) {
                     y = parts[0]; m = parts[1]; d = parts[2];
                 } else {
@@ -151,44 +167,35 @@ function filterJobsTable() {
                         m = parts[0]; d = parts[1];
                     }
                 }
+                return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             }
         }
-
-        if (y && m && d) {
-            return isEndDate 
-                ? new Date(y, m - 1, d, 23, 59, 59, 999) 
-                : new Date(y, m - 1, d, 0, 0, 0, 0);
-        }
-
-        const dObj = new Date(dateStr);
-        if (isNaN(dObj.getTime())) return null;
-        return isEndDate 
-            ? new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999) 
-            : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
+        return '';
     }
-
-    const fDate = parseDateObj(fromVal, false);
-    const tDate = parseDateObj(toVal, true);
 
     const filtered = rawData.filter(item => {
         const itemDateStr = item.date || item.created_at;
         if (!itemDateStr) return false;
 
-        const itemDate = parseDateObj(itemDateStr, false);
-        if (!itemDate) return false;
+        const normalizedItemDate = normalizeDateString(itemDateStr);
+        if (!normalizedItemDate) return false;
 
-        if (fDate && itemDate < fDate) return false;
-        if (tDate && itemDate > tDate) return false;
+        if (startValStr && normalizedItemDate < startValStr) return false;
+        if (endValStr && normalizedItemDate > endValStr) return false;
 
         return true;
     });
 
-    // إذا كانت الحقول فارغة، نعرض كافة البيانات، وإلا نعرض البيانات المصفاة
-    window.currentFilteredJobs = (!fromVal && !toVal) ? rawData : filtered;
+    window.currentFilteredJobs = filtered;
 
-    // 🌟 استدعاء دالة الرسم فوراً لتحديث الجدول بالنتائج الجديدة
     if (typeof renderTable === 'function') {
-        renderTable(window.currentFilteredJobs);
+        renderTable(filtered);
+    }
+
+    const totalMasterCount = rawData.length;
+    const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
+    if (counterEl) {
+        counterEl.innerText = `Showing ${filtered.length} of ${totalMasterCount} records`;
     }
 
     const summaryContainer = document.getElementById('paymentSummaryContainer');
@@ -197,190 +204,9 @@ function filterJobsTable() {
     }
 }
 
-// توحيد الاسماء لتجنب أي تضارب استدعاء
+// توحيد الربط البرمجي
 window.filterJobsTable = filterJobsTable;
 window.filterLedgerTable = filterJobsTable;
-
-// ربط الحقول بحدث التغيير تلقائياً
-document.addEventListener('DOMContentLoaded', () => {
-    const fromInput = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
-    const toInput = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
-
-    if (fromInput && !fromInput.hasAttribute('data-filter-bound')) {
-        fromInput.setAttribute('data-filter-bound', 'true');
-        fromInput.addEventListener('change', () => filterJobsTable());
-    }
-    if (toInput && !toInput.hasAttribute('data-filter-bound')) {
-        toInput.setAttribute('data-filter-bound', 'true');
-        toInput.addEventListener('change', () => filterJobsTable());
-    }
-});
-
-function getFilteredJobsData() {
-    return window.currentFilteredJobs || window.masterJobs || [];
-}
-window.getFilteredJobsData = getFilteredJobsData;
-
-function formatDateOnly(dateStr) {
-    if (!dateStr) return '-';
-    return String(dateStr).trim().split(' ')[0];
-}
-window.formatDateOnly = formatDateOnly;
-
-function assignPaymentMethodRevenue(paymentStr, amount, paymentMethodMap) {
-    if (!paymentStr) {
-        paymentMethodMap.Unspecified = (paymentMethodMap.Unspecified || 0) + amount;
-        return;
-    }
-    const lower = paymentStr.toLowerCase();
-    if (lower.includes('cash')) paymentMethodMap.Cash = (paymentMethodMap.Cash || 0) + amount;
-    else if (lower.includes('zelle')) paymentMethodMap.Zelle = (paymentMethodMap.Zelle || 0) + amount;
-    else if (lower.includes('cheque') || lower.includes('check') || lower.includes('ck')) paymentMethodMap.Cheque = (paymentMethodMap.Cheque || 0) + amount;
-    else if (lower.includes('pmo')) paymentMethodMap.PMO = (paymentMethodMap.PMO || 0) + amount;
-    else if (lower.includes('bc')) paymentMethodMap.BC = (paymentMethodMap.BC || 0) + amount;
-    else if (lower.includes('pc')) paymentMethodMap.PC = (paymentMethodMap.PC || 0) + amount;
-    else if (lower.includes('cc')) paymentMethodMap.CC = (paymentMethodMap.CC || 0) + amount;
-    else if (lower.includes('wt')) paymentMethodMap.WT = (paymentMethodMap.WT || 0) + amount;
-    else if (lower.includes('other')) paymentMethodMap.Others = (paymentMethodMap.Others || 0) + amount;
-    else paymentMethodMap.Unspecified = (paymentMethodMap.Unspecified || 0) + amount;
-}
-window.assignPaymentMethodRevenue = assignPaymentMethodRevenue;
-
-async function initMasterJobsData() {
-    try {
-        if (!window.supabaseClient) {
-            console.error("❌ Supabase client is not initialized!");
-            window.masterJobs = [];
-            return;
-        }
-
-        const { data: jobsData, error } = await window.supabaseClient
-            .from('jobs_report')
-            .select('*')
-            .or('is_deleted.is.null,is_deleted.eq.false')
-            .order('id', { ascending: false });
-
-        if (error) {
-            window.masterJobs = [];
-            return;
-        }
-
-        window.masterJobs = (jobsData || []).map(item => {
-            let rawDate = item.date || '';
-            let dVal = rawDate ? String(rawDate).trim().split(' ')[0] : '';
-            let mVal = 1;
-            let yVal = new Date().getFullYear();
-
-            if (dVal) {
-                const parts = dVal.split('/');
-                if (parts.length === 3) {
-                    mVal = parseInt(parts[0]) || 1;
-                    yVal = parseInt(parts[2]) || yVal;
-                } else if (dVal.includes('-')) {
-                    const dashParts = dVal.split('-');
-                    if (dashParts.length === 3) {
-                        yVal = parseInt(dashParts[0]) || yVal;
-                        mVal = parseInt(dashParts[1]) || 1;
-                    }
-                }
-            }
-
-            const foremanVal = item.foreman_name || '';
-
-            return {
-                id: item.id,
-                date: dVal,
-                month: mVal,
-                year: yVal,
-                jobNo: item.job_no || item.jobNo || item.job_number || '',
-                job_no: item.job_no || '',
-                route: item.route || ((item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : ''),
-                route_from: item.route_from || '',
-                route_to: item.route_to || '',
-                foreman: foremanVal,
-                foremanName: foremanVal,
-                foreman_name: foremanVal,
-                foreman10pct: item.foreman_cost || '0',
-                foreman_cost: item.foreman_cost || '0',
-                total: item.total_amount || '$0',
-                total_amount: item.total_amount || '$0',
-                helpers: item.helpers_cost || '-',
-                helpers_cost: item.helpers_cost || '-',
-                drivers: item.drivers_cost || '-',
-                drivers_cost: item.drivers_cost || '-',
-                pu: item.pu_payments || '-',
-                pu_payments: item.pu_payments || '-',
-                dest: item.destination_payments || '-',
-                destination: item.destination_payments || '-',
-                destination_payments: item.destination_payments || '-',
-                diesel: item.diesel_expense || '-',
-                diesel_expense: item.diesel_expense || '-',
-                hotel: item.hotel_expense || '-',
-                hotel_expense: item.hotel_expense || '-',
-                storage: item.storage || '-'
-            };
-        });
-
-        window.masterJobs.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-        window.currentFilteredJobs = window.masterJobs;
-
-        if (typeof populateYearFilter === 'function') populateYearFilter();
-        
-        // استدعاء الفلترة أو الرسم عند جلب البيانات أول مرة
-        if (typeof filterJobsTable === 'function') {
-            filterJobsTable();
-        }
-
-        const summaryContainer = document.getElementById('paymentSummaryContainer');
-        if (summaryContainer && typeof generatePaymentMethodSummaryTableHTML === 'function') {
-            summaryContainer.innerHTML = generatePaymentMethodSummaryTableHTML();
-        }
-
-        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
-
-    } catch (e) {
-        window.masterJobs = [];
-    }
-}
-window.initMasterJobsData = initMasterJobsData;
-
-async function saveMasterJobsData(jobs) {
-    window.masterJobs = jobs;
-    filterJobsTable();
-    if (typeof updateDashboardAnalytics === 'function') {
-        updateDashboardAnalytics();
-    }
-}
-window.saveMasterJobsData = saveMasterJobsData;
-
-function populateYearFilter() {
-    const yearSelect = document.getElementById('filterYear');
-    if (!yearSelect) return;
-
-    const uniqueYears = [...new Set(window.masterJobs.map(item => item.year))].filter(y => y).sort((a, b) => b - a);
-    const currentSelected = yearSelect.value;
-
-    let optionsHTML = `<option value="ALL">All Years</option>`;
-    uniqueYears.forEach(year => {
-        optionsHTML += `<option value="${year}" ${year == currentSelected ? 'selected' : ''}>${year}</option>`;
-    });
-
-    yearSelect.innerHTML = optionsHTML;
-}
-window.populateYearFilter = populateYearFilter;
-
-// دالة تفريغ الفلتر (Reset)
-function resetDateFilter() {
-    const startInput = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
-    const endInput = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
-    
-    if (startInput) startInput.value = '';
-    if (endInput) endInput.value = '';
-    
-    window.currentFilteredJobs = window.masterJobs || [];
-    filterJobsTable();
-}
-window.resetDateFilter = resetDateFilter;
 
 // ==========================================
 // 4. USERS & PERMISSIONS MANAGEMENT
