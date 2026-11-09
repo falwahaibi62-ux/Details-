@@ -347,28 +347,32 @@ window.populateYearFilter = populateYearFilter;
 // 3. CRUD TABLE & FILTERING
 // ==========================================
 function filterJobsTable() {
-    const startDateVal = document.getElementById('filterStartDate') ? document.getElementById('filterStartDate').value : '';
-    const endDateVal = document.getElementById('filterEndDate') ? document.getElementById('filterEndDate').value : '';
+    const startDateVal = document.getElementById('filterStartDate') || document.getElementById('ledgerFromDate') || document.getElementById('fromDate');
+    const endDateVal = document.getElementById('filterEndDate') || document.getElementById('ledgerToDate') || document.getElementById('toDate');
 
     const rawData = window.masterJobs || window.allJobsData || [];
+
+    const startValStr = startDateVal ? startDateVal.value : '';
+    const endValStr = endDateVal ? endDateVal.value : '';
 
     const filtered = rawData.filter(item => {
         const itemDateStr = item.date || item.created_at;
         if (!itemDateStr) return false;
 
-        const itemDate = new Date(itemDateStr);
+        const cleanStr = String(itemDateStr).trim().split(' ')[0];
+        const itemDate = new Date(cleanStr);
         if (isNaN(itemDate)) return false;
 
         const itemTime = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate()).getTime();
 
-        if (startDateVal) {
-            const startParts = startDateVal.split('-');
+        if (startValStr) {
+            const startParts = startValStr.split('-');
             const startTime = new Date(startParts[0], startParts[1] - 1, startParts[2]).getTime();
             if (itemTime < startTime) return false;
         }
 
-        if (endDateVal) {
-            const endParts = endDateVal.split('-');
+        if (endValStr) {
+            const endParts = endValStr.split('-');
             const endTime = new Date(endParts[0], endParts[1] - 1, endParts[2]).getTime();
             if (itemTime > endTime) return false;
         }
@@ -376,16 +380,27 @@ function filterJobsTable() {
         return true;
     });
 
+    window.currentFilteredJobs = filtered;
+
     if (typeof renderTable === 'function') {
         renderTable(filtered);
     }
     
-    const countEl = document.getElementById('filteredCountText');
+    const countEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
     if (countEl) {
-        countEl.innerText = `Showing ${filtered.length} of ${window.masterJobs.length} records`;
+        const totalMasterCount = (window.masterJobs || []).length;
+        countEl.innerText = `Showing ${filtered.length} of ${totalMasterCount} records`;
+    }
+
+    const summaryContainer = document.getElementById('paymentSummaryContainer');
+    if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
+        summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
     }
 }
+
+// 🌟 جسر الربط الشامل لمنع أي تضارب في الأسماء
 window.filterJobsTable = filterJobsTable;
+window.filterLedgerTable = filterJobsTable;
 
 function renderTable(data) {
     let tbody = document.getElementById('masterJobsTableBody');
@@ -396,7 +411,7 @@ function renderTable(data) {
 
     if (!tbody) return;
 
-    // 🌟 حماية إضافية: إذا لم يتم تمرير بيانات، نستخدم البيانات المصفاة حالياً أو القائمة الأصلية
+    // حماية إضافية: إذا لم يتم تمرير بيانات، نستخدم البيانات المصفاة حالياً أو القائمة الأصلية
     const activeData = (data && data.length > 0) ? data : (window.currentFilteredJobs || window.masterJobs || []);
 
     if (activeData.length === 0) {
@@ -440,8 +455,8 @@ window.renderTable = renderTable;
 
 function resetDateFilter() {
     // البحث الشامل عن حقول التاريخ لتفريغها
-    const startInput = document.getElementById('ledgerFromDate') || document.getElementById('reportStartDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
-    const endInput = document.getElementById('ledgerToDate') || document.getElementById('reportEndDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
+    const startInput = document.getElementById('filterStartDate') || document.getElementById('ledgerFromDate') || document.getElementById('reportStartDate') || document.getElementById('fromDate');
+    const endInput = document.getElementById('filterEndDate') || document.getElementById('ledgerToDate') || document.getElementById('reportEndDate') || document.getElementById('toDate');
     
     if (startInput) startInput.value = '';
     if (endInput) endInput.value = '';
@@ -457,8 +472,8 @@ function resetDateFilter() {
     }
     
     // 2. تحديث جدول الأستاذ أو الفلتر العام إن وجد
-    if (typeof filterLedgerTable === 'function') {
-        filterLedgerTable();
+    if (typeof filterJobsTable === 'function') {
+        filterJobsTable();
     }
     
     // 3. إعادة رسم وتحديث كل الجداول الإجمالية والتفصيلية فوراً
@@ -481,7 +496,6 @@ function resetDateFilter() {
     }
 }
 window.resetDateFilter = resetDateFilter;
-
 
 // ==========================================
 // 4. USERS & PERMISSIONS MANAGEMENT
