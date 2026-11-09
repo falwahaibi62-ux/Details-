@@ -81,15 +81,45 @@ function parseLocalDate(dateStr) {
 window.parseLocalDate = parseLocalDate;
 
 
-// 2. الدالة المسؤولة عن تطبيق الفلتر وتوفيرها عالمياً لمنع خطأ undefined
+// 2. الدالة المسؤولة عن تطبيق الفلتر الفعلي وتوفيرها عالمياً
 function applyReportFilters() {
+    const startDateVal = document.getElementById('reportStartDate')?.value;
+    const endDateVal = document.getElementById('reportEndDate')?.value;
+    const jobTypeVal = document.getElementById('reportJobType')?.value || 'all';
+
+    const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
+    const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
+    if (endDate) endDate.setHours(23, 59, 59, 999);
+
+    const master = window.masterJobs || [];
+
+    // فلترة السجلات بدقة حسب الفترة الزمنية ونوع الوظيفة
+    window.currentFilteredJobs = master.filter(item => {
+        // فلترة التاريخ
+        if (item.date) {
+            const itemDate = parseLocalDate(item.date);
+            if (itemDate) {
+                if (startDate && itemDate < startDate) return false;
+                if (endDate && itemDate > endDate) return false;
+            }
+        }
+
+        // فلترة نوع الوظيفة (Delivery أو Moving)
+        if (jobTypeVal !== 'all') {
+            const jNo = String(item.jobNo || item.job_no || '').toLowerCase();
+            const route = String(item.route || '').toLowerCase();
+            const isDelivery = jNo.includes('delivery') || route.includes('delivery');
+            if (jobTypeVal === 'delivery' && !isDelivery) return false;
+            if (jobTypeVal === 'moving' && isDelivery) return false;
+        }
+
+        return true;
+    });
+
+    // تحديث العرض حسب التبويب النشط حالياً (Summary أو Detailed)
     const summaryView = document.getElementById('summaryReportView');
-    if (!summaryView) {
-        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
-        return;
-    }
+    const isSummaryActive = summaryView && !summaryView.classList.contains('hidden');
     
-    const isSummaryActive = !summaryView.classList.contains('hidden');
     if (isSummaryActive) {
         if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
     } else {
