@@ -1020,7 +1020,15 @@ async function saveJob(event) {
     } else {
         if (jobForm) jobForm.removeAttribute('data-edit-id');
         closeModal();
-        if (typeof initMasterJobsData === 'function') initMasterJobsData();
+        
+        // جلب أحدث البيانات من قاعدة البيانات وإعادة رسم الجدول فوراً
+        if (typeof initMasterJobsData === 'function') {
+            await initMasterJobsData();
+        }
+        if (typeof renderTable === 'function' && window.masterJobs) {
+            renderTable(window.masterJobs);
+        }
+
         alert('Record saved successfully!');
     }
 }
