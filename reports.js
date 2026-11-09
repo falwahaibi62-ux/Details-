@@ -1004,35 +1004,47 @@ function updateOfficialReportSummaryCards() {
     const rawTotalJobs = jobs.length;
     const adjustedTotalJobs = Math.max(0, rawTotalJobs - totalDeliveries);
 
-    // 3. حساب الإيرادات والمصاريف التشغيلية بدقة وآمان تام
+    // دالة مساعدة داخلية آمنة لاستخراج الأرقام الصافية وتجاهل النصوص والأيام
+    const parseExpenseNumber = (val) => {
+        if (!val) return 0;
+        if (typeof val === 'number') return isNaN(val) ? 0 : val;
+        const str = String(val).trim();
+        // استخراج أول رقم صالح (يقبل العلامات العشرية والأرقام ويتجاهل الكلمات مثل days)
+        const match = str.match(/[\d,.]+/);
+        if (!match) return 0;
+        const cleanNum = parseFloat(match[0].replace(/,/g, '')) || 0;
+        return isNaN(cleanNum) ? 0 : cleanNum;
+    };
+
     let totalRevenue = 0;
     let totalExpenses = 0;
 
+    // 3. تجميع الإيرادات والمصاريف التشغيلية لكل مهمة بدقة تامة
     jobs.forEach(j => {
-        const rev = parseCurrency(j.total || j.total_amount);
+        const rev = parseExpenseNumber(j.total || j.total_amount);
         totalRevenue += rev;
 
-        const diesel = parseCurrency(j.diesel || j.diesel_expense);
-        const hotel = parseCurrency(j.hotel || j.hotel_expense);
+        const diesel = parseExpenseNumber(j.diesel || j.diesel_expense);
+        const hotel = parseExpenseNumber(j.hotel || j.hotel_expense); // معالجة آمنة حتى لو احتوت على أيام أو نصوص
         const foremanCost = rev > 0 ? Math.round(rev * 0.1) : 0;
-        const helpersCost = parseCurrency(j.helpers || j.helpers_cost);
-        const driversCost = parseCurrency(j.drivers || j.drivers_cost);
+        const helpersCost = parseExpenseNumber(j.helpers || j.helpers_cost);
+        const driversCost = parseExpenseNumber(j.drivers || j.drivers_cost);
 
         totalExpenses += (diesel + hotel + foremanCost + helpersCost + driversCost);
     });
 
-    // 4. إضافة مصاريف الشاحنات المستأجرة والمستودع بدقة
+    // 4. إضافة مصاريف الشاحنات المستأجرة والمستودع بطريقة نظيفة وآمنة
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     rentals.forEach(r => {
-        totalExpenses += parseCurrency(r.amount);
+        totalExpenses += parseExpenseNumber(r.amount);
     });
 
     const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
     warehouse.forEach(w => {
-        totalExpenses += parseCurrency(w.amount);
+        totalExpenses += parseExpenseNumber(w.amount);
     });
 
-    // 5. تحديث عناصر الـ HTML في البطاقات العلوية بالتنسيق المالي النظيفة
+    // 5. تحديث عناصر الـ HTML في البطاقات العلوية بالتنسيق المالي النظيف
     const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
     setEl('sumTotalJobs', adjustedTotalJobs);
