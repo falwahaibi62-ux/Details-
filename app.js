@@ -1281,62 +1281,71 @@ window.renderDashboardCharts = renderDashboardCharts;
 // ==========================================
 // 10. NAVIGATION & TABS
 // ==========================================
+function renderTable(data) {
+    const tbody = document.getElementById('masterJobsTableBody');
+    if (!tbody) return;
+
+    const activeData = (data && data.length > 0) ? data : (window.currentFilteredJobs || window.masterJobs || []);
+
+    if (activeData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-slate-400 font-medium">No records found.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = activeData.map(item => `
+        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+            <td class="p-3 text-center">${item.date || '-'}</td>
+            <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
+            <td class="p-3 text-slate-600">${item.route || '-'}</td>
+            <td class="p-3 text-slate-600">${item.foreman_name || item.foreman || '-'}</td>
+            <td class="p-3 text-emerald-600 font-medium">${item.foreman_cost || item.foreman10pct || '-'}</td>
+            <td class="p-3 text-purple-600">${item.helpers_cost || item.helpers || '-'}</td>
+            <td class="p-3 text-blue-600">${item.drivers_cost || item.drivers || '-'}</td>
+            <td class="p-3 font-bold text-slate-900">${item.total_amount || item.total || '-'}</td>
+            <td class="p-3 text-slate-600">${item.pu_payments || item.pu || '-'}</td>
+            <td class="p-3 text-slate-600">${item.destination_payments || item.dest || '-'}</td>
+            <td class="p-3 text-slate-600">${item.diesel_expense || item.diesel || '-'}</td>
+            <td class="p-3 text-slate-600">${item.hotel_expense || item.hotel || '-'}</td>
+            <td class="p-3 text-center space-x-1">
+                <button type="button" onclick="openEditJobModal('${item.id}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button type="button" onclick="deleteJob('${item.id}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    const totalMasterCount = (window.masterJobs || []).length;
+    const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
+    if (counterEl) {
+        counterEl.innerText = `Showing ${activeData.length} of ${totalMasterCount} records`;
+    }
+}
+window.renderTable = renderTable;
+
+// 2. دالة التنقل بين التبويبات (لإصلاح خطأ switchTab is not defined)
 function switchTab(tabName) {
-    try {
-        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
-        tabs.forEach(t => {
-            [`tab-${t}`, `${t}-view`, t].forEach(id => {
-                const tabEl = document.getElementById(id);
-                if (tabEl) {
-                    tabEl.classList.add('hidden');
-                    tabEl.classList.remove('flex', 'block');
-                    tabEl.style.setProperty('display', 'none', 'important');
-                }
-            });
-            [`nav-${t}`, `nav-${t}-btn`, t].forEach(id => {
-                const navEl = document.getElementById(id);
-                if (navEl) navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
-            });
-        });
+    const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
+    tabs.forEach(t => {
+        const tabEl = document.getElementById(`tab-${t}`) || document.getElementById(`${t}-view`) || document.getElementById(t);
+        if (tabEl) {
+            tabEl.classList.add('hidden');
+            tabEl.classList.remove('flex', 'block');
+            tabEl.style.setProperty('display', 'none', 'important');
+        }
+    });
 
-        let activeTab = null;
-        for (let id of [`tab-${tabName}`, `${tabName}-view`, tabName]) {
-            activeTab = document.getElementById(id);
-            if (activeTab) break;
-        }
-        if (activeTab) {
-            activeTab.classList.remove('hidden');
-            activeTab.classList.add('flex');
-            activeTab.style.setProperty('display', 'flex', 'important');
-        }
+    const activeTab = document.getElementById(`tab-${tabName}`) || document.getElementById(`${tabName}-view`) || document.getElementById(tabName);
+    if (activeTab) {
+        activeTab.classList.remove('hidden');
+        activeTab.classList.add('flex');
+        activeTab.style.setProperty('display', 'flex', 'important');
+    }
 
-        let activeNav = null;
-        for (let id of [`nav-${tabName}`, `nav-${tabName}-btn`, tabName]) {
-            activeNav = document.getElementById(id);
-            if (activeNav) break;
-        }
-        if (activeNav) {
-            activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
-        }
-
-        if (tabName === 'dashboard') {
-            setTimeout(updateDashboardAnalytics, 50);
-        } else if (tabName === 'jobs') {
-            if (typeof filterLedgerTable === 'function') filterLedgerTable();
-        } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
-            renderPrivateTruckRentalTab();
-        } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
-            renderWarehouseTab();
-        } else if (tabName === 'reports') {
-            if (typeof renderReportsTab === 'function') renderReportsTab();
-            if (typeof window.renderSummaryPageWithDetailedTables === 'function') window.renderSummaryPageWithDetailedTables();
-        } else if (tabName === 'users' && typeof renderUsers === 'function') {
-            renderUsers();
-        } else if (tabName === 'trash' && typeof renderTrashBin === 'function') {
-            renderTrashBin();
-        }
-    } catch (e) {
-        console.error("Error switching tab:", e);
+    if (tabName === 'jobs' && typeof window.masterJobs !== 'undefined') {
+        renderTable(window.masterJobs);
     }
 }
 window.switchTab = switchTab;
