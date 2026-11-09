@@ -1,5 +1,5 @@
 /**
- * MovePro - Core Application & Operations Management (Production Ready & Cleaned)
+ * MovePro - Core Application & Operations Management (Production Ready & Fixed)
  */
 
 if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
@@ -23,16 +23,12 @@ async function loadDataFromSupabase() {
     const { data, error } = await supabase.from('jobs_report').select('*');
     
     if (!error && data) {
-        // تخزين البيانات في المتغير العام
         window.masterJobs = data; 
         window.currentFilteredJobs = data; 
         
-        // 🌟 ضع الكود هنا بالتحديد فور وصول البيانات:
         if (typeof populateSummaryTables === 'function') {
             populateSummaryTables(data);
         }
-        
-        // (اختياري) إذا أردت تحديث البطاقات والملخصات معها مباشرة:
         if (typeof generateSummaryReportData === 'function') {
             generateSummaryReportData();
         }
@@ -71,46 +67,83 @@ function formatJobDateToSlash(dateStr) {
 window.formatJobDateToSlash = formatJobDateToSlash;
 
 // ==========================================
-// 2. دالة فلترة جدول العمليات (Operations Ledger)
+// 2. دالة رسم الجدول (TABLE RENDERER - مضافة حديثاً لمنع الفراغ)
 // ==========================================
-function filterLedgerTable() {
-    const fromInput = document.getElementById('ledgerFromDate') || 
-                      document.getElementById('reportStartDate') || 
-                      document.getElementById('filterStartDate') || 
-                      document.getElementById('fromDate');
-                      
-    const toInput = document.getElementById('ledgerToDate') || 
-                    document.getElementById('reportEndDate') || 
-                    document.getElementById('filterEndDate') || 
-                    document.getElementById('toDate');
-    
+function renderTable(data) {
+    let tbody = document.getElementById('masterJobsTableBody') || document.querySelector('#tab-jobs tbody');
+    if (!tbody) return;
+
+    const activeData = (data && data.length > 0) ? data : (window.currentFilteredJobs || window.masterJobs || []);
+
+    if (activeData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-slate-400 font-medium">No records found.</td></tr>`;
+        return;
+    }
+
+    try {
+        tbody.innerHTML = activeData.map(item => `
+            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="p-3 text-center">${formatDateOnly(item.date)}</td>
+                <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
+                <td class="p-3 text-slate-600">${item.route || '-'}</td>
+                <td class="p-3 text-slate-600">${item.foreman || item.foreman_name || '-'}</td>
+                <td class="p-3 text-emerald-600 font-medium">${item.foreman10pct || item.foreman_cost || '-'}</td>
+                <td class="p-3 text-purple-600">${item.helpers || item.helpers_cost || '-'}</td>
+                <td class="p-3 text-blue-600">${item.drivers || item.drivers_cost || '-'}</td>
+                <td class="p-3 font-bold text-slate-900">${item.total || item.total_amount || '-'}</td>
+                <td class="p-3 text-slate-600">${item.pu || item.pu_payments || '-'}</td>
+                <td class="p-3 text-slate-600">${item.dest || item.destination || item.destination_payments || '-'}</td>
+                <td class="p-3 text-slate-600">${item.diesel || item.diesel_expense || '-'}</td>
+                <td class="p-3 text-slate-600">${item.hotel || item.hotel_expense || '-'}</td>
+                <td class="p-3 text-center space-x-1">
+                    <button type="button" onclick="openEditJobModal('${item.id}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button type="button" onclick="deleteJob('${item.id}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error("Error rendering table:", err);
+    }
+
+    const totalMasterCount = (window.masterJobs || []).length;
+    const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
+    if (counterEl) {
+        counterEl.innerText = `Showing ${activeData.length} of ${totalMasterCount} records`;
+    }
+}
+window.renderTable = renderTable;
+
+// ==========================================
+// 3. دالة فلترة جدول العمليات الموحدة والدقيقة
+// ==========================================
+function filterJobsTable() {
+    const fromInput = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
+    const toInput = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
+
     const fromVal = fromInput ? fromInput.value : '';
     const toVal = toInput ? toInput.value : '';
 
-    let data = window.masterJobs || [];
+    const rawData = window.masterJobs || window.allJobsData || [];
 
     function parseDateObj(dateStr, isEndDate = false) {
         if (!dateStr) return null;
-        
-        let y, m, d;
         const cleanStr = String(dateStr).trim().split(' ')[0];
+        let y = 0, m = 0, d = 0;
 
-        // 1. إذا كان التاريخ بصيغة YYYY-MM-DD
         if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
             const parts = cleanStr.split('-').map(Number);
             y = parts[0]; m = parts[1]; d = parts[2];
-        } 
-        // 2. إذا كان التاريخ بصيغة DD-MM-YYYY أو DD/MM/YYYY أو MM/DD/YYYY
-        else if (cleanStr.includes('-') || cleanStr.includes('/')) {
+        } else if (cleanStr.includes('-') || cleanStr.includes('/')) {
             const separator = cleanStr.includes('-') ? '-' : '/';
             const parts = cleanStr.split(separator).map(Number);
             if (parts.length === 3) {
-                // إذا كانت السنة في البداية (مثل 2026-10-01)
                 if (parts[0] > 1000) {
                     y = parts[0]; m = parts[1]; d = parts[2];
-                } 
-                // إذا كانت السنة في النهاية (مثل 01-10-2026 أو 10-01-2026)
-                else {
+                } else {
                     y = parts[2];
                     if (parts[0] > 12) {
                         d = parts[0]; m = parts[1];
@@ -137,53 +170,49 @@ function filterLedgerTable() {
     const fDate = parseDateObj(fromVal, false);
     const tDate = parseDateObj(toVal, true);
 
-    // تطبيق الفلترة الصارمة واستبعاد تواريخ سبتمبر فوراً
-    data = data.filter(item => {
-        if (!item.date) return false;
-        const itemDate = parseDateObj(item.date, false);
+    const filtered = rawData.filter(item => {
+        const itemDateStr = item.date || item.created_at;
+        if (!itemDateStr) return false;
+
+        const itemDate = parseDateObj(itemDateStr, false);
         if (!itemDate) return false;
-        
+
         if (fDate && itemDate < fDate) return false;
         if (tDate && itemDate > tDate) return false;
-        
+
         return true;
     });
 
-    window.currentFilteredJobs = data;
+    // إذا كانت الحقول فارغة، نعرض كافة البيانات، وإلا نعرض البيانات المصفاة
+    window.currentFilteredJobs = (!fromVal && !toVal) ? rawData : filtered;
 
+    // 🌟 استدعاء دالة الرسم فوراً لتحديث الجدول بالنتائج الجديدة
     if (typeof renderTable === 'function') {
-        renderTable(data);
+        renderTable(window.currentFilteredJobs);
     }
 
     const summaryContainer = document.getElementById('paymentSummaryContainer');
     if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
         summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
     }
-
-    const totalMasterCount = (window.masterJobs || []).length;
-    const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
-    
-    if (counterEl) {
-        counterEl.innerText = `Showing ${data.length} of ${totalMasterCount} records`;
-    }
 }
 
-// توفير التوافق الكامل لكلا الاسمين لمنع أي أخطاء استدعاء
-window.filterLedgerTable = filterLedgerTable;
-window.filterJobsTable = filterLedgerTable;
+// توحيد الاسماء لتجنب أي تضارب استدعاء
+window.filterJobsTable = filterJobsTable;
+window.filterLedgerTable = filterJobsTable;
 
-// 🌟 ربط حقول الإدخال تلقائياً بحدث التغيير لضمان الفلترة الفورية عند اختيار التاريخ
+// ربط الحقول بحدث التغيير تلقائياً
 document.addEventListener('DOMContentLoaded', () => {
-    const fromInput = document.getElementById('filterStartDate') || document.getElementById('fromDate') || document.getElementById('ledgerFromDate');
-    const toInput = document.getElementById('filterEndDate') || document.getElementById('toDate') || document.getElementById('ledgerToDate');
+    const fromInput = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
+    const toInput = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
 
     if (fromInput && !fromInput.hasAttribute('data-filter-bound')) {
         fromInput.setAttribute('data-filter-bound', 'true');
-        fromInput.addEventListener('change', () => filterLedgerTable());
+        fromInput.addEventListener('change', () => filterJobsTable());
     }
     if (toInput && !toInput.hasAttribute('data-filter-bound')) {
         toInput.setAttribute('data-filter-bound', 'true');
-        toInput.addEventListener('change', () => filterLedgerTable());
+        toInput.addEventListener('change', () => filterJobsTable());
     }
 });
 
@@ -297,11 +326,9 @@ async function initMasterJobsData() {
 
         if (typeof populateYearFilter === 'function') populateYearFilter();
         
-        // 🌟 التعديل هنا: تطبيق الفلترة فوراً بعد جلب البيانات لتطبيق نطاق التواريخ الافتراضي واستبعاد سبتمبر
-        if (typeof filterLedgerTable === 'function') {
-            filterLedgerTable();
-        } else if (typeof renderTable === 'function') {
-            renderTable(window.masterJobs);
+        // استدعاء الفلترة أو الرسم عند جلب البيانات أول مرة
+        if (typeof filterJobsTable === 'function') {
+            filterJobsTable();
         }
 
         const summaryContainer = document.getElementById('paymentSummaryContainer');
@@ -319,7 +346,7 @@ window.initMasterJobsData = initMasterJobsData;
 
 async function saveMasterJobsData(jobs) {
     window.masterJobs = jobs;
-    filterLedgerTable();
+    filterJobsTable();
     if (typeof updateDashboardAnalytics === 'function') {
         updateDashboardAnalytics();
     }
@@ -342,99 +369,18 @@ function populateYearFilter() {
 }
 window.populateYearFilter = populateYearFilter;
 
-
-// ==========================================
-// 3. CRUD TABLE & FILTERING (مصحح ويعرض البيانات فوراً)
-// ==========================================
-function filterJobsTable() {
-    // جلب عناصر الحقول أولاً
+// دالة تفريغ الفلتر (Reset)
+function resetDateFilter() {
     const startInput = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
     const endInput = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
-
-    // استخراج القيم النصية بشكل صحيح (.value)
-    const startValStr = startInput ? startInput.value : '';
-    const endValStr = endInput ? endInput.value : '';
-
-    const rawData = window.masterJobs || window.allJobsData || [];
-
-    // دالة تحليل التواريخ الدقيقة
-    function parseDateObj(dateStr, isEndDate = false) {
-        if (!dateStr) return null;
-        const cleanStr = String(dateStr).trim().split(' ')[0];
-        let y = 0, m = 0, d = 0;
-
-        if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
-            const parts = cleanStr.split('-').map(Number);
-            y = parts[0]; m = parts[1]; d = parts[2];
-        } else if (cleanStr.includes('-') || cleanStr.includes('/')) {
-            const separator = cleanStr.includes('-') ? '-' : '/';
-            const parts = cleanStr.split(separator).map(Number);
-            if (parts.length === 3) {
-                if (parts[0] > 1000) {
-                    y = parts[0]; m = parts[1]; d = parts[2];
-                } else {
-                    y = parts[2];
-                    if (parts[0] > 12) {
-                        d = parts[0]; m = parts[1];
-                    } else {
-                        m = parts[0]; d = parts[1];
-                    }
-                }
-            }
-        }
-
-        if (y && m && d) {
-            return isEndDate 
-                ? new Date(y, m - 1, d, 23, 59, 59, 999) 
-                : new Date(y, m - 1, d, 0, 0, 0, 0);
-        }
-
-        const dObj = new Date(dateStr);
-        if (isNaN(dObj.getTime())) return null;
-        return isEndDate 
-            ? new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999) 
-            : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
-    }
-
-    const fDate = parseDateObj(startValStr, false);
-    const tDate = parseDateObj(endValStr, true);
-
-    const filtered = rawData.filter(item => {
-        const itemDateStr = item.date || item.created_at;
-        if (!itemDateStr) return false;
-
-        const itemDate = parseDateObj(itemDateStr, false);
-        if (!itemDate) return false;
-
-        if (fDate && itemDate < fDate) return false;
-        if (tDate && itemDate > tDate) return false;
-
-        return true;
-    });
-
-    // إذا كانت الحقول فارغة، نعرض كافة البيانات (rawData) بشكل طبيعي
-    window.currentFilteredJobs = (!startValStr && !endValStr) ? rawData : filtered;
-    const activeDisplayData = window.currentFilteredJobs;
-
-    if (typeof renderTable === 'function') {
-        renderTable(activeDisplayData);
-    }
     
-    const countEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
-    if (countEl) {
-        const totalMasterCount = (window.masterJobs || []).length;
-        countEl.innerText = `Showing ${activeDisplayData.length} of ${totalMasterCount} records`;
-    }
-
-    const summaryContainer = document.getElementById('paymentSummaryContainer');
-    if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
-        summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
-    }
+    if (startInput) startInput.value = '';
+    if (endInput) endInput.value = '';
+    
+    window.currentFilteredJobs = window.masterJobs || [];
+    filterJobsTable();
 }
-
-// توفق تام بين أسماء الدوال لتعمل مع الـ HTML مباشرة
-window.filterJobsTable = filterJobsTable;
-window.filterLedgerTable = filterJobsTable;
+window.resetDateFilter = resetDateFilter;
 
 // ==========================================
 // 4. USERS & PERMISSIONS MANAGEMENT
