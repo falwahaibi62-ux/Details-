@@ -1057,9 +1057,9 @@ function generateMonthlyRevenueTableHTML(filteredData) {
         
         const itemTotal = parseCurrency(item.total || item.total_amount);
 
-        // الاعتماد حصراً على رقم الوظيفة (job_no) لاستبعاد التوصيلات من حروف التصنيف
+        // الاعتماد حصراً على رقم الوظيفة (job_no) لاستبعاد التوصيلات
         if (jobNoStr.toLowerCase().includes('delivery')) {
-            return; // تخطي التوصيلات لأنها محسوبة في بطاقة Total Deliveries العلوية المستقلة
+            return; 
         }
 
         if (firstLetter === 'G') {
@@ -1083,8 +1083,9 @@ function generateMonthlyRevenueTableHTML(filteredData) {
     const totalJobsCount = (filteredData || []).length;
     const grandTotalRevenue = revenueG + revenueC + revenueP + revenueT + revenueOther;
 
-    const html = `
-        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4">
+    // إرجاع الـ HTML النصي حصراً لمنع تكسير التنسيق في الصفحة
+    return `
+        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4 w-full">
             <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wide">Jobs Breakdown by Prefix (G, C, P, T & Others)</h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-center border-collapse text-xs min-w-[700px]">
@@ -1114,11 +1115,8 @@ function generateMonthlyRevenueTableHTML(filteredData) {
             </div>
         </div>
     `;
-
-    return { html, countG, countC, countP, countT, grandTotalRevenue };
 }
 window.generateMonthlyRevenueTableHTML = generateMonthlyRevenueTableHTML;
-
 
 
 
