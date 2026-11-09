@@ -1,5 +1,5 @@
 /**
- * MovePro - Core Application & Operations Management (Production Ready & Fixed)
+ * MovePro - Core Application & Operations Management (Production Ready & Cleaned)
  */
 
 if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
@@ -29,6 +29,7 @@ async function loadDataFromSupabase() {
         if (typeof populateSummaryTables === 'function') {
             populateSummaryTables(data);
         }
+        
         if (typeof generateSummaryReportData === 'function') {
             generateSummaryReportData();
         }
@@ -67,96 +68,293 @@ function formatJobDateToSlash(dateStr) {
 window.formatJobDateToSlash = formatJobDateToSlash;
 
 // ==========================================
-// 2. دالة رسم الجدول (TABLE RENDERER - مضافة حديثاً لمنع الفراغ)
+// 2. دالة فلترة جدول العمليات (Operations Ledger)
 // ==========================================
-function renderTable(data) {
-    let tbody = document.getElementById('masterJobsTableBody') || document.querySelector('#tab-jobs tbody');
-    if (!tbody) return;
+function filterLedgerTable() {
+    const fromInput = document.getElementById('ledgerFromDate') || 
+                      document.getElementById('reportStartDate') || 
+                      document.getElementById('filterStartDate') || 
+                      document.getElementById('fromDate');
+                      
+    const toInput = document.getElementById('ledgerToDate') || 
+                    document.getElementById('reportEndDate') || 
+                    document.getElementById('filterEndDate') || 
+                    document.getElementById('toDate');
+    
+    const fromVal = fromInput ? fromInput.value : '';
+    const toVal = toInput ? toInput.value : '';
 
-    const activeData = (data && data.length > 0) ? data : (window.currentFilteredJobs || window.masterJobs || []);
+    let data = window.masterJobs || [];
 
-    if (activeData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-slate-400 font-medium">No records found.</td></tr>`;
-        return;
+    function parseDateObj(dateStr, isEndDate = false) {
+        if (!dateStr) return null;
+        
+        let y, m, d;
+        const cleanStr = String(dateStr).trim().split(' ')[0];
+
+        if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
+            const parts = cleanStr.split('-').map(Number);
+            y = parts[0]; m = parts[1]; d = parts[2];
+        } 
+        else if (cleanStr.includes('-') || cleanStr.includes('/')) {
+            const separator = cleanStr.includes('-') ? '-' : '/';
+            const parts = cleanStr.split(separator).map(Number);
+            if (parts.length === 3) {
+                if (parts[0] > 1000) {
+                    y = parts[0]; m = parts[1]; d = parts[2];
+                } 
+                else {
+                    y = parts[2];
+                    if (parts[0] > 12) {
+                        d = parts[0]; m = parts[1];
+                    } else {
+                        m = parts[0]; d = parts[1];
+                    }
+                }
+            }
+        }
+
+        if (y && m && d) {
+            return isEndDate 
+                ? new Date(y, m - 1, d, 23, 59, 59, 999) 
+                : new Date(y, m - 1, d, 0, 0, 0, 0);
+        }
+
+        const dObj = new Date(dateStr);
+        if (isNaN(dObj.getTime())) return null;
+        return isEndDate 
+            ? new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999) 
+            : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
     }
 
-    try {
-        tbody.innerHTML = activeData.map(item => `
-            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="p-3 text-center">${formatDateOnly(item.date)}</td>
-                <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
-                <td class="p-3 text-slate-600">${item.route || '-'}</td>
-                <td class="p-3 text-slate-600">${item.foreman || item.foreman_name || '-'}</td>
-                <td class="p-3 text-emerald-600 font-medium">${item.foreman10pct || item.foreman_cost || '-'}</td>
-                <td class="p-3 text-purple-600">${item.helpers || item.helpers_cost || '-'}</td>
-                <td class="p-3 text-blue-600">${item.drivers || item.drivers_cost || '-'}</td>
-                <td class="p-3 font-bold text-slate-900">${item.total || item.total_amount || '-'}</td>
-                <td class="p-3 text-slate-600">${item.pu || item.pu_payments || '-'}</td>
-                <td class="p-3 text-slate-600">${item.dest || item.destination || item.destination_payments || '-'}</td>
-                <td class="p-3 text-slate-600">${item.diesel || item.diesel_expense || '-'}</td>
-                <td class="p-3 text-slate-600">${item.hotel || item.hotel_expense || '-'}</td>
-                <td class="p-3 text-center space-x-1">
-                    <button type="button" onclick="openEditJobModal('${item.id}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
-                    <button type="button" onclick="deleteJob('${item.id}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-    } catch (err) {
-        console.error("Error rendering table:", err);
+    const fDate = parseDateObj(fromVal, false);
+    const tDate = parseDateObj(toVal, true);
+
+    data = data.filter(item => {
+        if (!item.date) return false;
+        const itemDate = parseDateObj(item.date, false);
+        if (!itemDate) return false;
+        
+        if (fDate && itemDate < fDate) return false;
+        if (tDate && itemDate > tDate) return false;
+        
+        return true;
+    });
+
+    window.currentFilteredJobs = data;
+
+    if (typeof renderTable === 'function') {
+        renderTable(data);
+    }
+
+    const summaryContainer = document.getElementById('paymentSummaryContainer');
+    if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
+        summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
     }
 
     const totalMasterCount = (window.masterJobs || []).length;
     const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
+    
     if (counterEl) {
-        counterEl.innerText = `Showing ${activeData.length} of ${totalMasterCount} records`;
+        counterEl.innerText = `Showing ${data.length} of ${totalMasterCount} records`;
     }
 }
-window.renderTable = renderTable;
+
+window.filterLedgerTable = filterLedgerTable;
+window.filterJobsTable = filterLedgerTable;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const fromInput = document.getElementById('filterStartDate') || document.getElementById('fromDate') || document.getElementById('ledgerFromDate');
+    const toInput = document.getElementById('filterEndDate') || document.getElementById('toDate') || document.getElementById('ledgerToDate');
+
+    if (fromInput && !fromInput.hasAttribute('data-filter-bound')) {
+        fromInput.setAttribute('data-filter-bound', 'true');
+        fromInput.addEventListener('change', () => filterLedgerTable());
+    }
+    if (toInput && !toInput.hasAttribute('data-filter-bound')) {
+        toInput.setAttribute('data-filter-bound', 'true');
+        toInput.addEventListener('change', () => filterLedgerTable());
+    }
+});
+
+function getFilteredJobsData() {
+    return window.currentFilteredJobs || window.masterJobs || [];
+}
+window.getFilteredJobsData = getFilteredJobsData;
+
+function formatDateOnly(dateStr) {
+    if (!dateStr) return '-';
+    return String(dateStr).trim().split(' ')[0];
+}
+window.formatDateOnly = formatDateOnly;
+
+function assignPaymentMethodRevenue(paymentStr, amount, paymentMethodMap) {
+    if (!paymentStr) {
+        paymentMethodMap.Unspecified = (paymentMethodMap.Unspecified || 0) + amount;
+        return;
+    }
+    const lower = paymentStr.toLowerCase();
+    if (lower.includes('cash')) paymentMethodMap.Cash = (paymentMethodMap.Cash || 0) + amount;
+    else if (lower.includes('zelle')) paymentMethodMap.Zelle = (paymentMethodMap.Zelle || 0) + amount;
+    else if (lower.includes('cheque') || lower.includes('check') || lower.includes('ck')) paymentMethodMap.Cheque = (paymentMethodMap.Cheque || 0) + amount;
+    else if (lower.includes('pmo')) paymentMethodMap.PMO = (paymentMethodMap.PMO || 0) + amount;
+    else if (lower.includes('bc')) paymentMethodMap.BC = (paymentMethodMap.BC || 0) + amount;
+    else if (lower.includes('pc')) paymentMethodMap.PC = (paymentMethodMap.PC || 0) + amount;
+    else if (lower.includes('cc')) paymentMethodMap.CC = (paymentMethodMap.CC || 0) + amount;
+    else if (lower.includes('wt')) paymentMethodMap.WT = (paymentMethodMap.WT || 0) + amount;
+    else if (lower.includes('other')) paymentMethodMap.Others = (paymentMethodMap.Others || 0) + amount;
+    else paymentMethodMap.Unspecified = (paymentMethodMap.Unspecified || 0) + amount;
+}
+window.assignPaymentMethodRevenue = assignPaymentMethodRevenue;
+
+async function initMasterJobsData() {
+    try {
+        if (!window.supabaseClient) {
+            console.error("❌ Supabase client is not initialized!");
+            window.masterJobs = [];
+            return;
+        }
+
+        const { data: jobsData, error } = await window.supabaseClient
+            .from('jobs_report')
+            .select('*')
+            .or('is_deleted.is.null,is_deleted.eq.false')
+            .order('id', { ascending: false });
+
+        if (error) {
+            window.masterJobs = [];
+            return;
+        }
+
+        window.masterJobs = (jobsData || []).map(item => {
+            let rawDate = item.date || '';
+            let dVal = rawDate ? String(rawDate).trim().split(' ')[0] : '';
+            let mVal = 1;
+            let yVal = new Date().getFullYear();
+
+            if (dVal) {
+                const parts = dVal.split('/');
+                if (parts.length === 3) {
+                    mVal = parseInt(parts[0]) || 1;
+                    yVal = parseInt(parts[2]) || yVal;
+                } else if (dVal.includes('-')) {
+                    const dashParts = dVal.split('-');
+                    if (dashParts.length === 3) {
+                        yVal = parseInt(dashParts[0]) || yVal;
+                        mVal = parseInt(dashParts[1]) || 1;
+                    }
+                }
+            }
+
+            const foremanVal = item.foreman_name || '';
+
+            return {
+                id: item.id,
+                date: dVal,
+                month: mVal,
+                year: yVal,
+                jobNo: item.job_no || item.jobNo || item.job_number || '',
+                job_no: item.job_no || '',
+                route: item.route || ((item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : ''),
+                route_from: item.route_from || '',
+                route_to: item.route_to || '',
+                foreman: foremanVal,
+                foremanName: foremanVal,
+                foreman_name: foremanVal,
+                foreman10pct: item.foreman_cost || '0',
+                foreman_cost: item.foreman_cost || '0',
+                total: item.total_amount || '$0',
+                total_amount: item.total_amount || '$0',
+                helpers: item.helpers_cost || '-',
+                helpers_cost: item.helpers_cost || '-',
+                drivers: item.drivers_cost || '-',
+                drivers_cost: item.drivers_cost || '-',
+                pu: item.pu_payments || '-',
+                pu_payments: item.pu_payments || '-',
+                dest: item.destination_payments || '-',
+                destination: item.destination_payments || '-',
+                destination_payments: item.destination_payments || '-',
+                diesel: item.diesel_expense || '-',
+                diesel_expense: item.diesel_expense || '-',
+                hotel: item.hotel_expense || '-',
+                hotel_expense: item.hotel_expense || '-',
+                storage: item.storage || '-'
+            };
+        });
+
+        window.masterJobs.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        window.currentFilteredJobs = window.masterJobs;
+
+        if (typeof populateYearFilter === 'function') populateYearFilter();
+        
+        if (typeof filterLedgerTable === 'function') {
+            filterLedgerTable();
+        } else if (typeof renderTable === 'function') {
+            renderTable(window.masterJobs);
+        }
+
+        const summaryContainer = document.getElementById('paymentSummaryContainer');
+        if (summaryContainer && typeof generatePaymentMethodSummaryTableHTML === 'function') {
+            summaryContainer.innerHTML = generatePaymentMethodSummaryTableHTML();
+        }
+
+        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
+
+    } catch (e) {
+        window.masterJobs = [];
+    }
+}
+window.initMasterJobsData = initMasterJobsData;
+
+async function saveMasterJobsData(jobs) {
+    window.masterJobs = jobs;
+    filterLedgerTable();
+    if (typeof updateDashboardAnalytics === 'function') {
+        updateDashboardAnalytics();
+    }
+}
+window.saveMasterJobsData = saveMasterJobsData;
+
+function populateYearFilter() {
+    const yearSelect = document.getElementById('filterYear');
+    if (!yearSelect) return;
+
+    const uniqueYears = [...new Set(window.masterJobs.map(item => item.year))].filter(y => y).sort((a, b) => b - a);
+    const currentSelected = yearSelect.value;
+
+    let optionsHTML = `<option value="ALL">All Years</option>`;
+    uniqueYears.forEach(year => {
+        optionsHTML += `<option value="${year}" ${year == currentSelected ? 'selected' : ''}>${year}</option>`;
+    });
+
+    yearSelect.innerHTML = optionsHTML;
+}
+window.populateYearFilter = populateYearFilter;
 
 // ==========================================
-// 3. CRUD TABLE & FILTERING (الإصدار النهائي المستقر)
+// 3. CRUD TABLE & FILTERING
 // ==========================================
 function filterJobsTable() {
     const startInput = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
     const endInput = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
 
-    const startValStr = startInput ? startInput.value : ''; 
-    const endValStr = endInput ? endInput.value : '';     
+    const startValStr = startInput ? startInput.value : '';
+    const endValStr = endInput ? endInput.value : '';
 
     const rawData = window.masterJobs || window.allJobsData || [];
 
-    // إذا كانت حقول التاريخ فارغة تماماً، اعرض جميع الـ 397 سجلاً مباشرة دون فلترة
-    if (!startValStr && !endValStr) {
-        window.currentFilteredJobs = rawData;
-        if (typeof renderTable === 'function') {
-            renderTable(rawData);
-        }
-        const totalMasterCount = rawData.length;
-        const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
-        if (counterEl) {
-            counterEl.innerText = `Showing ${rawData.length} of ${totalMasterCount} records`;
-        }
-        return;
-    }
-
-    // دالة تنظيف ومقارنة التواريخ بدقة لمنع تداخل الشهور
-    function normalizeDateString(dateStr) {
-        if (!dateStr) return '';
+    function parseDateObj(dateStr, isEndDate = false) {
+        if (!dateStr) return null;
         const cleanStr = String(dateStr).trim().split(' ')[0];
+        let y = 0, m = 0, d = 0;
 
         if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
-            return cleanStr;
-        }
-
-        if (cleanStr.includes('/') || cleanStr.includes('-')) {
-            const separator = cleanStr.includes('/') ? '/' : '-';
+            const parts = cleanStr.split('-').map(Number);
+            y = parts[0]; m = parts[1]; d = parts[2];
+        } else if (cleanStr.includes('-') || cleanStr.includes('/')) {
+            const separator = cleanStr.includes('-') ? '-' : '/';
             const parts = cleanStr.split(separator).map(Number);
             if (parts.length === 3) {
-                let y, m, d;
                 if (parts[0] > 1000) {
                     y = parts[0]; m = parts[1]; d = parts[2];
                 } else {
@@ -167,35 +365,49 @@ function filterJobsTable() {
                         m = parts[0]; d = parts[1];
                     }
                 }
-                return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             }
         }
-        return '';
+
+        if (y && m && d) {
+            return isEndDate 
+                ? new Date(y, m - 1, d, 23, 59, 59, 999) 
+                : new Date(y, m - 1, d, 0, 0, 0, 0);
+        }
+
+        const dObj = new Date(dateStr);
+        if (isNaN(dObj.getTime())) return null;
+        return isEndDate 
+            ? new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999) 
+            : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
     }
+
+    const fDate = parseDateObj(startValStr, false);
+    const tDate = parseDateObj(endValStr, true);
 
     const filtered = rawData.filter(item => {
         const itemDateStr = item.date || item.created_at;
         if (!itemDateStr) return false;
 
-        const normalizedItemDate = normalizeDateString(itemDateStr);
-        if (!normalizedItemDate) return false;
+        const itemDate = parseDateObj(itemDateStr, false);
+        if (!itemDate) return false;
 
-        if (startValStr && normalizedItemDate < startValStr) return false;
-        if (endValStr && normalizedItemDate > endValStr) return false;
+        if (fDate && itemDate < fDate) return false;
+        if (tDate && itemDate > tDate) return false;
 
         return true;
     });
 
-    window.currentFilteredJobs = filtered;
+    window.currentFilteredJobs = (!startValStr && !endValStr) ? rawData : filtered;
+    const activeDisplayData = window.currentFilteredJobs;
 
     if (typeof renderTable === 'function') {
-        renderTable(filtered);
+        renderTable(activeDisplayData);
     }
-
-    const totalMasterCount = rawData.length;
-    const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
-    if (counterEl) {
-        counterEl.innerText = `Showing ${filtered.length} of ${totalMasterCount} records`;
+    
+    const countEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
+    if (countEl) {
+        const totalMasterCount = (window.masterJobs || []).length;
+        countEl.innerText = `Showing ${activeDisplayData.length} of ${totalMasterCount} records`;
     }
 
     const summaryContainer = document.getElementById('paymentSummaryContainer');
@@ -204,7 +416,6 @@ function filterJobsTable() {
     }
 }
 
-// توحيد الربط البرمجي
 window.filterJobsTable = filterJobsTable;
 window.filterLedgerTable = filterJobsTable;
 
@@ -876,10 +1087,8 @@ async function softDeleteRecord(tableName, recordId, recordDate) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
     if (!window.supabaseClient) return false;
 
-    // تحويل الـ ID إلى رقم أو نص حسب نوعه في قاعدة البيانات
     const cleanId = !isNaN(recordId) ? Number(recordId) : recordId;
 
-    // بناء الاستعلام مع دعم المفتاح المركب (id + date) لتجنب رفض قاعدة البيانات
     let query = window.supabaseClient
         .from(tableName)
         .update({ is_deleted: true })
@@ -897,7 +1106,6 @@ async function softDeleteRecord(tableName, recordId, recordDate) {
     } else {
         alert('Record moved to Recycle Bin successfully!');
         
-        // تحديث البيانات المحلية وإعادة الرسم فوراً
         if (typeof initMasterJobsData === 'function') await initMasterJobsData();
         if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
         if (typeof loadTruckRentals === 'function') await loadTruckRentals();
