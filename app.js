@@ -1327,25 +1327,72 @@ window.renderTable = renderTable;
 
 // 2. دالة التنقل بين التبويبات (لإصلاح خطأ switchTab is not defined)
 function switchTab(tabName) {
-    const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
-    tabs.forEach(t => {
-        const tabEl = document.getElementById(`tab-${t}`) || document.getElementById(`${t}-view`) || document.getElementById(t);
-        if (tabEl) {
-            tabEl.classList.add('hidden');
-            tabEl.classList.remove('flex', 'block');
-            tabEl.style.setProperty('display', 'none', 'important');
+    try {
+        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
+        tabs.forEach(t => {
+            // إخفاء كافة محتويات التبويبات
+            [`tab-${t}`, `${t}-view`, t].forEach(id => {
+                const tabEl = document.getElementById(id);
+                if (tabEl) {
+                    tabEl.classList.add('hidden');
+                    tabEl.classList.remove('flex', 'block');
+                    tabEl.style.setProperty('display', 'none', 'important');
+                }
+            });
+            // إعادة ضبط تصميم الأزرار الجانبية غير النشطة
+            [`nav-${t}`, `nav-${t}-btn`, t].forEach(id => {
+                const navEl = document.getElementById(id);
+                if (navEl) {
+                    navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
+                }
+            });
+        });
+
+        // إظهار التبويب النشط المطلوب
+        let activeTab = null;
+        for (let id of [`tab-${tabName}`, `${tabName}-view`, tabName]) {
+            activeTab = document.getElementById(id);
+            if (activeTab) break;
         }
-    });
+        if (activeTab) {
+            activeTab.classList.remove('hidden');
+            activeTab.classList.add('flex');
+            activeTab.style.setProperty('display', 'flex', 'important');
+        }
 
-    const activeTab = document.getElementById(`tab-${tabName}`) || document.getElementById(`${tabName}-view`) || document.getElementById(tabName);
-    if (activeTab) {
-        activeTab.classList.remove('hidden');
-        activeTab.classList.add('flex');
-        activeTab.style.setProperty('display', 'flex', 'important');
-    }
+        // تفعيل لون الزر الجانبي للتبويب النشط
+        let activeNav = null;
+        for (let id of [`nav-${tabName}`, `nav-${tabName}-btn`, tabName]) {
+            activeNav = document.getElementById(id);
+            if (activeNav) break;
+        }
+        if (activeNav) {
+            activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
+        }
 
-    if (tabName === 'jobs' && typeof window.masterJobs !== 'undefined') {
-        renderTable(window.masterJobs);
+        // استدعاء الوظائف البرمجية الخاصة بكل تبويب عند فتحه
+        if (tabName === 'dashboard') {
+            setTimeout(updateDashboardAnalytics, 50);
+        } else if (tabName === 'jobs') {
+            if (typeof filterLedgerTable === 'function') {
+                filterLedgerTable();
+            } else if (typeof renderTable === 'function' && window.masterJobs) {
+                renderTable(window.masterJobs);
+            }
+        } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
+            renderPrivateTruckRentalTab();
+        } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
+            renderWarehouseTab();
+        } else if (tabName === 'reports') {
+            if (typeof renderReportsTab === 'function') renderReportsTab();
+            if (typeof window.renderSummaryPageWithDetailedTables === 'function') window.renderSummaryPageWithDetailedTables();
+        } else if (tabName === 'users' && typeof renderUsers === 'function') {
+            renderUsers();
+        } else if (tabName === 'trash' || tabName === 'recycle-bin') {
+            if (typeof renderTrashBin === 'function') renderTrashBin();
+        }
+    } catch (e) {
+        console.error("Error switching tab:", e);
     }
 }
 window.switchTab = switchTab;
