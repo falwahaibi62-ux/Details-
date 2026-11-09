@@ -1487,3 +1487,38 @@ window.updateSummaryReportView = updateSummaryReportView;
 window.generateSummaryReportData = generateSummaryReportData;
 window.exportOfficialPDF = exportOfficialPDF;
 window.renderReportsTab = renderReportsTab;
+
+window.exportOfficialPDF = exportOfficialPDF;
+window.renderReportsTab = renderReportsTab;
+
+// 🌟 الكود الجديد للتأكد من التشغيل التلقائي وتحديث الجداول فوراً عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        const data = window.currentFilteredJobs || window.masterJobs || [];
+        if (data.length > 0) {
+            // 1. تحديث البطاقات العلوية والملخصات
+            if (typeof generateSummaryReportData === 'function') {
+                generateSummaryReportData();
+            }
+            // 2. تحديث جدول الإيرادات والأحرف (G, C, P, T, Delivery)
+            if (typeof renderMonthlyTableWrapper === 'function') {
+                renderMonthlyTableWrapper(data);
+            }
+            // 3. تحديث باقي الجداول الإجمالية
+            if (typeof populateSummaryTables === 'function') {
+                populateSummaryTables(data);
+            }
+        }
+    }, 300);
+});
+
+
+
+
+
+
+
+
+
+
+
