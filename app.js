@@ -73,6 +73,7 @@ window.formatJobDateToSlash = formatJobDateToSlash;
 // ==========================================
 // 2. دالة فلترة جدول العمليات (Operations Ledger)
 // ==========================================
+
 function filterLedgerTable() {
     const fromInput = document.getElementById('ledgerFromDate') || 
                       document.getElementById('reportStartDate') || 
@@ -100,13 +101,26 @@ function filterLedgerTable() {
             const parts = cleanStr.split('-').map(Number);
             y = parts[0]; m = parts[1]; d = parts[2];
         } 
-        // 2. إذا كان التاريخ قادماً بصيغة الحقول MM/DD/YYYY (مثل 10/01/2026)
-        else if (cleanStr.includes('/')) {
-            const parts = cleanStr.split('/').map(Number);
+        // 2. إذا كان التاريخ بصيغة DD-MM-YYYY أو DD/MM/YYYY أو MM/DD/YYYY
+        else if (cleanStr.includes('-') || cleanStr.includes('/')) {
+            const separator = cleanStr.includes('-') ? '-' : '/';
+            const parts = cleanStr.split(separator).map(Number);
             if (parts.length === 3) {
-                m = parts[0]; // الشهر
-                d = parts[1]; // اليوم
-                y = parts[2]; // السنة
+                // إذا كانت السنة في البداية (مثل 2026-10-01)
+                if (parts[0] > 1000) {
+                    y = parts[0]; m = parts[1]; d = parts[2];
+                } 
+                // إذا كانت السنة في النهاية (مثل 01-10-2026 أو 10-01-2026)
+                else {
+                    y = parts[2];
+                    // افتراض أن القيمة الأولى هي الشهر والثانية اليوم (أو العكس حسب المدخل)
+                    // بما أن المدخل من حقل التاريخ، نحدد بدقة بناءً على القيمة الأكبر
+                    if (parts[0] > 12) {
+                        d = parts[0]; m = parts[1];
+                    } else {
+                        m = parts[0]; d = parts[1];
+                    }
+                }
             }
         }
 
@@ -126,7 +140,7 @@ function filterLedgerTable() {
     const fDate = parseDateObj(fromVal, false);
     const tDate = parseDateObj(toVal, true);
 
-    // تطبيق الفلترة واستبعاد أي تواريخ خارج النطاق بدقة تامة
+    // تطبيق الفلترة الصارمة واستبعاد تواريخ سبتمبر فوراً
     data = data.filter(item => {
         if (!item.date) return false;
         const itemDate = parseDateObj(item.date, false);
@@ -157,6 +171,8 @@ function filterLedgerTable() {
     }
 }
 window.filterLedgerTable = filterLedgerTable;
+
+
 
 // 🌟 ربط حقول الإدخال تلقائياً بحدث التغيير لضمان الفلترة الفورية عند اختيار التاريخ
 document.addEventListener('DOMContentLoaded', () => {
