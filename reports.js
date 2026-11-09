@@ -162,7 +162,7 @@ function generateDetailedReportData() {
 
         return `
             <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-                <td class="p-2.5 border-r text-center">${formatDateOnly(j.date)}</td>                
+                <td class="p-2.5 border-r text-center">${formatDateOnly(j.date)}</td>               
                 <td class="p-2.5 border-r text-center font-bold">${j.jobNo || j.job_no || '-'}</td>
                 <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[0] : (j.route_from || '-')}</td>
                 <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[1] || '-' : (j.route_to || '-')}</td>
@@ -179,20 +179,22 @@ function generateDetailedReportData() {
         `;
     }).join('');
 
+    // 🌟 التعديل المتوافق مع أعمدة truck_rental الفعلية في Supabase (truckLabel & Days)
     const rentalRows = rentals.map(r => `
         <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
             <td class="p-2 border-r text-center">${r.date || '-'}</td>
-            <td class="p-2 border-r text-center font-bold">${r.truckNo || r.truck_no || r.truckName || r.name || '-'}</td>
-            <td class="p-2 border-r text-center">${r.days || '0'} Days</td>
+            <td class="p-2 border-r text-center font-bold">${r.truckLabel || r.truckNo || r.truck_no || '-'}</td>
+            <td class="p-2 border-r text-center">${r.Days || r.days || '0'} Days</td>
             <td class="p-2 border-r text-center font-bold text-amber-600">$${formatCleanNumber(r.amount)}</td>
             <td class="p-2 text-center uppercase font-semibold">${r.paymentType || r.paymentMethod || 'Cash'}</td>
         </tr>
     `).join('');
 
+    // 🌟 التعديل المتوافق مع أعمدة warehouse_expenses الفعلية في Supabase (services & details)
     const warehouseRows = warehouse.map(w => `
         <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
             <td class="p-2 border-r text-center">${w.date || '-'}</td>
-            <td class="p-2 border-r text-center font-bold">${w.description || w.item || w.name || '-'}</td>
+            <td class="p-2 border-r text-center font-bold">${w.services || w.details || w.description || '-'}</td>
             <td class="p-2 border-r text-center font-bold text-purple-600">$${formatCleanNumber(w.amount)}</td>
             <td class="p-2 text-center uppercase font-semibold">${w.paymentType || w.paymentMethod || 'Cash'}</td>
         </tr>
