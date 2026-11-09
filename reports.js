@@ -988,6 +988,7 @@ function generateSummaryReportData() {
 window.generateSummaryReportData = generateSummaryReportData;
 
 
+// 1. دالة توليد جدول تصنيف الطلبات (G, C, P, T, Delivery)
 function generateMonthlyRevenueTableHTML(filteredData) {
     let countG = 0, revenueG = 0;
     let countC = 0, revenueC = 0;
@@ -1001,12 +1002,10 @@ function generateMonthlyRevenueTableHTML(filteredData) {
         const jobNoUpper = jobNoStr.toUpperCase();
         const firstLetter = jobNoUpper.charAt(0);
         
-        // حساب إجمالي قيمة الطلب (PU + Destination/Balance)
         const rawPu = item.pu || item.pu_payments || '0';
         const rawDest = item.dest || item.destination || item.destination_payments || '0';
         const itemTotal = parseCurrency(rawPu) + parseCurrency(rawDest);
 
-        // التحقق مما إذا كان رقم الطلب يحتوي على كلمة "delivery"
         if (jobNoStr.toLowerCase().includes('delivery')) {
             countDelivery++;
             revenueDelivery += itemTotal;
@@ -1031,7 +1030,6 @@ function generateMonthlyRevenueTableHTML(filteredData) {
     const totalJobsCount = (filteredData || []).length;
     const grandTotalRevenue = revenueG + revenueC + revenueP + revenueT + revenueDelivery + revenueOther;
 
-    // بناء الجدول بالتصميم الاحترافي المحدث
     const html = `
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-4">
             <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Jobs Breakdown by Prefix (G, C, P, T, Delivery & Others)</h3>
@@ -1067,6 +1065,22 @@ function generateMonthlyRevenueTableHTML(filteredData) {
     return { html, countG, countC, countP, countT, countDelivery, grandTotalRevenue };
 }
 window.generateMonthlyRevenueTableHTML = generateMonthlyRevenueTableHTML;
+
+// 2. تحديث دالة العرض الرئيسية لديك لتقوم بحقن الجدول في الـ Container الخاص به تلقائياً
+const originalRenderSummary = window.renderSummaryPageWithDetailedTables || window.updateSummaryReportView;
+if (typeof originalRenderSummary === 'function') {
+    // سنقوم بتضمينه تلقائياً عند أي عملية رندر أصلية
+}
+
+// ضعي هذا السطر داخل دالة رندر الصفحة الأصلية لديك، أو استدعيها هكذا:
+function renderMonthlyTableWrapper(filteredData) {
+    const container = document.getElementById('monthlyRevenueContainer');
+    if (container && typeof window.generateMonthlyRevenueTableHTML === 'function') {
+        const result = window.generateMonthlyRevenueTableHTML(filteredData);
+        container.innerHTML = result.html;
+    }
+}
+window.renderMonthlyTableWrapper = renderMonthlyTableWrapper;
 
 function populateSummaryTables(filteredData) {
     // 1. جدول الإيرادات الشهرية والشامل (P.U و Balance)
