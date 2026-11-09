@@ -173,7 +173,6 @@ function filterLedgerTable() {
 window.filterLedgerTable = filterLedgerTable;
 
 
-
 // 🌟 ربط حقول الإدخال تلقائياً بحدث التغيير لضمان الفلترة الفورية عند اختيار التاريخ
 document.addEventListener('DOMContentLoaded', () => {
     const fromInput = document.getElementById('filterStartDate') || document.getElementById('fromDate') || document.getElementById('ledgerFromDate');
