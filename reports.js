@@ -1088,10 +1088,8 @@ function renderMonthlyTableWrapper(filteredData) {
 window.renderMonthlyTableWrapper = renderMonthlyTableWrapper;
 
 function populateSummaryTables(filteredData) {
-    // 1. جدول الإيرادات الشهرية والشامل (P.U و Balance)
+    // 1. جدول تصنيف الطلبات والأحرف (G, C, P, T, Delivery)
     let revenueContainer = document.getElementById('monthlyRevenueContainer');
-    
-    // إذا لم تكن الحاوية موجودة في الـ HTML، نقوم بإنشائها ووضعها تلقائياً فوق جدول طرق الدفع
     if (!revenueContainer) {
         revenueContainer = document.createElement('div');
         revenueContainer.id = 'monthlyRevenueContainer';
@@ -1108,27 +1106,32 @@ function populateSummaryTables(filteredData) {
         revenueContainer.innerHTML = typeof revenueResult === 'object' ? revenueResult.html : revenueResult;
     }
 
-    // 2. ملخص طرق الدفع
+    // 2. ملخص طرق الدفع (يعمل لديك بالفعل)
     const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
     if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
         const paymentRes = window.generatePaymentMethodSummaryTableHTML(filteredData);
         summaryPaymentContainer.innerHTML = typeof paymentRes === 'object' ? paymentRes.html : paymentRes;
     }
 
-    // 3. الملخص العام للعمليات والتشغيل
+    // 3. الملخص العام للعمليات والتشغيل (تم تصحيح اسم الدالة لتطابق ما لديك)
     const summaryContainer = document.getElementById('summaryReportContainer');
-    if (summaryContainer && typeof window.generateOfficialSummaryHTML === 'function') {
-        summaryContainer.innerHTML = window.generateOfficialSummaryHTML(filteredData);
+    if (summaryContainer) {
+        // نتحقق من كلا الاسمين المحتملين للدالة لمنع حدوث خطأ
+        const summaryFunc = window.generateOfficialSummaryHTML || window.generateOfficialSummaryTable;
+        if (typeof summaryFunc === 'function') {
+            const summaryRes = summaryFunc(filteredData);
+            summaryContainer.innerHTML = typeof summaryRes === 'object' ? summaryRes.html : summaryRes;
+        }
     }
 
-    // 4. ملخص المستودع والمصاريف الأخرى
+    // 4. ملخص المستودع والمصاريف الأخرى (يعمل لديك بالفعل)
     const warehouseContainer = document.getElementById('warehousePDFSummarySection');
     if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
         const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
         warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
     }
 }
-window.populateSummaryTables = populateSummaryTables;
+window.populateSummaryTables = populateSummaryTables; 
 
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
