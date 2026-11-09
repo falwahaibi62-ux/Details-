@@ -989,18 +989,19 @@ window.generateSummaryReportData = generateSummaryReportData;
 
 
 function populateSummaryTables(filteredData) {
-    
     const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
-    if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') 
+    if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
         const paymentRes = window.generatePaymentMethodSummaryTableHTML(filteredData);
         summaryPaymentContainer.innerHTML = typeof paymentRes === 'object' ? paymentRes.html : paymentRes;
     }
 
-  const warehouseContainer = document.getElementById('warehousePDFSummarySection');
-if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
-    const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
-    warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
+    const warehouseContainer = document.getElementById('warehousePDFSummarySection');
+    if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
+        const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
+        warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
+    }
 }
+window.populateSummaryTables = populateSummaryTables;
 
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
