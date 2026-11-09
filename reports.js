@@ -650,41 +650,29 @@ function generateOfficialSummaryTable(filteredJobs) {
 
         const dieselValStr = item.diesel || item.diesel_expense;
         if (dieselValStr && dieselValStr !== '-') {
-            let dieselStr = String(dieselValStr);
-            let dieselParts = dieselStr.split('+');
-            dieselParts.forEach(part => {
-                const partLower = part.toLowerCase().trim();
-                if (partLower.includes('cash')) {
+            String(dieselValStr).split('+').forEach(part => {
+                if (part.toLowerCase().includes('cash')) {
                     const cleanNum = parseCurrency(part);
-                    if (cleanNum > 0 && cleanNum < 50000) {
-                        sumCashDiesel += cleanNum;
-                    }
+                    if (cleanNum > 0 && cleanNum < 50000) sumCashDiesel += cleanNum;
                 }
             });
         }
 
         const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
-        let cashPuVal = 0;
         if (puStr.includes('cash')) {
             const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            cashPuVal = cashMatch ? parseCurrency(cashMatch[1]) : parseCurrency(item.pu || item.pu_payments);
-            sumCashPu += cashPuVal;
+            sumCashPu += cashMatch ? parseCurrency(cashMatch[1]) : parseCurrency(item.pu || item.pu_payments);
         }
-
-        let pmoPuVal = 0;
         if (puStr.includes('pmo')) {
             const pmoMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*pmo/);
-            pmoPuVal = pmoMatch ? parseCurrency(pmoMatch[1]) : parseCurrency(item.pu || item.pu_payments);
-            sumPmoPu += pmoPuVal;
+            sumPmoPu += pmoMatch ? parseCurrency(pmoMatch[1]) : parseCurrency(item.pu || item.pu_payments);
         }
 
         const rawPuVal = parseCurrency(item.pu || item.pu_payments);
         const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
-
         let netPuWithoutCashPmo = puVal;
-        if (puStr.includes('cash')) netPuWithoutCashPmo -= cashPuVal;
-        if (puStr.includes('pmo')) netPuWithoutCashPmo -= pmoPuVal;
-
+        if (puStr.includes('cash')) netPuWithoutCashPmo -= sumCashPu;
+        if (puStr.includes('pmo')) netPuWithoutCashPmo -= sumPmoPu;
         if (netPuWithoutCashPmo > 0) sumZellePu += netPuWithoutCashPmo;
 
         const destStr = String(item.dest || item.destination || item.destination_payments || '').toLowerCase();
@@ -693,7 +681,6 @@ function generateOfficialSummaryTable(filteredJobs) {
             const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
             cashDestVal = cashDestMatch ? parseCurrency(cashDestMatch[1]) : parseCurrency(item.dest || item.destination || item.destination_payments);
         }
-
         const rawDestVal = parseCurrency(item.dest || item.destination || item.destination_payments);
         const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
 
@@ -711,14 +698,9 @@ function generateOfficialSummaryTable(filteredJobs) {
         }
     });
 
-    const rentalSummaryObj = generateTruckRentalSummaryTableHTML();
-    const warehouseSummaryObj = generateWarehouseSummaryTableHTML();
-    const paymentMethodsObj = generatePaymentMethodSummaryTableHTML();
-
+    // 🌟 تم إزالة استدعاء rentalSummaryObj و warehouseSummaryObj من هنا لتجنب التكرار
     return `
         <div class="space-y-6">
-            ${paymentMethodsObj.html}
-            
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
                 <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                     <div>
@@ -764,9 +746,6 @@ function generateOfficialSummaryTable(filteredJobs) {
                     </table>
                 </div>
             </div>
-
-            ${rentalSummaryObj.html}
-            ${warehouseSummaryObj.html}
         </div>
     `;
 }
@@ -1076,11 +1055,10 @@ function generateMonthlyRevenueTableHTML(filteredData) {
         const jobNoUpper = jobNoStr.toUpperCase();
         const firstLetter = jobNoUpper.charAt(0);
         
-        const rawPu = item.pu || item.pu_payments || '0';
-        const rawDest = item.dest || item.destination || item.destination_payments || '0';
-        const itemTotal = parseCurrency(rawPu) + parseCurrency(rawDest);
+        // 🌟 التصحيح الجذري: استخدام الإجمالي الصحيح مباشرة لمنع تضاعف الأرقام
+        const itemTotal = parseCurrency(item.total || item.total_amount);
 
-        if (jobNoStr.toLowerCase().includes('delivery')) {
+        if (jobNoStr.toLowerCase().includes('delivery') || String(item.route || '').toLowerCase().includes('delivery')) {
             countDelivery++;
             revenueDelivery += itemTotal;
         } else if (firstLetter === 'G') {
@@ -1105,34 +1083,36 @@ function generateMonthlyRevenueTableHTML(filteredData) {
     const grandTotalRevenue = revenueG + revenueC + revenueP + revenueT + revenueDelivery + revenueOther;
 
     const html = `
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-4">
-            <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Jobs Breakdown by Prefix (G, C, P, T, Delivery & Others)</h3>
-            <table class="table-pdf" style="width: 100%; border-collapse: collapse; font-size: 10px;">
-                <thead>
-                    <tr style="background-color: #f1f5f9; color: #334155;">
-                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center;">Category</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #047857;">G (${countG})</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #1d4ed8;">C (${countC})</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #d97706;">P (${countP})</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #7c3aed;">T (${countT})</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #e11d48;">Delivery (${countDelivery})</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #64748b;">Other (${countOther})</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; background-color: #047857; color: white;">Grand Total (${totalJobsCount})</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="font-weight: bold; text-align: center; color: #1e293b;">
-                        <td style="border: 1px solid #e2e8f0; padding: 5px; background-color: #f8fafc;">Total Revenue</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #047857;">$${formatCleanNumber(revenueG)}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #1d4ed8;">$${formatCleanNumber(revenueC)}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #d97706;">$${formatCleanNumber(revenueP)}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #7c3aed;">$${formatCleanNumber(revenueT)}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #e11d48;">$${formatCleanNumber(revenueDelivery)}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #64748b;">$${formatCleanNumber(revenueOther)}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 5px; background-color: #ecfdf5; color: #065f46; font-size: 11px;">$${formatCleanNumber(grandTotalRevenue)}</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4">
+            <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wide">Jobs Breakdown by Prefix (G, C, P, T, Delivery & Others)</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-center border-collapse text-xs min-w-[800px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                            <th class="p-2.5 border-r">Category</th>
+                            <th class="p-2.5 border-r text-emerald-700 font-bold">G (${countG})</th>
+                            <th class="p-2.5 border-r text-blue-700 font-bold">C (${countC})</th>
+                            <th class="p-2.5 border-r text-amber-700 font-bold">P (${countP})</th>
+                            <th class="p-2.5 border-r text-purple-700 font-bold">T (${countT})</th>
+                            <th class="p-2.5 border-r text-rose-700 font-bold">Delivery (${countDelivery})</th>
+                            <th class="p-2.5 border-r text-slate-600 font-bold">Other (${countOther})</th>
+                            <th class="p-2.5 bg-emerald-600 text-white font-extrabold">Grand Total (${totalJobsCount})</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="font-bold text-xs">
+                            <td class="p-3 border-r bg-slate-50 text-slate-800">Total Revenue</td>
+                            <td class="p-3 border-r text-emerald-600">$${formatCleanNumber(revenueG)}</td>
+                            <td class="p-3 border-r text-blue-600">$${formatCleanNumber(revenueC)}</td>
+                            <td class="p-3 border-r text-amber-600">$${formatCleanNumber(revenueP)}</td>
+                            <td class="p-3 border-r text-purple-600">$${formatCleanNumber(revenueT)}</td>
+                            <td class="p-3 border-r text-rose-600">$${formatCleanNumber(revenueDelivery)}</td>
+                            <td class="p-3 border-r text-slate-600">$${formatCleanNumber(revenueOther)}</td>
+                            <td class="p-3 bg-emerald-50 text-emerald-800 font-extrabold text-sm">$${formatCleanNumber(grandTotalRevenue)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     `;
 
