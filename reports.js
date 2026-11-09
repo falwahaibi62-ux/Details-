@@ -966,25 +966,29 @@ function updateSummaryReportView(filteredData) {
 window.updateSummaryReportView = updateSummaryReportView;
 
 function generateSummaryReportData() {
-    // جلب البيانات مع فحص احتياطي إذا كانت فارغة لجلبها مباشرة من النافذة العامة
-    let filteredData = typeof getFilteredJobsData === 'function' ? getFilteredJobsData() : [];
-    
-    if (!filteredData || filteredData.length === 0) {
-        filteredData = window.masterJobs || window.currentFilteredJobs || [];
+    // 1. احصل على البيانات المصفاة حالياً (استخدم المصفوفة المصفاة أو الشاملة)
+    const filteredData = window.currentFilteredJobs || window.masterJobs || [];
+
+    // 2. كود توزيع الجداول على الحاويات بدقة لمرة واحدة فقط بدون تكرار:
+
+    // أ. ملخص طرق الدفع
+    const payContainer = document.getElementById('paymentSummaryContainer');
+    if (payContainer && typeof window.generatePaymentSummaryHTML === 'function') {
+        payContainer.innerHTML = window.generatePaymentSummaryHTML(filteredData);
     }
 
-    // إذا كانت البيانات فارغة تماماً ولم يتم تحميلها بعد، نحاول إعادة جلبها إذا توفرت دالة التهيئة
-    if (filteredData.length === 0 && typeof initMasterJobsData === 'function') {
-        initMasterJobsData().then(() => {
-            const reloadedData = typeof getFilteredJobsData === 'function' ? getFilteredJobsData() : (window.masterJobs || []);
-            updateSummaryReportView(reloadedData);
-            populateSummaryTables(reloadedData);
-        });
-        return;
+    // ب. الملخص العام للعمليات
+    const summaryContainer = document.getElementById('summaryReportContainer');
+    if (summaryContainer && typeof window.generateOfficialSummaryHTML === 'function') {
+        summaryContainer.innerHTML = window.generateOfficialSummaryHTML(filteredData);
     }
-    
-    updateSummaryReportView(filteredData);
-    populateSummaryTables(filteredData);
+
+    // ج. ملخص المستودع (يظهر لمرة واحدة فقط هنا)
+    const warehouseContainer = document.getElementById('warehousePDFSummarySection');
+    if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
+        const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
+        warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
+    }
 }
 window.generateSummaryReportData = generateSummaryReportData;
 
