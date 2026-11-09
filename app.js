@@ -1035,48 +1035,51 @@ async function saveJob(event) {
 window.saveJob = saveJob;
 
 // ==========================================
-// 8. RECYCLE BIN & TRASH MANAGEMENT (شامل لكافة الجداول)
+// 8. RECYCLE BIN & TRASH MANAGEMENT (نسخة نهائية دقيقة)
 // ==========================================
 
 async function renderTrashBin() {
     try {
-        if (!window.supabaseClient) return;
+        if (!window.supabaseClient) {
+            console.error("❌ Supabase client is not initialized!");
+            return;
+        }
         
         let allDeletedRecords = [];
 
-        // جلب العمليات المحذوفة من jobs_report
+        // جلب العمليات المحذوفة من جدول jobs_report بدقة
         const { data: jobsData, error: jobsErr } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (!jobsErr && jobsData) {
+        if (jobsErr) {
+            console.error("❌ خطأ في جلب السجلات المحذوفة:", jobsErr.message);
+        } else if (jobsData) {
             allDeletedRecords.push(...jobsData.map(item => ({ ...item, tableName: 'jobs_report', displayType: 'Job' })));
         }
 
-        // البحث الآمن عن مكان الجدول أو الحاوية دون التسبب بشاشة بيضاء
-        const trashContainer = document.getElementById('trashTableBody') || 
-                               document.getElementById('recycleBinTableBody') || 
-                               document.getElementById('trashContainer');
-                               
+        const trashContainer = document.getElementById('trashTableBody');
         if (!trashContainer) {
-            console.warn("⚠️ عنصر جدول سلة المحذوفات غير موجود في هذه الصفحة، يتم تخطي الرسم.");
+            console.warn("⚠️ عنصر جدول سلة المحذوفات (trashTableBody) غير موجود في الصفحة.");
             return;
         }
 
         if (allDeletedRecords.length === 0) {
-            trashContainer.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 font-medium">Trash bin is empty</td></tr>`;
+            trashContainer.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 font-medium">Trash bin is empty</td></tr>`;
             return;
         }
 
         trashContainer.innerHTML = allDeletedRecords.map(item => `
             <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
-                <td class="p-3 text-slate-800 font-medium">${item.date || '-'}</td>
+                <td class="p{-3 text-slate-800 font-medium">${item.date || '-'}</td>
                 <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType}</span></td>
                 <td class="p-3 text-slate-700 font-semibold">${item.job_no || item.jobNo || '-'}</td>
                 <td class="p-3 text-slate-600">${item.route || '-'}</td>
                 <td class="p-3 text-slate-600">${item.foreman_name || '-'}</td>
+                <td class="p-3 text-purple-600">${item.helpers_cost || '-'}</td>
+                <td class="p-3 text-blue-600">${item.drivers_cost || '-'}</td>
                 <td class="p-3 font-bold text-emerald-600">${item.total_amount || '$0'}</td>
                 <td class="p-3 text-center space-x-1">
                     <button type="button" onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer shadow-xs" title="Restore">
@@ -1088,92 +1091,70 @@ async function renderTrashBin() {
                 </td>
             </tr>
         `).join('');
+
+        console.log(`✅ تم تحديث سلة المحذوفات وعرض ${allDeletedRecords.length} سجل.`);
+
     } catch (e) {
         console.error("Error in renderTrashBin:", e);
     }
 }
 window.renderTrashBin = renderTrashBin;
 
-async function softDeleteRecord(tableName, recordId, recordDate) {
-    if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
-    if (!window.supabaseClient) {
-        alert("Supabase client not initialized!");
-        return false;
-    }
-
+async function restoreRecord(tableName, recordId) {
+    if (!window.supabaseClient) return;
     const cleanId = !isNaN(recordId) ? Number(recordId) : String(recordId).trim();
 
-    console.log(`🗑️ جاري نقل السجل إلى سلة المحذوفات: Table=${tableName}, ID=${cleanId}`);
-
-    let query = window.supabaseClient
+    const { error } = await window.supabaseClient
         .from(tableName)
-        .update({ is_deleted: true })
+        .update({ is_deleted: false })
         .eq('id', cleanId);
 
-    if (recordDate) {
-        query = query.eq('date', recordDate);
-    }
-
-    const { error } = await query;
-
     if (error) {
-        console.error("❌ خطأ Supabase أثناء الحذف المؤقت:", error);
-        alert('Failed to move record to recycle bin: ' + error.message);
-        return false;
+        alert('Failed to restore record: ' + error.message);
     } else {
-        alert('Record moved to Recycle Bin successfully!');
-        
+        alert('Record restored successfully!');
+        if (typeof renderTrashBin === 'function') await renderTrashBin();
         if (typeof initMasterJobsData === 'function') await initMasterJobsData();
         if (typeof renderTable === 'function' && window.masterJobs) {
             renderTable(window.masterJobs);
         }
-        if (typeof renderTrashBin === 'function') await renderTrashBin();
-        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
-        
-        return true;
-    }
-}
-window.softDeleteRecord = softDeleteRecord;
-
-async function restoreRecord(tableName, recordId) {
-    if (!window.supabaseClient) return;
-    const { error } = await window.supabaseClient.from(tableName).update({ is_deleted: false }).eq('id', recordId);
-    if (!error) {
-        alert('Record restored successfully!');
-        if (typeof renderTrashBin === 'function') renderTrashBin();
-        if (typeof initMasterJobsData === 'function') initMasterJobsData();
-        if (typeof loadWarehouseRecords === 'function') loadWarehouseRecords();
-        if (typeof loadTruckRentals === 'function') loadTruckRentals();
     }
 }
 window.restoreRecord = restoreRecord;
 
 async function permanentDeleteRecord(tableName, recordId) {
-    if (!confirm('Are you sure you want to permanently delete this record?')) return;
+    if (!confirm('Are you sure you want to permanently delete this record? This action cannot be undone.')) return;
     if (!window.supabaseClient) return;
-    const { error } = await window.supabaseClient.from(tableName).delete().eq('id', recordId);
-    if (!error) {
+    
+    const cleanId = !isNaN(recordId) ? Number(recordId) : String(recordId).trim();
+
+    const { error } = await window.supabaseClient
+        .from(tableName)
+        .delete()
+        .eq('id', cleanId);
+
+    if (error) {
+        alert('Failed to permanently delete record: ' + error.message);
+    } else {
         alert('Record permanently deleted!');
-        if (typeof renderTrashBin === 'function') renderTrashBin();
+        if (typeof renderTrashBin === 'function') await renderTrashBin();
     }
 }
 window.permanentDeleteRecord = permanentDeleteRecord;
 
-async function deleteWarehouseRecord(id) {
-    const success = await softDeleteRecord('warehouse_expenses', id);
-    if (success) {
-        if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
-        if (typeof renderWarehouseTable === 'function') renderWarehouseTable();
-        if (typeof renderTrashBin === 'function') renderTrashBin();
-    }
+async function deleteJob(jobIdOrNo) { 
+    await softDeleteRecord('jobs_report', jobIdOrNo); 
 }
-window.deleteWarehouseRecord = deleteWarehouseRecord;
-
-async function deleteJob(jobIdOrNo) { await softDeleteRecord('jobs_report', jobIdOrNo); }
 window.deleteJob = deleteJob;
-async function restoreJob(jobId) { await restoreRecord('jobs_report', jobId); }
+
+async function restoreJob(jobId) { 
+    await restoreRecord('jobs_report', jobId); 
+}
 window.restoreJob = restoreJob;
-async function permanentDeleteJob(jobId) { await permanentDeleteRecord('jobs_report', jobId); }
+
+async function permanentDeleteJob(jobId) { 
+    await permanentDeleteRecord('jobs_report', jobId); 
+}
 window.permanentDeleteJob = permanentDeleteJob;
 
 // ==========================================
