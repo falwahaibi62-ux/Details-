@@ -396,12 +396,15 @@ function renderTable(data) {
 
     if (!tbody) return;
 
-    if (!data || data.length === 0) {
+    // 🌟 حماية إضافية: إذا لم يتم تمرير بيانات، نستخدم البيانات المصفاة حالياً أو القائمة الأصلية
+    const activeData = (data && data.length > 0) ? data : (window.currentFilteredJobs || window.masterJobs || []);
+
+    if (activeData.length === 0) {
         tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-slate-400 font-medium">No records found.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = data.map(item => `
+    tbody.innerHTML = activeData.map(item => `
         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
             <td class="p-3 text-center">${formatDateOnly(item.date)}</td>
             <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
@@ -425,11 +428,18 @@ function renderTable(data) {
             </td>
         </tr>
     `).join('');
+
+    // تحديث نص عداد السجلات المعروضة في الواجهة تلقائياً
+    const totalMasterCount = (window.masterJobs || []).length;
+    const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
+    if (counterEl) {
+        counterEl.innerText = `Showing ${activeData.length} of ${totalMasterCount} records`;
+    }
 }
 window.renderTable = renderTable;
 
 function resetDateFilter() {
-    // 🌟 البحث الشامل عن حقول التاريخ لتفريغها بغض النظر عن الـ ID المستخدم في الصفحة
+    // البحث الشامل عن حقول التاريخ لتفريغها
     const startInput = document.getElementById('ledgerFromDate') || document.getElementById('reportStartDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
     const endInput = document.getElementById('ledgerToDate') || document.getElementById('reportEndDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
     
@@ -451,7 +461,7 @@ function resetDateFilter() {
         filterLedgerTable();
     }
     
-    // 3. 🌟 إعادة رسم وتحديث كل الجداول الإجمالية والتفصيلية فوراً
+    // 3. إعادة رسم وتحديث كل الجداول الإجمالية والتفصيلية فوراً
     if (typeof renderTable === 'function') {
         renderTable(window.currentFilteredJobs);
     }
@@ -464,8 +474,14 @@ function resetDateFilter() {
     if (typeof populateSummaryTables === 'function') {
         populateSummaryTables(window.currentFilteredJobs);
     }
+
+    const summaryContainer = document.getElementById('paymentSummaryContainer');
+    if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
+        summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
+    }
 }
 window.resetDateFilter = resetDateFilter;
+
 
 // ==========================================
 // 4. USERS & PERMISSIONS MANAGEMENT
