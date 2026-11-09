@@ -998,11 +998,10 @@ function populateSummaryTables(filteredData) {
     }
 
     // تعبئة جدول المستودع
-    const warehouseContainer = document.getElementById('warehousePDFSummarySection') || document.getElementById('warehouseSummaryContainer');
-    if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
-        const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
-        warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
-    }
+  const warehouseContainer = document.getElementById('warehousePDFSummarySection');
+if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
+    const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
+    warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
 }
 
 function exportOfficialPDF() {
