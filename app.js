@@ -1026,17 +1026,24 @@ async function renderTrashBin() {
 }
 window.renderTrashBin = renderTrashBin;
 
-async function softDeleteRecord(tableName, recordId) {
+async function softDeleteRecord(tableName, recordId, recordDate) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
     if (!window.supabaseClient) return false;
 
     // تحويل الـ ID إلى رقم أو نص حسب نوعه في قاعدة البيانات
     const cleanId = !isNaN(recordId) ? Number(recordId) : recordId;
 
-    const { error } = await window.supabaseClient
+    // بناء الاستعلام مع دعم المفتاح المركب (id + date) لتجنب رفض قاعدة البيانات
+    let query = window.supabaseClient
         .from(tableName)
         .update({ is_deleted: true })
         .eq('id', cleanId);
+
+    if (recordDate) {
+        query = query.eq('date', recordDate);
+    }
+
+    const { error } = await query;
 
     if (error) {
         alert('Failed to move record to recycle bin: ' + error.message);
