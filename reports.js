@@ -992,18 +992,20 @@ window.generateSummaryReportData = generateSummaryReportData;
 
 
 function updateOfficialReportSummaryCards() {
-    // قراءة البيانات المحدثة القادمة من سحابة Supabase (المفلترة أو الأساسية)
     const jobs = window.currentFilteredJobs || window.masterJobs || [];
     
-    // 1. حساب إجمالي الوظائف والتوصيلات
-    const totalJobs = jobs.length;
+    // 1. حساب إجمالي التوصيلات بدقة
     const totalDeliveries = jobs.filter(j => {
         const jNo = String(j.jobNo || j.job_no || '').toLowerCase();
         const route = String(j.route || '').toLowerCase();
-        return jNo.includes('delivery') || route.includes('delivery') || jNo === '';
+        return jNo.includes('delivery') || route.includes('delivery');
     }).length;
 
-    // 2. حساب الإيرادات والمصاريف باستخدام دالة parseCurrency المحمية والآمنة
+    // 2. حساب إجمالي الوظائف (Total Jobs minus Deliveries إذا كان هذا هو المطلوب، أو إجمالي الوظائف ناقص التوصيلات)
+    const rawTotalJobs = jobs.length;
+    const adjustedTotalJobs = Math.max(0, rawTotalJobs - totalDeliveries); // تطبيقا لطلبك: Total Jobs - Total Deliveries
+
+    // 3. حساب الإيرادات والمصاريف الفعلية بطريقة محمية وآمنة مطابقة لجداول النظام
     let totalRevenue = 0;
     let totalExpenses = 0;
 
@@ -1017,27 +1019,28 @@ function updateOfficialReportSummaryCards() {
         const helpersCost = parseCurrency(j.helpers || j.helpers_cost);
         const driversCost = parseCurrency(j.drivers || j.drivers_cost);
 
+        // جمع المصاريف التشغيلية للمهمة بشكل سليم
         totalExpenses += (diesel + hotel + foremanCost + helpersCost + driversCost);
     });
 
-    // 3. قراءة بيانات إيجارات الشاحنات والمستودع القادمة من جدول Supabase وتتم جدولتها
-    const rentals = window.currentTruckRentals || [];
+    // إضافة مصاريف الشاحنات المستأجرة والمستودع بدقة لكي تتطابق المصاريف مع الواقع
+    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     rentals.forEach(r => {
         totalExpenses += parseCurrency(r.amount);
     });
 
-    const warehouse = window.currentWarehouseRecords || [];
+    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
     warehouse.forEach(w => {
         totalExpenses += parseCurrency(w.amount);
     });
 
-    // 4. تحديث عناصر الـ HTML في البطاقات العلوية بنفس تنسيق الأرقام النظيفة الموحدة
+    // 4. تحديث الـ HTML للبطاقات العلوية بنفس فورمات الأرقام النظيفة في الجداول الأخرى
     const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
-    setEl('sumTotalJobs', totalJobs);
+    setEl('sumTotalJobs', adjustedTotalJobs); // عرض الرقم بعد طرح التوصيلات
     setEl('sumTotalDeliveries', totalDeliveries);
     setEl('sumTotalRevenue', `$${formatCleanNumber(totalRevenue)}`);
-    setEl('sumTotalExpenses', `$${formatCleanNumber(totalExpenses)}`);
+    setEl('sumTotalExpenses', `$${formatCleanNumber(totalExpenses)}`); // تنسيق نظيف بدون أرقام فلكية
 }
 window.updateOfficialReportSummaryCards = updateOfficialReportSummaryCards;
 
