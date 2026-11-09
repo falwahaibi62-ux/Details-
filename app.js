@@ -1089,12 +1089,15 @@ window.renderTrashBin = renderTrashBin;
 
 async function softDeleteRecord(tableName, recordId, recordDate) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
-    if (!window.supabaseClient) return false;
+    if (!window.supabaseClient) {
+        alert("Supabase client not initialized!");
+        return false;
+    }
 
-    // التأكد من أن الid رقم أو نص بشكل صحيح
+    // تنظیف الـ ID (معالجة إذا كان رقماً أو نصاً)
     const cleanId = !isNaN(recordId) ? Number(recordId) : String(recordId).trim();
 
-    console.log(`جاري حذف السجل: Table=${tableName}, ID=${cleanId}`);
+    console.log(`🗑️ جاري نقل السجل إلى سلة المحذوفات: Table=${tableName}, ID=${cleanId}`);
 
     let query = window.supabaseClient
         .from(tableName)
@@ -1108,12 +1111,13 @@ async function softDeleteRecord(tableName, recordId, recordDate) {
     const { data, error } = await query;
 
     if (error) {
-        console.error("❌ خطأ في الحذف عبر Supabase:", error);
+        console.error("❌ خطأ Supabase أثناء الحذف المؤقت:", error);
         alert('Failed to move record to recycle bin: ' + error.message);
         return false;
     } else {
         alert('Record moved to Recycle Bin successfully!');
         
+        // إعادة تحميل البيانات ورسم الجدول وسلة المحذوفات فوراً
         if (typeof initMasterJobsData === 'function') await initMasterJobsData();
         if (typeof renderTable === 'function' && window.masterJobs) {
             renderTable(window.masterJobs);
