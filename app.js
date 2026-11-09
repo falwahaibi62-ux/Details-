@@ -1350,10 +1350,16 @@ window.renderTable = renderTable;
 // 2. دالة التنقل بين التبويبات (لإصلاح خطأ switchTab is not defined)
 function switchTab(tabName) {
     try {
-        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report', 'recycle-bin'];
+        // توحيد الاسم ليتوافق مع الـ ID الحقيقي في الـ HTML وهو tab-trash
+        if (tabName === 'recycle-bin' || tabName === 'trash') {
+            tabName = 'trash';
+        }
+
+        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report'];
+        
         tabs.forEach(t => {
-            // إخفاء كافة محتويات التبويبات
-            [`tab-${t}`, `${t}-view`, t].forEach(id => {
+            // إخفاء كافة محتويات التبويبات المحتملة
+            [t, `tab-${t}`, `${t}-view`].forEach(id => {
                 const tabEl = document.getElementById(id);
                 if (tabEl) {
                     tabEl.classList.add('hidden');
@@ -1361,30 +1367,35 @@ function switchTab(tabName) {
                     tabEl.style.setProperty('display', 'none', 'important');
                 }
             });
-            // إعادة ضبط تصميم الأزرار الجانبية غير النشطة
-            [`nav-${t}`, `nav-${t}-btn`, t].forEach(id => {
+            // إعادة ضبط تصميم الأزرار الجانبية
+            [t, `nav-${t}`, `nav-${t}-btn`].forEach(id => {
                 const navEl = document.getElementById(id);
-                if (navEl) {
+                if (navEl && (navEl.tagName === 'BUTTON' || navEl.tagName === 'DIV')) {
                     navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
                 }
             });
         });
 
-        // إظهار التبويب النشط المطلوب
+        // إظهار التبويب المطلوب باستخدام الـ ID الصحيح tab-trash
         let activeTab = null;
-        for (let id of [`tab-${tabName}`, `${tabName}-view`, tabName]) {
+        const possibleIds = tabName === 'trash' 
+            ? ['tab-trash', 'trash', 'trash-view', 'recycle-bin', 'tab-recycle-bin']
+            : [tabName, `tab-${tabName}`, `${tabName}-view`];
+
+        for (let id of possibleIds) {
             activeTab = document.getElementById(id);
             if (activeTab) break;
         }
+
         if (activeTab) {
             activeTab.classList.remove('hidden');
-            activeTab.classList.add('flex');
-            activeTab.style.setProperty('display', 'flex', 'important');
+            activeTab.classList.add('block');
+            activeTab.style.setProperty('display', 'block', 'important');
         }
 
-        // تفعيل لون الزر الجانبي للتبويب النشط
+        // تفعيل زر القائمة الجانبية (Recycle Bin)
         let activeNav = null;
-        for (let id of [`nav-${tabName}`, `nav-${tabName}-btn`, tabName]) {
+        for (let id of [tabName, `nav-${tabName}`, `nav-${tabName}-btn`, 'recycle-bin', 'nav-recycle-bin']) {
             activeNav = document.getElementById(id);
             if (activeNav) break;
         }
@@ -1392,15 +1403,12 @@ function switchTab(tabName) {
             activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
-        // استدعاء الوظائف البرمجية الخاصة بكل تبويب عند فتحه
+        // تشغيل الوظائف البرمجية لكل تبويب
         if (tabName === 'dashboard') {
-            setTimeout(updateDashboardAnalytics, 50);
+            if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
         } else if (tabName === 'jobs') {
-            if (typeof filterLedgerTable === 'function') {
-                filterLedgerTable();
-            } else if (typeof renderTable === 'function' && window.masterJobs) {
-                renderTable(window.masterJobs);
-            }
+            if (typeof filterLedgerTable === 'function') filterLedgerTable();
+            else if (typeof renderTable === 'function' && window.masterJobs) renderTable(window.masterJobs);
         } else if (tabName === 'rentals' && typeof renderPrivateTruckRentalTab === 'function') {
             renderPrivateTruckRentalTab();
         } else if (tabName === 'warehouse' && typeof renderWarehouseTab === 'function') {
@@ -1410,7 +1418,7 @@ function switchTab(tabName) {
             if (typeof window.renderSummaryPageWithDetailedTables === 'function') window.renderSummaryPageWithDetailedTables();
         } else if (tabName === 'users' && typeof renderUsers === 'function') {
             renderUsers();
-        } else if (tabName === 'trash' || tabName === 'recycle-bin') {
+        } else if (tabName === 'trash') {
             if (typeof renderTrashBin === 'function') renderTrashBin();
         }
     } catch (e) {
