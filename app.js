@@ -344,7 +344,7 @@ window.populateYearFilter = populateYearFilter;
 
 
 // ==========================================
-// 3. CRUD TABLE & FILTERING (محدث ومصحح)
+// 3. CRUD TABLE & FILTERING (محدث ويدعم الحالة الفارغة)
 // ==========================================
 function filterJobsTable() {
     const fromInput = document.getElementById('filterStartDate') || document.getElementById('ledgerFromDate') || document.getElementById('fromDate');
@@ -355,12 +355,28 @@ function filterJobsTable() {
 
     let data = window.masterJobs || window.allJobsData || [];
 
+    // إذا كانت الحقول فارغة تماماً، اعرض كل البيانات مباشرة ولا تقم بالفلترة
+    if (!fromVal && !toVal) {
+        window.currentFilteredJobs = data;
+        if (typeof renderTable === 'function') {
+            renderTable(data);
+        }
+        const countEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
+        if (countEl) {
+            countEl.innerText = `Showing ${data.length} of ${data.length} records`;
+        }
+        const summaryContainer = document.getElementById('paymentSummaryContainer');
+        if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
+            summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
+        }
+        return;
+    }
+
     function parseDateObj(dateStr, isEndDate = false) {
         if (!dateStr) return null;
         const cleanStr = String(dateStr).trim().split(' ')[0];
         let y = 0, m = 0, d = 0;
 
-        // تحليل دقيق يدعم جميع الصيغ (YYYY-MM-DD أو MM/DD/YYYY أو DD-MM-YYYY)
         if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
             const parts = cleanStr.split('-').map(Number);
             y = parts[0]; m = parts[1]; d = parts[2];
@@ -397,7 +413,6 @@ function filterJobsTable() {
     const fDate = parseDateObj(fromVal, false);
     const tDate = parseDateObj(toVal, true);
 
-    // تطبيق الفلترة الصارمة واستبعاد تواريخ سبتمبر فوراً عند اختيار أكتوبر
     const filtered = data.filter(item => {
         const itemDateStr = item.date || item.created_at;
         if (!itemDateStr) return false;
@@ -429,7 +444,6 @@ function filterJobsTable() {
     }
 }
 
-// توفير التوافق الشامل لأسماء الدوال
 window.filterJobsTable = filterJobsTable;
 window.filterLedgerTable = filterJobsTable;
 
