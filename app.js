@@ -73,7 +73,6 @@ window.formatJobDateToSlash = formatJobDateToSlash;
 // ==========================================
 // 2. دالة فلترة جدول العمليات (Operations Ledger)
 // ==========================================
-
 function filterLedgerTable() {
     const fromInput = document.getElementById('ledgerFromDate') || 
                       document.getElementById('reportStartDate') || 
@@ -113,8 +112,6 @@ function filterLedgerTable() {
                 // إذا كانت السنة في النهاية (مثل 01-10-2026 أو 10-01-2026)
                 else {
                     y = parts[2];
-                    // افتراض أن القيمة الأولى هي الشهر والثانية اليوم (أو العكس حسب المدخل)
-                    // بما أن المدخل من حقل التاريخ، نحدد بدقة بناءً على القيمة الأكبر
                     if (parts[0] > 12) {
                         d = parts[0]; m = parts[1];
                     } else {
@@ -170,8 +167,10 @@ function filterLedgerTable() {
         counterEl.innerText = `Showing ${data.length} of ${totalMasterCount} records`;
     }
 }
-window.filterLedgerTable = filterLedgerTable;
 
+// توفير التوافق الكامل لكلا الاسمين لمنع أي أخطاء استدعاء
+window.filterLedgerTable = filterLedgerTable;
+window.filterJobsTable = filterLedgerTable;
 
 // 🌟 ربط حقول الإدخال تلقائياً بحدث التغيير لضمان الفلترة الفورية عند اختيار التاريخ
 document.addEventListener('DOMContentLoaded', () => {
@@ -187,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         toInput.addEventListener('change', () => filterLedgerTable());
     }
 });
+
 function getFilteredJobsData() {
     return window.currentFilteredJobs || window.masterJobs || [];
 }
@@ -318,8 +318,10 @@ window.initMasterJobsData = initMasterJobsData;
 
 async function saveMasterJobsData(jobs) {
     window.masterJobs = jobs;
-    filterJobsTable();
-    updateDashboardAnalytics();
+    filterLedgerTable();
+    if (typeof updateDashboardAnalytics === 'function') {
+        updateDashboardAnalytics();
+    }
 }
 window.saveMasterJobsData = saveMasterJobsData;
 
@@ -338,6 +340,7 @@ function populateYearFilter() {
     yearSelect.innerHTML = optionsHTML;
 }
 window.populateYearFilter = populateYearFilter;
+
 
 // ==========================================
 // 3. CRUD TABLE & FILTERING
