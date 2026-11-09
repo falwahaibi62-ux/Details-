@@ -74,8 +74,15 @@ window.formatJobDateToSlash = formatJobDateToSlash;
 // 2. دالة فلترة جدول العمليات (Operations Ledger)
 // ==========================================
 function filterLedgerTable() {
-    const fromInput = document.getElementById('ledgerFromDate') || document.getElementById('reportStartDate');
-    const toInput = document.getElementById('ledgerToDate') || document.getElementById('reportEndDate');
+    const fromInput = document.getElementById('ledgerFromDate') || 
+                      document.getElementById('reportStartDate') || 
+                      document.getElementById('filterStartDate') || 
+                      document.getElementById('fromDate');
+                      
+    const toInput = document.getElementById('ledgerToDate') || 
+                    document.getElementById('reportEndDate') || 
+                    document.getElementById('filterEndDate') || 
+                    document.getElementById('toDate');
     
     const fromVal = fromInput ? fromInput.value : '';
     const toVal = toInput ? toInput.value : '';
