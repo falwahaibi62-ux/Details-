@@ -344,18 +344,19 @@ window.populateYearFilter = populateYearFilter;
 
 
 // ==========================================
-// 3. CRUD TABLE & FILTERING (مصحح وشامل)
+// 3. CRUD TABLE & FILTERING (مصحح ومضبوط حسب الـ HTML لديك)
 // ==========================================
 function filterJobsTable() {
-    const startDateVal = document.getElementById('filterStartDate') || document.getElementById('ledgerFromDate') || document.getElementById('fromDate');
-    const endDateVal = document.getElementById('filterEndDate') || document.getElementById('ledgerToDate') || document.getElementById('toDate');
+    // 🌟 جعل الحقول الفعلية الموجودة في الـ HTML في أولوية البحث الأولى تماماً
+    const startDateVal = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
+    const endDateVal = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
 
     const rawData = window.masterJobs || window.allJobsData || [];
 
     const startValStr = startDateVal ? startDateVal.value : '';
     const endValStr = endDateVal ? endDateVal.value : '';
 
-    // دالة ذكية لتحليل التواريخ بدقة واستبعاد أخطاء الشهور والسنوات
+    // دالة تحليل التواريخ الدقيقة
     function parseDateObj(dateStr, isEndDate = false) {
         if (!dateStr) return null;
         const cleanStr = String(dateStr).trim().split(' ')[0];
@@ -410,7 +411,7 @@ function filterJobsTable() {
         return true;
     });
 
-    // إذا كانت حقول التاريخ فارغة، نعرض كافة البيانات بشكل طبيعي
+    // إذا كانت الحقول فارغة، نعرض كافة البيانات بشكل طبيعي
     window.currentFilteredJobs = (!startValStr && !endValStr) ? rawData : filtered;
     const activeDisplayData = window.currentFilteredJobs;
 
@@ -430,104 +431,9 @@ function filterJobsTable() {
     }
 }
 
-// 🌟 جسر الربط الشامل لمنع أي تضارب في الأسماء
+// توفق تام بين أسماء الدوال لتعمل مع الـ HTML مباشرة
 window.filterJobsTable = filterJobsTable;
 window.filterLedgerTable = filterJobsTable;
-
-function renderTable(data) {
-    let tbody = document.getElementById('masterJobsTableBody');
-    if (!tbody) {
-        const tbodies = document.querySelectorAll('tbody');
-        tbody = tbodies[2] || tbodies[3] || document.querySelector('table tbody');
-    }
-
-    if (!tbody) return;
-
-    // حماية إضافية: إذا لم يتم تمرير بيانات، نستخدم البيانات المصفاة حالياً أو القائمة الأصلية
-    const activeData = (data && data.length > 0) ? data : (window.currentFilteredJobs || window.masterJobs || []);
-
-    if (activeData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-slate-400 font-medium">No records found.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = activeData.map(item => `
-        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-            <td class="p-3 text-center">${formatDateOnly(item.date)}</td>
-            <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
-            <td class="p-3 text-slate-600">${item.route || '-'}</td>
-            <td class="p-3 text-slate-600">${item.foreman || item.foreman_name || '-'}</td>
-            <td class="p-3 text-emerald-600 font-medium">${item.foreman10pct || item.foreman_cost || '-'}</td>
-            <td class="p-3 text-purple-600">${item.helpers || item.helpers_cost || '-'}</td>
-            <td class="p-3 text-blue-600">${item.drivers || item.drivers_cost || '-'}</td>
-            <td class="p-3 font-bold text-slate-900">${item.total || item.total_amount || '-'}</td>
-            <td class="p-3 text-slate-600">${item.pu || item.pu_payments || '-'}</td>
-            <td class="p-3 text-slate-600">${item.dest || item.destination || '-'}</td>
-            <td class="p-3 text-slate-600">${item.diesel || item.diesel_expense || '-'}</td>
-            <td class="p-3 text-slate-600">${item.hotel || item.hotel_expense || '-'}</td>
-            <td class="p-3 text-center space-x-1">
-                <button type="button" onclick="openEditJobModal('${item.id}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                </button>
-                <button type="button" onclick="deleteJob('${item.id}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
-
-    // تحديث نص عداد السجلات المعروضة في الواجهة تلقائياً
-    const totalMasterCount = (window.masterJobs || []).length;
-    const counterEl = document.getElementById('filteredCountText') || document.getElementById('ledgerCounter');
-    if (counterEl) {
-        counterEl.innerText = `Showing ${activeData.length} of ${totalMasterCount} records`;
-    }
-}
-window.renderTable = renderTable;
-
-function resetDateFilter() {
-    // البحث الشامل عن حقول التاريخ لتفريغها
-    const startInput = document.getElementById('filterStartDate') || document.getElementById('ledgerFromDate') || document.getElementById('reportStartDate') || document.getElementById('fromDate');
-    const endInput = document.getElementById('filterEndDate') || document.getElementById('ledgerToDate') || document.getElementById('reportEndDate') || document.getElementById('toDate');
-    
-    if (startInput) startInput.value = '';
-    if (endInput) endInput.value = '';
-    
-    // 1. إعادة ضبط كل المصفوفات العامة لتعود لحالتها الأصلية الكاملة من الذاكرة
-    window.currentFilteredJobs = window.masterJobs || [];
-    
-    if (window.masterTruckRentals) {
-        window.currentTruckRentals = window.masterTruckRentals;
-    }
-    if (window.masterWarehouseRecords) {
-        window.currentWarehouseRecords = window.masterWarehouseRecords;
-    }
-    
-    // 2. تحديث جدول الأستاذ أو الفلتر العام إن وجد
-    if (typeof filterJobsTable === 'function') {
-        filterJobsTable();
-    }
-    
-    // 3. إعادة رسم وتحديث كل الجداول الإجمالية والتفصيلية فوراً
-    if (typeof renderTable === 'function') {
-        renderTable(window.currentFilteredJobs);
-    }
-    if (typeof generateDetailedReportData === 'function') {
-        generateDetailedReportData();
-    }
-    if (typeof updateDashboardAnalytics === 'function') {
-        updateDashboardAnalytics();
-    }
-    if (typeof populateSummaryTables === 'function') {
-        populateSummaryTables(window.currentFilteredJobs);
-    }
-
-    const summaryContainer = document.getElementById('paymentSummaryContainer');
-    if (summaryContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
-        summaryContainer.innerHTML = window.generatePaymentMethodSummaryTableHTML();
-    }
-}
-window.resetDateFilter = resetDateFilter;
 
 // ==========================================
 // 4. USERS & PERMISSIONS MANAGEMENT
