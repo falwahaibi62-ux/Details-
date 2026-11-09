@@ -966,24 +966,19 @@ function updateSummaryReportView(filteredData) {
 window.updateSummaryReportView = updateSummaryReportView;
 
 function generateSummaryReportData() {
-    // 1. احصل على البيانات المصفاة حالياً (استخدم المصفوفة المصفاة أو الشاملة)
     const filteredData = window.currentFilteredJobs || window.masterJobs || [];
 
-    // 2. كود توزيع الجداول على الحاويات بدقة لمرة واحدة فقط بدون تكرار:
 
-    // أ. ملخص طرق الدفع
     const payContainer = document.getElementById('paymentSummaryContainer');
     if (payContainer && typeof window.generatePaymentSummaryHTML === 'function') {
         payContainer.innerHTML = window.generatePaymentSummaryHTML(filteredData);
     }
 
-    // ب. الملخص العام للعمليات
     const summaryContainer = document.getElementById('summaryReportContainer');
     if (summaryContainer && typeof window.generateOfficialSummaryHTML === 'function') {
         summaryContainer.innerHTML = window.generateOfficialSummaryHTML(filteredData);
     }
 
-    // ج. ملخص المستودع (يظهر لمرة واحدة فقط هنا)
     const warehouseContainer = document.getElementById('warehousePDFSummarySection');
     if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
         const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
@@ -992,16 +987,15 @@ function generateSummaryReportData() {
 }
 window.generateSummaryReportData = generateSummaryReportData;
 
-// دالة مساعدة لتعبئة جداول الملخص لتنظيم الكود
+
 function populateSummaryTables(filteredData) {
-    // تعبئة جدول طرق الدفع
+    
     const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
-    if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
+    if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') 
         const paymentRes = window.generatePaymentMethodSummaryTableHTML(filteredData);
         summaryPaymentContainer.innerHTML = typeof paymentRes === 'object' ? paymentRes.html : paymentRes;
     }
 
-    // تعبئة جدول المستودع
   const warehouseContainer = document.getElementById('warehousePDFSummarySection');
 if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
     const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
