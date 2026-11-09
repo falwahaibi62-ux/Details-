@@ -84,19 +84,36 @@ function filterLedgerTable() {
 
     function parseDateObj(dateStr, isEndDate = false) {
         if (!dateStr) return null;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-            const [y, m, d] = dateStr.split('-').map(Number);
-            return isEndDate ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
+        
+        let y, m, d;
+        const cleanStr = String(dateStr).trim().split(' ')[0];
+
+        // 1. إذا كان التاريخ بصيغة YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
+            const parts = cleanStr.split('-').map(Number);
+            y = parts[0]; m = parts[1]; d = parts[2];
+        } 
+        // 2. إذا كان التاريخ قادماً بصيغة الحقول MM/DD/YYYY (مثل 10/01/2026)
+        else if (cleanStr.includes('/')) {
+            const parts = cleanStr.split('/').map(Number);
+            if (parts.length === 3) {
+                m = parts[0]; // الشهر
+                d = parts[1]; // اليوم
+                y = parts[2]; // السنة
+            }
         }
-        const cleanDate = String(dateStr).split(' ')[0];
-        const parts = cleanDate.split('/');
-        if (parts.length === 3) {
-            const m = parseInt(parts[0], 10), d = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
-            return isEndDate ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
+
+        if (y && m && d) {
+            return isEndDate 
+                ? new Date(y, m - 1, d, 23, 59, 59, 999) 
+                : new Date(y, m - 1, d, 0, 0, 0, 0);
         }
+
         const dObj = new Date(dateStr);
         if (isNaN(dObj.getTime())) return null;
-        return isEndDate ? new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999) : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
+        return isEndDate 
+            ? new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 23, 59, 59, 999) 
+            : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate(), 0, 0, 0, 0);
     }
 
     const fDate = parseDateObj(fromVal, false);
