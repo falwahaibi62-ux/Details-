@@ -344,17 +344,18 @@ window.populateYearFilter = populateYearFilter;
 
 
 // ==========================================
-// 3. CRUD TABLE & FILTERING (مصحح ومضبوط حسب الـ HTML لديك)
+// 3. CRUD TABLE & FILTERING (مصحح ويعرض البيانات فوراً)
 // ==========================================
 function filterJobsTable() {
-    // 🌟 جعل الحقول الفعلية الموجودة في الـ HTML في أولوية البحث الأولى تماماً
-    const startDateVal = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
-    const endDateVal = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
+    // جلب عناصر الحقول أولاً
+    const startInput = document.getElementById('ledgerFromDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
+    const endInput = document.getElementById('ledgerToDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
+
+    // استخراج القيم النصية بشكل صحيح (.value)
+    const startValStr = startInput ? startInput.value : '';
+    const endValStr = endInput ? endInput.value : '';
 
     const rawData = window.masterJobs || window.allJobsData || [];
-
-    const startValStr = startDateVal ? startDateVal.value : '';
-    const endValStr = endDateVal ? endDateVal.value : '';
 
     // دالة تحليل التواريخ الدقيقة
     function parseDateObj(dateStr, isEndDate = false) {
@@ -411,7 +412,7 @@ function filterJobsTable() {
         return true;
     });
 
-    // إذا كانت الحقول فارغة، نعرض كافة البيانات بشكل طبيعي
+    // إذا كانت الحقول فارغة، نعرض كافة البيانات (rawData) بشكل طبيعي
     window.currentFilteredJobs = (!startValStr && !endValStr) ? rawData : filtered;
     const activeDisplayData = window.currentFilteredJobs;
 
