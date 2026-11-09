@@ -989,49 +989,84 @@ window.generateSummaryReportData = generateSummaryReportData;
 
 
 function generateMonthlyRevenueTableHTML(filteredData) {
-    let totalPuPayments = 0;
-    let totalBalancePayments = 0;
+    let countG = 0, revenueG = 0;
+    let countC = 0, revenueC = 0;
+    let countP = 0, revenueP = 0;
+    let countT = 0, revenueT = 0;
+    let countDelivery = 0, revenueDelivery = 0;
+    let countOther = 0, revenueOther = 0;
 
-    // تجميع القيم من أعمدة pu_payments و balance/destination
     (filteredData || []).forEach(item => {
+        const jobNoStr = String(item.jobNo || item.job_no || '').trim();
+        const jobNoUpper = jobNoStr.toUpperCase();
+        const firstLetter = jobNoUpper.charAt(0);
+        
+        // حساب إجمالي قيمة الطلب (PU + Destination/Balance)
         const rawPu = item.pu || item.pu_payments || '0';
         const rawDest = item.dest || item.destination || item.destination_payments || '0';
+        const itemTotal = parseCurrency(rawPu) + parseCurrency(rawDest);
 
-        totalPuPayments += parseCurrency(rawPu);
-        totalBalancePayments += parseCurrency(rawDest);
+        // التحقق مما إذا كان رقم الطلب يحتوي على كلمة "delivery"
+        if (jobNoStr.toLowerCase().includes('delivery')) {
+            countDelivery++;
+            revenueDelivery += itemTotal;
+        } else if (firstLetter === 'G') {
+            countG++;
+            revenueG += itemTotal;
+        } else if (firstLetter === 'C') {
+            countC++;
+            revenueC += itemTotal;
+        } else if (firstLetter === 'P') {
+            countP++;
+            revenueP += itemTotal;
+        } else if (firstLetter === 'T') {
+            countT++;
+            revenueT += itemTotal;
+        } else {
+            countOther++;
+            revenueOther += itemTotal;
+        }
     });
 
-    const grandTotal = totalPuPayments + totalBalancePayments;
+    const totalJobsCount = (filteredData || []).length;
+    const grandTotalRevenue = revenueG + revenueC + revenueP + revenueT + revenueDelivery + revenueOther;
 
-    // بناء شكل الجدول بنفس تصميم وتنسيق الجداول السابقة (Tailwind CSS)
+    // بناء الجدول بالتصميم الاحترافي المحدث
     const html = `
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-4">
-            <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Monthly Revenue & P.U / Balance Breakdown</h3>
-            <table class="table-pdf" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Jobs Breakdown by Prefix (G, C, P, T, Delivery & Others)</h3>
+            <table class="table-pdf" style="width: 100%; border-collapse: collapse; font-size: 10px;">
                 <thead>
                     <tr style="background-color: #f1f5f9; color: #334155;">
-                        <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">Total Records</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; color: #047857;">Total P.U Payments</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; color: #1d4ed8;">Total Balance / Dest</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; background-color: #047857; color: white;">Grand Total Revenue</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center;">Category</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #047857;">G (${countG})</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #1d4ed8;">C (${countC})</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #d97706;">P (${countP})</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #7c3aed;">T (${countT})</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #e11d48;">Delivery (${countDelivery})</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; color: #64748b;">Other (${countOther})</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 5px; text-align: center; background-color: #047857; color: white;">Grand Total (${totalJobsCount})</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr style="font-weight: bold; text-align: center; color: #1e293b;">
-                        <td style="border: 1px solid #e2e8f0; padding: 6px;">${(filteredData || []).length} Jobs</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 6px; color: #047857;">$${formatCleanNumber(totalPuPayments)}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 6px; color: #1d4ed8;">$${formatCleanNumber(totalBalancePayments)}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 6px; background-color: #ecfdf5; color: #065f46; font-size: 12px;">$${formatCleanNumber(grandTotal)}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 5px; background-color: #f8fafc;">Total Revenue</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #047857;">$${formatCleanNumber(revenueG)}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #1d4ed8;">$${formatCleanNumber(revenueC)}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #d97706;">$${formatCleanNumber(revenueP)}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #7c3aed;">$${formatCleanNumber(revenueT)}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #e11d48;">$${formatCleanNumber(revenueDelivery)}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 5px; color: #64748b;">$${formatCleanNumber(revenueOther)}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 5px; background-color: #ecfdf5; color: #065f46; font-size: 11px;">$${formatCleanNumber(grandTotalRevenue)}</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     `;
 
-    return { html, totalPuPayments, totalBalancePayments, grandTotal };
+    return { html, countG, countC, countP, countT, countDelivery, grandTotalRevenue };
 }
 window.generateMonthlyRevenueTableHTML = generateMonthlyRevenueTableHTML;
-
 
 function populateSummaryTables(filteredData) {
     // 1. جدول الإيرادات الشهرية والشامل (P.U و Balance)
