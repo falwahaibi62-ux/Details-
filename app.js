@@ -1035,52 +1035,83 @@ async function saveJob(event) {
 window.saveJob = saveJob;
 
 // ==========================================
-// 8. RECYCLE BIN & TRASH MANAGEMENT
+// 8. RECYCLE BIN & TRASH MANAGEMENT (شامل لكافة الجداول)
 // ==========================================
-
 
 async function renderTrashBin() {
     try {
-        if (!window.supabaseClient) return;
+        if (!window.supabaseClient) {
+            console.error("❌ Supabase client is not initialized!");
+            return;
+        }
         let allDeletedRecords = [];
 
-        // جلب العمليات المحذوفة
-        const { data: jobsData, error: jobsErr } = await window.supabaseClient
+        // 1. جلب العمليات المحذوفة من jobs_report
+        const { data: jobsData } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (!jobsErr && jobsData) {
+        if (jobsData) {
             allDeletedRecords.push(...jobsData.map(item => ({ ...item, tableName: 'jobs_report', displayType: 'Job' })));
+        }
+
+        // 2. جلب السجلات المحذوفة من truck_rental (إن وجدت)
+        const { data: truckData } = await window.supabaseClient
+            .from('truck_rental')
+            .select('*')
+            .eq('is_deleted', true)
+            .order('id', { ascending: false });
+            
+        if (truckData) {
+            allDeletedRecords.push(...truckData.map(item => ({ ...item, tableName: 'truck_rental', displayType: 'Truck Rental' })));
+        }
+
+        // 3. جلب السجلات المحذوفة من warehouse_expenses (إن وجدت)
+        const { data: warehouseData } = await window.supabaseClient
+            .from('warehouse_expenses')
+            .select('*')
+            .eq('is_deleted', true)
+            .order('id', { ascending: false });
+            
+        if (warehouseData) {
+            allDeletedRecords.push(...warehouseData.map(item => ({ ...item, tableName: 'warehouse_expenses', displayType: 'Warehouse' })));
         }
 
         const trashContainer = document.getElementById('trashTableBody') || document.getElementById('trashContainer');
         if (!trashContainer) return;
 
         if (allDeletedRecords.length === 0) {
-            trashContainer.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">Trash bin is empty</td></tr>`;
+            trashContainer.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 font-medium">Trash bin is empty</td></tr>`;
             return;
         }
 
-        trashContainer.innerHTML = allDeletedRecords.map(item => `
-            <tr class="border-b hover:bg-slate-50 text-xs">
-                <td class="p-3 text-slate-800 font-medium">${item.date || '-'}</td>
-                <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType}</span></td>
-                <td class="p-3 text-slate-700 font-semibold">${item.job_no || item.jobNo || '-'}</td>
-                <td class="p-3 text-slate-600">${item.route || '-'}</td>
-                <td class="p-3 text-slate-600">${item.foreman_name || '-'}</td>
-                <td class="p-3 font-bold text-emerald-600">${item.total_amount || '$0'}</td>
-                <td class="p-3 text-center space-x-1">
-                    <button onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer" title="Restore">
-                        <i class="fa-solid fa-rotate-left mr-1"></i> Restore
-                    </button>
-                    <button onclick="permanentDeleteRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-rose-600 text-white rounded-lg text-xs hover:bg-rose-700 transition cursor-pointer" title="Delete Forever">
-                        <i class="fa-solid fa-trash-can mr-1"></i> Delete
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        trashContainer.innerHTML = allDeletedRecords.map(item => {
+            const identifier = item.job_no || item.jobNo || item.services || item.truck_name || item.id || '-';
+            const details = item.route || item.details || item.notes || '-';
+            const foreman = item.foreman_name || item.paymentType || item.assigned_to || '-';
+            const amount = item.total_amount || item.amount || item.total || '$0';
+
+            return `
+                <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
+                    <td class="p-3 text-slate-800 font-medium">${item.date || '-'}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType}</span></td>
+                    <td class="p-3 text-slate-700 font-semibold">${identifier}</td>
+                    <td class="p-3 text-slate-600 truncate max-w-xs">${details}</td>
+                    <td class="p-3 text-slate-600">${foreman}</td>
+                    <td class="p-3 font-bold text-emerald-600">${amount}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer shadow-xs" title="Restore">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> Restore
+                        </button>
+                        <button onclick="permanentDeleteRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-rose-600 text-white rounded-lg text-xs hover:bg-rose-700 transition cursor-pointer shadow-xs" title="Delete Forever">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     } catch (e) {
         console.error("Error in renderTrashBin:", e);
     }
@@ -1094,7 +1125,6 @@ async function softDeleteRecord(tableName, recordId, recordDate) {
         return false;
     }
 
-    // تنظیف الـ ID (معالجة إذا كان رقماً أو نصاً)
     const cleanId = !isNaN(recordId) ? Number(recordId) : String(recordId).trim();
 
     console.log(`🗑️ جاري نقل السجل إلى سلة المحذوفات: Table=${tableName}, ID=${cleanId}`);
@@ -1108,7 +1138,7 @@ async function softDeleteRecord(tableName, recordId, recordDate) {
         query = query.eq('date', recordDate);
     }
 
-    const { data, error } = await query;
+    const { error } = await query;
 
     if (error) {
         console.error("❌ خطأ Supabase أثناء الحذف المؤقت:", error);
@@ -1117,7 +1147,6 @@ async function softDeleteRecord(tableName, recordId, recordDate) {
     } else {
         alert('Record moved to Recycle Bin successfully!');
         
-        // إعادة تحميل البيانات ورسم الجدول وسلة المحذوفات فوراً
         if (typeof initMasterJobsData === 'function') await initMasterJobsData();
         if (typeof renderTable === 'function' && window.masterJobs) {
             renderTable(window.masterJobs);
