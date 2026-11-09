@@ -1567,42 +1567,32 @@ window.exportOfficialPDF = exportOfficialPDF;
 window.renderReportsTab = renderReportsTab;
 window.filterReportData = filterReportData;
 
-document.addEventListener('supabaseDataReady', async (e) => {
-    const data = e.detail || window.currentFilteredJobs || window.masterJobs || [];
+async function initializeReportData(eventData) {
+    const data = eventData || window.currentFilteredJobs || window.masterJobs || [];
+
+    // 1. جلب بيانات المستودع والشاحنات دائماً بغض النظر عن حالة الوظائف لتجنب ظهور الأصفار
+    if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
+    if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
+
+    // 🌟 2. تحديث البطاقات العلوية وملخص المستودع والشاحنات
+    if (typeof updateOfficialReportSummaryCards === 'function') {
+        updateOfficialReportSummaryCards();
+    }
+
+    // 3. تحديث باقي الجداول الإجمالية والتفصيلية فقط إذا توفرت بيانات الوظائف
     if (data.length > 0) {
-        // 1. جلب بيانات المستودع والشاحنات لتجنب ظهور الأصفار
-        if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
-        if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
-
-        // 🌟 2. تحديث البطاقات العلوية وملخص المستودع
-        if (typeof updateOfficialReportSummaryCards === 'function') {
-            updateOfficialReportSummaryCards();
-        }
-
-        // 3. تحديث باقي الجداول الإجمالية والتفصيلية
         if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
         if (typeof renderMonthlyTableWrapper === 'function') renderMonthlyTableWrapper(data);
         if (typeof populateSummaryTables === 'function') populateSummaryTables(data);
         if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
     }
+}
+
+// الاستماع لأحداث النظام
+document.addEventListener('supabaseDataReady', async (e) => {
+    await initializeReportData(e.detail);
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const data = window.currentFilteredJobs || window.masterJobs || [];
-    if (data.length > 0) {
-        // 1. جلب بيانات المستودع والشاحنات احترازياً
-        if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
-        if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
-
-        // 🌟 2. تحديث البطاقات العلوية وملخص المستودع
-        if (typeof updateOfficialReportSummaryCards === 'function') {
-            updateOfficialReportSummaryCards();
-        }
-
-        // 3. تحديث باقي الجداول الإجمالية والتفصيلية
-        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
-        if (typeof renderMonthlyTableWrapper === 'function') renderMonthlyTableWrapper(data);
-        if (typeof populateSummaryTables === 'function') populateSummaryTables(data);
-        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
-    }
+    await initializeReportData();
 });
