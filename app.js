@@ -19,6 +19,17 @@ if (typeof window.systemUsers === 'undefined') {
     ];
 }
 
+async function loadDataFromSupabase() {
+    const { data, error } = await supabase.from('jobs_report').select('*');
+    
+    if (!error && data) {
+        // تخزين البيانات في المتغير العام
+        window.masterJobs = data; 
+        
+        document.dispatchEvent(new CustomEvent('supabaseDataReady', { detail: data }));
+    }
+}
+
 function formatJobDateForInput(dateStr) {
     if (!dateStr) return '';
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
