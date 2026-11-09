@@ -350,8 +350,9 @@ window.processPaymentString = processPaymentString;
 function generateTruckRentalSummaryTableHTML() {
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     
-    const startDateVal = document.getElementById('filterStartDate')?.value;
-    const endDateVal = document.getElementById('filterEndDate')?.value;
+    // 🌟 التصحيح: مطابقة المعرفات مع حقول صفحة التقارير الفعلية
+    const startDateVal = document.getElementById('reportStartDate')?.value || document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('reportEndDate')?.value || document.getElementById('filterEndDate')?.value;
     const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
     const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
     if (endDate) endDate.setHours(23, 59, 59, 999);
@@ -433,8 +434,9 @@ window.generateTruckRentalSummaryTableHTML = generateTruckRentalSummaryTableHTML
 function generateWarehouseSummaryTableHTML() {
     const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
     
-    const startDateVal = document.getElementById('filterStartDate')?.value;
-    const endDateVal = document.getElementById('filterEndDate')?.value;
+    // 🌟 التصحيح: مطابقة المعرفات مع حقول صفحة التقارير الفعلية
+    const startDateVal = document.getElementById('reportStartDate')?.value || document.getElementById('filterStartDate')?.value;
+    const endDateVal = document.getElementById('reportEndDate')?.value || document.getElementById('filterEndDate')?.value;
     const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
     const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
     if (endDate) endDate.setHours(23, 59, 59, 999);
@@ -1001,25 +1003,14 @@ window.updateSummaryReportView = updateSummaryReportView;
 
 function generateSummaryReportData() {
     const filteredData = window.currentFilteredJobs || window.masterJobs || [];
-
-
-    const payContainer = document.getElementById('paymentSummaryContainer');
-    if (payContainer && typeof window.generatePaymentSummaryHTML === 'function') {
-        payContainer.innerHTML = window.generatePaymentSummaryHTML(filteredData);
-    }
-
-    const summaryContainer = document.getElementById('summaryReportContainer');
-    if (summaryContainer && typeof window.generateOfficialSummaryHTML === 'function') {
-        summaryContainer.innerHTML = window.generateOfficialSummaryHTML(filteredData);
-    }
-
-    const warehouseContainer = document.getElementById('warehousePDFSummarySection');
-    if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
-        const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
-        warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
+    
+    // استدعاء الدالة الموحدة والشاملة لتعبئة كافة حاويات الملخص بدقة
+    if (typeof populateSummaryTables === 'function') {
+        populateSummaryTables(filteredData);
     }
 }
 window.generateSummaryReportData = generateSummaryReportData;
+
 
 function updateOfficialReportSummaryCards() {
     const jobs = window.currentFilteredJobs || window.masterJobs || [];
@@ -1162,19 +1153,8 @@ function renderMonthlyTableWrapper(filteredData) {
 window.renderMonthlyTableWrapper = renderMonthlyTableWrapper;
 
 function populateSummaryTables(filteredData) {
-    // 1. جدول تصنيف الطلبات والأحرف (Revenue Container: G, C, P, T, Delivery)
-    let revenueContainer = document.getElementById('monthlyRevenueContainer');
-    if (!revenueContainer) {
-        revenueContainer = document.createElement('div');
-        revenueContainer.id = 'monthlyRevenueContainer';
-        const paymentContainer = document.getElementById('paymentSummaryContainer');
-        if (paymentContainer && paymentContainer.parentNode) {
-            paymentContainer.parentNode.insertBefore(revenueContainer, paymentContainer);
-        } else {
-            document.body.appendChild(revenueContainer);
-        }
-    }
-
+    // 1. جدول تصنيف الطلبات والأحرف (G, C, P, T, Delivery)
+    const revenueContainer = document.getElementById('monthlyRevenueContainer');
     if (revenueContainer && typeof window.generateMonthlyRevenueTableHTML === 'function') {
         const revenueResult = window.generateMonthlyRevenueTableHTML(filteredData);
         revenueContainer.innerHTML = typeof revenueResult === 'object' ? revenueResult.html : revenueResult;
@@ -1197,41 +1177,25 @@ function populateSummaryTables(filteredData) {
         }
     }
 
-    // 4. ملخص تأجير الشاحنات (Truck Rental Summary) - تم إضافته لضمان ظهوره تلقائياً
-    let truckContainer = document.getElementById('truckRentalSummaryContainer');
-    if (!truckContainer) {
-        truckContainer = document.createElement('div');
-        truckContainer.id = 'truckRentalSummaryContainer';
-        const warehouseSec = document.getElementById('warehousePDFSummarySection');
-        if (warehouseSec && warehouseSec.parentNode) {
-            warehouseSec.parentNode.insertBefore(truckContainer, warehouseSec);
-        } else if (summaryContainer && summaryContainer.parentNode) {
-            summaryContainer.parentNode.appendChild(truckContainer);
-        } else {
-            document.body.appendChild(truckContainer);
-        }
-    }
+    // 4. ملخص تأجير الشاحنات (Truck Rental Summary) - الربط مع الحاوية الثابتة truckRentalPDFSummarySection
+    const truckContainer = document.getElementById('truckRentalPDFSummarySection') || document.getElementById('truckRentalSummaryContainer');
     if (truckContainer && typeof window.generateTruckRentalSummaryTableHTML === 'function') {
         const truckResult = window.generateTruckRentalSummaryTableHTML(filteredData);
         truckContainer.innerHTML = typeof truckResult === 'object' ? truckResult.html : truckResult;
     }
 
-    // 5. ملخص المستودع والمصاريف الأخرى (Warehouse Summary - مع منع التكرار نهائياً)
-    const warehouseContainers = document.querySelectorAll('#warehousePDFSummarySection');
-    warehouseContainers.forEach((warehouseContainer, index) => {
-        if (typeof window.generateWarehouseSummaryTableHTML === 'function') {
-            // إذا وجد أكثر من عنصر يحمل نفس الـ ID، يتم إفراغ وإخفاء المكرر
-            if (index > 0) {
-                warehouseContainer.innerHTML = '';
-                warehouseContainer.style.display = 'none';
-                return;
-            }
-            const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
-            warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
-        }
-    });
+    // 5. ملخص المستودع والمصاريف الأخرى (Warehouse Summary)
+    const warehouseContainer = document.getElementById('warehousePDFSummarySection');
+    if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
+        const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
+        warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
+    }
 }
 window.populateSummaryTables = populateSummaryTables;
+
+
+
+
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
