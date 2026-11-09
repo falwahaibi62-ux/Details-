@@ -988,6 +988,51 @@ function generateSummaryReportData() {
 window.generateSummaryReportData = generateSummaryReportData;
 
 
+function generateMonthlyRevenueTableHTML(filteredData) {
+    let totalPuPayments = 0;
+    let totalBalancePayments = 0;
+
+    // تجميع القيم من أعمدة pu_payments و balance/destination
+    (filteredData || []).forEach(item => {
+        const rawPu = item.pu || item.pu_payments || '0';
+        const rawDest = item.dest || item.destination || item.destination_payments || '0';
+
+        totalPuPayments += parseCurrency(rawPu);
+        totalBalancePayments += parseCurrency(rawDest);
+    });
+
+    const grandTotal = totalPuPayments + totalBalancePayments;
+
+    // بناء شكل الجدول بنفس تصميم وتنسيق الجداول السابقة (Tailwind CSS)
+    const html = `
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-4">
+            <h3 class="text-xs font-bold uppercase text-slate-600 mb-2">Monthly Revenue & P.U / Balance Breakdown</h3>
+            <table class="table-pdf" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; color: #334155;">
+                        <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">Total Records</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; color: #047857;">Total P.U Payments</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; color: #1d4ed8;">Total Balance / Dest</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; background-color: #047857; color: white;">Grand Total Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="font-weight: bold; text-align: center; color: #1e293b;">
+                        <td style="border: 1px solid #e2e8f0; padding: 6px;">${(filteredData || []).length} Jobs</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 6px; color: #047857;">$${formatCleanNumber(totalPuPayments)}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 6px; color: #1d4ed8;">$${formatCleanNumber(totalBalancePayments)}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 6px; background-color: #ecfdf5; color: #065f46; font-size: 12px;">$${formatCleanNumber(grandTotal)}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    return { html, totalPuPayments, totalBalancePayments, grandTotal };
+}
+window.generateMonthlyRevenueTableHTML = generateMonthlyRevenueTableHTML;
+
+
 function populateSummaryTables(filteredData) {
  
     const revenueContainer = document.getElementById('monthlyRevenueContainer');
