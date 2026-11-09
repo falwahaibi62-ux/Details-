@@ -10,19 +10,27 @@ if (typeof window.getFilteredJobsData !== 'function') {
     };
 }
 
-function filterReportData() {
-    if (typeof applyReportFilters === 'function') {
-        applyReportFilters();
-    } else if (typeof generateSummaryReportData === 'function') {
-        generateSummaryReportData();
+function resetReportFilters() {
+    const startInput = document.getElementById('reportStartDate') || document.getElementById('ledgerFromDate');
+    const endInput = document.getElementById('reportEndDate') || document.getElementById('ledgerToDate');
+    
+    if (startInput) startInput.value = '';
+    if (endInput) endInput.value = '';
+    
+    window.currentFilteredJobs = window.masterJobs || [];
+    
+    if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
+        window.renderSummaryPageWithDetailedTables();
+    } else if (typeof filterLedgerTable === 'function') {
+        filterLedgerTable();
     }
 
-    const activeData = window.currentFilteredJobs || window.masterJobs || [];
+    // 🌟 تحديث وتصفير جدول التصنيفات والأحرف (G, C, P, T, Delivery) ليظهر البيانات الكاملة عند إعادة التعيين
     if (typeof renderMonthlyTableWrapper === 'function') {
-        renderMonthlyTableWrapper(activeData);
+        renderMonthlyTableWrapper(window.currentFilteredJobs);
     }
 }
-window.filterReportData = filterReportData;
+window.resetReportFilters = resetReportFilters;
 
 
 
