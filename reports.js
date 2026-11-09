@@ -1101,7 +1101,7 @@ function renderMonthlyTableWrapper(filteredData) {
 window.renderMonthlyTableWrapper = renderMonthlyTableWrapper;
 
 function populateSummaryTables(filteredData) {
-    // 1. جدول تصنيف الطلبات والأحرف (G, C, P, T, Delivery)
+    // 1. جدول تصنيف الطلبات والأحرف (Revenue Container: G, C, P, T, Delivery)
     let revenueContainer = document.getElementById('monthlyRevenueContainer');
     if (!revenueContainer) {
         revenueContainer = document.createElement('div');
@@ -1119,14 +1119,14 @@ function populateSummaryTables(filteredData) {
         revenueContainer.innerHTML = typeof revenueResult === 'object' ? revenueResult.html : revenueResult;
     }
 
-    // 2. ملخص طرق الدفع
+    // 2. ملخص طرق الدفع (Payment Methods Summary)
     const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
     if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
         const paymentRes = window.generatePaymentMethodSummaryTableHTML(filteredData);
         summaryPaymentContainer.innerHTML = typeof paymentRes === 'object' ? paymentRes.html : paymentRes;
     }
 
-    // 3. الملخص العام للعمليات والتشغيل
+    // 3. الملخص العام للعمليات والتشغيل (Job Report / Official Summary)
     const summaryContainer = document.getElementById('summaryReportContainer');
     if (summaryContainer) {
         const summaryFunc = window.generateOfficialSummaryHTML || window.generateOfficialSummaryTable;
@@ -1136,7 +1136,26 @@ function populateSummaryTables(filteredData) {
         }
     }
 
-    // 4. ملخص المستودع والمصاريف الأخرى (معدل لمنع التكرار نهائياً)
+    // 4. ملخص تأجير الشاحنات (Truck Rental Summary) - تم إضافته لضمان ظهوره تلقائياً
+    let truckContainer = document.getElementById('truckRentalSummaryContainer');
+    if (!truckContainer) {
+        truckContainer = document.createElement('div');
+        truckContainer.id = 'truckRentalSummaryContainer';
+        const warehouseSec = document.getElementById('warehousePDFSummarySection');
+        if (warehouseSec && warehouseSec.parentNode) {
+            warehouseSec.parentNode.insertBefore(truckContainer, warehouseSec);
+        } else if (summaryContainer && summaryContainer.parentNode) {
+            summaryContainer.parentNode.appendChild(truckContainer);
+        } else {
+            document.body.appendChild(truckContainer);
+        }
+    }
+    if (truckContainer && typeof window.generateTruckRentalSummaryTableHTML === 'function') {
+        const truckResult = window.generateTruckRentalSummaryTableHTML(filteredData);
+        truckContainer.innerHTML = typeof truckResult === 'object' ? truckResult.html : truckResult;
+    }
+
+    // 5. ملخص المستودع والمصاريف الأخرى (Warehouse Summary - مع منع التكرار نهائياً)
     const warehouseContainers = document.querySelectorAll('#warehousePDFSummarySection');
     warehouseContainers.forEach((warehouseContainer, index) => {
         if (typeof window.generateWarehouseSummaryTableHTML === 'function') {
@@ -1152,7 +1171,6 @@ function populateSummaryTables(filteredData) {
     });
 }
 window.populateSummaryTables = populateSummaryTables;
-
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
