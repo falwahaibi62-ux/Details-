@@ -1013,50 +1013,54 @@ window.generateSummaryReportData = generateSummaryReportData;
 
 
 function updateOfficialReportSummaryCards() {
+    // قراءة البيانات المحدثة القادمة من سحابة Supabase (المفلترة أو الأساسية)
     const jobs = window.currentFilteredJobs || window.masterJobs || [];
     
     // 1. حساب إجمالي الوظائف والتوصيلات
     const totalJobs = jobs.length;
-    const totalDeliveries = jobs.filter(j => 
-        String(j.route || '').toLowerCase().includes('delivery') || 
-        String(j.jobNo || '').toLowerCase().includes('del')
-    ).length;
+    const totalDeliveries = jobs.filter(j => {
+        const jNo = String(j.jobNo || j.job_no || '').toLowerCase();
+        const route = String(j.route || '').toLowerCase();
+        return jNo.includes('delivery') || route.includes('delivery') || jNo === '';
+    }).length;
 
-    // 2. حساب إيرادات ومصاريف الوظائف
+    // 2. حساب الإيرادات والمصاريف باستخدام دالة parseCurrency المحمية والآمنة
     let totalRevenue = 0;
     let totalExpenses = 0;
 
     jobs.forEach(j => {
-        const rev = parseFloat(String(j.total || j.total_amount || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const rev = parseCurrency(j.total || j.total_amount);
         totalRevenue += rev;
 
-        const diesel = parseFloat(String(j.diesel || j.diesel_expense || '0').replace(/[^0-9.-]/g, '')) || 0;
-        const hotel = parseFloat(String(j.hotel || j.hotel_expense || '0').replace(/[^0-9.-]/g, '')) || 0;
-        const foremanCost = parseFloat(String(j.foreman10pct || j.foreman_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
-        const helpersCost = parseFloat(String(j.helpers || j.helpers_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
-        const driversCost = parseFloat(String(j.drivers || j.drivers_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const diesel = parseCurrency(j.diesel || j.diesel_expense);
+        const hotel = parseCurrency(j.hotel || j.hotel_expense);
+        const foremanCost = rev > 0 ? Math.round(rev * 0.1) : 0;
+        const helpersCost = parseCurrency(j.helpers || j.helpers_cost);
+        const driversCost = parseCurrency(j.drivers || j.drivers_cost);
 
         totalExpenses += (diesel + hotel + foremanCost + helpersCost + driversCost);
     });
 
-    // 3. تحديث عناصر الـ HTML في البطاقات العلوية
+    // 3. قراءة بيانات إيجارات الشاحنات والمستودع القادمة من جدول Supabase وتتم جدولتها
+    const rentals = window.currentTruckRentals || [];
+    rentals.forEach(r => {
+        totalExpenses += parseCurrency(r.amount);
+    });
+
+    const warehouse = window.currentWarehouseRecords || [];
+    warehouse.forEach(w => {
+        totalExpenses += parseCurrency(w.amount);
+    });
+
+    // 4. تحديث عناصر الـ HTML في البطاقات العلوية بنفس تنسيق الأرقام النظيفة الموحدة
     const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
     setEl('sumTotalJobs', totalJobs);
     setEl('sumTotalDeliveries', totalDeliveries);
-    setEl('sumTotalRevenue', `$${totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
-    setEl('sumTotalExpenses', `$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
-
-    // 4. تحديث ملخص المستودع تلقائياً إذا كانت البيانات متوفرة
-    const warehouseRecords = window.currentWarehouseRecords || [];
-    const whTotalRecordsEl = document.querySelector('#warehousePDFSummarySection [id*="Record"], #warehousePDFSummarySection span');
-    // إذا كنت تستخدم دالة رسم المستودع الخاصة، قم باستدعائها هنا مباشرة:
-    if (typeof renderWarehousePDFSummary === 'function') {
-        renderWarehousePDFSummary(warehouseRecords);
-    }
+    setEl('sumTotalRevenue', `$${formatCleanNumber(totalRevenue)}`);
+    setEl('sumTotalExpenses', `$${formatCleanNumber(totalExpenses)}`);
 }
 window.updateOfficialReportSummaryCards = updateOfficialReportSummaryCards;
-
 
 // 1. دالة توليد جدول تصنيف الطلبات (G, C, P, T, Delivery)
 function generateMonthlyRevenueTableHTML(filteredData) {
