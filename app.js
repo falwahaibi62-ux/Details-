@@ -296,11 +296,12 @@ async function initMasterJobsData() {
         window.currentFilteredJobs = window.masterJobs;
 
         if (typeof populateYearFilter === 'function') populateYearFilter();
-        if (typeof renderTable === 'function') renderTable(window.masterJobs);
-
-        const counterEl = document.getElementById('filteredCountText');
-        if (counterEl) {
-            counterEl.innerText = `Showing ${window.masterJobs.length} of ${window.masterJobs.length} records`;
+        
+        // 🌟 التعديل هنا: تطبيق الفلترة فوراً بعد جلب البيانات لتطبيق نطاق التواريخ الافتراضي واستبعاد سبتمبر
+        if (typeof filterLedgerTable === 'function') {
+            filterLedgerTable();
+        } else if (typeof renderTable === 'function') {
+            renderTable(window.masterJobs);
         }
 
         const summaryContainer = document.getElementById('paymentSummaryContainer');
