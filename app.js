@@ -222,6 +222,7 @@ async function initMasterJobsData() {
             .order('id', { ascending: false });
 
         if (error) {
+            console.error("Supabase Error:", error);
             window.masterJobs = [];
             return;
         }
@@ -287,10 +288,11 @@ async function initMasterJobsData() {
 
         if (typeof populateYearFilter === 'function') populateYearFilter();
         
-        if (typeof filterLedgerTable === 'function') {
-            filterLedgerTable();
-        } else if (typeof renderTable === 'function') {
+        // 🌟 التعديل الحاسم: التأكد من إظهار البيانات في الجدول مباشرة بشكل افتراضي
+        if (typeof renderTable === 'function') {
             renderTable(window.masterJobs);
+        } else if (typeof filterLedgerTable === 'function') {
+            filterLedgerTable();
         }
 
         const summaryContainer = document.getElementById('paymentSummaryContainer');
@@ -301,6 +303,7 @@ async function initMasterJobsData() {
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
 
     } catch (e) {
+        console.error("Error in initMasterJobsData:", e);
         window.masterJobs = [];
     }
 }
