@@ -1468,6 +1468,24 @@ function resetReportFilters() {
 window.resetReportFilters = resetReportFilters;
 
 
+// تعريف دالة filterReportData لتفادي خطأ عدم وجود الدالة
+function filterReportData() {
+    if (typeof applyReportFilters === 'function') {
+        applyReportFilters();
+    } else if (typeof generateSummaryReportData === 'function') {
+        generateSummaryReportData();
+    }
+    
+    // تحديث جدول الإيرادات والأحرف تلقائياً
+    const activeData = window.currentFilteredJobs || window.masterJobs || [];
+    if (typeof renderMonthlyTableWrapper === 'function') {
+        renderMonthlyTableWrapper(activeData);
+    }
+}
+window.filterReportData = filterReportData;
+
+
+
 // 🌟 تسجيل وتصدير جميع الدوال للاستخدام المباشر
 window.switchReportMode = switchReportMode;
 window.parseCurrency = parseCurrency;
@@ -1490,6 +1508,7 @@ window.renderReportsTab = renderReportsTab;
 
 window.exportOfficialPDF = exportOfficialPDF;
 window.renderReportsTab = renderReportsTab;
+window.filterReportData = filterReportData;
 
 // 🌟 الكود الجديد للتأكد من التشغيل التلقائي وتحديث الجداول فوراً عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', () => {
