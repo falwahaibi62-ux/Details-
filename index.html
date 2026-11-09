@@ -425,7 +425,7 @@
         <!-- Summary Report View -->
         <div id="summaryReportView" class="space-y-6">
             
-            <!-- Statistics Cards -->
+            <!-- Statistics Cards (Summary Jobs / Master Overview) -->
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div class="glass-panel p-4 rounded-xl bg-white shadow-xs border border-slate-200">
                     <div class="text-slate-500 text-xs">Total Jobs</div>
@@ -445,14 +445,20 @@
                 </div>
             </div>
 
-
+            <!-- 1. Summary Jobs C / P / T / G / Deliveries Wrapper -->
             <div id="monthlyRevenueContainer" class="mb-4"></div>
-            <!-- Payment Methods Summary Breakdown -->
+
+            <!-- 2. Payment Methods Summary Breakdown -->
             <div id="paymentSummaryContainer"></div>
 
-            <!-- Summary Container & Warehouse Summary Section -->
+            <!-- 3. Master Table / General Summary Container -->
             <div id="summaryReportContainer"></div>
+
+            <!-- 4. Summary Warehouse (Auto Refreshed) -->
             <div id="warehousePDFSummarySection"></div>
+
+            <!-- 5. Summary Rental Truck (Auto Refreshed) -->
+            <div id="truckRentalPDFSummarySection"></div>
 
         </div> <!-- END Summary View -->
 
@@ -490,7 +496,7 @@
                 </div>
             </div>
             
-            <!-- Additional Detailed Container -->
+            <!-- Additional Detailed Container (For Rentals, Warehouse & Other Detailed Modules) -->
             <div id="detailedReportContainer" class="space-y-6"></div>
 
         </div> <!-- END Detailed View -->
@@ -498,8 +504,6 @@
     </div> <!-- END pdfReportContent -->
 
 </div> <!-- END TAB 6 -->
-
-
 
         
         <!-- TAB 7: RECYCLE BIN -->
