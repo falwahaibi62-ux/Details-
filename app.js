@@ -393,8 +393,9 @@ function renderTable(data) {
 window.renderTable = renderTable;
 
 function resetDateFilter() {
-    const startInput = document.getElementById('ledgerFromDate');
-    const endInput = document.getElementById('ledgerToDate');
+    // 🌟 البحث الشامل عن حقول التاريخ لتفريغها بغض النظر عن الـ ID المستخدم في الصفحة
+    const startInput = document.getElementById('ledgerFromDate') || document.getElementById('reportStartDate') || document.getElementById('filterStartDate') || document.getElementById('fromDate');
+    const endInput = document.getElementById('ledgerToDate') || document.getElementById('reportEndDate') || document.getElementById('filterEndDate') || document.getElementById('toDate');
     
     if (startInput) startInput.value = '';
     if (endInput) endInput.value = '';
@@ -414,7 +415,7 @@ function resetDateFilter() {
         filterLedgerTable();
     }
     
-    // 3. 🌟 الحل الحاسم: إعادة رسم وتحديث كل الجداول الإجمالية والتفصيلية فوراً
+    // 3. 🌟 إعادة رسم وتحديث كل الجداول الإجمالية والتفصيلية فوراً
     if (typeof renderTable === 'function') {
         renderTable(window.currentFilteredJobs);
     }
