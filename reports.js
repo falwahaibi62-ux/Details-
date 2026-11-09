@@ -994,18 +994,17 @@ window.generateSummaryReportData = generateSummaryReportData;
 function updateOfficialReportSummaryCards() {
     const jobs = window.currentFilteredJobs || window.masterJobs || [];
     
-    // 1. حساب إجمالي التوصيلات بدقة
+    // 1. حساب إجمالي التوصيلات حصراً من حقل رقم الوظيفة (job_no / jobNo) فقط
     const totalDeliveries = jobs.filter(j => {
         const jNo = String(j.jobNo || j.job_no || '').toLowerCase();
-        const route = String(j.route || '').toLowerCase();
-        return jNo.includes('delivery') || route.includes('delivery');
+        return jNo.includes('delivery');
     }).length;
 
-    // 2. حساب إجمالي الوظائف (Total Jobs minus Deliveries إذا كان هذا هو المطلوب، أو إجمالي الوظائف ناقص التوصيلات)
+    // 2. حساب إجمالي الوظائف (إجمالي الوظائف ناقص التوصيلات)
     const rawTotalJobs = jobs.length;
-    const adjustedTotalJobs = Math.max(0, rawTotalJobs - totalDeliveries); // تطبيقا لطلبك: Total Jobs - Total Deliveries
+    const adjustedTotalJobs = Math.max(0, rawTotalJobs - totalDeliveries);
 
-    // 3. حساب الإيرادات والمصاريف الفعلية بطريقة محمية وآمنة مطابقة لجداول النظام
+    // 3. حساب الإيرادات والمصاريف التشغيلية بدقة وآمان تام
     let totalRevenue = 0;
     let totalExpenses = 0;
 
@@ -1019,11 +1018,10 @@ function updateOfficialReportSummaryCards() {
         const helpersCost = parseCurrency(j.helpers || j.helpers_cost);
         const driversCost = parseCurrency(j.drivers || j.drivers_cost);
 
-        // جمع المصاريف التشغيلية للمهمة بشكل سليم
         totalExpenses += (diesel + hotel + foremanCost + helpersCost + driversCost);
     });
 
-    // إضافة مصاريف الشاحنات المستأجرة والمستودع بدقة لكي تتطابق المصاريف مع الواقع
+    // 4. إضافة مصاريف الشاحنات المستأجرة والمستودع بدقة
     const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
     rentals.forEach(r => {
         totalExpenses += parseCurrency(r.amount);
@@ -1034,13 +1032,13 @@ function updateOfficialReportSummaryCards() {
         totalExpenses += parseCurrency(w.amount);
     });
 
-    // 4. تحديث الـ HTML للبطاقات العلوية بنفس فورمات الأرقام النظيفة في الجداول الأخرى
+    // 5. تحديث عناصر الـ HTML في البطاقات العلوية بالتنسيق المالي النظيفة
     const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
-    setEl('sumTotalJobs', adjustedTotalJobs); // عرض الرقم بعد طرح التوصيلات
+    setEl('sumTotalJobs', adjustedTotalJobs);
     setEl('sumTotalDeliveries', totalDeliveries);
     setEl('sumTotalRevenue', `$${formatCleanNumber(totalRevenue)}`);
-    setEl('sumTotalExpenses', `$${formatCleanNumber(totalExpenses)}`); // تنسيق نظيف بدون أرقام فلكية
+    setEl('sumTotalExpenses', `$${formatCleanNumber(totalExpenses)}`);
 }
 window.updateOfficialReportSummaryCards = updateOfficialReportSummaryCards;
 
@@ -1050,7 +1048,6 @@ function generateMonthlyRevenueTableHTML(filteredData) {
     let countC = 0, revenueC = 0;
     let countP = 0, revenueP = 0;
     let countT = 0, revenueT = 0;
-    let countDelivery = 0, revenueDelivery = 0;
     let countOther = 0, revenueOther = 0;
 
     (filteredData || []).forEach(item => {
@@ -1058,13 +1055,14 @@ function generateMonthlyRevenueTableHTML(filteredData) {
         const jobNoUpper = jobNoStr.toUpperCase();
         const firstLetter = jobNoUpper.charAt(0);
         
-        // 🌟 التصحيح الجذري: استخدام الإجمالي الصحيح مباشرة لمنع تضاعف الأرقام
         const itemTotal = parseCurrency(item.total || item.total_amount);
 
-        if (jobNoStr.toLowerCase().includes('delivery') || String(item.route || '').toLowerCase().includes('delivery')) {
-            countDelivery++;
-            revenueDelivery += itemTotal;
-        } else if (firstLetter === 'G') {
+        // الاعتماد حصراً على رقم الوظيفة (job_no) لاستبعاد التوصيلات من حروف التصنيف
+        if (jobNoStr.toLowerCase().includes('delivery')) {
+            return; // تخطي التوصيلات لأنها محسوبة في بطاقة Total Deliveries العلوية المستقلة
+        }
+
+        if (firstLetter === 'G') {
             countG++;
             revenueG += itemTotal;
         } else if (firstLetter === 'C') {
@@ -1083,13 +1081,13 @@ function generateMonthlyRevenueTableHTML(filteredData) {
     });
 
     const totalJobsCount = (filteredData || []).length;
-    const grandTotalRevenue = revenueG + revenueC + revenueP + revenueT + revenueDelivery + revenueOther;
+    const grandTotalRevenue = revenueG + revenueC + revenueP + revenueT + revenueOther;
 
     const html = `
         <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4">
-            <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wide">Jobs Breakdown by Prefix (G, C, P, T, Delivery & Others)</h3>
+            <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wide">Jobs Breakdown by Prefix (G, C, P, T & Others)</h3>
             <div class="overflow-x-auto">
-                <table class="w-full text-center border-collapse text-xs min-w-[800px]">
+                <table class="w-full text-center border-collapse text-xs min-w-[700px]">
                     <thead>
                         <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] tracking-wider border-b border-slate-200">
                             <th class="p-2.5 border-r">Category</th>
@@ -1097,7 +1095,6 @@ function generateMonthlyRevenueTableHTML(filteredData) {
                             <th class="p-2.5 border-r text-blue-700 font-bold">C (${countC})</th>
                             <th class="p-2.5 border-r text-amber-700 font-bold">P (${countP})</th>
                             <th class="p-2.5 border-r text-purple-700 font-bold">T (${countT})</th>
-                            <th class="p-2.5 border-r text-rose-700 font-bold">Delivery (${countDelivery})</th>
                             <th class="p-2.5 border-r text-slate-600 font-bold">Other (${countOther})</th>
                             <th class="p-2.5 bg-emerald-600 text-white font-extrabold">Grand Total (${totalJobsCount})</th>
                         </tr>
@@ -1109,7 +1106,6 @@ function generateMonthlyRevenueTableHTML(filteredData) {
                             <td class="p-3 border-r text-blue-600">$${formatCleanNumber(revenueC)}</td>
                             <td class="p-3 border-r text-amber-600">$${formatCleanNumber(revenueP)}</td>
                             <td class="p-3 border-r text-purple-600">$${formatCleanNumber(revenueT)}</td>
-                            <td class="p-3 border-r text-rose-600">$${formatCleanNumber(revenueDelivery)}</td>
                             <td class="p-3 border-r text-slate-600">$${formatCleanNumber(revenueOther)}</td>
                             <td class="p-3 bg-emerald-50 text-emerald-800 font-extrabold text-sm">$${formatCleanNumber(grandTotalRevenue)}</td>
                         </tr>
@@ -1119,9 +1115,15 @@ function generateMonthlyRevenueTableHTML(filteredData) {
         </div>
     `;
 
-    return { html, countG, countC, countP, countT, countDelivery, grandTotalRevenue };
+    return { html, countG, countC, countP, countT, grandTotalRevenue };
 }
 window.generateMonthlyRevenueTableHTML = generateMonthlyRevenueTableHTML;
+
+
+
+
+
+
 
 // 2. تحديث دالة العرض الرئيسية لديك لتقوم بحقن الجدول في الـ Container الخاص به تلقائياً
 const originalRenderSummary = window.renderSummaryPageWithDetailedTables || window.updateSummaryReportView;
