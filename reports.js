@@ -122,6 +122,11 @@ function applyReportFilters() {
     
     if (isSummaryActive) {
         if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
+        
+        // 🌟 تحديث جدول التصنيفات والأحرف (G, C, P, T, Delivery) فوراً عند تطبيق الفلتر
+        if (typeof renderMonthlyTableWrapper === 'function') {
+            renderMonthlyTableWrapper(window.currentFilteredJobs);
+        }
     } else {
         if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
     }
