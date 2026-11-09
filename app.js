@@ -126,12 +126,15 @@ function filterLedgerTable() {
     const fDate = parseDateObj(fromVal, false);
     const tDate = parseDateObj(toVal, true);
 
+    // تطبيق الفلترة واستبعاد أي تواريخ خارج النطاق بدقة تامة
     data = data.filter(item => {
         if (!item.date) return false;
         const itemDate = parseDateObj(item.date, false);
         if (!itemDate) return false;
+        
         if (fDate && itemDate < fDate) return false;
         if (tDate && itemDate > tDate) return false;
+        
         return true;
     });
 
@@ -155,6 +158,20 @@ function filterLedgerTable() {
 }
 window.filterLedgerTable = filterLedgerTable;
 
+// 🌟 ربط حقول الإدخال تلقائياً بحدث التغيير لضمان الفلترة الفورية عند اختيار التاريخ
+document.addEventListener('DOMContentLoaded', () => {
+    const fromInput = document.getElementById('filterStartDate') || document.getElementById('fromDate') || document.getElementById('ledgerFromDate');
+    const toInput = document.getElementById('filterEndDate') || document.getElementById('toDate') || document.getElementById('ledgerToDate');
+
+    if (fromInput && !fromInput.hasAttribute('data-filter-bound')) {
+        fromInput.setAttribute('data-filter-bound', 'true');
+        fromInput.addEventListener('change', () => filterLedgerTable());
+    }
+    if (toInput && !toInput.hasAttribute('data-filter-bound')) {
+        toInput.setAttribute('data-filter-bound', 'true');
+        toInput.addEventListener('change', () => filterLedgerTable());
+    }
+});
 function getFilteredJobsData() {
     return window.currentFilteredJobs || window.masterJobs || [];
 }
