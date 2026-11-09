@@ -1091,7 +1091,10 @@ async function softDeleteRecord(tableName, recordId, recordDate) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
     if (!window.supabaseClient) return false;
 
-    const cleanId = !isNaN(recordId) ? Number(recordId) : recordId;
+    // التأكد من أن الid رقم أو نص بشكل صحيح
+    const cleanId = !isNaN(recordId) ? Number(recordId) : String(recordId).trim();
+
+    console.log(`جاري حذف السجل: Table=${tableName}, ID=${cleanId}`);
 
     let query = window.supabaseClient
         .from(tableName)
@@ -1102,19 +1105,21 @@ async function softDeleteRecord(tableName, recordId, recordDate) {
         query = query.eq('date', recordDate);
     }
 
-    const { error } = await query;
+    const { data, error } = await query;
 
     if (error) {
+        console.error("❌ خطأ في الحذف عبر Supabase:", error);
         alert('Failed to move record to recycle bin: ' + error.message);
         return false;
     } else {
         alert('Record moved to Recycle Bin successfully!');
         
         if (typeof initMasterJobsData === 'function') await initMasterJobsData();
-        if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
-        if (typeof loadTruckRentals === 'function') await loadTruckRentals();
+        if (typeof renderTable === 'function' && window.masterJobs) {
+            renderTable(window.masterJobs);
+        }
         if (typeof renderTrashBin === 'function') await renderTrashBin();
-        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
+        if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
         
         return true;
     }
