@@ -161,131 +161,122 @@ function applyReportFilters() {
 window.applyReportFilters = applyReportFilters;
 
 function generateDetailedReportData() {
-    const container = document.getElementById('detailedReportBody') || document.getElementById('detailedReportContainer') || document.getElementById('detailedReportView');
-    if (!container) return;
+    // 1. استهداف جدول الوظائف الرئيسي حصراً لمنع التداخل
+    const tbody = document.getElementById('detailedReportBody');
+    const badge = document.getElementById('detailedJobsBadge');
+    
+    // جلب البيانات مع دعم التصفية من Supabase
+    const jobs = (typeof getFilteredJobsData === 'function') ? getFilteredJobsData() : (window.currentFilteredJobs || window.masterJobs || []);
+    
+    // تحديث العداد العلوي للوظائف التفصيلية
+    if (badge) {
+        badge.innerText = `${jobs.length} Jobs`;
+    }
 
-    const jobs = (typeof getFilteredJobsData === 'function') ? getFilteredJobsData() : (window.masterJobs || []);
-    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || JSON.parse(localStorage.getItem('movepro_truck_rentals')) || [];
-    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+    if (tbody) {
+        if (jobs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-slate-400">No dispatch records found</td></tr>`;
+        } else {
+            tbody.innerHTML = jobs.map(j => {
+                const totalNum = parseCurrency(j.total || j.total_amount);
+                const foreman10 = totalNum > 0 ? '$' + formatCleanNumber(totalNum * 0.1) : '-';
+                const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers || j.helpers_cost) : (j.helpers || j.helpers_cost || '-');
+                const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers || j.drivers_cost) : (j.drivers || j.drivers_cost || '-');
 
-    const jobsRows = jobs.map(j => {
-        const totalNum = parseCurrency(j.total || j.total_amount);
-        const foreman10 = totalNum > 0 ? '$' + formatCleanNumber(totalNum * 0.1) : '-';
-        const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers || j.helpers_cost) : (j.helpers || j.helpers_cost || '-');
-        const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers || j.drivers_cost) : (j.drivers || j.drivers_cost || '-');
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
+                        <td class="p-2.5 border-r text-center">${formatDateOnly ? formatDateOnly(j.date || j.job_date) : (j.date || '-')}</td>               
+                        <td class="p-2.5 border-r text-center font-bold">${j.jobNo || j.job_no || '-'}</td>
+                        <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[0] : (j.route_from || '-')}</td>
+                        <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[1] || '-' : (j.route_to || '-')}</td>
+                        <td class="p-2.5 border-r text-center">${j.foreman || j.foreman_name || '-'}</td>
+                        <td class="p-2.5 border-r text-center font-bold text-emerald-700">${foreman10}</td>
+                        <td class="p-2.5 border-r text-center">${helpersDisplay}</td>
+                        <td class="p-2.5 border-r text-center">${driversDisplay}</td>
+                        <td class="p-2.5 border-r text-center font-bold text-amber-700 bg-amber-50/20">${j.diesel || j.diesel_expense || '-'}</td>
+                        <td class="p-2.5 border-r text-center font-bold text-blue-700 bg-blue-50/20">${j.hotel || j.hotel_expense || '-'}</td>
+                        <td class="p-2.5 border-r text-center font-bold text-emerald-600">$${formatCleanNumber(totalNum)}</td>
+                        <td class="p-2.5 text-center">${j.pu || j.pu_payments || j.destination || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
 
-        return `
+    // 2. إدارة حاوية التفاصيل الإضافية (للشاحنات والمستودع) بشكل منفصل تماماً وآمن
+    const extraContainer = document.getElementById('detailedReportContainer');
+    if (extraContainer) {
+        const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
+        const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+
+        const rentalRows = rentals.map(r => `
             <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-                <td class="p-2.5 border-r text-center">${formatDateOnly(j.date)}</td>               
-                <td class="p-2.5 border-r text-center font-bold">${j.jobNo || j.job_no || '-'}</td>
-                <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[0] : (j.route_from || '-')}</td>
-                <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[1] || '-' : (j.route_to || '-')}</td>
-                <td class="p-2.5 border-r text-center">${j.foreman || j.foreman_name || '-'}</td>
-                <td class="p-2.5 border-r text-center font-bold text-emerald-700">${foreman10}</td>
-                <td class="p-2.5 border-r text-center">${helpersDisplay}</td>
-                <td class="p-2.5 border-r text-center">${driversDisplay}</td>
-                <td class="p-2.5 border-r text-center font-bold text-amber-700 bg-amber-50/20">${j.diesel || j.diesel_expense || '-'}</td>
-                <td class="p-2.5 border-r text-center font-bold text-blue-700 bg-blue-50/20">${j.hotel || j.hotel_expense || '-'}</td>
-                <td class="p-2.5 border-r text-center font-bold text-emerald-600">$${formatCleanNumber(j.total || j.total_amount)}</td>
-                <td class="p-2.5 border-r text-center">${j.pu || j.pu_payments || '-'}</td>
-                <td class="p-2.5 text-center">${j.dest || j.destination || j.destination_payments || '-'}</td>
+                <td class="p-2 border-r text-center">${r.date || '-'}</td>
+                <td class="p-2 border-r text-center font-bold">${r.truckLabel || r.truckNo || r.truck_no || '-'}</td>
+                <td class="p-2 border-r text-center">${r.Days || r.days || '0'} Days</td>
+                <td class="p-2 border-r text-center font-bold text-amber-600">$${formatCleanNumber(r.amount)}</td>
+                <td class="p-2 text-center uppercase font-semibold">${r.paymentType || r.paymentMethod || 'Cash'}</td>
             </tr>
+        `).join('');
+
+        const warehouseRows = warehouse.map(w => `
+            <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
+                <td class="p-2 border-r text-center">${w.date || '-'}</td>
+                <td class="p-2 border-r text-center font-bold">${w.services || w.details || w.description || '-'}</td>
+                <td class="p-2 border-r text-center font-bold text-purple-600">$${formatCleanNumber(w.amount)}</td>
+                <td class="p-2 text-center uppercase font-semibold">${w.paymentType || w.paymentMethod || 'Cash'}</td>
+            </tr>
+        `).join('');
+
+        extraContainer.innerHTML = `
+            <div class="space-y-6 mt-6">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 mb-3">2. Private Truck Rental Detailed Records</h3>
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white p-2">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
+                                    <th class="p-2 border-r text-center">Date</th>
+                                    <th class="p-2 border-r text-center">Truck / Description</th>
+                                    <th class="p-2 border-r text-center">Days</th>
+                                    <th class="p-2 border-r text-center">Amount</th>
+                                    <th class="p-2 text-center">Payment Method</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                ${rentalRows || '<tr><td colspan="5" class="p-4 text-center text-slate-400">No rental records found</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 mb-3">3. Warehouse & Expenses Detailed Records</h3>
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white p-2">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
+                                    <th class="p-2 border-r text-center">Date</th>
+                                    <th class="p-2 border-r text-center">Description / Item</th>
+                                    <th class="p-2 border-r text-center">Amount</th>
+                                    <th class="p-2 text-center">Payment Method</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                ${warehouseRows || '<tr><td colspan="4" class="p-4 text-center text-slate-400">No warehouse records found</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         `;
-    }).join('');
-
-    // 🌟 التعديل المتوافق مع أعمدة truck_rental الفعلية في Supabase (truckLabel & Days)
-    const rentalRows = rentals.map(r => `
-        <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-            <td class="p-2 border-r text-center">${r.date || '-'}</td>
-            <td class="p-2 border-r text-center font-bold">${r.truckLabel || r.truckNo || r.truck_no || '-'}</td>
-            <td class="p-2 border-r text-center">${r.Days || r.days || '0'} Days</td>
-            <td class="p-2 border-r text-center font-bold text-amber-600">$${formatCleanNumber(r.amount)}</td>
-            <td class="p-2 text-center uppercase font-semibold">${r.paymentType || r.paymentMethod || 'Cash'}</td>
-        </tr>
-    `).join('');
-
-    // 🌟 التعديل المتوافق مع أعمدة warehouse_expenses الفعلية في Supabase (services & details)
-    const warehouseRows = warehouse.map(w => `
-        <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-            <td class="p-2 border-r text-center">${w.date || '-'}</td>
-            <td class="p-2 border-r text-center font-bold">${w.services || w.details || w.description || '-'}</td>
-            <td class="p-2 border-r text-center font-bold text-purple-600">$${formatCleanNumber(w.amount)}</td>
-            <td class="p-2 text-center uppercase font-semibold">${w.paymentType || w.paymentMethod || 'Cash'}</td>
-        </tr>
-    `).join('');
-
-    container.innerHTML = `
-        <div class="space-y-8">
-            <div>
-                <h3 class="text-sm font-bold text-slate-800 mb-3">1. Dispatch Operations Detailed Records</h3>
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
-                                <th class="p-2.5 border-r text-center">Date</th>
-                                <th class="p-2.5 border-r text-center">Job No</th>
-                                <th class="p-2.5 border-r text-center">From State</th>
-                                <th class="p-2.5 border-r text-center">To State</th>
-                                <th class="p-2.5 border-r text-center">Foreman Name</th>
-                                <th class="p-2.5 border-r text-center">Foreman 10%</th>
-                                <th class="p-2.5 border-r text-center">Helpers</th>
-                                <th class="p-2.5 border-r text-center">Drivers</th>
-                                <th class="p-2.5 border-r text-center text-amber-700">Diesel</th>
-                                <th class="p-2.5 border-r text-center text-blue-700">Hotel</th>
-                                <th class="p-2.5 border-r text-center">Total After Deposit</th>
-                                <th class="p-2.5 border-r text-center">P.U Payment</th>
-                                <th class="p-2.5 text-center">Dest Balance</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${jobsRows || '<tr><td colspan="13" class="p-4 text-center text-slate-400">No dispatch records found</td></tr>'}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div>
-                <h3 class="text-sm font-bold text-slate-800 mb-3">2. Private Truck Rental Detailed Records</h3>
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
-                                <th class="p-2 border-r text-center">Date</th>
-                                <th class="p-2 border-r text-center">Truck / Description</th>
-                                <th class="p-2 border-r text-center">Days</th>
-                                <th class="p-2 border-r text-center">Amount</th>
-                                <th class="p-2 text-center">Payment Method</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${rentalRows || '<tr><td colspan="5" class="p-4 text-center text-slate-400">No rental records found</td></tr>'}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div>
-                <h3 class="text-sm font-bold text-slate-800 mb-3">3. Warehouse & Expenses Detailed Records</h3>
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
-                                <th class="p-2 border-r text-center">Date</th>
-                                <th class="p-2 border-r text-center">Description / Item</th>
-                                <th class="p-2 border-r text-center">Amount</th>
-                                <th class="p-2 text-center">Payment Method</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${warehouseRows || '<tr><td colspan="4" class="p-4 text-center text-slate-400">No warehouse records found</td></tr>'}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    `;
+    }
 }
 window.generateDetailedReportData = generateDetailedReportData;
+
+
+
+
 
 function processPaymentString(str, map) {
     if (!str) return;
