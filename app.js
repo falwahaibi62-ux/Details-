@@ -25,8 +25,17 @@ async function loadDataFromSupabase() {
     if (!error && data) {
         // تخزين البيانات في المتغير العام
         window.masterJobs = data; 
+        window.currentFilteredJobs = data; 
         
-        document.dispatchEvent(new CustomEvent('supabaseDataReady', { detail: data }));
+        // 🌟 ضع الكود هنا بالتحديد فور وصول البيانات:
+        if (typeof populateSummaryTables === 'function') {
+            populateSummaryTables(data);
+        }
+        
+        // (اختياري) إذا أردت تحديث البطاقات والملخصات معها مباشرة:
+        if (typeof generateSummaryReportData === 'function') {
+            generateSummaryReportData();
+        }
     }
 }
 
