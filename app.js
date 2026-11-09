@@ -375,9 +375,33 @@ function resetDateFilter() {
     if (startInput) startInput.value = '';
     if (endInput) endInput.value = '';
     
+    // 1. إعادة ضبط كل المصفوفات العامة لتعود لحالتها الأصلية الكاملة من الذاكرة
     window.currentFilteredJobs = window.masterJobs || [];
+    
+    if (window.masterTruckRentals) {
+        window.currentTruckRentals = window.masterTruckRentals;
+    }
+    if (window.masterWarehouseRecords) {
+        window.currentWarehouseRecords = window.masterWarehouseRecords;
+    }
+    
+    // 2. تحديث جدول الأستاذ أو الفلتر العام إن وجد
     if (typeof filterLedgerTable === 'function') {
         filterLedgerTable();
+    }
+    
+    // 3. 🌟 الحل الحاسم: إعادة رسم وتحديث كل الجداول الإجمالية والتفصيلية فوراً
+    if (typeof renderTable === 'function') {
+        renderTable(window.currentFilteredJobs);
+    }
+    if (typeof generateDetailedReportData === 'function') {
+        generateDetailedReportData();
+    }
+    if (typeof updateDashboardAnalytics === 'function') {
+        updateDashboardAnalytics();
+    }
+    if (typeof populateSummaryTables === 'function') {
+        populateSummaryTables(window.currentFilteredJobs);
     }
 }
 window.resetDateFilter = resetDateFilter;
