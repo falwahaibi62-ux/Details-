@@ -50,6 +50,11 @@ function switchReportMode(mode) {
 
     if (!summaryView || !detailedView) return;
 
+    // 🌟 تحديث البطاقات العلوية عند أي تبديل للوضع
+    if (typeof updateOfficialReportSummaryCards === 'function') {
+        updateOfficialReportSummaryCards();
+    }
+
     if (mode === 'summary') {
         summaryView.classList.remove('hidden');
         detailedView.classList.add('hidden');
@@ -65,6 +70,7 @@ function switchReportMode(mode) {
     }
 }
 window.switchReportMode = switchReportMode;
+
 
 function parseCurrency(val) {
     if (!val) return 0;
@@ -1015,6 +1021,51 @@ function generateSummaryReportData() {
 }
 window.generateSummaryReportData = generateSummaryReportData;
 
+function updateOfficialReportSummaryCards() {
+    const jobs = window.currentFilteredJobs || window.masterJobs || [];
+    
+    // 1. حساب إجمالي الوظائف والتوصيلات
+    const totalJobs = jobs.length;
+    const totalDeliveries = jobs.filter(j => 
+        String(j.route || '').toLowerCase().includes('delivery') || 
+        String(j.jobNo || '').toLowerCase().includes('del')
+    ).length;
+
+    // 2. حساب إيرادات ومصاريف الوظائف
+    let totalRevenue = 0;
+    let totalExpenses = 0;
+
+    jobs.forEach(j => {
+        const rev = parseFloat(String(j.total || j.total_amount || '0').replace(/[^0-9.-]/g, '')) || 0;
+        totalRevenue += rev;
+
+        const diesel = parseFloat(String(j.diesel || j.diesel_expense || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const hotel = parseFloat(String(j.hotel || j.hotel_expense || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const foremanCost = parseFloat(String(j.foreman10pct || j.foreman_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const helpersCost = parseFloat(String(j.helpers || j.helpers_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const driversCost = parseFloat(String(j.drivers || j.drivers_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
+
+        totalExpenses += (diesel + hotel + foremanCost + helpersCost + driversCost);
+    });
+
+    // 3. تحديث عناصر الـ HTML في البطاقات العلوية
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+
+    setEl('sumTotalJobs', totalJobs);
+    setEl('sumTotalDeliveries', totalDeliveries);
+    setEl('sumTotalRevenue', `$${totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+    setEl('sumTotalExpenses', `$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+
+    // 4. تحديث ملخص المستودع تلقائياً إذا كانت البيانات متوفرة
+    const warehouseRecords = window.currentWarehouseRecords || [];
+    const whTotalRecordsEl = document.querySelector('#warehousePDFSummarySection [id*="Record"], #warehousePDFSummarySection span');
+    // إذا كنت تستخدم دالة رسم المستودع الخاصة، قم باستدعائها هنا مباشرة:
+    if (typeof renderWarehousePDFSummary === 'function') {
+        renderWarehousePDFSummary(warehouseRecords);
+    }
+}
+window.updateOfficialReportSummaryCards = updateOfficialReportSummaryCards;
+
 
 // 1. دالة توليد جدول تصنيف الطلبات (G, C, P, T, Delivery)
 function generateMonthlyRevenueTableHTML(filteredData) {
@@ -1494,14 +1545,22 @@ function resetReportFilters() {
     
     window.currentFilteredJobs = window.masterJobs || [];
     
+    // 🌟 تحديث البطاقات العلوية فور إعادة التعيين
+    if (typeof updateOfficialReportSummaryCards === 'function') {
+        updateOfficialReportSummaryCards();
+    }
+
     if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
         window.renderSummaryPageWithDetailedTables();
     } else if (typeof filterLedgerTable === 'function') {
         filterLedgerTable();
     }
+
+    if (typeof renderMonthlyTableWrapper === 'function') {
+        renderMonthlyTableWrapper(window.currentFilteredJobs);
+    }
 }
 window.resetReportFilters = resetReportFilters;
-
 
 // تعريف دالة filterReportData لتفادي خطأ عدم وجود الدالة
 function filterReportData() {
@@ -1545,28 +1604,42 @@ window.exportOfficialPDF = exportOfficialPDF;
 window.renderReportsTab = renderReportsTab;
 window.filterReportData = filterReportData;
 
-document.addEventListener('supabaseDataReady', (e) => {
+document.addEventListener('supabaseDataReady', async (e) => {
     const data = e.detail || window.currentFilteredJobs || window.masterJobs || [];
     if (data.length > 0) {
+        // 1. جلب بيانات المستودع والشاحنات لتجنب ظهور الأصفار
+        if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
+        if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
+
+        // 🌟 2. تحديث البطاقات العلوية وملخص المستودع
+        if (typeof updateOfficialReportSummaryCards === 'function') {
+            updateOfficialReportSummaryCards();
+        }
+
+        // 3. تحديث باقي الجداول الإجمالية والتفصيلية
         if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
         if (typeof renderMonthlyTableWrapper === 'function') renderMonthlyTableWrapper(data);
         if (typeof populateSummaryTables === 'function') populateSummaryTables(data);
-        
         if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
     }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const data = window.currentFilteredJobs || window.masterJobs || [];
     if (data.length > 0) {
+        // 1. جلب بيانات المستودع والشاحنات احترازياً
+        if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
+        if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
+
+        // 🌟 2. تحديث البطاقات العلوية وملخص المستودع
+        if (typeof updateOfficialReportSummaryCards === 'function') {
+            updateOfficialReportSummaryCards();
+        }
+
+        // 3. تحديث باقي الجداول الإجمالية والتفصيلية
         if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
         if (typeof renderMonthlyTableWrapper === 'function') renderMonthlyTableWrapper(data);
         if (typeof populateSummaryTables === 'function') populateSummaryTables(data);
-        
         if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
     }
 });
-
-
-
-
