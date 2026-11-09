@@ -16,6 +16,11 @@ function filterReportData() {
     } else if (typeof generateSummaryReportData === 'function') {
         generateSummaryReportData();
     }
+
+    const activeData = window.currentFilteredJobs || window.masterJobs || [];
+    if (typeof renderMonthlyTableWrapper === 'function') {
+        renderMonthlyTableWrapper(activeData);
+    }
 }
 window.filterReportData = filterReportData;
 
