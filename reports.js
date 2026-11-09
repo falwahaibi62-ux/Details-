@@ -1119,17 +1119,16 @@ function populateSummaryTables(filteredData) {
         revenueContainer.innerHTML = typeof revenueResult === 'object' ? revenueResult.html : revenueResult;
     }
 
-    // 2. ملخص طرق الدفع (يعمل لديك بالفعل)
+    // 2. ملخص طرق الدفع
     const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
     if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
         const paymentRes = window.generatePaymentMethodSummaryTableHTML(filteredData);
         summaryPaymentContainer.innerHTML = typeof paymentRes === 'object' ? paymentRes.html : paymentRes;
     }
 
-    // 3. الملخص العام للعمليات والتشغيل (تم تصحيح اسم الدالة لتطابق ما لديك)
+    // 3. الملخص العام للعمليات والتشغيل
     const summaryContainer = document.getElementById('summaryReportContainer');
     if (summaryContainer) {
-        // نتحقق من كلا الاسمين المحتملين للدالة لمنع حدوث خطأ
         const summaryFunc = window.generateOfficialSummaryHTML || window.generateOfficialSummaryTable;
         if (typeof summaryFunc === 'function') {
             const summaryRes = summaryFunc(filteredData);
@@ -1137,14 +1136,22 @@ function populateSummaryTables(filteredData) {
         }
     }
 
-    // 4. ملخص المستودع والمصاريف الأخرى (يعمل لديك بالفعل)
-    const warehouseContainer = document.getElementById('warehousePDFSummarySection');
-    if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
-        const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
-        warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
-    }
+    // 4. ملخص المستودع والمصاريف الأخرى (معدل لمنع التكرار نهائياً)
+    const warehouseContainers = document.querySelectorAll('#warehousePDFSummarySection');
+    warehouseContainers.forEach((warehouseContainer, index) => {
+        if (typeof window.generateWarehouseSummaryTableHTML === 'function') {
+            // إذا وجد أكثر من عنصر يحمل نفس الـ ID، يتم إفراغ وإخفاء المكرر
+            if (index > 0) {
+                warehouseContainer.innerHTML = '';
+                warehouseContainer.style.display = 'none';
+                return;
+            }
+            const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
+            warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
+        }
+    });
 }
-window.populateSummaryTables = populateSummaryTables; 
+window.populateSummaryTables = populateSummaryTables;
 
 function exportOfficialPDF() {
     const jobs = getFilteredJobsData();
