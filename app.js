@@ -73,7 +73,7 @@ function formatJobDateToSlash(dateStr) {
 window.formatJobDateToSlash = formatJobDateToSlash;
 
 // ==========================================
-// 2. دالة فلترة جدول العمليات (Operations Ledger)
+// 2. Operations Ledger table filter
 // ==========================================
 function filterLedgerTable() {
     const fromInput = document.getElementById('ledgerFromDate') || 
@@ -293,7 +293,7 @@ async function initMasterJobsData() {
 
         if (typeof populateYearFilter === 'function') populateYearFilter();
         
-        // 🌟 التعديل الحاسم: التأكد من إظهار البيانات في الجدول مباشرة بشكل افتراضي
+        // Make sure the table shows the data immediately by default
         if (typeof renderTable === 'function') {
             renderTable(window.masterJobs);
         } else if (typeof filterLedgerTable === 'function') {
@@ -471,13 +471,13 @@ function renderUsers() {
     }
 
     let html = `
-        <div class="flex justify-between items-center pb-4 mb-3 border-b border-slate-100 px-2">
+        <div class="flex justify-between items-center pb-4 mb-3 border-b border-surface-100 px-2">
             <div>
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">User Profile & Credentials</span>
+                <span class="text-xs font-bold text-surface-400 uppercase tracking-wider">User Profile & Credentials</span>
             </div>
             <div class="flex items-center gap-3">
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Access Controls</span>
-                <button id="addUserBtn" onclick="openAddUserModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+                <span class="text-xs font-bold text-surface-400 uppercase tracking-wider">Access Controls</span>
+                <button id="addUserBtn" onclick="openAddUserModal()" class="bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-user-plus text-[10px]"></i> Add User
                 </button>
             </div>
@@ -486,41 +486,41 @@ function renderUsers() {
     `;
 
     if (window.systemUsers.length === 0) {
-        html += `<div class="p-6 text-center text-slate-400 text-xs">No users found in database. Click "Add User" to create one.</div>`;
+        html += `<div class="p-6 text-center text-surface-400 text-xs">No users found in database. Click "Add User" to create one.</div>`;
     } else {
         html += window.systemUsers.map((u) => {
             const userStatus = u.status || 'enable';
-            let roleBadgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            let roleBadgeColor = 'bg-primary-50 text-primary-700 border-primary-200';
             let roleIcon = 'fa-user-shield';
             
             if (u.role === 'Member') {
-                roleBadgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
+                roleBadgeColor = 'bg-info-50 text-info-700 border-info-200';
                 roleIcon = 'fa-user-tie';
             } else if (u.role === 'Viewer') {
-                roleBadgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+                roleBadgeColor = 'bg-warning-50 text-warning-700 border-warning-200';
                 roleIcon = 'fa-eye';
             }
 
             if (userStatus === 'disable') {
-                roleBadgeColor = 'bg-rose-50 text-rose-700 border-rose-200';
+                roleBadgeColor = 'bg-alert-50 text-alert-700 border-alert-200';
                 roleIcon = 'fa-user-slash';
             }
 
             return `
-                <div class="flex items-center justify-between p-4 bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl rounded-2xl hover:border-emerald-500/50 transition-all group">
+                <div class="flex items-center justify-between p-4 bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl rounded-2xl hover:border-primary-500/50 transition-all group">
                     <div class="flex items-center space-x-3.5">
                         <div class="w-11 h-11 rounded-xl ${roleBadgeColor} border flex items-center justify-center font-bold text-sm shadow-2xs">
                             <i class="fa-solid ${roleIcon}"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-slate-800 text-sm group-hover:text-emerald-600 transition-colors">${escapeHtml(u.name)}</h4>
-                            <p class="text-xs text-slate-400 font-medium">${escapeHtml(u.email)}</p>
+                            <h4 class="font-bold text-surface-800 text-sm group-hover:text-primary-600 transition-colors">${escapeHtml(u.name)}</h4>
+                            <p class="text-xs text-surface-400 font-medium">${escapeHtml(u.email)}</p>
                         </div>
                     </div>
                     
                     <div class="flex items-center space-x-2">
                         <div class="relative">
-                            <select onchange="updateUserField(${u.id}, 'role', this.value)" class="appearance-none bg-slate-50/80 border border-slate-200/60 text-slate-700 text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:border-emerald-500 transition cursor-pointer">
+                            <select onchange="updateUserField(${u.id}, 'role', this.value)" class="appearance-none bg-surface-50/80 border border-surface-200/60 text-surface-700 text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:border-primary-500 transition cursor-pointer">
                                 <option value="Admin" ${u.role === 'Admin' ? 'selected' : ''}>🛡️ Admin</option>
                                 <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>💼 Member</option>
                                 <option value="Viewer" ${u.role === 'Viewer' ? 'selected' : ''}>👁️ Viewer</option>
@@ -528,7 +528,7 @@ function renderUsers() {
                         </div>
 
                         <div class="relative">
-                            <select onchange="updateUserField(${u.id}, 'status', this.value)" class="appearance-none border text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none transition cursor-pointer ${userStatus === 'disable' ? 'bg-rose-50/80 border-rose-200 text-rose-700' : 'bg-emerald-50/80 border-emerald-200 text-emerald-700'}">
+                            <select onchange="updateUserField(${u.id}, 'status', this.value)" class="appearance-none border text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none transition cursor-pointer ${userStatus === 'disable' ? 'bg-alert-50/80 border-alert-200 text-alert-700' : 'bg-primary-50/80 border-primary-200 text-primary-700'}">
                                 <option value="enable" ${userStatus === 'enable' ? 'selected' : ''}>🟢 Enable</option>
                                 <option value="disable" ${userStatus === 'disable' ? 'selected' : ''}>🔴 Disable</option>
                             </select>
@@ -656,8 +656,8 @@ function addCustomExpenseField() {
     const div = document.createElement('div');
     div.className = 'flex items-center gap-2 pt-2';
     div.innerHTML = `
-        <input type="text" placeholder="Expense Name" class="w-1/3 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500">
-        <input type="text" placeholder="Amount" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500">
+        <input type="text" placeholder="Expense Name" class="w-1/3 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-primary-500">
+        <input type="text" placeholder="Amount" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-primary-500">
         <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white">
             <option value="Unspecified" selected>Unspecified</option>
             <option value="Cash">Cash</option>
@@ -668,7 +668,7 @@ function addCustomExpenseField() {
             <option value="Dif">Dif</option>
             <option value="Others">Others</option>
         </select>
-        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 px-2 font-bold text-sm">×</button>
+        <button type="button" onclick="this.parentElement.remove()" class="text-danger-500 hover:text-danger-700 px-2 font-bold text-sm">×</button>
     `;
     container.appendChild(div);
 }
@@ -680,7 +680,7 @@ window.addDieselEntryField = function(amount = '', method = 'Unspecified') {
     const div = document.createElement('div');
     div.className = 'flex items-center gap-2 diesel-row pt-2';
     div.innerHTML = `
-        <input type="text" placeholder="Amount" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 diesel-amount" value="${escapeHtml(amount)}">
+        <input type="text" placeholder="Amount" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-primary-500 diesel-amount" value="${escapeHtml(amount)}">
         <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white diesel-method">
             <option value="Unspecified" ${method === 'Unspecified' ? 'selected' : ''}>Unspecified</option>
             <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
@@ -691,7 +691,7 @@ window.addDieselEntryField = function(amount = '', method = 'Unspecified') {
             <option value="Dif" ${method === 'Dif' ? 'selected' : ''}>Dif</option>
             <option value="Others" ${method === 'Others' ? 'selected' : ''}>Others</option>
         </select>
-        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 px-2 font-bold text-sm">×</button>
+        <button type="button" onclick="this.parentElement.remove()" class="text-danger-500 hover:text-danger-700 px-2 font-bold text-sm">×</button>
     `;
     container.appendChild(div);
 };
@@ -722,8 +722,8 @@ function addPaymentRow(containerId, amount = '', method = '') {
     rowDiv.id = rowId;
 
     rowDiv.innerHTML = `
-        <input type="text" placeholder="Amount (e.g. 500)" value="${escapeHtml(safeAmount)}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
-        <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
+        <input type="text" placeholder="Amount (e.g. 500)" value="${escapeHtml(safeAmount)}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-primary-500 payment-amount">
+        <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-primary-500 payment-method">
             <option value="" ${safeMethod === '' || safeMethod === 'unspecified' ? 'selected' : ''}>Unspecified</option>
             <option value="Cash" ${safeMethod === 'cash' ? 'selected' : ''}>Cash</option>
             <option value="Zelle" ${safeMethod === 'zelle' ? 'selected' : ''}>Zelle</option>
@@ -735,7 +735,7 @@ function addPaymentRow(containerId, amount = '', method = '') {
             <option value="WT" ${safeMethod === 'wt' ? 'selected' : ''}>WT</option>
             <option value="Others" ${['others', 'other'].includes(safeMethod) ? 'selected' : ''}>Others</option>
         </select>
-        <button type="button" onclick="removePaymentRow('${rowId}')" class="text-red-500 hover:text-red-700 text-sm font-bold px-1 cursor-pointer delete-payment-btn" title="Remove">
+        <button type="button" onclick="removePaymentRow('${rowId}')" class="text-danger-500 hover:text-danger-700 text-sm font-bold px-1 cursor-pointer delete-payment-btn" title="Remove">
             <i class="fa-solid fa-xmark pointer-events-none"></i>
         </button>
     `;
@@ -1047,7 +1047,7 @@ async function saveJob(event) {
         if (jobForm) jobForm.removeAttribute('data-edit-id');
         closeModal();
         
-        // جلب أحدث البيانات من قاعدة البيانات وإعادة رسم الجدول فوراً
+        // Fetch the latest data from the database and redraw the table immediately
         if (typeof initMasterJobsData === 'function') {
             await initMasterJobsData();
         }
@@ -1061,7 +1061,7 @@ async function saveJob(event) {
 window.saveJob = saveJob;
 
 // ==========================================
-// 8. RECYCLE BIN & TRASH MANAGEMENT (النسخة النهائية المصححة)
+// 8. RECYCLE BIN & TRASH MANAGEMENT (final corrected version)
 // ==========================================
 
 async function softDeleteRecord(tableName, recordId) {
@@ -1077,9 +1077,9 @@ async function softDeleteRecord(tableName, recordId) {
     }
 
     const cleanId = typeof recordId === 'string' ? recordId.trim() : Number(recordId);
-    console.log(`🗑️ [SoftDelete] جاري نقل السجل إلى سلة المحذوفات: Table=${tableName}, ID=`, cleanId);
+    console.log(`🗑️ [SoftDelete] Moving record to Recycle Bin: Table=${tableName}, ID=`, cleanId);
 
-    // تحديث حقل is_deleted إلى true بغض النظر عن محتوى الحقول الأخرى
+    // Set is_deleted to true regardless of the other fields' content
     const { data, error } = await window.supabaseClient
         .from(tableName)
         .update({ is_deleted: true })
@@ -1087,14 +1087,14 @@ async function softDeleteRecord(tableName, recordId) {
         .select();
 
     if (error) {
-        console.error(`❌ [SoftDelete Error] فشل تحديث السجل في ${tableName}:`, error.message);
+        console.error(`❌ [SoftDelete Error] Failed to update record in ${tableName}:`, error.message);
         alert('Failed to move record to recycle bin: ' + error.message);
         return false;
     } else {
-        console.log(`✅ [SoftDelete Success] تم نقل السجل بنجاح:`, data);
+        console.log(`✅ [SoftDelete Success] Record moved successfully:`, data);
         alert('Record moved to Recycle Bin successfully!');
         
-        // تحديث الواجهات حسب الجدول المُعدّل
+        // Refresh the UI for the affected table
         if (tableName === 'jobs_report') {
             if (typeof initMasterJobsData === 'function') await initMasterJobsData();
             if (typeof renderTable === 'function' && window.masterJobs) renderTable(window.masterJobs);
@@ -1104,7 +1104,7 @@ async function softDeleteRecord(tableName, recordId) {
             if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
         }
 
-        // تحديث سلة المحذوفات فوراً
+        // Refresh the Recycle Bin immediately
         if (typeof renderTrashBin === 'function') await renderTrashBin();
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
         
@@ -1113,7 +1113,7 @@ async function softDeleteRecord(tableName, recordId) {
 }
 window.softDeleteRecord = softDeleteRecord;
 
-// دوال الحذف المباشرة للأقسام
+// Direct delete helpers for each section
 async function deleteJob(jobId) { 
     await softDeleteRecord('jobs_report', jobId); 
 }
@@ -1132,7 +1132,7 @@ window.deleteTruckRental = deleteTruckRental;
 
 
 // ==========================================
-// 📦 دالة عرض سلة المحذوفات الموحدة لكافة الأقسام (محصنة ضد القيم الفارغة)
+// 📦 Unified Recycle Bin renderer for all sections (safe against empty values)
 // ==========================================
 async function renderTrashBin() {
     try {
@@ -1143,7 +1143,7 @@ async function renderTrashBin() {
         
         let allDeletedRecords = [];
 
-        // 1. جلب محذوفات العمليات (Jobs)
+        // 1. Fetch deleted jobs
         const { data: jobsData } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
@@ -1164,7 +1164,7 @@ async function renderTrashBin() {
             })));
         }
 
-        // 2. جلب محذوفات المستودع (Warehouse)
+        // 2. Fetch deleted warehouse records
         const { data: warehouseData } = await window.supabaseClient
             .from('warehouse_expenses')
             .select('*')
@@ -1185,7 +1185,7 @@ async function renderTrashBin() {
             })));
         }
 
-        // 3. جلب محذوفات الشاحنات (Truck Rental)
+        // 3. Fetch deleted truck rentals
         const { data: rentalData } = await window.supabaseClient
             .from('truck_rental')
             .select('*')
@@ -1208,29 +1208,29 @@ async function renderTrashBin() {
 
         const trashContainer = document.getElementById('trashTableBody');
         if (!trashContainer) {
-            console.warn("⚠️ عنصر جدول سلة المحذوفات (trashTableBody) غير موجود في الصفحة.");
+            console.warn("⚠️ Recycle Bin table element (trashTableBody) was not found on the page.");
             return;
         }
 
         if (allDeletedRecords.length === 0) {
-            trashContainer.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 font-medium">Trash bin is empty</td></tr>`;
+            trashContainer.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-surface-400 font-medium">Trash bin is empty</td></tr>`;
         } else {
-            // رسم السجلات مع استخدام قيم افتراضية (-) لو كانت الحقول فارغة تماماً
+            // Render records, using "-" as the default when a field is empty
             trashContainer.innerHTML = allDeletedRecords.map(item => `
-                <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
-                    <td class="p-3 text-slate-800 font-medium">${escapeHtml(item.date || item.created_at?.split('T')[0] || '-')}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${escapeHtml(item.displayType || 'Record')}</span></td>
-                    <td class="p-3 text-slate-700 font-semibold">${escapeHtml(item.identifier || `ID: ${item.id}`)}</td>
-                    <td class="p-3 text-slate-600">${escapeHtml(item.details || '-')}</td>
-                    <td class="p-3 text-slate-600">${escapeHtml(item.assigned || '-')}</td>
-                    <td class="p-3 text-purple-700">${escapeHtml(item.helpers || '-')}</td>
-                    <td class="p-3 text-blue-700">${escapeHtml(item.drivers || '-')}</td>
-                    <td class="p-3 font-bold text-emerald-600">${escapeHtml(item.amount || '$0')}</td>
+                <tr class="border-b hover:bg-surface-50 text-xs transition-colors">
+                    <td class="p-3 text-surface-800 font-medium">${escapeHtml(item.date || item.created_at?.split('T')[0] || '-')}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-surface-100 text-surface-700 rounded text-[10px] font-semibold">${escapeHtml(item.displayType || 'Record')}</span></td>
+                    <td class="p-3 text-surface-700 font-semibold">${escapeHtml(item.identifier || `ID: ${item.id}`)}</td>
+                    <td class="p-3 text-surface-600">${escapeHtml(item.details || '-')}</td>
+                    <td class="p-3 text-surface-600">${escapeHtml(item.assigned || '-')}</td>
+                    <td class="p-3 text-accent-700">${escapeHtml(item.helpers || '-')}</td>
+                    <td class="p-3 text-info-700">${escapeHtml(item.drivers || '-')}</td>
+                    <td class="p-3 font-bold text-primary-600">${escapeHtml(item.amount || '$0')}</td>
                     <td class="p-3 text-center space-x-1">
-                        <button type="button" onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer shadow-xs" title="Restore">
+                        <button type="button" onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-primary-600 text-white rounded-lg text-xs hover:bg-primary-700 transition cursor-pointer shadow-xs" title="Restore">
                             <i class="fa-solid fa-rotate-left mr-1"></i> Restore
                         </button>
-                        <button type="button" onclick="permanentDeleteRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-rose-600 text-white rounded-lg text-xs hover:bg-rose-700 transition cursor-pointer shadow-xs" title="Delete Forever">
+                        <button type="button" onclick="permanentDeleteRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-alert-600 text-white rounded-lg text-xs hover:bg-alert-700 transition cursor-pointer shadow-xs" title="Delete Forever">
                             <i class="fa-solid fa-trash-can mr-1"></i> Delete
                         </button>
                     </td>
@@ -1238,7 +1238,7 @@ async function renderTrashBin() {
             `).join('');
         }
 
-        console.log(`✅ [Trash] تم عرض ${allDeletedRecords.length} سجل في سلة المحذوفات بنجاح.`);
+        console.log(`✅ [Trash] Displayed ${allDeletedRecords.length} record(s) in the Recycle Bin.`);
 
     } catch (e) {
         console.error("Error in renderTrashBin:", e);
@@ -1331,29 +1331,29 @@ function renderTable(data) {
     const activeData = (data && data.length > 0) ? data : (window.currentFilteredJobs || window.masterJobs || []);
 
     if (activeData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-slate-400 font-medium">No records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-surface-400 font-medium">No records found.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = activeData.map(item => `
-        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+        <tr class="border-b border-surface-100 hover:bg-surface-50 transition-colors">
             <td class="p-3 text-center">${escapeHtml(item.date || '-')}</td>
-            <td class="p-3 font-semibold text-slate-800">${escapeHtml(item.jobNo || item.job_no || '-')}</td>
-            <td class="p-3 text-slate-600">${escapeHtml(item.route || '-')}</td>
-            <td class="p-3 text-slate-600">${escapeHtml(item.foreman_name || item.foreman || '-')}</td>
-            <td class="p-3 text-emerald-600 font-medium">${escapeHtml(item.foreman_cost || item.foreman10pct || '-')}</td>
-            <td class="p-3 text-purple-600">${escapeHtml(item.helpers_cost || item.helpers || '-')}</td>
-            <td class="p-3 text-blue-600">${escapeHtml(item.drivers_cost || item.drivers || '-')}</td>
-            <td class="p-3 font-bold text-slate-900">${escapeHtml(item.total_amount || item.total || '-')}</td>
-            <td class="p-3 text-slate-600">${escapeHtml(item.pu_payments || item.pu || '-')}</td>
-            <td class="p-3 text-slate-600">${escapeHtml(item.destination_payments || item.dest || '-')}</td>
-            <td class="p-3 text-slate-600">${escapeHtml(item.diesel_expense || item.diesel || '-')}</td>
-            <td class="p-3 text-slate-600">${escapeHtml(item.hotel_expense || item.hotel || '-')}</td>
+            <td class="p-3 font-semibold text-surface-800">${escapeHtml(item.jobNo || item.job_no || '-')}</td>
+            <td class="p-3 text-surface-600">${escapeHtml(item.route || '-')}</td>
+            <td class="p-3 text-surface-600">${escapeHtml(item.foreman_name || item.foreman || '-')}</td>
+            <td class="p-3 text-primary-600 font-medium">${escapeHtml(item.foreman_cost || item.foreman10pct || '-')}</td>
+            <td class="p-3 text-accent-600">${escapeHtml(item.helpers_cost || item.helpers || '-')}</td>
+            <td class="p-3 text-info-600">${escapeHtml(item.drivers_cost || item.drivers || '-')}</td>
+            <td class="p-3 font-bold text-surface-900">${escapeHtml(item.total_amount || item.total || '-')}</td>
+            <td class="p-3 text-surface-600">${escapeHtml(item.pu_payments || item.pu || '-')}</td>
+            <td class="p-3 text-surface-600">${escapeHtml(item.destination_payments || item.dest || '-')}</td>
+            <td class="p-3 text-surface-600">${escapeHtml(item.diesel_expense || item.diesel || '-')}</td>
+            <td class="p-3 text-surface-600">${escapeHtml(item.hotel_expense || item.hotel || '-')}</td>
             <td class="p-3 text-center space-x-1">
-                <button type="button" onclick="openEditJobModal('${item.id}')" class="edit-action-btn p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
+                <button type="button" onclick="openEditJobModal('${item.id}')" class="edit-action-btn p-1.5 bg-info-50 hover:bg-info-100 text-info-600 rounded-lg transition cursor-pointer" title="Edit">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </button>
-                <button type="button" onclick="deleteJob('${item.id}')" class="delete-action-btn p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
+                <button type="button" onclick="deleteJob('${item.id}')" class="delete-action-btn p-1.5 bg-alert-50 hover:bg-alert-100 text-alert-600 rounded-lg transition cursor-pointer" title="Delete">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </td>
@@ -1370,10 +1370,10 @@ function renderTable(data) {
 }
 window.renderTable = renderTable;
 
-// 2. دالة التنقل بين التبويبات (لإصلاح خطأ switchTab is not defined)
+// 2. Tab navigation (fixes the "switchTab is not defined" error)
 function switchTab(tabName) {
     try {
-        // توحيد الاسم ليتوافق مع الـ ID الحقيقي في الـ HTML وهو trash
+        // Normalize the name to match the real HTML ID, which is "trash"
         if (tabName === 'recycle-bin' || tabName === 'trash') {
             tabName = 'trash';
         }
@@ -1381,7 +1381,7 @@ function switchTab(tabName) {
         const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report'];
         
         tabs.forEach(t => {
-            // إخفاء كافة محتويات التبويبات المحتملة
+            // Hide every possible tab container
             [t, `tab-${t}`, `${t}-view`].forEach(id => {
                 const tabEl = document.getElementById(id);
                 if (tabEl) {
@@ -1390,16 +1390,16 @@ function switchTab(tabName) {
                     tabEl.style.setProperty('display', 'none', 'important');
                 }
             });
-            // إعادة ضبط تصميم الأزرار الجانبية
+            // Reset the sidebar button styles
             [t, `nav-${t}`, `nav-${t}-btn`].forEach(id => {
                 const navEl = document.getElementById(id);
                 if (navEl && (navEl.tagName === 'BUTTON' || navEl.tagName === 'DIV')) {
-                    navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer';
+                    navEl.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition cursor-pointer';
                 }
             });
         });
 
-        // إظهار التبويب المطلوب باستخدام الـ ID الصحيح tab-trash مع استخدام flex
+        // Show the requested tab (e.g. tab-trash) using flex
         let activeTab = null;
         const possibleIds = tabName === 'trash' 
             ? ['tab-trash', 'trash', 'trash-view', 'recycle-bin', 'tab-recycle-bin']
@@ -1412,21 +1412,21 @@ function switchTab(tabName) {
 
         if (activeTab) {
             activeTab.classList.remove('hidden');
-            activeTab.classList.add('flex'); // استخدام flex بدلاً من block لأن العنصر يحتوي على flex-col
+            activeTab.classList.add('flex'); // Use flex instead of block because the element uses flex-col
             activeTab.style.setProperty('display', 'flex', 'important');
         }
 
-        // تفعيل زر القائمة الجانبية (Recycle Bin)
+        // Highlight the active sidebar button
         let activeNav = null;
         for (let id of [tabName, `nav-${tabName}`, `nav-${tabName}-btn`, 'recycle-bin', 'nav-recycle-bin']) {
             activeNav = document.getElementById(id);
             if (activeNav) break;
         }
         if (activeNav) {
-            activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition cursor-pointer';
+            activeNav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl bg-primary-600 text-white font-medium shadow-md transition cursor-pointer';
         }
 
-        // تشغيل الوظائف البرمجية لكل تبويب
+        // Run the render logic for the selected tab
         if (tabName === 'dashboard') {
             if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
         } else if (tabName === 'jobs') {

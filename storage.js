@@ -57,14 +57,14 @@ async function loadTrashBinFromSupabase() {
         
         let allDeleted = [];
 
-    // 1. الوظائف المحذوفة من جدول jobs_report
+        // 1. Deleted jobs from the jobs_report table
         const { data: deletedJobs } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
             .eq('is_deleted', true);
         if (deletedJobs) allDeleted.push(...deletedJobs.map(j => ({ ...j, tableName: 'jobs_report', displayType: 'Job' })));
 
-        // 2. إيجارات الشاحنات المحذوفة من truck_rental
+        // 2. Deleted truck rentals from the truck_rental table
         const { data: deletedRentals, error: truckTrashError } = await window.supabaseClient
             .from('truck_rental')
             .select('*')
@@ -73,7 +73,7 @@ async function loadTrashBinFromSupabase() {
         if (!truckTrashError && deletedRentals) {
             allDeleted.push(...deletedRentals.map(r => ({ ...r, tableName: 'truck_rental', displayType: 'Truck Rental' })));
         }
-    // 3. مصروفات المستودع المحذوفة من جدول warehouse_expenses
+        // 3. Deleted warehouse expenses from the warehouse_expenses table
         const { data: deletedWarehouse } = await window.supabaseClient
             .from('warehouse_expenses')
             .select('*')
@@ -154,29 +154,16 @@ async function restoreRecordFromTrash(tableName, recordId) {
 window.restoreRecordFromTrash = restoreRecordFromTrash;
 
 
-// --- Private Truck Rentals Management (Direct from Supabase) ---
+// --- Private Truck Rentals Management ---
+// Delegates to loadPrivateTruckRentals() in rentalForm.js so the data
+// always has the same shape (days, amount, paymentType, paidBy, truckLabel).
 async function loadTruckRentals() {
     try {
-        if (!window.supabaseClient) {
-            const saved = localStorage.getItem(RENTALS_STORAGE_KEY);
-            return saved ? JSON.parse(saved) : [];
+        if (typeof window.loadPrivateTruckRentals === 'function') {
+            return await window.loadPrivateTruckRentals();
         }
-
-        // جلب إيجارات الشاحنات غير المحذوفة فقط من Supabase
-        const { data, error } = await window.supabaseClient
-            .from('truck_rental')
-            .select('*')
-            .or('is_deleted.is.null,is_deleted.eq.false')
-            .order('id', { ascending: false });
-
-        if (error) {
-            console.error('Error fetching truck rentals from Supabase:', error);
-            return [];
-        }
-
-        window.currentTruckRentals = data || [];
-        localStorage.setItem(RENTALS_STORAGE_KEY, JSON.stringify(window.currentTruckRentals));
-        return window.currentTruckRentals;
+        const saved = localStorage.getItem(RENTALS_STORAGE_KEY);
+        return saved ? JSON.parse(saved) : [];
     } catch (e) {
         console.error('Exception in loadTruckRentals:', e);
         return [];
@@ -199,7 +186,7 @@ async function loadWarehouseRecords() {
             return [];
         }
 
-        // جلب سجلات المستودع غير المحذوفة فقط مباشرة من Supabase
+        // Fetch only non-deleted warehouse records directly from Supabase
         const { data, error } = await window.supabaseClient
             .from('warehouse_expenses')
             .select('*')

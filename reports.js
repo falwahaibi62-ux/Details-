@@ -300,29 +300,29 @@
         const b = s.breakdown;
         return `
         <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4 w-full">
-            <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wide">Jobs Breakdown by Prefix (G, C, P, T & Others)</h3>
+            <h3 class="font-bold text-surface-900 text-sm uppercase tracking-wide">Jobs Breakdown by Prefix (G, C, P, T & Others)</h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-center border-collapse text-xs min-w-[700px]">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                        <tr class="bg-surface-50 text-surface-700 uppercase text-[10px] tracking-wider border-b border-surface-200">
                             <th class="p-2.5 border-r">Category</th>
-                            <th class="p-2.5 border-r text-emerald-700 font-bold">G (${b.G.n})</th>
-                            <th class="p-2.5 border-r text-blue-700 font-bold">C (${b.C.n})</th>
-                            <th class="p-2.5 border-r text-amber-700 font-bold">P (${b.P.n})</th>
-                            <th class="p-2.5 border-r text-purple-700 font-bold">T (${b.T.n})</th>
-                            <th class="p-2.5 border-r text-slate-600 font-bold">Other (${b.Other.n})</th>
-                            <th class="p-2.5 bg-emerald-600 text-white font-extrabold">Grand Total (${s.categorizedJobs})</th>
+                            <th class="p-2.5 border-r text-primary-700 font-bold">G (${b.G.n})</th>
+                            <th class="p-2.5 border-r text-info-700 font-bold">C (${b.C.n})</th>
+                            <th class="p-2.5 border-r text-warning-700 font-bold">P (${b.P.n})</th>
+                            <th class="p-2.5 border-r text-accent-700 font-bold">T (${b.T.n})</th>
+                            <th class="p-2.5 border-r text-surface-600 font-bold">Other (${b.Other.n})</th>
+                            <th class="p-2.5 bg-primary-600 text-white font-extrabold">Grand Total (${s.categorizedJobs})</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr class="font-bold text-xs">
-                            <td class="p-3 border-r bg-slate-50 text-slate-800">Total Revenue</td>
-                            <td class="p-3 border-r text-emerald-600">${money(b.G.rev)}</td>
-                            <td class="p-3 border-r text-blue-600">${money(b.C.rev)}</td>
-                            <td class="p-3 border-r text-amber-600">${money(b.P.rev)}</td>
-                            <td class="p-3 border-r text-purple-600">${money(b.T.rev)}</td>
-                            <td class="p-3 border-r text-slate-600">${money(b.Other.rev)}</td>
-                            <td class="p-3 bg-emerald-50 text-emerald-800 font-extrabold text-sm">${money(s.categorizedRevenue)}</td>
+                            <td class="p-3 border-r bg-surface-50 text-surface-800">Total Revenue</td>
+                            <td class="p-3 border-r text-primary-600">${money(b.G.rev)}</td>
+                            <td class="p-3 border-r text-info-600">${money(b.C.rev)}</td>
+                            <td class="p-3 border-r text-warning-600">${money(b.P.rev)}</td>
+                            <td class="p-3 border-r text-accent-600">${money(b.T.rev)}</td>
+                            <td class="p-3 border-r text-surface-600">${money(b.Other.rev)}</td>
+                            <td class="p-3 bg-primary-50 text-primary-800 font-extrabold text-sm">${money(s.categorizedRevenue)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -336,13 +336,13 @@
         return `
         <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4">
             <div>
-                <h3 class="font-bold text-slate-900 text-base">Payment Methods Summary Breakdown</h3>
-                <p class="text-xs text-slate-500">Detailed distribution of revenue from PU Payments and Destination Payments</p>
+                <h3 class="font-bold text-surface-900 text-base">Payment Methods Summary Breakdown</h3>
+                <p class="text-xs text-surface-500">Detailed distribution of revenue from PU Payments and Destination Payments</p>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-center border-collapse text-xs min-w-[1000px]">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                        <tr class="bg-surface-50 text-surface-700 uppercase text-[10px] tracking-wider border-b border-surface-200">
                             <th class="p-2 border-r">Cash</th>
                             <th class="p-2 border-r">Zelle</th>
                             <th class="p-2 border-r">Cheque</th>
@@ -353,22 +353,22 @@
                             <th class="p-2 border-r">WT</th>
                             <th class="p-2 border-r">Others</th>
                             <th class="p-2 border-r">Unspecified</th>
-                            <th class="p-2 bg-emerald-600 text-white font-bold">Total Amount</th>
+                            <th class="p-2 bg-primary-600 text-white font-bold">Total Amount</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr class="font-bold text-xs">
-                            <td class="p-3 border-r text-emerald-600">${money(p.Cash)}</td>
-                            <td class="p-3 border-r text-blue-600">${money(p.Zelle)}</td>
-                            <td class="p-3 border-r text-indigo-600">${money(p.Cheque)}</td>
-                            <td class="p-3 border-r text-purple-600">${money(p.PMO)}</td>
-                            <td class="p-3 border-r text-cyan-600">${money(p.BC)}</td>
-                            <td class="p-3 border-r text-teal-600">${money(p.PC)}</td>
-                            <td class="p-3 border-r text-pink-600">${money(p.CC)}</td>
-                            <td class="p-3 border-r text-orange-600">${money(p.WT)}</td>
-                            <td class="p-3 border-r text-amber-600">${money(p.Others)}</td>
-                            <td class="p-3 border-r text-slate-600">${money(p.Unspecified)}</td>
-                            <td class="p-3 bg-emerald-50 text-emerald-800 font-extrabold text-sm">${money(grand)}</td>
+                            <td class="p-3 border-r text-primary-600">${money(p.Cash)}</td>
+                            <td class="p-3 border-r text-info-600">${money(p.Zelle)}</td>
+                            <td class="p-3 border-r text-secondary-600">${money(p.Cheque)}</td>
+                            <td class="p-3 border-r text-accent-600">${money(p.PMO)}</td>
+                            <td class="p-3 border-r text-extra1-600">${money(p.BC)}</td>
+                            <td class="p-3 border-r text-extra2-600">${money(p.PC)}</td>
+                            <td class="p-3 border-r text-extra3-600">${money(p.CC)}</td>
+                            <td class="p-3 border-r text-highlight-600">${money(p.WT)}</td>
+                            <td class="p-3 border-r text-warning-600">${money(p.Others)}</td>
+                            <td class="p-3 border-r text-surface-600">${money(p.Unspecified)}</td>
+                            <td class="p-3 bg-primary-50 text-primary-800 font-extrabold text-sm">${money(grand)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -380,45 +380,45 @@
         const o = s.official;
         return `
         <div class="space-y-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
-                <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+            <div class="bg-white rounded-2xl shadow-sm border border-surface-200/80 p-6 space-y-4 mt-6 print:p-2">
+                <div class="border-b border-surface-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                     <div>
-                        <h3 class="text-sm font-bold text-slate-800">Official Period Financial Summary</h3>
-                        <p class="text-[11px] text-slate-400">Labor fees, cash, Zelle, and PMO summary</p>
+                        <h3 class="text-sm font-bold text-surface-800">Official Period Financial Summary</h3>
+                        <p class="text-[11px] text-surface-400">Labor fees, cash, Zelle, and PMO summary</p>
                     </div>
                 </div>
-                <div class="overflow-x-auto rounded-xl border border-slate-100">
+                <div class="overflow-x-auto rounded-xl border border-surface-100">
                     <table class="w-full text-left border-collapse text-[11px]">
                         <thead>
-                            <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                            <tr class="bg-surface-50 text-surface-600 uppercase font-bold border-b border-surface-200/80 text-[10px]">
                                 <th class="p-2.5 border-r text-center">Foreman</th>
                                 <th class="p-2.5 border-r text-center">Helpers</th>
                                 <th class="p-2.5 border-r text-center">Drivers</th>
-                                <th class="p-2.5 border-r text-center text-amber-700 bg-amber-50/50">Cash Diesel</th>
-                                <th class="p-2.5 border-r text-center text-emerald-700 bg-emerald-50/30">Cash PU Payment</th>
-                                <th class="p-2.5 border-r text-center text-emerald-700 bg-emerald-50/30">Cash Dest-Balance</th>
+                                <th class="p-2.5 border-r text-center text-warning-700 bg-warning-50/50">Cash Diesel</th>
+                                <th class="p-2.5 border-r text-center text-primary-700 bg-primary-50/30">Cash PU Payment</th>
+                                <th class="p-2.5 border-r text-center text-primary-700 bg-primary-50/30">Cash Dest-Balance</th>
                                 <th class="p-2.5 border-r text-center">PMO PU Payment</th>
-                                <th class="p-2.5 border-r text-center text-blue-700 bg-blue-50/30">PU (No Cash/PMO)</th>
-                                <th class="p-2.5 border-r text-center text-blue-700 bg-blue-50/30">Balance (No Cash/PMO)</th>
+                                <th class="p-2.5 border-r text-center text-info-700 bg-info-50/30">PU (No Cash/PMO)</th>
+                                <th class="p-2.5 border-r text-center text-info-700 bg-info-50/30">Balance (No Cash/PMO)</th>
                                 <th class="p-2.5 border-r text-center">PMO Deliveries</th>
-                                <th class="p-2.5 border-r text-center text-purple-700 bg-purple-50/30">Dest Balance Zelle</th>
-                                <th class="p-2.5 text-center bg-emerald-600 text-white font-extrabold">Total After Deposit</th>
+                                <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">Dest Balance Zelle</th>
+                                <th class="p-2.5 text-center bg-primary-600 text-white font-extrabold">Total After Deposit</th>
                             </tr>
                         </thead>
-                        <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
-                            <tr class="hover:bg-slate-50 transition-colors">
+                        <tbody class="font-semibold text-surface-700 divide-y divide-surface-100">
+                            <tr class="hover:bg-surface-50 transition-colors">
                                 <td class="p-2.5 border-r text-center">${money(o.foreman)}</td>
                                 <td class="p-2.5 border-r text-center">${money(o.helpers)}</td>
                                 <td class="p-2.5 border-r text-center">${money(o.drivers)}</td>
-                                <td class="p-2.5 border-r text-center text-amber-700 font-bold bg-amber-50/20">${money(o.cashDiesel)}</td>
-                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold">${money(o.cashPu)}</td>
-                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold">${money(o.cashDest)}</td>
+                                <td class="p-2.5 border-r text-center text-warning-700 font-bold bg-warning-50/20">${money(o.cashDiesel)}</td>
+                                <td class="p-2.5 border-r text-center text-primary-600 font-bold">${money(o.cashPu)}</td>
+                                <td class="p-2.5 border-r text-center text-primary-600 font-bold">${money(o.cashDest)}</td>
                                 <td class="p-2.5 border-r text-center">${money(o.pmoPu)}</td>
-                                <td class="p-2.5 border-r text-center text-blue-600 font-bold">${money(o.puOther)}</td>
-                                <td class="p-2.5 border-r text-center text-blue-600 font-bold">${money(o.destOther)}</td>
+                                <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(o.puOther)}</td>
+                                <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(o.destOther)}</td>
                                 <td class="p-2.5 border-r text-center">${money(o.pmoDeliveries)}</td>
-                                <td class="p-2.5 border-r text-center text-purple-600 font-bold">${money(o.destZelle)}</td>
-                                <td class="p-2.5 border-r text-center bg-emerald-50 text-emerald-800 font-extrabold text-xs">${money(o.total)}</td>
+                                <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(o.destZelle)}</td>
+                                <td class="p-2.5 border-r text-center bg-primary-50 text-primary-800 font-extrabold text-xs">${money(o.total)}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -429,33 +429,33 @@
 
     function smallSummaryHTML(opts) {
         return `
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
-            <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+        <div class="bg-white rounded-2xl shadow-sm border border-surface-200/80 p-6 space-y-4 mt-6 print:p-2">
+            <div class="border-b border-surface-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                 <div>
-                    <h3 class="text-sm font-bold text-slate-800">${opts.title}</h3>
-                    <p class="text-[11px] text-slate-400">${opts.subtitle}</p>
+                    <h3 class="text-sm font-bold text-surface-800">${opts.title}</h3>
+                    <p class="text-[11px] text-surface-400">${opts.subtitle}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                    <span class="text-xs font-bold text-surface-700 bg-surface-100 px-3 py-1 rounded-xl">
                         Total Records: <span class="${opts.countClass}">${opts.count}</span>
                     </span>
                 </div>
             </div>
-            <div class="overflow-x-auto rounded-xl border border-slate-100">
+            <div class="overflow-x-auto rounded-xl border border-surface-100">
                 <table class="w-full text-left border-collapse text-[11px]">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                        <tr class="bg-surface-50 text-surface-600 uppercase font-bold border-b border-surface-200/80 text-[10px]">
                             <th class="p-2.5 border-r text-center">${opts.firstHead}</th>
-                            <th class="p-2.5 border-r text-center text-emerald-700 bg-emerald-50/30">Cash Payments</th>
-                            <th class="p-2.5 border-r text-center text-blue-700 bg-blue-50/30">Other Payments</th>
+                            <th class="p-2.5 border-r text-center text-primary-700 bg-primary-50/30">Cash Payments</th>
+                            <th class="p-2.5 border-r text-center text-info-700 bg-info-50/30">Other Payments</th>
                             <th class="p-2.5 text-center ${opts.totalHeadClass} text-white font-extrabold">Grand Total Cost</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="font-semibold text-slate-700 ${opts.rowClass}">
+                        <tr class="font-semibold text-surface-700 ${opts.rowClass}">
                             <td class="p-2.5 border-r text-center font-bold">${opts.firstValue}</td>
-                            <td class="p-2.5 border-r text-center text-emerald-600 font-bold">${money(opts.cash)}</td>
-                            <td class="p-2.5 border-r text-center text-blue-600 font-bold">${money(opts.other)}</td>
+                            <td class="p-2.5 border-r text-center text-primary-600 font-bold">${money(opts.cash)}</td>
+                            <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(opts.other)}</td>
                             <td class="p-2.5 text-center ${opts.totalValueClass} font-extrabold">${money(opts.total)}</td>
                         </tr>
                     </tbody>
@@ -468,10 +468,10 @@
         return smallSummaryHTML({
             title: 'Private Truck Rental Financial Summary',
             subtitle: 'Summary of rental duration, cash payments, and total costs',
-            count: s.rental.count, countClass: 'text-emerald-600',
+            count: s.rental.count, countClass: 'text-primary-600',
             firstHead: 'Total Days', firstValue: s.rental.days + ' Days',
             cash: s.rental.cash, other: s.rental.other, total: s.rental.total,
-            totalHeadClass: 'bg-amber-600', rowClass: 'bg-amber-50/20', totalValueClass: 'text-amber-900'
+            totalHeadClass: 'bg-warning-600', rowClass: 'bg-warning-50/20', totalValueClass: 'text-warning-900'
         });
     }
 
@@ -479,10 +479,10 @@
         return smallSummaryHTML({
             title: 'Warehouse & Others Financial Summary',
             subtitle: 'Summary of warehouse expenses and operational costs',
-            count: s.warehouse.count, countClass: 'text-purple-600',
+            count: s.warehouse.count, countClass: 'text-accent-600',
             firstHead: 'Total Items', firstValue: s.warehouse.count + ' Items',
             cash: s.warehouse.cash, other: s.warehouse.other, total: s.warehouse.total,
-            totalHeadClass: 'bg-purple-700', rowClass: 'bg-purple-50/20', totalValueClass: 'text-purple-900'
+            totalHeadClass: 'bg-accent-700', rowClass: 'bg-accent-50/20', totalValueClass: 'text-accent-900'
         });
     }
 
@@ -567,41 +567,41 @@
         ];
     }
 
-    const TONE_TEXT = { emerald: 'text-emerald-700', amber: 'text-amber-700', blue: 'text-blue-700', purple: 'text-purple-700' };
+    const TONE_TEXT = { emerald: 'text-primary-700', amber: 'text-warning-700', blue: 'text-info-700', purple: 'text-accent-700' };
     const BADGE_CLASS = {
-        emerald: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-        amber: 'text-amber-700 bg-amber-50 border-amber-200',
-        purple: 'text-purple-700 bg-purple-50 border-purple-200'
+        emerald: 'text-primary-700 bg-primary-50 border-primary-200',
+        amber: 'text-warning-700 bg-warning-50 border-warning-200',
+        purple: 'text-accent-700 bg-accent-50 border-accent-200'
     };
 
     function screenSection(sec) {
         const head = sec.cols.map((c) => `<th class="p-3 border text-center${c.tone ? ' ' + TONE_TEXT[c.tone] : ''}">${esc(c.h)}</th>`).join('');
         const body = sec.rows.length
-            ? sec.rows.map((cells) => `<tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">${cells.map((v, i) => {
+            ? sec.rows.map((cells) => `<tr class="hover:bg-surface-50 transition-colors text-surface-700 text-xs">${cells.map((v, i) => {
                 const c = sec.cols[i];
                 return `<td class="p-2.5 border-r text-center${c.b ? ' font-bold' : ''}${c.tone ? ' ' + TONE_TEXT[c.tone] : ''}">${esc(v)}</td>`;
             }).join('')}</tr>`).join('')
-            : `<tr><td colspan="${sec.cols.length}" class="p-5 text-center text-slate-400">No records found in this period</td></tr>`;
+            : `<tr><td colspan="${sec.cols.length}" class="p-5 text-center text-surface-400">No records found in this period</td></tr>`;
         const foot = sec.rows.length
-            ? `<tfoot><tr class="bg-emerald-50 text-emerald-800 font-extrabold text-xs">
+            ? `<tfoot><tr class="bg-primary-50 text-primary-800 font-extrabold text-xs">
                     <td colspan="${sec.footSpan}" class="p-2.5 text-right">${esc(sec.footLabel)}</td>
                     <td class="p-2.5 text-center">${esc(sec.footValue)}</td>
                     ${sec.footTail ? `<td colspan="${sec.footTail}"></td>` : ''}
                </tr></tfoot>`
             : '';
         return `
-        <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3 w-full">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-surface-200 space-y-3 w-full">
+            <div class="flex justify-between items-center border-b border-surface-100 pb-3">
                 <div>
-                    <h4 class="font-bold text-slate-800 text-sm">${esc(sec.title)}</h4>
-                    <p class="text-[11px] text-slate-400">${esc(sec.subtitle)}</p>
+                    <h4 class="font-bold text-surface-800 text-sm">${esc(sec.title)}</h4>
+                    <p class="text-[11px] text-surface-400">${esc(sec.subtitle)}</p>
                 </div>
                 <span class="text-xs font-bold ${BADGE_CLASS[sec.tone]} px-3 py-1 rounded-lg border">${esc(sec.badge)}</span>
             </div>
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-xs border-collapse${sec.key === 'jobs' ? ' min-w-[1100px]' : ' min-w-[640px]'}">
-                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200"><tr>${head}</tr></thead>
-                    <tbody class="divide-y divide-slate-100">${body}</tbody>
+                    <thead class="bg-surface-50 text-surface-600 uppercase text-[10px] font-bold border-b border-surface-200"><tr>${head}</tr></thead>
+                    <tbody class="divide-y divide-surface-100">${body}</tbody>
                     ${foot}
                 </table>
             </div>
@@ -641,9 +641,9 @@
         const host = $('detailedReportContainer') || $('detailedReportView');
         if (!host) return;
         host.innerHTML = `
-            <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-slate-500">
-                <span><i class="fa-regular fa-calendar mr-1.5 text-emerald-600"></i>Period: <span class="text-slate-800">${esc(periodText(data.start, data.end))}</span></span>
-                <span class="text-slate-400">${data.jobs.length} jobs &middot; ${data.rentals.length} rentals &middot; ${data.warehouse.length} warehouse records</span>
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-surface-500">
+                <span><i class="fa-regular fa-calendar mr-1.5 text-primary-600"></i>Period: <span class="text-surface-800">${esc(periodText(data.start, data.end))}</span></span>
+                <span class="text-surface-400">${data.jobs.length} jobs &middot; ${data.rentals.length} rentals &middot; ${data.warehouse.length} warehouse records</span>
             </div>
             ${detailSections(data, s).map(screenSection).join('')}`;
     }
@@ -668,8 +668,8 @@
         const btnDetailed = $('btnDetailedMode');
         if (!summaryView || !detailedView) return;
 
-        const on = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer';
-        const off = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer';
+        const on = 'px-4 py-2 text-xs font-semibold rounded-lg bg-primary-600 text-white transition cursor-pointer';
+        const off = 'px-4 py-2 text-xs font-semibold rounded-lg bg-surface-100 text-surface-600 hover:bg-surface-200 transition cursor-pointer';
 
         if (mode === 'detailed') {
             summaryView.classList.add('hidden');
@@ -719,15 +719,18 @@
     // ==========================================
     // 9. PDF (Summary first, then Detailed - same period)
     // ==========================================
+    // All PDF colors come from theme.js
+    const T = window.themeColor;
+    const TINT = window.PDF_TINTS;
     const PDF_CSS = `
-        :root { --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --soft:#f8fafc; --brand:#047857; --brand-dark:#064e3b; --brand-soft:#ecfdf5; }
+        :root { --ink:${T('surface', 900)}; --muted:${T('surface', 500)}; --line:${T('surface', 200)}; --soft:${T('surface', 50)}; --brand:${T('primary', 700)}; --brand-dark:${T('primary', 900)}; --brand-soft:${T('primary', 50)}; }
         @page { size: A4 landscape; margin: 9mm; }
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
         body { font-family: "Segoe UI", Inter, system-ui, -apple-system, Arial, sans-serif; color: var(--ink); font-size: 10px; line-height: 1.4;
-               background: linear-gradient(150deg, #f4faf8 0%, #f2f6ff 55%, #f8f5ff 100%);
+               background: linear-gradient(150deg, ${TINT.backgroundStart} 0%, ${TINT.backgroundMiddle} 55%, ${TINT.backgroundEnd} 100%);
                -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .hero { background: linear-gradient(120deg, #064e3b 0%, #047857 60%, #10b981 130%); color: #fff; border-radius: 12px; padding: 16px 20px;
+        .hero { background: linear-gradient(120deg, ${T('primary', 900)} 0%, ${T('primary', 700)} 60%, ${T('primary', 500)} 130%); color: #fff; border-radius: 12px; padding: 16px 20px;
                 display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
         .brand { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; opacity: .8; font-weight: 700; }
         .hero h1 { margin: 3px 0 0; font-size: 21px; font-weight: 800; letter-spacing: -.01em; }
@@ -736,29 +739,29 @@
         .hero .period .val { font-size: 14px; font-weight: 800; margin-top: 2px; }
         .hero .period .meta { font-size: 8.5px; opacity: .75; margin-top: 3px; }
         .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0 4px; }
-        .kpi { border: 1px solid rgba(203, 213, 225, 0.7); border-left: 4px solid var(--brand); border-radius: 10px; padding: 9px 12px; background: rgba(255, 255, 255, 0.82); }
+        .kpi { border: 1px solid ${T('surface', 300, 0.7)}; border-left: 4px solid var(--brand); border-radius: 10px; padding: 9px 12px; background: rgba(255, 255, 255, 0.82); }
         .kpi .l { font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
         .kpi .v { font-size: 19px; font-weight: 800; margin-top: 2px; letter-spacing: -.01em; }
-        .kpi.blue { border-left-color: #2563eb; } .kpi.amber { border-left-color: #d97706; } .kpi.rose { border-left-color: #e11d48; }
+        .kpi.blue { border-left-color: ${T('info', 600)}; } .kpi.amber { border-left-color: ${T('warning', 600)}; } .kpi.rose { border-left-color: ${T('alert', 600)}; }
         .sec { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; font-size: 12.5px; font-weight: 800; color: var(--brand-dark); }
-        .sec::before { content: ""; width: 4px; height: 15px; border-radius: 2px; background: #10b981; }
+        .sec::before { content: ""; width: 4px; height: 15px; border-radius: 2px; background: ${T('primary', 500)}; }
         .sec small { font-size: 9px; color: var(--muted); font-weight: 600; margin-left: 4px; }
-        .card { border: 1px solid rgba(203, 213, 225, 0.7); border-radius: 10px; padding: 9px 11px 6px; margin-bottom: 10px; background: rgba(255, 255, 255, 0.82); break-inside: avoid; page-break-inside: avoid; }
-        .card h3 { margin: 0 0 6px; font-size: 10px; font-weight: 800; color: #334155; letter-spacing: .02em; }
+        .card { border: 1px solid ${T('surface', 300, 0.7)}; border-radius: 10px; padding: 9px 11px 6px; margin-bottom: 10px; background: rgba(255, 255, 255, 0.82); break-inside: avoid; page-break-inside: avoid; }
+        .card h3 { margin: 0 0 6px; font-size: 10px; font-weight: 800; color: ${T('surface', 700)}; letter-spacing: .02em; }
         .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 9px; }
         thead { display: table-header-group; }
         tfoot { display: table-row-group; }
         tr { break-inside: avoid; page-break-inside: avoid; }
-        th { background: #f1f5f9; color: #334155; font-weight: 800; font-size: 7.6px; text-transform: uppercase; letter-spacing: .04em;
-             padding: 6px 4px; border-bottom: 1.5px solid #cbd5e1; text-align: center; }
-        td { padding: 5px 4px; border-bottom: 1px solid #eef2f7; text-align: center; }
-        tbody tr:nth-child(even) td { background: #fafcfd; }
+        th { background: ${T('surface', 100)}; color: ${T('surface', 700)}; font-weight: 800; font-size: 7.6px; text-transform: uppercase; letter-spacing: .04em;
+             padding: 6px 4px; border-bottom: 1.5px solid ${T('surface', 300)}; text-align: center; }
+        td { padding: 5px 4px; border-bottom: 1px solid ${TINT.rowLine}; text-align: center; }
+        tbody tr:nth-child(even) td { background: ${TINT.rowStripe}; }
         td.b { font-weight: 700; }
-        .t-emerald { color: #047857; } .t-amber { color: #b45309; } .t-blue { color: #1d4ed8; } .t-purple { color: #7e22ce; }
+        .t-emerald { color: ${T('primary', 700)}; } .t-amber { color: ${T('warning', 700)}; } .t-blue { color: ${T('info', 700)}; } .t-purple { color: ${T('accent', 700)}; }
         th.hl { background: var(--brand); color: #fff; border-bottom-color: var(--brand); }
-        td.hl { background: var(--brand-soft) !important; color: #065f46; font-weight: 800; }
-        tfoot td { background: var(--brand-soft); color: #065f46; font-weight: 800; border-top: 1.5px solid #a7f3d0; border-bottom: none; padding: 6px 4px; }
+        td.hl { background: var(--brand-soft) !important; color: ${T('primary', 800)}; font-weight: 800; }
+        tfoot td { background: var(--brand-soft); color: ${T('primary', 800)}; font-weight: 800; border-top: 1.5px solid ${T('primary', 200)}; border-bottom: none; padding: 6px 4px; }
         td.r { text-align: right; padding-right: 10px; }
         .empty { text-align: center; color: var(--muted); padding: 14px; font-size: 10px; }
         .pagebreak { break-before: page; page-break-before: always; }
@@ -851,8 +854,8 @@
         <div class="kpi"><div class="l">Total Jobs</div><div class="v">${s.nonDeliveryJobs}</div></div>
         <div class="kpi blue"><div class="l">Total Deliveries</div><div class="v">${s.deliveries}</div></div>
         <div class="kpi"><div class="l">Total Revenue</div><div class="v t-emerald">${money(s.revenue)}</div></div>
-        <div class="kpi rose"><div class="l">Total Expenses</div><div class="v" style="color:#be123c">${money(s.expenses)}</div>
-            <div style="font-size:7.5px;color:#64748b;margin-top:1px">Diesel ${money(s.diesel)} &middot; Hotel ${money(s.hotel)} &middot; Rentals ${money(s.rental.total)} &middot; Warehouse ${money(s.warehouse.total)}</div></div>
+        <div class="kpi rose"><div class="l">Total Expenses</div><div class="v" style="color:${T('alert', 700)}">${money(s.expenses)}</div>
+            <div style="font-size:7.5px;color:${T('surface', 500)};margin-top:1px">Diesel ${money(s.diesel)} &middot; Hotel ${money(s.hotel)} &middot; Rentals ${money(s.rental.total)} &middot; Warehouse ${money(s.warehouse.total)}</div></div>
     </div>
 
     <div class="sec">Summary</div>

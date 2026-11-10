@@ -182,16 +182,16 @@
             .slice(0, 4);
 
         if (!sorted.length) {
-            box.innerHTML = '<p class="text-slate-400 text-xs">No route data available</p>';
+            box.innerHTML = '<p class="text-surface-400 text-xs">No route data available</p>';
             return;
         }
         box.innerHTML = sorted.map((item, idx) => `
-            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <div class="flex items-center justify-between p-3 bg-surface-50 rounded-xl border border-surface-100">
                 <div class="flex items-center space-x-2 min-w-0">
-                    <span class="w-5 h-5 shrink-0 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
-                    <span class="font-bold text-emerald-800 truncate">${esc(item[0])}</span>
+                    <span class="w-5 h-5 shrink-0 rounded-full bg-primary-100 text-primary-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
+                    <span class="font-bold text-primary-800 truncate">${esc(item[0])}</span>
                 </div>
-                <span class="font-extrabold text-slate-900 ml-3">${money(item[1])}</span>
+                <span class="font-extrabold text-surface-900 ml-3">${money(item[1])}</span>
             </div>`).join('');
     }
 
@@ -221,8 +221,8 @@
             connected = false;
         }
         valueEl.innerText = connected ? 'Connected' : 'Offline';
-        valueEl.className = 'text-2xl font-black mt-1 ' + (connected ? 'text-emerald-600' : 'text-rose-600');
-        if (dotEl) dotEl.className = 'w-1.5 h-1.5 rounded-full mr-1 ' + (connected ? 'bg-emerald-500 animate-ping' : 'bg-rose-500');
+        valueEl.className = 'text-2xl font-black mt-1 ' + (connected ? 'text-primary-600' : 'text-alert-600');
+        if (dotEl) dotEl.className = 'w-1.5 h-1.5 rounded-full mr-1 ' + (connected ? 'bg-primary-500 animate-ping' : 'bg-alert-500');
     }
 
     function updateDashboardAnalytics() {
@@ -255,9 +255,9 @@
                     datasets: [{
                         label: 'Monthly Revenue ($)',
                         data: monthlyData,
-                        backgroundColor: 'rgba(5, 150, 105, 0.85)',
+                        backgroundColor: themeColor('primary', 600, 0.85),
                         borderRadius: 8,
-                        hoverBackgroundColor: '#047857'
+                        hoverBackgroundColor: themeColor('primary', 700)
                     }]
                 },
                 options: {
@@ -265,7 +265,7 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                        y: { grid: { color: themeColor('surface', 100) }, ticks: { font: { size: 10 } } },
                         x: { grid: { display: false }, ticks: { font: { size: 10 } } }
                     }
                 }
@@ -275,7 +275,7 @@
         const ctxPayment = $('paymentMixChart');
         if (ctxPayment) {
             if (window.paymentMixChartInstance) window.paymentMixChartInstance.destroy();
-            const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b', '#cbd5e1'];
+            const colors = window.CHART_COLORS; // defined in theme.js
             window.paymentMixChartInstance = new Chart(ctxPayment, {
                 type: 'doughnut',
                 data: {
