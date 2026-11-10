@@ -237,8 +237,11 @@
             if (delivery) {
                 s.deliveries++;
             } else {
-                const first = jobNoOf(j).toUpperCase().charAt(0);
-                const bucket = s.breakdown[first] && ['G', 'C', 'P', 'T'].indexOf(first) !== -1 ? s.breakdown[first] : s.breakdown.Other;
+                // A job number belongs to G / C / P / T only when it is ONE letter followed by digits (G101, C205).
+                // CANCEL 12, none, or an empty number are still counted, but under Other.
+                const match = jobNoOf(j).toUpperCase().match(/^([A-Z])\d+/);
+                const first = match ? match[1] : '';
+                const bucket = ['G', 'C', 'P', 'T'].indexOf(first) !== -1 ? s.breakdown[first] : s.breakdown.Other;
                 bucket.n++;
                 bucket.rev += total;
             }
@@ -722,6 +725,7 @@
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
         body { font-family: "Segoe UI", Inter, system-ui, -apple-system, Arial, sans-serif; color: var(--ink); font-size: 10px; line-height: 1.4;
+               background: linear-gradient(150deg, #f4faf8 0%, #f2f6ff 55%, #f8f5ff 100%);
                -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .hero { background: linear-gradient(120deg, #064e3b 0%, #047857 60%, #10b981 130%); color: #fff; border-radius: 12px; padding: 16px 20px;
                 display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
@@ -732,14 +736,14 @@
         .hero .period .val { font-size: 14px; font-weight: 800; margin-top: 2px; }
         .hero .period .meta { font-size: 8.5px; opacity: .75; margin-top: 3px; }
         .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0 4px; }
-        .kpi { border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 10px; padding: 9px 12px; background: #fff; }
+        .kpi { border: 1px solid rgba(203, 213, 225, 0.7); border-left: 4px solid var(--brand); border-radius: 10px; padding: 9px 12px; background: rgba(255, 255, 255, 0.82); }
         .kpi .l { font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
         .kpi .v { font-size: 19px; font-weight: 800; margin-top: 2px; letter-spacing: -.01em; }
         .kpi.blue { border-left-color: #2563eb; } .kpi.amber { border-left-color: #d97706; } .kpi.rose { border-left-color: #e11d48; }
         .sec { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; font-size: 12.5px; font-weight: 800; color: var(--brand-dark); }
         .sec::before { content: ""; width: 4px; height: 15px; border-radius: 2px; background: #10b981; }
         .sec small { font-size: 9px; color: var(--muted); font-weight: 600; margin-left: 4px; }
-        .card { border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px 6px; margin-bottom: 10px; background: #fff; break-inside: avoid; page-break-inside: avoid; }
+        .card { border: 1px solid rgba(203, 213, 225, 0.7); border-radius: 10px; padding: 9px 11px 6px; margin-bottom: 10px; background: rgba(255, 255, 255, 0.82); break-inside: avoid; page-break-inside: avoid; }
         .card h3 { margin: 0 0 6px; font-size: 10px; font-weight: 800; color: #334155; letter-spacing: .02em; }
         .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 9px; }
