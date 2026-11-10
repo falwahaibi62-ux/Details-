@@ -1111,17 +1111,61 @@ async function renderTrashBin() {
         
         let allDeletedRecords = [];
 
-        // جلب العمليات المحذوفة من جدول jobs_report بدقة
+        // 1. جلب العمليات المحذوفة من جدول jobs_report
         const { data: jobsData, error: jobsErr } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (jobsErr) {
-            console.error("❌ خطأ في جلب السجلات المحذوفة:", jobsErr.message);
-        } else if (jobsData) {
-            allDeletedRecords.push(...jobsData.map(item => ({ ...item, tableName: 'jobs_report', displayType: 'Job' })));
+        if (!jobsErr && jobsData) {
+            allDeletedRecords.push(...jobsData.map(item => ({ 
+                ...item, 
+                tableName: 'jobs_report', 
+                displayType: 'Job Report',
+                identifier: item.job_no || item.jobNo || `Job #${item.id}`,
+                details: item.route || '-',
+                assigned: item.foreman_name || '-',
+                amount: item.total_amount || '$0'
+            })));
+        }
+
+        // 2. جلب السجلات المحذوفة من جدول warehouse_expenses
+        const { data: warehouseData, error: warehouseErr } = await window.supabaseClient
+            .from('warehouse_expenses')
+            .select('*')
+            .eq('is_deleted', true)
+            .order('id', { ascending: false });
+            
+        if (!warehouseErr && warehouseData) {
+            allDeletedRecords.push(...warehouseData.map(item => ({ 
+                ...item, 
+                tableName: 'warehouse_expenses', 
+                displayType: 'Warehouse',
+                identifier: item.item_name || item.name || `Item #${item.id}`,
+                details: item.category || item.description || '-',
+                assigned: item.supplier || item.paid_by || '-',
+                amount: item.cost || item.amount || '$0'
+            })));
+        }
+
+        // 3. جلب السجلات المحذوفة من جدول truck_rental
+        const { data: rentalData, error: rentalErr } = await window.supabaseClient
+            .from('truck_rental')
+            .select('*')
+            .eq('is_deleted', true)
+            .order('id', { ascending: false });
+            
+        if (!rentalErr && rentalData) {
+            allDeletedRecords.push(...rentalData.map(item => ({ 
+                ...item, 
+                tableName: 'truck_rental', 
+                displayType: 'Truck Rental',
+                identifier: item.truck_no || item.plate_no || `Rental #${item.id}`,
+                details: item.route || item.notes || '-',
+                assigned: item.driver_name || '-',
+                amount: item.total_amount || item.cost || '$0'
+            })));
         }
 
         const trashContainer = document.getElementById('trashTableBody');
@@ -1135,16 +1179,17 @@ async function renderTrashBin() {
             return;
         }
 
+        // رسم السجلات المجمعة من كافة الجداول مع خياري Restore و Delete
         trashContainer.innerHTML = allDeletedRecords.map(item => `
             <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
-                <td class="p-3 text-slate-800 font-medium">${item.date || '-'}</td>
+                <td class="p-3 text-slate-800 font-medium">${item.date || item.created_at?.split('T')[0] || '-'}</td>
                 <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType}</span></td>
-                <td class="p-3 text-slate-700 font-semibold">${item.job_no || item.jobNo || '-'}</td>
-                <td class="p-3 text-slate-600">${item.route || '-'}</td>
-                <td class="p-3 text-slate-600">${item.foreman_name || '-'}</td>
-                <td class="p-3 text-purple-600">${item.helpers_cost || '-'}</td>
-                <td class="p-3 text-blue-600">${item.drivers_cost || '-'}</td>
-                <td class="p-3 font-bold text-emerald-600">${item.total_amount || '$0'}</td>
+                <td class="p-3 text-slate-700 font-semibold">${item.identifier}</td>
+                <td class="p-3 text-slate-600">${item.details}</td>
+                <td class="p-3 text-slate-600">${item.assigned}</td>
+                <td class="p-3 text-purple-600">-</td>
+                <td class="p-3 text-blue-600">-</td>
+                <td class="p-3 font-bold text-emerald-600">${item.amount}</td>
                 <td class="p-3 text-center space-x-1">
                     <button type="button" onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer shadow-xs" title="Restore">
                         <i class="fa-solid fa-rotate-left mr-1"></i> Restore
@@ -1156,7 +1201,7 @@ async function renderTrashBin() {
             </tr>
         `).join('');
 
-        console.log(`✅ تم تحديث سلة المحذوفات وعرض ${allDeletedRecords.length} سجل.`);
+        console.log(`✅ تم تحديث سلة المحذوفات وعرض ${allDeletedRecords.length} سجل من كافة الأقسام.`);
 
     } catch (e) {
         console.error("Error in renderTrashBin:", e);
