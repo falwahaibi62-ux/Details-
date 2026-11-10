@@ -18,9 +18,21 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-surface-100 font-sans text-surface-800 antialiased h-[100dvh] flex flex-col md:flex-row overflow-hidden">
-    
+
+    <!-- MOBILE TOP BAR (phones only) -->
+    <header class="md:hidden flex items-center justify-between px-4 py-3 bg-surface-900 text-white shrink-0 shadow-lg">
+        <button type="button" onclick="toggleSidebar(true)" aria-label="Open menu" class="w-10 h-10 -ml-2 flex items-center justify-center rounded-xl hover:bg-surface-800 text-lg cursor-pointer">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <h2 class="text-base font-bold">Wathek</h2>
+        <span class="w-10"></span>
+    </header>
+
+    <!-- Dark layer behind the open menu on phones; tap it to close -->
+    <div id="sidebarBackdrop" onclick="toggleSidebar(false)" class="hidden fixed inset-0 bg-black/50 z-40 md:hidden"></div>
+
     <!-- SIDEBAR NAVIGATION -->
-    <aside class="hidden md:flex w-64 bg-surface-900 text-surface-300 flex-col justify-between shrink-0 shadow-2xl">
+    <aside id="sidebar" class="hidden md:flex w-64 bg-surface-900 text-surface-300 flex-col justify-between shrink-0 shadow-2xl">
         <div>
             <div class="p-5 flex items-center justify-between border-b border-surface-800">
                 <div class="flex items-center space-x-3">
@@ -83,7 +95,7 @@
     </aside>
 
     <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 overflow-y-auto p-6 custom-scrollbar min-w-0 relative bg-surface-100 flex flex-col">
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar min-w-0 relative bg-surface-100 flex flex-col">
 
         <!-- TAB 1: ADVANCED DASHBOARD & CHARTS -->
         <div id="tab-dashboard" class="space-y-6 w-full flex flex-col animate-fade-in view-section">
@@ -636,5 +648,19 @@
     <script src="warehouseform.js"></script>
     <script src="app.js"></script>
     <script src="reports.js"></script>
+    <script>
+        // Phone menu: open/close the sidebar as a slide-in drawer
+        function toggleSidebar(open) {
+            document.body.classList.toggle('sidebar-open', open);
+            document.getElementById('sidebarBackdrop').classList.toggle('hidden', !open);
+        }
+        // Close the drawer after choosing a section, or with the Escape key
+        document.querySelectorAll('#sidebar nav button').forEach((btn) => {
+            btn.addEventListener('click', () => toggleSidebar(false));
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') toggleSidebar(false);
+        });
+    </script>
 </body>
 </html>

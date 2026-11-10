@@ -214,6 +214,27 @@ html.glass aside {
     border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* 8. Phone menu: the sidebar slides in as a drawer (opened by the menu button) */
+@media (max-width: 767px) {
+    body.sidebar-open #sidebar {
+        display: flex !important;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 50;
+        width: 16rem;
+        max-width: 85vw;
+        overflow-y: auto;
+        animation: sidebarSlideIn 0.2s ease-out;
+    }
+}
+
+@keyframes sidebarSlideIn {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+}
+
 /* 6. Chart Container Fixed Height Fix */
 .chart-container {
     position: relative;
