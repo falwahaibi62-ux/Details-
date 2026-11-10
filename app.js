@@ -1188,30 +1188,37 @@ async function renderTrashBin() {
 
         if (allDeletedRecords.length === 0) {
             trashContainer.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 font-medium">Trash bin is empty</td></tr>`;
-            return;
+        } else {
+            // رسم السجلات مع استخدام قيم افتراضية (-) لو كانت الحقول فارغة تماماً
+            trashContainer.innerHTML = allDeletedRecords.map(item => `
+                <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
+                    <td class="p-3 text-slate-800 font-medium">${item.date || item.created_at?.split('T')[0] || '-'}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType || 'Record'}</span></td>
+                    <td class="p-3 text-slate-700 font-semibold">${item.identifier || `ID: ${item.id}`}</td>
+                    <td class="p-3 text-slate-600">${item.details || '-'}</td>
+                    <td class="p-3 text-slate-600">${item.assigned || '-'}</td>
+                    <td class="p-3 text-purple-700">${item.helpers || '-'}</td>
+                    <td class="p-3 text-blue-700">${item.drivers || '-'}</td>
+                    <td class="p-3 font-bold text-emerald-600">${item.amount || '$0'}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button type="button" onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer shadow-xs" title="Restore">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> Restore
+                        </button>
+                        <button type="button" onclick="permanentDeleteRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-rose-600 text-white rounded-lg text-xs hover:bg-rose-700 transition cursor-pointer shadow-xs" title="Delete Forever">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        // رسم السجلات مع استخدام قيم افتراضية (-) لو كانت الحقول فارغة تماماً لضمان عدم حدوث خطأ في العرض
-        trashContainer.innerHTML = allDeletedRecords.map(item => `
-            <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
-                <td class="p-3 text-slate-800 font-medium">${item.date || item.created_at?.split('T')[0] || '-'}</td>
-                <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType || 'Record'}</span></td>
-                <td class="p-3 text-slate-700 font-semibold">${item.identifier || `ID: ${item.id}`}</td>
-                <td class="p-3 text-slate-600">${item.details || '-'}</td>
-                <td class="p-3 text-slate-600">${item.assigned || '-'}</td>
-                <td class="p-3 text-purple-700">${item.helpers || '-'}</td>
-                <td class="p-3 text-blue-700">${item.drivers || '-'}</td>
-                <td class="p-3 font-bold text-emerald-600">${item.amount || '$0'}</td>
-                <td class="p-3 text-center space-x-1">
-                    <button type="button" onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer shadow-xs" title="Restore">
-                        <i class="fa-solid fa-rotate-left mr-1"></i> Restore
-                    </button>
-                    <button type="button" onclick="permanentDeleteRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-rose-600 text-white rounded-lg text-xs hover:bg-rose-700 transition cursor-pointer shadow-xs" title="Delete Forever">
-                        <i class="fa-solid fa-trash-can mr-1"></i> Delete
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        // 🌟 التعديل الإضافي الهامة: إجبار قسم سلة المحذوفات على الظهور بصرياً على الشاشة
+        const trashTab = document.getElementById('tab-trash');
+        if (trashTab) {
+            trashTab.classList.remove('hidden');
+            trashTab.classList.add('flex');
+            trashTab.style.setProperty('display', 'flex', 'important');
+        }
 
         console.log(`✅ [Trash] تم عرض ${allDeletedRecords.length} سجل في سلة المحذوفات بنجاح.`);
 
