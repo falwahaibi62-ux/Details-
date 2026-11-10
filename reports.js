@@ -261,7 +261,9 @@
             destEntries.forEach((e) => {
                 s.payments[e.method] += e.amount;
                 if (e.method === 'Cash') s.official.cashDest += e.amount;
-                else if (e.method !== 'PMO') {
+                else if (e.method === 'PMO') {
+                    if (delivery) s.official.pmoDeliveries += e.amount;
+                } else {
                     s.official.destOther += e.amount;
                     if (e.method === 'Zelle') s.official.destZelle += e.amount;
                 }
