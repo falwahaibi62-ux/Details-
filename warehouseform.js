@@ -37,47 +37,21 @@ function formatWarehouseDateToSlash(dateStr) {
     return dateStr;
 }
 
-// جلب البيانات المباشرة من Supabase
-async function loadWarehouseRecords() {
-    try {
-        if (!window.supabaseClient) {
-            console.error("Supabase client is not initialized!");
-            return [];
-        }
+async function loadWarehouseData() {
+    if (!window.supabaseClient) return;
 
-        // جلب سجلات المستودع غير المحذوفة فقط مباشرة من Supabase
-        const { data, error } = await window.supabaseClient
-            .from('warehouse_expenses')
-            .select('*')
-            .or('is_deleted.is.null,is_deleted.eq.false')
-            .order('id', { ascending: false });
+    const { data, error } = await window.supabaseClient
+        .from('warehouse_expenses')
+        .select('*')
+        .or('is_deleted.is.null,is_deleted.eq.false') // 👈 ضعه هنا لاستبعاد السجلات المحذوفة من الجدول النشط
+        .order('id', { ascending: false });
 
-        if (error) {
-            console.error('Error fetching warehouse records from Supabase:', error);
-            return [];
-        }
-
-        const formattedRecords = (data || []).map(item => ({
-            id: item.id,
-            date: item.date || '',
-            services: item.services || '',
-            details: item.details || '',
-            paymentType: item.paymentType || 'Cash',
-            amount: parseFloat(item.amount) || 0
-        }));
-
-        // ترتيب السجلات من الأحدث للأقدم
-        formattedRecords.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-
-        window.currentWarehouseRecords = formattedRecords;
-        return formattedRecords;
-
-    } catch (e) {
-        console.error('Error loading warehouse records from Supabase:', e);
-        return [];
+    if (!error && data) {
+        // كود عرض البيانات في جدول المستودع
+        window.warehouseData = data;
+        renderWarehouseTable(data);
     }
 }
-window.loadWarehouseRecords = loadWarehouseRecords;
 
 
 async function refreshWarehouseData() {
