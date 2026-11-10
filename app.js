@@ -1103,7 +1103,7 @@ window.deleteTruckRental = deleteTruckRental;
 
 
 // ==========================================
-// 📦 دالة عرض سلة المحذوفات الموحدة لكافة الأقسام
+// 📦 دالة عرض سلة المحذوفات الموحدة لكافة الأقسام (محصنة ضد القيم الفارغة)
 // ==========================================
 async function renderTrashBin() {
     try {
@@ -1126,12 +1126,12 @@ async function renderTrashBin() {
                 ...item, 
                 tableName: 'jobs_report', 
                 displayType: 'Job Report',
-                identifier: item.job_no || `Job #${item.id}`,
+                identifier: item.job_no || item.jobNo || `Job #${item.id}`,
                 details: item.route || '-',
-                assigned: item.foreman_name || '-',
-                helpers: item.helpers_cost || '-',
-                drivers: item.drivers_cost || '-',
-                amount: item.total_amount || '$0'
+                assigned: item.foreman_name || item.foreman || '-',
+                helpers: item.helpers_cost || item.helpers || '-',
+                drivers: item.drivers_cost || item.drivers || '-',
+                amount: item.total_amount || item.total || '$0'
             })));
         }
 
@@ -1147,12 +1147,12 @@ async function renderTrashBin() {
                 ...item, 
                 tableName: 'warehouse_expenses', 
                 displayType: 'Warehouse',
-                identifier: item.services || `Item #${item.id}`,
-                details: item.details || '-',
-                assigned: item.paymentType || '-',
+                identifier: item.services || item.category || `Item #${item.id}`,
+                details: item.details || item.description || '-',
+                assigned: item.paymentType || item.method || '-',
                 helpers: '-',
                 drivers: '-',
-                amount: item.amount || '$0'
+                amount: item.amount || item.cost || '$0'
             })));
         }
 
@@ -1168,12 +1168,12 @@ async function renderTrashBin() {
                 ...item, 
                 tableName: 'truck_rental', 
                 displayType: 'Truck Rental',
-                identifier: item.truckLabel || `Rental #${item.id}`,
-                details: item.paymentType || '-',
-                assigned: item.paidBy || '-',
+                identifier: item.truckLabel || item.truck_no || `Rental #${item.id}`,
+                details: item.paymentType || item.notes || '-',
+                assigned: item.paidBy || item.driver_name || '-',
                 helpers: '-',
                 drivers: '-',
-                amount: item.amount || '$0'
+                amount: item.amount || item.total_amount || '$0'
             })));
         }
 
@@ -1188,10 +1188,10 @@ async function renderTrashBin() {
             return;
         }
 
-        // رسم السجلات مع خياري Restore و Delete
+        // رسم السجلات مع خياري Restore و Delete بدقة
         trashContainer.innerHTML = allDeletedRecords.map(item => `
             <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
-                <td class="p-3 text-slate-800 font-medium">${item.date || '-'}</td>
+                <td class="p-3 text-slate-800 font-medium">${item.date || item.created_at?.split('T')[0] || '-'}</td>
                 <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType}</span></td>
                 <td class="p-3 text-slate-700 font-semibold">${item.identifier}</td>
                 <td class="p-3 text-slate-600">${item.details}</td>
@@ -1264,7 +1264,6 @@ async function emptyTrashBin() {
     if (!window.supabaseClient) return;
 
     try {
-        // حذف نهائي لكافة السجلات التي تحمل is_deleted = true في الجداول الثلاثة
         await window.supabaseClient.from('jobs_report').delete().eq('is_deleted', true);
         await window.supabaseClient.from('warehouse_expenses').delete().eq('is_deleted', true);
         await window.supabaseClient.from('truck_rental').delete().eq('is_deleted', true);
@@ -1277,6 +1276,8 @@ async function emptyTrashBin() {
     }
 }
 window.emptyTrashBin = emptyTrashBin;
+
+
 
 // ==========================================
 // 9. DASHBOARD ANALYTICS & CHARTS
