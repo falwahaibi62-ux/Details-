@@ -1,696 +1,381 @@
 /**
- * MovePro - Financial & Operations Reports Module (Production Ready)
+ * Wathek - Financial & Operations Reports Module
+ *
+ * - The report period is date-only (From / To are inclusive, time of day and time zone are ignored).
+ * - The Reports page has its own filter; it no longer shares state with the Jobs page filter.
+ * - Total Expenses = Diesel + Hotel + Warehouse + Truck Rentals (inside the selected period).
+ * - Summary view, Detailed view and the PDF are all built from the same filtered data.
  */
+(function () {
+    'use strict';
 
+    const RENTALS_KEY = 'movepro_private_truck_rentals';
+    const WAREHOUSE_KEY = 'movepro_warehouse_records';
 
-// حماية ضمان توفر دالة جلب البيانات عالمياً
-if (typeof window.getFilteredJobsData !== 'function') {
-    window.getFilteredJobsData = function() {
-        return window.currentFilteredJobs || window.masterJobs || [];
-    };
-}
+    // ==========================================
+    // 1. BASIC HELPERS
+    // ==========================================
+    const $ = (id) => document.getElementById(id);
 
-function resetReportFilters() {
-    const startInput = document.getElementById('reportStartDate') || document.getElementById('ledgerFromDate');
-    const endInput = document.getElementById('reportEndDate') || document.getElementById('ledgerToDate');
-    
-    if (startInput) startInput.value = '';
-    if (endInput) endInput.value = '';
-    
-    window.currentFilteredJobs = window.masterJobs || [];
-    
-    // إعادة تعيين الجداول الإجمالية والتفصيلية بالبيانات الكاملة
-    if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
-        window.renderSummaryPageWithDetailedTables();
-    } else if (typeof filterLedgerTable === 'function') {
-        filterLedgerTable();
+    function esc(value) {
+        return String(value === null || value === undefined ? '' : value).replace(/[&<>"']/g, (c) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
     }
 
-    if (typeof renderMonthlyTableWrapper === 'function') {
-        renderMonthlyTableWrapper(window.currentFilteredJobs);
-    }
-    
-    // تحديث العرض الحالي بناءً على الوضع النشط (Summary أو Detailed)
-    const detailedView = document.getElementById('detailedReportView');
-    if (detailedView && !detailedView.classList.contains('hidden')) {
-        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
-    } else {
-        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
-    }
-}
-window.resetReportFilters = resetReportFilters;
-
-
-
-function switchReportMode(mode) {
-    const summaryView = document.getElementById('summaryReportView');
-    const detailedView = document.getElementById('detailedReportView');
-    const btnSummary = document.getElementById('btnSummaryMode');
-    const btnDetailed = document.getElementById('btnDetailedMode');
-
-    if (!summaryView || !detailedView) return;
-
-    // 🌟 تحديث البطاقات العلوية عند أي تبديل للوضع
-    if (typeof updateOfficialReportSummaryCards === 'function') {
-        updateOfficialReportSummaryCards();
+    // First number inside a text: "$3,795" -> 3795, "500 Cash" -> 500, "-" -> 0
+    function firstNumber(text) {
+        const m = String(text === null || text === undefined ? '' : text).match(/\d[\d,]*(?:\.\d+)?/);
+        return m ? (parseFloat(m[0].replace(/,/g, '')) || 0) : 0;
     }
 
-    if (mode === 'summary') {
-        summaryView.classList.remove('hidden');
-        detailedView.classList.add('hidden');
-        if (btnSummary) btnSummary.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer';
-        if (btnDetailed) btnDetailed.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer';
-        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
-    } else {
-        summaryView.classList.add('hidden');
-        detailedView.classList.remove('hidden');
-        if (btnDetailed) btnDetailed.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer';
-        if (btnSummary) btnSummary.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer';
-        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
+    function parseMoney(value) {
+        if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+        return firstNumber(value);
     }
-}
-window.switchReportMode = switchReportMode;
 
+    const fmt = (value) => Math.round(parseMoney(value)).toLocaleString('en-US');
+    const money = (value) => '$' + fmt(value);
 
-function parseCurrency(val) {
-    if (!val) return 0;
-    if (typeof val === 'number') return Math.round(val);
-    const cleaned = String(val).replace(/[^0-9.-]+/g, "");
-    const parsed = parseFloat(cleaned);
-    return isNaN(parsed) ? 0 : Math.round(parsed);
-}
-window.parseCurrency = parseCurrency;
-
-function formatCleanNumber(val) {
-    const num = Math.round(parseCurrency(val));
-    return num.toLocaleString('en-US');
-}
-window.formatCleanNumber = formatCleanNumber;
-
-
-// 1. الدالة المسؤولة عن معالجة التواريخ بدقة وتوفرها عالمياً
-function parseLocalDate(dateStr) {
-    if (!dateStr) return null;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        const [y, m, d] = dateStr.split('-').map(Number);
-        return new Date(y, m - 1, d, 0, 0, 0, 0);
+    // "150 Cash + 100 Zelle" -> 250
+    function sumPlusSeparated(text) {
+        const raw = String(text === null || text === undefined ? '' : text).trim();
+        if (!raw || raw === '-' || raw === '---') return 0;
+        return raw.split('+').reduce((sum, part) => sum + firstNumber(part), 0);
     }
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-        const m = parseInt(parts[0], 10);
-        const d = parseInt(parts[1], 10);
-        const y = parseInt(parts[2], 10);
-        return new Date(y, m - 1, d, 0, 0, 0, 0);
+
+    // Helpers / Drivers: "2 (400)" -> 400, "400" -> 400, "-" -> 0
+    function laborCost(text) {
+        const raw = String(text === null || text === undefined ? '' : text).trim();
+        if (!raw || raw === '-') return 0;
+        const inBrackets = raw.match(/\(\s*(\d[\d,]*(?:\.\d+)?)\s*\)/);
+        if (inBrackets) return parseFloat(inBrackets[1].replace(/,/g, '')) || 0;
+        return firstNumber(raw);
     }
-    const dObj = new Date(dateStr);
-    return isNaN(dObj.getTime()) ? null : new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate());
-}
-window.parseLocalDate = parseLocalDate;
 
+    // ==========================================
+    // 2. DATE HANDLING (date only, never time)
+    // ==========================================
+    function makeKey(y, m, d) {
+        const yy = Number(y), mm = Number(m), dd = Number(d);
+        if (!(yy >= 1900 && yy <= 2200 && mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31)) return '';
+        return yy + '-' + String(mm).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
+    }
 
-// 2. الدالة المسؤولة عن تطبيق الفلتر الفعلي وتوفيرها عالمياً
-function applyReportFilters() {
-    const startDateVal = document.getElementById('reportStartDate')?.value;
-    const endDateVal = document.getElementById('reportEndDate')?.value;
-    const jobTypeVal = document.getElementById('reportJobType')?.value || 'all';
-
-    const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
-    const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59, 999);
-
-    const master = window.masterJobs || [];
-
-    // فلترة السجلات بدقة حسب الفترة الزمنية ونوع الوظيفة
-    window.currentFilteredJobs = master.filter(item => {
-        // فلترة التاريخ
-        if (item.date) {
-            const itemDate = parseLocalDate(item.date);
-            if (itemDate) {
-                if (startDate && itemDate < startDate) return false;
-                if (endDate && itemDate > endDate) return false;
-            }
+    // Any stored date -> "YYYY-MM-DD" (or '' when it cannot be read).
+    // Supports YYYY-MM-DD (a time part is ignored) and M/D/YYYY (D/M/YYYY when the first number is above 12).
+    function toDateKey(value) {
+        if (value === null || value === undefined) return '';
+        const s = String(value).trim();
+        if (!s) return '';
+        let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (m) return makeKey(m[1], m[2], m[3]);
+        m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/);
+        if (m) {
+            const a = Number(m[1]), b = Number(m[2]);
+            return (a > 12 && b <= 12) ? makeKey(m[3], b, a) : makeKey(m[3], a, b);
         }
+        return '';
+    }
 
-        // فلترة نوع الوظيفة (Delivery أو Moving)
-        if (jobTypeVal !== 'all') {
-            const jNo = String(item.jobNo || item.job_no || '').toLowerCase();
-            const route = String(item.route || '').toLowerCase();
-            const isDelivery = jNo.includes('delivery') || route.includes('delivery');
-            if (jobTypeVal === 'delivery' && !isDelivery) return false;
-            if (jobTypeVal === 'moving' && isDelivery) return false;
-        }
+    function parseLocalDate(value) {
+        const key = toDateKey(value);
+        if (!key) return null;
+        const p = key.split('-').map(Number);
+        return new Date(p[0], p[1] - 1, p[2], 0, 0, 0, 0);
+    }
 
+    function niceDate(key) {
+        const d = parseLocalDate(key);
+        return d ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : key;
+    }
+
+    function periodText(start, end) {
+        if (start && end) return niceDate(start) + '  \u2192  ' + niceDate(end);
+        if (start) return 'From ' + niceDate(start);
+        if (end) return 'Up to ' + niceDate(end);
+        return 'All dates';
+    }
+
+    function inPeriod(dateValue, start, end) {
+        if (!start && !end) return true;
+        const key = toDateKey(dateValue);
+        if (!key) return false;
+        if (start && key < start) return false;
+        if (end && key > end) return false;
         return true;
-    });
-
-    // تحديث العرض حسب التبويب النشط حالياً (Summary أو Detailed)
-    const summaryView = document.getElementById('summaryReportView');
-    const isSummaryActive = summaryView && !summaryView.classList.contains('hidden');
-    
-    if (isSummaryActive) {
-        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
-        
-        // 🌟 تحديث جدول التصنيفات والأحرف (G, C, P, T, Delivery) فوراً عند تطبيق الفلتر
-        if (typeof renderMonthlyTableWrapper === 'function') {
-            renderMonthlyTableWrapper(window.currentFilteredJobs);
-        }
-    } else {
-        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
-    }
-}
-window.applyReportFilters = applyReportFilters;
-
-function generateDetailedReportData() {
-    // 1. استهداف جدول الوظائف الرئيسي حصراً لمنع التداخل
-    const tbody = document.getElementById('detailedReportBody');
-    const badge = document.getElementById('detailedJobsBadge');
-    
-    // جلب البيانات مع دعم التصفية من Supabase
-    const jobs = (typeof getFilteredJobsData === 'function') ? getFilteredJobsData() : (window.currentFilteredJobs || window.masterJobs || []);
-    
-    // تحديث العداد العلوي للوظائف التفصيلية
-    if (badge) {
-        badge.innerText = `${jobs.length} Jobs`;
     }
 
-    if (tbody) {
-        if (jobs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-slate-400">No dispatch records found</td></tr>`;
-        } else {
-            tbody.innerHTML = jobs.map(j => {
-                const totalNum = parseCurrency(j.total || j.total_amount);
-                const foreman10 = totalNum > 0 ? '$' + formatCleanNumber(totalNum * 0.1) : '-';
-                const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers || j.helpers_cost) : (j.helpers || j.helpers_cost || '-');
-                const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers || j.drivers_cost) : (j.drivers || j.drivers_cost || '-');
+    // ==========================================
+    // 3. REPORT DATA (its own filter, its own state)
+    // ==========================================
+    function getFilters() {
+        const startEl = $('reportStartDate');
+        const endEl = $('reportEndDate');
+        const typeEl = $('reportJobType');
+        return {
+            start: toDateKey(startEl ? startEl.value : ''),
+            end: toDateKey(endEl ? endEl.value : ''),
+            type: (typeEl && typeEl.value) || 'all'
+        };
+    }
 
-                return `
-                    <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-                        <td class="p-2.5 border-r text-center">${formatDateOnly ? formatDateOnly(j.date || j.job_date) : (j.date || '-')}</td>               
-                        <td class="p-2.5 border-r text-center font-bold">${j.jobNo || j.job_no || '-'}</td>
-                        <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[0] : (j.route_from || '-')}</td>
-                        <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[1] || '-' : (j.route_to || '-')}</td>
-                        <td class="p-2.5 border-r text-center">${j.foreman || j.foreman_name || '-'}</td>
-                        <td class="p-2.5 border-r text-center font-bold text-emerald-700">${foreman10}</td>
-                        <td class="p-2.5 border-r text-center">${helpersDisplay}</td>
-                        <td class="p-2.5 border-r text-center">${driversDisplay}</td>
-                        <td class="p-2.5 border-r text-center font-bold text-amber-700 bg-amber-50/20">${j.diesel || j.diesel_expense || '-'}</td>
-                        <td class="p-2.5 border-r text-center font-bold text-blue-700 bg-blue-50/20">${j.hotel || j.hotel_expense || '-'}</td>
-                        <td class="p-2.5 border-r text-center font-bold text-emerald-600">$${formatCleanNumber(totalNum)}</td>
-                        <td class="p-2.5 text-center">${j.pu || j.pu_payments || j.destination || '-'}</td>
-                    </tr>
-                `;
-            }).join('');
+    function readStored(key) {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(key));
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
         }
     }
 
-    // 2. إدارة حاوية التفاصيل الإضافية (للشاحنات والمستودع) بشكل منفصل تماماً وآمن
-    const extraContainer = document.getElementById('detailedReportContainer');
-    if (extraContainer) {
-        const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-        const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
+    const sourceJobs = () => (Array.isArray(window.masterJobs) ? window.masterJobs : []);
+    const sourceRentals = () => (Array.isArray(window.currentTruckRentals) ? window.currentTruckRentals : readStored(RENTALS_KEY));
+    const sourceWarehouse = () => (Array.isArray(window.currentWarehouseRecords) ? window.currentWarehouseRecords : readStored(WAREHOUSE_KEY));
 
-        const rentalRows = rentals.map(r => `
-            <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-                <td class="p-2 border-r text-center">${r.date || '-'}</td>
-                <td class="p-2 border-r text-center font-bold">${r.truckLabel || r.truckNo || r.truck_no || '-'}</td>
-                <td class="p-2 border-r text-center">${r.Days || r.days || '0'} Days</td>
-                <td class="p-2 border-r text-center font-bold text-amber-600">$${formatCleanNumber(r.amount)}</td>
-                <td class="p-2 text-center uppercase font-semibold">${r.paymentType || r.paymentMethod || 'Cash'}</td>
-            </tr>
-        `).join('');
+    const jobNoOf = (j) => String(j.jobNo || j.job_no || j.job_number || '').trim();
+    const jobTotalOf = (j) => parseMoney(j.total || j.total_amount || 0);
+    const jobDateOf = (j) => j.date || j.job_date || '';
+    const isDeliveryJob = (j) => jobNoOf(j).toLowerCase().includes('delivery');
 
-        const warehouseRows = warehouse.map(w => `
-            <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-                <td class="p-2 border-r text-center">${w.date || '-'}</td>
-                <td class="p-2 border-r text-center font-bold">${w.services || w.details || w.description || '-'}</td>
-                <td class="p-2 border-r text-center font-bold text-purple-600">$${formatCleanNumber(w.amount)}</td>
-                <td class="p-2 text-center uppercase font-semibold">${w.paymentType || w.paymentMethod || 'Cash'}</td>
-            </tr>
-        `).join('');
-
-        extraContainer.innerHTML = `
-            <div class="space-y-6 mt-6">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-800 mb-3">2. Private Truck Rental Detailed Records</h3>
-                    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white p-2">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
-                                    <th class="p-2 border-r text-center">Date</th>
-                                    <th class="p-2 border-r text-center">Truck / Description</th>
-                                    <th class="p-2 border-r text-center">Days</th>
-                                    <th class="p-2 border-r text-center">Amount</th>
-                                    <th class="p-2 text-center">Payment Method</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                ${rentalRows || '<tr><td colspan="5" class="p-4 text-center text-slate-400">No rental records found</td></tr>'}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-sm font-bold text-slate-800 mb-3">3. Warehouse & Expenses Detailed Records</h3>
-                    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white p-2">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
-                                    <th class="p-2 border-r text-center">Date</th>
-                                    <th class="p-2 border-r text-center">Description / Item</th>
-                                    <th class="p-2 border-r text-center">Amount</th>
-                                    <th class="p-2 text-center">Payment Method</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                ${warehouseRows || '<tr><td colspan="4" class="p-4 text-center text-slate-400">No warehouse records found</td></tr>'}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        `;
+    function matchesJobType(j, type) {
+        if (type === 'all') return true;
+        const delivery = isDeliveryJob(j) || String(j.route || '').toLowerCase().includes('delivery');
+        return type === 'delivery' ? delivery : !delivery;
     }
-}
-window.generateDetailedReportData = generateDetailedReportData;
 
+    function getReportData() {
+        const f = getFilters();
+        return {
+            start: f.start,
+            end: f.end,
+            type: f.type,
+            jobs: sourceJobs().filter((j) => inPeriod(jobDateOf(j), f.start, f.end) && matchesJobType(j, f.type)),
+            rentals: sourceRentals().filter((r) => inPeriod(r.date, f.start, f.end)),
+            warehouse: sourceWarehouse().filter((w) => inPeriod(w.date, f.start, f.end))
+        };
+    }
 
+    // Truck rental / warehouse field readers (the records come straight from Supabase)
+    const rentalLabel = (r) => r.truckLabel || r.truck_label || r.truckNo || r.truck_no || r.label || r.name || '-';
+    const rentalPaidBy = (r) => r.paidBy || r.paid_by || '-';
+    const rentalPayType = (r) => String(r.paymentType || r.payment_type || r.paymentMethod || r.payment_method || '');
+    const rentalDays = (r) => parseInt(String(r.days !== undefined && r.days !== null ? r.days : (r.Days || '0')).replace(/[^0-9]/g, ''), 10) || 0;
+    const warehousePayType = (w) => String(w.paymentType || w.payment_type || w.paymentMethod || w.payment_method || '');
 
+    // ==========================================
+    // 4. PAYMENT TEXT PARSING
+    // ==========================================
+    const METHOD_PATTERNS = [
+        ['Cash', /(^|[^a-z])cash([^a-z]|$)/],
+        ['Zelle', /(^|[^a-z])zelle([^a-z]|$)/],
+        ['Cheque', /(^|[^a-z])(cheque|check|chq|ck)([^a-z]|$)/],
+        ['PMO', /(^|[^a-z])pmo([^a-z]|$)/],
+        ['BC', /(^|[^a-z])bc([^a-z]|$)/],
+        ['PC', /(^|[^a-z])pc([^a-z]|$)/],
+        ['CC', /(^|[^a-z])(cc|card)([^a-z]|$)/],
+        ['WT', /(^|[^a-z])wt([^a-z]|$)/],
+        ['Others', /(^|[^a-z])others?([^a-z]|$)/]
+    ];
 
+    function detectMethod(text) {
+        const lower = String(text === null || text === undefined ? '' : text).toLowerCase();
+        for (let i = 0; i < METHOD_PATTERNS.length; i++) {
+            if (METHOD_PATTERNS[i][1].test(lower)) return METHOD_PATTERNS[i][0];
+        }
+        return 'Unspecified';
+    }
 
-function processPaymentString(str, map) {
-    if (!str) return;
-    const raw = String(str).trim();
-    if (!raw || raw === '-' || raw === '---' || raw.toUpperCase() === 'NULL') return;
+    // "500 Cash, 300 Zelle" -> [{amount:500, method:'Cash'}, {amount:300, method:'Zelle'}]
+    // A comma between digits ("1,200 Cash") is a thousands separator, not an entry separator.
+    function parsePaymentEntries(text) {
+        const raw = String(text === null || text === undefined ? '' : text).trim();
+        if (!raw || raw === '-' || raw === '---' || raw.toUpperCase() === 'NULL') return [];
+        return raw
+            .split(/,(?!\d{3}(?:\D|$))|\//)
+            .map((p) => p.trim())
+            .filter(Boolean)
+            .map((p) => ({ amount: firstNumber(p), method: detectMethod(p) }))
+            .filter((e) => e.amount > 0);
+    }
 
-    const parts = raw.split(/[,/]+/);
+    // ==========================================
+    // 5. SUMMARY NUMBERS
+    // ==========================================
+    function computeSummary(data) {
+        const s = {
+            jobs: data.jobs.length,
+            deliveries: 0,
+            revenue: 0,
+            diesel: 0,
+            hotel: 0,
+            breakdown: { G: { n: 0, rev: 0 }, C: { n: 0, rev: 0 }, P: { n: 0, rev: 0 }, T: { n: 0, rev: 0 }, Other: { n: 0, rev: 0 } },
+            payments: { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 },
+            official: { foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, destZelle: 0, total: 0 },
+            rental: { count: 0, days: 0, cash: 0, other: 0, total: 0 },
+            warehouse: { count: 0, cash: 0, other: 0, total: 0 }
+        };
 
-    parts.forEach(part => {
-        const sub = part.trim();
-        if (!sub) return;
+        data.jobs.forEach((j) => {
+            const total = jobTotalOf(j);
+            const delivery = isDeliveryJob(j);
+            const dieselText = j.diesel || j.diesel_expense || '';
+            const hotelText = j.hotel || j.hotel_expense || '';
 
-        const upperSub = sub.toUpperCase();
-        const allNums = sub.match(/([0-9,.]+\d)/g);
-        let amount = 0;
+            s.revenue += total;
+            s.official.total += total;
+            s.official.foreman += total > 0 ? total * 0.1 : 0;
+            s.official.helpers += laborCost(j.helpers || j.helpers_cost);
+            s.official.drivers += laborCost(j.drivers || j.drivers_cost);
 
-        if (allNums && allNums.length > 0) {
-            if (upperSub.includes('CHEQUE') || upperSub.includes('CHECK') || upperSub.includes('CHQ') || upperSub.includes('CK')) {
-                const validNum = allNums.map(n => parseCurrency(n)).find(n => n > 0 && n < 50000);
-                amount = validNum || 0; 
+            s.diesel += sumPlusSeparated(dieselText);
+            s.hotel += sumPlusSeparated(hotelText);
+            String(dieselText).split('+').forEach((part) => {
+                if (detectMethod(part) === 'Cash') s.official.cashDiesel += firstNumber(part);
+            });
+
+            if (delivery) {
+                s.deliveries++;
             } else {
-                amount = parseCurrency(allNums[0]);
+                const first = jobNoOf(j).toUpperCase().charAt(0);
+                const bucket = s.breakdown[first] && ['G', 'C', 'P', 'T'].indexOf(first) !== -1 ? s.breakdown[first] : s.breakdown.Other;
+                bucket.n++;
+                bucket.rev += total;
             }
-        }
 
-        amount = Math.round(amount);
+            const puEntries = parsePaymentEntries(j.pu || j.pu_payments);
+            const destEntries = parsePaymentEntries(j.dest || j.destination || j.destination_payments);
 
-        if (upperSub.includes('CHEQUE') || upperSub.includes('CHECK') || upperSub.includes('CK') || upperSub.includes('CHQ') || upperSub.includes('CHEQ')) {
-            map.Cheque += (amount > 0 && amount < 50000) ? amount : 0;
-            return;
-        }
+            puEntries.forEach((e) => {
+                s.payments[e.method] += e.amount;
+                if (e.method === 'Cash') s.official.cashPu += e.amount;
+                else if (e.method === 'PMO') {
+                    s.official.pmoPu += e.amount;
+                    if (delivery) s.official.pmoDeliveries += e.amount;
+                } else s.official.puOther += e.amount;
+            });
 
-        if (amount <= 0 || amount >= 50000) return;
-
-        const textWithoutNum = sub.replace(/([0-9,.]+)/g, '').trim().toUpperCase();
-
-        if (!textWithoutNum) {
-            map.Unspecified += amount;
-        } else if (textWithoutNum.includes('CASH')) {
-            map.Cash += amount;
-        } else if (textWithoutNum.includes('ZELLE')) {
-            map.Zelle += amount;
-        } else if (textWithoutNum.includes('PMO')) {
-            map.PMO += amount;
-        } else if (textWithoutNum.includes('BC')) {
-            map.BC += amount;
-        } else if (textWithoutNum.includes('PC')) {
-            map.PC += amount;
-        } else if (textWithoutNum.includes('CC')) {
-            map.CC += amount;
-        } else if (textWithoutNum.includes('WT')) {
-            map.WT += amount;
-        } else if (textWithoutNum.includes('OTHER') || textWithoutNum.includes('OTHERS')) {
-            map.Others += amount;
-        } else {
-            map.Unspecified += amount;
-        }
-    });
-}
-window.processPaymentString = processPaymentString;
-
-function generateTruckRentalSummaryTableHTML() {
-    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-    
-    // 🌟 التصحيح: مطابقة المعرفات مع حقول صفحة التقارير الفعلية
-    const startDateVal = document.getElementById('reportStartDate')?.value || document.getElementById('filterStartDate')?.value;
-    const endDateVal = document.getElementById('reportEndDate')?.value || document.getElementById('filterEndDate')?.value;
-    const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
-    const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59, 999);
-
-    let totalDays = 0;
-    let sumCash = 0;
-    let sumOther = 0;
-    let grandTotal = 0;
-    let filteredCount = 0;
-
-    rentals.forEach(r => {
-        if (r.date) {
-            const rDate = parseLocalDate(r.date);
-            if (startDate && rDate < startDate) return;
-            if (endDate && rDate > endDate) return;
-        }
-
-        filteredCount++;
-        const daysNum = parseInt(String(r.days || r.Days || '0').replace(/[^0-9]/g, '')) || 0;
-        totalDays += daysNum;
-
-        const amount = parseCurrency(r.amount);
-        grandTotal += amount;
-
-        const paymentType = String(r.paymentType || r.paymentMethod || '').toLowerCase();
-        if (paymentType.includes('cash')) {
-            sumCash += amount;
-        } else {
-            sumOther += amount;
-        }
-    });
-
-    return {
-        count: filteredCount,
-        totalDays: totalDays,
-        sumCash: Math.round(sumCash),
-        sumOther: Math.round(sumOther),
-        grandTotal: Math.round(grandTotal),
-        html: `
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
-                <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800">Private Truck Rental Financial Summary</h3>
-                        <p class="text-[11px] text-slate-400">Summary of rental duration, cash payments, and total costs</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                            Total Records: <span class="text-emerald-600">${filteredCount}</span>
-                        </span>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto rounded-xl border border-slate-100">
-                    <table class="w-full text-left border-collapse text-[11px]">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
-                                <th class="p-2.5 border-r text-center">Total Days</th>
-                                <th class="p-2.5 border-r text-center text-emerald-700 bg-emerald-50/30">Cash Payments</th>
-                                <th class="p-2.5 border-r text-center text-blue-700 bg-blue-50/30">Other Payments</th>
-                                <th class="p-2.5 text-center bg-amber-600 text-white font-extrabold">Grand Total Cost</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="font-semibold text-slate-700 bg-amber-50/20">
-                                <td class="p-2.5 border-r text-center font-bold">${totalDays} Days</td>
-                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${formatCleanNumber(sumCash)}</td>
-                                <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${formatCleanNumber(sumOther)}</td>
-                                <td class="p-2.5 text-center text-amber-900 font-extrabold">$${formatCleanNumber(grandTotal)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `
-    };
-}
-window.generateTruckRentalSummaryTableHTML = generateTruckRentalSummaryTableHTML;
-
-function generateWarehouseSummaryTableHTML() {
-    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-    
-    // 🌟 التصحيح: مطابقة المعرفات مع حقول صفحة التقارير الفعلية
-    const startDateVal = document.getElementById('reportStartDate')?.value || document.getElementById('filterStartDate')?.value;
-    const endDateVal = document.getElementById('reportEndDate')?.value || document.getElementById('filterEndDate')?.value;
-    const startDate = startDateVal ? parseLocalDate(startDateVal) : null;
-    const endDate = endDateVal ? parseLocalDate(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59, 999);
-
-    let sumCash = 0;
-    let sumOthers = 0;
-    let grandTotal = 0;
-    let filteredCount = 0;
-
-    warehouse.forEach(w => {
-        if (w.date) {
-            const wDate = parseLocalDate(w.date);
-            if (startDate && wDate < startDate) return;
-            if (endDate && wDate > endDate) return;
-        }
-
-        filteredCount++;
-        const amount = parseCurrency(w.amount);
-        grandTotal += amount;
-
-        const paymentType = String(w.paymentType || w.paymentMethod || '').toLowerCase();
-        if (paymentType.includes('cash')) {
-            sumCash += amount;
-        } else {
-            sumOthers += amount;
-        }
-    });
-
-    return {
-        count: filteredCount,
-        sumCash: Math.round(sumCash),
-        sumOthers: Math.round(sumOthers),
-        grandTotal: Math.round(grandTotal),
-        html: `
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
-                <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800">Warehouse & Others Financial Summary</h3>
-                        <p class="text-[11px] text-slate-400">Summary of warehouse expenses and operational costs</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                            Total Records: <span class="text-purple-600">${filteredCount}</span>
-                        </span>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto rounded-xl border border-slate-100">
-                    <table class="w-full text-left border-collapse text-[11px]">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
-                                <th class="p-2.5 border-r text-center">Total Items</th>
-                                <th class="p-2.5 border-r text-center text-emerald-700 bg-emerald-50/30">Cash Payments</th>
-                                <th class="p-2.5 border-r text-center text-blue-700 bg-blue-50/30">Other Payments</th>
-                                <th class="p-2.5 text-center bg-purple-700 text-white font-extrabold">Grand Total Cost</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="font-semibold text-slate-700 bg-purple-50/20">
-                                <td class="p-2.5 border-r text-center font-bold">${filteredCount} Items</td>
-                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${formatCleanNumber(sumCash)}</td>
-                                <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${formatCleanNumber(sumOthers)}</td>
-                                <td class="p-2.5 text-center text-purple-900 font-extrabold">$${formatCleanNumber(grandTotal)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `
-    };
-}
-window.generateWarehouseSummaryTableHTML = generateWarehouseSummaryTableHTML;
-
-function generatePaymentMethodSummaryTableHTML() {
-    const jobs = (typeof getFilteredJobsData === 'function') ? getFilteredJobsData() : (window.currentFilteredJobs || window.masterJobs || []);
-
-    // تهيئة المجاميع للـ 10 أعمدة بدقة
-    let totals = {
-        Cash: 0,
-        Zelle: 0,
-        Cheque: 0,
-        PMO: 0,
-        BC: 0,
-        PC: 0,
-        CC: 0,
-        WT: 0,
-        Others: 0,
-        Unspecified: 0
-    };
-
-    // دالة تحليل استخراج القيمة وتحديد طريقة الدفع بدقة
-  function parsePaymentEntry(str) {
-        if (!str || str === '-' || str === '___' || str === '' || str === '$0' || str === '0') return null;
-        
-        const stringVal = String(str).trim();
-        const upper = stringVal.toUpperCase();
-        
-        // استخراج القيمة العددية
-        let amt = parseFloat(stringVal.replace(/[^0-9.-]+/g, "")) || 0;
-        
-        // حماية صارمة: أي مبلغ فردي غير منطقي (أكبر من 20,000) يتم تجاهله تماماً
-        if (amt <= 0 || amt > 20000) return null;
-
-        // جعل الرقم عادياً وصحيحاً بدون كسور عشرية
-        amt = Math.round(amt);
-
-        let method = 'Unspecified';
-
-        if (upper.includes('CASH')) {
-            method = 'Cash';
-        } else if (upper.includes('ZELLE')) {
-            method = 'Zelle';
-        } else if (upper.includes('CHEQUE') || upper.includes('CHECK') || upper.includes('CHQ')) {
-            method = 'Cheque';
-        } else if (upper.includes('PMO')) {
-            method = 'PMO';
-        } else if (upper.includes('BC')) {
-            method = 'BC';
-        } else if (upper.includes('PC')) {
-            method = 'PC';
-        } else if (upper.includes('CC') || upper.includes('CARD')) {
-            method = 'CC';
-        } else if (upper.includes('WT')) {
-            method = 'WT';
-        } else if (upper.includes('OTHER') || upper.includes('OTHERS')) {
-            method = 'Others';
-        } else {
-            method = 'Unspecified';
-        }
-
-        return { method, amt };
-    }
-
-    // المرور حصراً على عمودي pu_payments و destination_payments في قاعدة البيانات
-    jobs.forEach(item => {
-        const puPaymentStr = String(item.pu_payments || '').trim();
-        const destPaymentStr = String(item.destination_payments || '').trim();
-
-        [puPaymentStr, destPaymentStr].forEach(entryStr => {
-            const res = parsePaymentEntry(entryStr);
-            if (res && totals.hasOwnProperty(res.method)) {
-                totals[res.method] += res.amt;
-            }
-        });
-    });
-
-    // حساب الإجمالي الكلي
-    const grandTotal = Object.values(totals).reduce((sum, val) => sum + val, 0);
-
-    // تنسيق الأرقام كأرقام عادية بدون كسور عشرية (بدون .00)
-    const formatCurrency = (num) => '$' + num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-
-    // بناء جدول الـ HTML بالـ 10 أعمدة + عمود الإجمالي
-    return `
-    <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4">
-        <div>
-            <h3 class="font-bold text-slate-900 text-base">Payment Methods Summary Breakdown</h3>
-            <p class="text-xs text-slate-500">Detailed distribution of revenue from PU Payments and Destination Payments</p>
-        </div>
-        
-        <div class="overflow-x-auto">
-            <table class="w-full text-center border-collapse text-xs min-w-[1000px]">
-                <thead>
-                    <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] tracking-wider border-b border-slate-200">
-                        <th class="p-2 border-r">Cash</th>
-                        <th class="p-2 border-r">Zelle</th>
-                        <th class="p-2 border-r">Cheque</th>
-                        <th class="p-2 border-r">PMO</th>
-                        <th class="p-2 border-r">BC</th>
-                        <th class="p-2 border-r">PC</th>
-                        <th class="p-2 border-r">CC</th>
-                        <th class="p-2 border-r">WT</th>
-                        <th class="p-2 border-r">Others</th>
-                        <th class="p-2 border-r">Unspecified</th>
-                        <th class="p-2 bg-emerald-600 text-white font-bold">Total Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="font-bold text-xs">
-                        <td class="p-3 border-r text-emerald-600">${formatCurrency(totals.Cash)}</td>
-                        <td class="p-3 border-r text-blue-600">${formatCurrency(totals.Zelle)}</td>
-                        <td class="p-3 border-r text-indigo-600">${formatCurrency(totals.Cheque)}</td>
-                        <td class="p-3 border-r text-purple-600">${formatCurrency(totals.PMO)}</td>
-                        <td class="p-3 border-r text-cyan-600">${formatCurrency(totals.BC)}</td>
-                        <td class="p-3 border-r text-teal-600">${formatCurrency(totals.PC)}</td>
-                        <td class="p-3 border-r text-pink-600">${formatCurrency(totals.CC)}</td>
-                        <td class="p-3 border-r text-orange-600">${formatCurrency(totals.WT)}</td>
-                        <td class="p-3 border-r text-amber-600">${formatCurrency(totals.Others)}</td>
-                        <td class="p-3 border-r text-slate-600">${formatCurrency(totals.Unspecified)}</td>
-                        <td class="p-3 bg-emerald-50 text-emerald-800 font-extrabold text-sm">${formatCurrency(grandTotal)}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    `;
-}
-window.generatePaymentMethodSummaryTableHTML = generatePaymentMethodSummaryTableHTML;
-
-function generateOfficialSummaryTable(filteredJobs) {
-    let sumForeman10 = 0, sumHelpers = 0, sumDrivers = 0, sumCashDiesel = 0;
-    let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
-    let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
-
-    filteredJobs.forEach(item => {
-        const totalVal = parseCurrency(item.total || item.total_amount);
-        sumTotalAfterDeposit += totalVal;
-        sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-        sumHelpers += parseCurrency(item.helpers || item.helpers_cost);
-        sumDrivers += parseCurrency(item.drivers || item.drivers_cost);
-
-        const dieselValStr = item.diesel || item.diesel_expense;
-        if (dieselValStr && dieselValStr !== '-') {
-            String(dieselValStr).split('+').forEach(part => {
-                if (part.toLowerCase().includes('cash')) {
-                    const cleanNum = parseCurrency(part);
-                    if (cleanNum > 0 && cleanNum < 50000) sumCashDiesel += cleanNum;
+            destEntries.forEach((e) => {
+                s.payments[e.method] += e.amount;
+                if (e.method === 'Cash') s.official.cashDest += e.amount;
+                else if (e.method !== 'PMO') {
+                    s.official.destOther += e.amount;
+                    if (e.method === 'Zelle') s.official.destZelle += e.amount;
                 }
             });
-        }
+        });
 
-        const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
-        if (puStr.includes('cash')) {
-            const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            sumCashPu += cashMatch ? parseCurrency(cashMatch[1]) : parseCurrency(item.pu || item.pu_payments);
-        }
-        if (puStr.includes('pmo')) {
-            const pmoMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*pmo/);
-            sumPmoPu += pmoMatch ? parseCurrency(pmoMatch[1]) : parseCurrency(item.pu || item.pu_payments);
-        }
+        data.rentals.forEach((r) => {
+            const amount = parseMoney(r.amount);
+            s.rental.count++;
+            s.rental.days += rentalDays(r);
+            s.rental.total += amount;
+            if (rentalPayType(r).toLowerCase().includes('cash')) s.rental.cash += amount;
+            else s.rental.other += amount;
+        });
 
-        const rawPuVal = parseCurrency(item.pu || item.pu_payments);
-        const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
-        let netPuWithoutCashPmo = puVal;
-        if (puStr.includes('cash')) netPuWithoutCashPmo -= sumCashPu;
-        if (puStr.includes('pmo')) netPuWithoutCashPmo -= sumPmoPu;
-        if (netPuWithoutCashPmo > 0) sumZellePu += netPuWithoutCashPmo;
+        data.warehouse.forEach((w) => {
+            const amount = parseMoney(w.amount);
+            s.warehouse.count++;
+            s.warehouse.total += amount;
+            if (warehousePayType(w).toLowerCase().includes('cash')) s.warehouse.cash += amount;
+            else s.warehouse.other += amount;
+        });
 
-        const destStr = String(item.dest || item.destination || item.destination_payments || '').toLowerCase();
-        let cashDestVal = 0;
-        if (destStr.includes('cash')) {
-            const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            cashDestVal = cashDestMatch ? parseCurrency(cashDestMatch[1]) : parseCurrency(item.dest || item.destination || item.destination_payments);
-        }
-        const rawDestVal = parseCurrency(item.dest || item.destination || item.destination_payments);
-        const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
+        s.nonDeliveryJobs = Math.max(0, s.jobs - s.deliveries);
+        s.categorizedJobs = Object.keys(s.breakdown).reduce((n, k) => n + s.breakdown[k].n, 0);
+        s.categorizedRevenue = Object.keys(s.breakdown).reduce((n, k) => n + s.breakdown[k].rev, 0);
+        // Total Expenses = Diesel + Hotel + Warehouse + Truck Rentals
+        s.expenses = s.diesel + s.hotel + s.warehouse.total + s.rental.total;
+        return s;
+    }
 
-        if (destStr.includes('cash')) {
-            sumCashDest += (cashDestVal > 0 ? cashDestVal : destVal);
-        } else if (destStr.includes('zelle')) {
-            sumDestZelle += destVal;
-            sumDestNoCashPmo += destVal;
-        } else if (!destStr.includes('pmo') && destVal > 0) {
-            sumDestNoCashPmo += destVal;
-        }
+    // ==========================================
+    // 6. SUMMARY TABLES (screen)
+    // ==========================================
+    function breakdownHTML(s) {
+        const b = s.breakdown;
+        return `
+        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4 w-full">
+            <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wide">Jobs Breakdown by Prefix (G, C, P, T & Others)</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-center border-collapse text-xs min-w-[700px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                            <th class="p-2.5 border-r">Category</th>
+                            <th class="p-2.5 border-r text-emerald-700 font-bold">G (${b.G.n})</th>
+                            <th class="p-2.5 border-r text-blue-700 font-bold">C (${b.C.n})</th>
+                            <th class="p-2.5 border-r text-amber-700 font-bold">P (${b.P.n})</th>
+                            <th class="p-2.5 border-r text-purple-700 font-bold">T (${b.T.n})</th>
+                            <th class="p-2.5 border-r text-slate-600 font-bold">Other (${b.Other.n})</th>
+                            <th class="p-2.5 bg-emerald-600 text-white font-extrabold">Grand Total (${s.categorizedJobs})</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="font-bold text-xs">
+                            <td class="p-3 border-r bg-slate-50 text-slate-800">Total Revenue</td>
+                            <td class="p-3 border-r text-emerald-600">${money(b.G.rev)}</td>
+                            <td class="p-3 border-r text-blue-600">${money(b.C.rev)}</td>
+                            <td class="p-3 border-r text-amber-600">${money(b.P.rev)}</td>
+                            <td class="p-3 border-r text-purple-600">${money(b.T.rev)}</td>
+                            <td class="p-3 border-r text-slate-600">${money(b.Other.rev)}</td>
+                            <td class="p-3 bg-emerald-50 text-emerald-800 font-extrabold text-sm">${money(s.categorizedRevenue)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    }
 
-        if ((item.jobNo || item.job_no) && String(item.jobNo || item.job_no).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
-            sumPmoDeliveries += puVal;
-        }
-    });
+    function paymentHTML(s) {
+        const p = s.payments;
+        const grand = Object.keys(p).reduce((n, k) => n + p[k], 0);
+        return `
+        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4">
+            <div>
+                <h3 class="font-bold text-slate-900 text-base">Payment Methods Summary Breakdown</h3>
+                <p class="text-xs text-slate-500">Detailed distribution of revenue from PU Payments and Destination Payments</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-center border-collapse text-xs min-w-[1000px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                            <th class="p-2 border-r">Cash</th>
+                            <th class="p-2 border-r">Zelle</th>
+                            <th class="p-2 border-r">Cheque</th>
+                            <th class="p-2 border-r">PMO</th>
+                            <th class="p-2 border-r">BC</th>
+                            <th class="p-2 border-r">PC</th>
+                            <th class="p-2 border-r">CC</th>
+                            <th class="p-2 border-r">WT</th>
+                            <th class="p-2 border-r">Others</th>
+                            <th class="p-2 border-r">Unspecified</th>
+                            <th class="p-2 bg-emerald-600 text-white font-bold">Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="font-bold text-xs">
+                            <td class="p-3 border-r text-emerald-600">${money(p.Cash)}</td>
+                            <td class="p-3 border-r text-blue-600">${money(p.Zelle)}</td>
+                            <td class="p-3 border-r text-indigo-600">${money(p.Cheque)}</td>
+                            <td class="p-3 border-r text-purple-600">${money(p.PMO)}</td>
+                            <td class="p-3 border-r text-cyan-600">${money(p.BC)}</td>
+                            <td class="p-3 border-r text-teal-600">${money(p.PC)}</td>
+                            <td class="p-3 border-r text-pink-600">${money(p.CC)}</td>
+                            <td class="p-3 border-r text-orange-600">${money(p.WT)}</td>
+                            <td class="p-3 border-r text-amber-600">${money(p.Others)}</td>
+                            <td class="p-3 border-r text-slate-600">${money(p.Unspecified)}</td>
+                            <td class="p-3 bg-emerald-50 text-emerald-800 font-extrabold text-sm">${money(grand)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    }
 
-    // 🌟 تم إزالة استدعاء rentalSummaryObj و warehouseSummaryObj من هنا لتجنب التكرار
-    return `
+    function officialHTML(s) {
+        const o = s.official;
+        return `
         <div class="space-y-6">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
                 <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
@@ -699,7 +384,6 @@ function generateOfficialSummaryTable(filteredJobs) {
                         <p class="text-[11px] text-slate-400">Labor fees, cash, Zelle, and PMO summary</p>
                     </div>
                 </div>
-
                 <div class="overflow-x-auto rounded-xl border border-slate-100">
                     <table class="w-full text-left border-collapse text-[11px]">
                         <thead>
@@ -720,870 +404,512 @@ function generateOfficialSummaryTable(filteredJobs) {
                         </thead>
                         <tbody class="font-semibold text-slate-700 divide-y divide-slate-100">
                             <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="p-2.5 border-r text-center">$${formatCleanNumber(sumForeman10)}</td>
-                                <td class="p-2.5 border-r text-center">$${formatCleanNumber(sumHelpers)}</td>
-                                <td class="p-2.5 border-r text-center">$${formatCleanNumber(sumDrivers)}</td>
-                                <td class="p-2.5 border-r text-center text-amber-700 font-bold bg-amber-50/20">$${formatCleanNumber(sumCashDiesel)}</td>
-                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${formatCleanNumber(sumCashPu)}</td>
-                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold">$${formatCleanNumber(sumCashDest)}</td>
-                                <td class="p-2.5 border-r text-center">$${formatCleanNumber(sumPmoPu)}</td>
-                                <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${formatCleanNumber(sumZellePu)}</td>
-                                <td class="p-2.5 border-r text-center text-blue-600 font-bold">$${formatCleanNumber(sumDestNoCashPmo)}</td>
-                                <td class="p-2.5 border-r text-center">$${formatCleanNumber(sumPmoDeliveries)}</td>
-                                <td class="p-2.5 border-r text-center text-purple-600 font-bold">$${formatCleanNumber(sumDestZelle)}</td>
-                                <td class="p-2.5 border-r text-center bg-emerald-50 text-emerald-800 font-extrabold text-xs">$${formatCleanNumber(sumTotalAfterDeposit)}</td>
+                                <td class="p-2.5 border-r text-center">${money(o.foreman)}</td>
+                                <td class="p-2.5 border-r text-center">${money(o.helpers)}</td>
+                                <td class="p-2.5 border-r text-center">${money(o.drivers)}</td>
+                                <td class="p-2.5 border-r text-center text-amber-700 font-bold bg-amber-50/20">${money(o.cashDiesel)}</td>
+                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold">${money(o.cashPu)}</td>
+                                <td class="p-2.5 border-r text-center text-emerald-600 font-bold">${money(o.cashDest)}</td>
+                                <td class="p-2.5 border-r text-center">${money(o.pmoPu)}</td>
+                                <td class="p-2.5 border-r text-center text-blue-600 font-bold">${money(o.puOther)}</td>
+                                <td class="p-2.5 border-r text-center text-blue-600 font-bold">${money(o.destOther)}</td>
+                                <td class="p-2.5 border-r text-center">${money(o.pmoDeliveries)}</td>
+                                <td class="p-2.5 border-r text-center text-purple-600 font-bold">${money(o.destZelle)}</td>
+                                <td class="p-2.5 border-r text-center bg-emerald-50 text-emerald-800 font-extrabold text-xs">${money(o.total)}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
-    `;
-}
-window.generateOfficialSummaryTable = generateOfficialSummaryTable;
+        </div>`;
+    }
 
-
-function formatDateOnly(dateStr) {
-    const d = parseLocalDate(dateStr);
-    if (!d) return dateStr || '-';
-    return d.toISOString().split('T')[0];
-}
-window.formatDateOnly = formatDateOnly;
-
-
-
-function generateDetailedReportData() {
-    const container = document.getElementById('detailedReportBody');
-    if (!container) return;
-
-    const jobs = getFilteredJobsData();
-    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-
-    const jobsRows = jobs.map(j => {
-        const totalNum = parseCurrency(j.total || j.total_amount);
-        const foreman10 = totalNum > 0 ? '$' + formatCleanNumber(totalNum * 0.1) : '-';
-        const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers || j.helpers_cost) : (j.helpers || j.helpers_cost || '-');
-        const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers || j.drivers_cost) : (j.drivers || j.drivers_cost || '-');
-        const dieselDisplay = j.diesel || j.diesel_expense || '-';
-        const hotelDisplay = j.hotel || j.hotel_expense || '-';
-
+    function smallSummaryHTML(opts) {
         return `
-            <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-                 <td class="p-2.5 border-r text-center">${formatDateOnly(j.date)}</td>                
-                 <td class="p-2.5 border-r text-center font-bold">${j.jobNo || j.job_no || '-'}</td>
-                <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[0] : (j.route_from || '-')}</td>
-                <td class="p-2.5 border-r text-center">${j.route ? j.route.split('→')[1] || '-' : (j.route_to || '-')}</td>
-                <td class="p-2.5 border-r text-center">${j.foreman || j.foreman_name || '-'}</td>
-                <td class="p-2.5 border-r text-center font-bold text-emerald-700">${foreman10}</td>
-                <td class="p-2.5 border-r text-center">${helpersDisplay}</td>
-                <td class="p-2.5 border-r text-center">${driversDisplay}</td>
-                <td class="p-2.5 border-r text-center font-bold text-amber-700 bg-amber-50/20">${dieselDisplay}</td>
-                <td class="p-2.5 border-r text-center font-bold text-blue-700 bg-blue-50/20">${hotelDisplay}</td>
-                <td class="p-2.5 border-r text-center font-bold text-emerald-600">$${formatCleanNumber(j.total || j.total_amount)}</td>
-                <td class="p-2.5 border-r text-center">${j.pu || j.pu_payments || '-'}</td>
-                <td class="p-2.5 text-center">${j.dest || j.destination || j.destination_payments || '-'}</td>
-            </tr>
-        `;
-    }).join('');
-
-    const rentalRows = rentals.map(r => `
-        <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-            <td class="p-2 border-r text-center">${r.date || '-'}</td>
-            <td class="p-2 border-r text-center font-bold">${r.truckNo || r.truck_no || r.name || '-'}</td>
-            <td class="p-2 border-r text-center">${r.days || '0'} Days</td>
-            <td class="p-2 border-r text-center font-bold text-amber-600">$${formatCleanNumber(r.amount)}</td>
-            <td class="p-2 text-center uppercase font-semibold">${r.paymentType || r.paymentMethod || 'Cash'}</td>
-        </tr>
-    `).join('');
-
-    const warehouseRows = warehouse.map(w => `
-        <tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">
-            <td class="p-2 border-r text-center">${w.date || '-'}</td>
-            <td class="p-2 border-r text-center font-bold">${w.description || w.item || w.name || '-'}</td>
-            <td class="p-2 border-r text-center font-bold text-purple-600">$${formatCleanNumber(w.amount)}</td>
-            <td class="p-2 text-center uppercase font-semibold">${w.paymentType || w.paymentMethod || 'Cash'}</td>
-        </tr>
-    `).join('');
-
-    container.innerHTML = `
-        <div class="space-y-8">
-            <div>
-                <h3 class="text-sm font-bold text-slate-800 mb-3">1. Dispatch Operations Detailed Records</h3>
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
-                                <th class="p-2.5 border-r text-center">Date</th>
-                                <th class="p-2.5 border-r text-center">Job No</th>
-                                <th class="p-2.5 border-r text-center">From State</th>
-                                <th class="p-2.5 border-r text-center">To State</th>
-                                <th class="p-2.5 border-r text-center">Foreman Name</th>
-                                <th class="p-2.5 border-r text-center">Foreman 10%</th>
-                                <th class="p-2.5 border-r text-center">Helpers</th>
-                                <th class="p-2.5 border-r text-center">Drivers</th>
-                                <th class="p-2.5 border-r text-center text-amber-700">Diesel</th>
-                                <th class="p-2.5 border-r text-center text-blue-700">Hotel</th>
-                                <th class="p-2.5 border-r text-center">Total After Deposit</th>
-                                <th class="p-2.5 border-r text-center">P.U Payment</th>
-                                <th class="p-2.5 text-center">Dest Balance</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${jobsRows || '<tr><td colspan="13" class="p-4 text-center text-slate-400">No dispatch records found</td></tr>'}
-                        </tbody>
-                    </table>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4 mt-6 print:p-2">
+            <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800">${opts.title}</h3>
+                    <p class="text-[11px] text-slate-400">${opts.subtitle}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                        Total Records: <span class="${opts.countClass}">${opts.count}</span>
+                    </span>
                 </div>
             </div>
-
-            <div>
-                <h3 class="text-sm font-bold text-slate-800 mb-3">2. Private Truck Rental Detailed Records</h3>
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
-                                <th class="p-2 border-r text-center">Date</th>
-                                <th class="p-2 border-r text-center">Truck / Description</th>
-                                <th class="p-2 border-r text-center">Days</th>
-                                <th class="p-2 border-r text-center">Amount</th>
-                                <th class="p-2 text-center">Payment Method</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${rentalRows || '<tr><td colspan="5" class="p-4 text-center text-slate-400">No rental records found</td></tr>'}
-                        </tbody>
-                    </table>
-                </div>
+            <div class="overflow-x-auto rounded-xl border border-slate-100">
+                <table class="w-full text-left border-collapse text-[11px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200/80 text-[10px]">
+                            <th class="p-2.5 border-r text-center">${opts.firstHead}</th>
+                            <th class="p-2.5 border-r text-center text-emerald-700 bg-emerald-50/30">Cash Payments</th>
+                            <th class="p-2.5 border-r text-center text-blue-700 bg-blue-50/30">Other Payments</th>
+                            <th class="p-2.5 text-center ${opts.totalHeadClass} text-white font-extrabold">Grand Total Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="font-semibold text-slate-700 ${opts.rowClass}">
+                            <td class="p-2.5 border-r text-center font-bold">${opts.firstValue}</td>
+                            <td class="p-2.5 border-r text-center text-emerald-600 font-bold">${money(opts.cash)}</td>
+                            <td class="p-2.5 border-r text-center text-blue-600 font-bold">${money(opts.other)}</td>
+                            <td class="p-2.5 text-center ${opts.totalValueClass} font-extrabold">${money(opts.total)}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-
-            <div>
-                <h3 class="text-sm font-bold text-slate-800 mb-3">3. Warehouse & Expenses Detailed Records</h3>
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] border-b">
-                                <th class="p-2 border-r text-center">Date</th>
-                                <th class="p-2 border-r text-center">Description / Item</th>
-                                <th class="p-2 border-r text-center">Amount</th>
-                                <th class="p-2 text-center">Payment Method</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${warehouseRows || '<tr><td colspan="4" class="p-4 text-center text-slate-400">No warehouse records found</td></tr>'}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    `;
-}
-window.generateDetailedReportData = generateDetailedReportData;
-
-function updateSummaryReportView(filteredData) {
-    try {
-        const container = document.getElementById('summaryReportContainer');
-        if (!container) return;
-
-        container.innerHTML = generateOfficialSummaryTable(filteredData);
-
-        // 🌟 تحديث عداد الوظائف بجميع المعرفات المحتملة لتجنب ظهور 0 Jobs
-        const jobCountValue = filteredData.length;
-        
-        ['sumTotalJobs', 'totalJobsCount', 'summaryTotalJobs'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = jobCountValue;
-        });
-
-        // تحديث العناصر الأخرى في واجهة الملخص إن وجدت
-        const totalDeliveriesEl = document.getElementById('sumTotalDeliveries');
-        const totalRevenueEl = document.getElementById('sumTotalRevenue');
-        const totalExpensesEl = document.getElementById('sumTotalExpenses');
-
-        let deliveriesCount = filteredData.filter(item => {
-            const jNo = String(item.jobNo || item.job_no || '').toLowerCase();
-            return jNo.includes('delivery') || jNo === '';
-        }).length;
-        
-        if (totalDeliveriesEl) totalDeliveriesEl.innerText = deliveriesCount;
-
-        let totalRev = filteredData.reduce((sum, item) => sum + parseCurrency(item.total || item.total_amount), 0);
-        if (totalRevenueEl) totalRevenueEl.innerText = '$' + formatCleanNumber(totalRev);
-
-        // حساب إجمالي المصروفات النقدية (Total Expenses) المحدث بناءً على طلبك السابق
-        let totalCashExpenses = 0;
-        filteredData.forEach(item => {
-            const dieselValStr = item.diesel || item.diesel_expense;
-            if (dieselValStr && dieselValStr !== '-') {
-                String(dieselValStr).split('+').forEach(part => {
-                    if (part.toLowerCase().includes('cash')) {
-                        const cleanNum = parseCurrency(part);
-                        if (cleanNum > 0 && cleanNum < 50000) totalCashExpenses += cleanNum;
-                    }
-                });
-            }
-
-            const hotelValStr = item.hotel || item.hotel_expense;
-            if (hotelValStr && hotelValStr !== '-') {
-                String(hotelValStr).split('+').forEach(part => {
-                    if (part.toLowerCase().includes('cash') || !part.toLowerCase().match(/(card|zelle|check|pmo)/)) {
-                        const cleanNum = parseCurrency(part);
-                        if (cleanNum > 0 && cleanNum < 50000) totalCashExpenses += cleanNum;
-                    }
-                });
-            }
-
-            const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
-            if (puStr.includes('cash')) {
-                const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-                const cashPuVal = cashMatch ? parseCurrency(cashMatch[1]) : parseCurrency(item.pu || item.pu_payments);
-                if (cashPuVal > 0 && cashPuVal < 50000) totalCashExpenses += cashPuVal;
-            }
-
-            const destStr = String(item.dest || item.destination || item.destination_payments || '').toLowerCase();
-            if (destStr.includes('cash')) {
-                const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-                const cashDestVal = cashDestMatch ? parseCurrency(cashDestMatch[1]) : parseCurrency(item.dest || item.destination || item.destination_payments);
-                if (cashDestVal > 0 && cashDestVal < 50000) totalCashExpenses += cashDestVal;
-            }
-        });
-
-        const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-        rentals.forEach(r => {
-            const pType = String(r.paymentType || r.paymentMethod || '').toLowerCase();
-            if (pType.includes('cash') || !r.paymentType) {
-                totalCashExpenses += parseCurrency(r.amount);
-            }
-        });
-
-        const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-        warehouse.forEach(w => {
-            const pType = String(w.paymentType || w.paymentMethod || '').toLowerCase();
-            if (pType.includes('cash') || !w.paymentType) {
-                totalCashExpenses += parseCurrency(w.amount);
-            }
-        });
-
-        if (totalExpensesEl) totalExpensesEl.innerText = '$' + formatCleanNumber(totalCashExpenses);
-
-    } catch (e) {
-        console.error("Error updating summary report view:", e);
+        </div>`;
     }
-}
-window.updateSummaryReportView = updateSummaryReportView;
 
-function generateSummaryReportData() {
-    const filteredData = window.currentFilteredJobs || window.masterJobs || [];
-    
-    // استدعاء الدالة الموحدة والشاملة لتعبئة كافة حاويات الملخص بدقة
-    if (typeof populateSummaryTables === 'function') {
-        populateSummaryTables(filteredData);
+    function rentalSummaryHTML(s) {
+        return smallSummaryHTML({
+            title: 'Private Truck Rental Financial Summary',
+            subtitle: 'Summary of rental duration, cash payments, and total costs',
+            count: s.rental.count, countClass: 'text-emerald-600',
+            firstHead: 'Total Days', firstValue: s.rental.days + ' Days',
+            cash: s.rental.cash, other: s.rental.other, total: s.rental.total,
+            totalHeadClass: 'bg-amber-600', rowClass: 'bg-amber-50/20', totalValueClass: 'text-amber-900'
+        });
     }
-}
-window.generateSummaryReportData = generateSummaryReportData;
 
+    function warehouseSummaryHTML(s) {
+        return smallSummaryHTML({
+            title: 'Warehouse & Others Financial Summary',
+            subtitle: 'Summary of warehouse expenses and operational costs',
+            count: s.warehouse.count, countClass: 'text-purple-600',
+            firstHead: 'Total Items', firstValue: s.warehouse.count + ' Items',
+            cash: s.warehouse.cash, other: s.warehouse.other, total: s.warehouse.total,
+            totalHeadClass: 'bg-purple-700', rowClass: 'bg-purple-50/20', totalValueClass: 'text-purple-900'
+        });
+    }
 
-function updateOfficialReportSummaryCards() {
-    const jobs = window.currentFilteredJobs || window.masterJobs || [];
-    
-    // 1. حساب إجمالي التوصيلات حصراً من حقل رقم الوظيفة (job_no / jobNo) فقط
-    const totalDeliveries = jobs.filter(j => {
-        const jNo = String(j.jobNo || j.job_no || '').toLowerCase();
-        return jNo.includes('delivery');
-    }).length;
+    // ==========================================
+    // 7. DETAILED TABLES (shared by the Detailed page and the PDF)
+    // ==========================================
+    const JOB_COLS = [
+        { h: 'Date' }, { h: 'Job No', b: 1 }, { h: 'From State' }, { h: 'To State' }, { h: 'Foreman Name' },
+        { h: 'Foreman 10%', b: 1, tone: 'emerald' }, { h: 'Helpers' }, { h: 'Drivers' },
+        { h: 'Diesel', b: 1, tone: 'amber' }, { h: 'Hotel', b: 1, tone: 'blue' },
+        { h: 'Total After Deposit', b: 1, tone: 'emerald' }, { h: 'P.U Payment' }, { h: 'Dest Balance' }
+    ];
+    const RENTAL_COLS = [
+        { h: 'Date' }, { h: 'Truck / Label', b: 1 }, { h: 'Days' }, { h: 'Paid By' },
+        { h: 'Payment Type' }, { h: 'Amount', b: 1, tone: 'amber' }
+    ];
+    const WAREHOUSE_COLS = [
+        { h: 'Date' }, { h: 'Category / Type', b: 1 }, { h: 'Description / Facility' },
+        { h: 'Payment Method' }, { h: 'Amount', b: 1, tone: 'purple' }
+    ];
 
-    // 2. حساب إجمالي الوظائف (إجمالي الوظائف ناقص التوصيلات)
-    const rawTotalJobs = jobs.length;
-    const adjustedTotalJobs = Math.max(0, rawTotalJobs - totalDeliveries);
+    const displayDate = (value) => toDateKey(value) || String(value || '-');
 
-    // دالة مساعدة داخلية آمنة لاستخراج الأرقام الصافية وتجاهل النصوص والأيام
-    const parseExpenseNumber = (val) => {
-        if (!val) return 0;
-        if (typeof val === 'number') return isNaN(val) ? 0 : val;
-        const str = String(val).trim();
-        // استخراج أول رقم صالح (يقبل العلامات العشرية والأرقام ويتجاهل الكلمات مثل days)
-        const match = str.match(/[\d,.]+/);
-        if (!match) return 0;
-        const cleanNum = parseFloat(match[0].replace(/,/g, '')) || 0;
-        return isNaN(cleanNum) ? 0 : cleanNum;
+    function jobCells(j) {
+        const total = jobTotalOf(j);
+        const route = routeParts(j);
+        const helpers = j.helpers || j.helpers_cost;
+        const drivers = j.drivers || j.drivers_cost;
+        return [
+            displayDate(jobDateOf(j)),
+            jobNoOf(j) || '-',
+            route[0],
+            route[1],
+            j.foreman || j.foremanName || j.foreman_name || '-',
+            total > 0 ? money(total * 0.1) : '-',
+            typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(helpers) : (helpers || '-'),
+            typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(drivers) : (drivers || '-'),
+            j.diesel || j.diesel_expense || '-',
+            j.hotel || j.hotel_expense || '-',
+            money(total),
+            j.pu || j.pu_payments || '-',
+            j.dest || j.destination || j.destination_payments || '-'
+        ];
+    }
+
+    function routeParts(j) {
+        const r = String(j.route || '');
+        const arrow = r.indexOf('\u2192') !== -1 ? '\u2192' : (r.indexOf('->') !== -1 ? '->' : '');
+        if (arrow) {
+            const p = r.split(arrow);
+            return [p[0].trim() || '-', (p[1] || '').trim() || '-'];
+        }
+        if (r.trim()) return [r.trim(), '-'];
+        return [j.route_from || '-', j.route_to || '-'];
+    }
+
+    function rentalCells(r) {
+        return [displayDate(r.date), rentalLabel(r), rentalDays(r) + ' Days', rentalPaidBy(r), rentalPayType(r) || '-', money(r.amount)];
+    }
+
+    function warehouseCells(w) {
+        return [displayDate(w.date), w.services || w.category || '-', w.details || w.description || '-', warehousePayType(w) || '-', money(w.amount)];
+    }
+
+    function detailSections(data, s) {
+        return [
+            {
+                key: 'jobs', title: '1. Dispatch Operations Detailed Records', subtitle: 'Detailed job operations, crew allocations, and revenues',
+                badge: data.jobs.length + ' Jobs', tone: 'emerald', cols: JOB_COLS, rows: data.jobs.map(jobCells),
+                footLabel: 'Total (' + data.jobs.length + ' records)', footSpan: 10, footValue: money(s.revenue), footTail: 2
+            },
+            {
+                key: 'rentals', title: '2. Private Truck Rental Detailed Records', subtitle: 'External truck rentals inside the selected period',
+                badge: data.rentals.length + ' Records', tone: 'amber', cols: RENTAL_COLS, rows: data.rentals.map(rentalCells),
+                footLabel: 'Total (' + data.rentals.length + ' records)', footSpan: 5, footValue: money(s.rental.total), footTail: 0
+            },
+            {
+                key: 'warehouse', title: '3. Warehouse & Expenses Detailed Records', subtitle: 'Facility costs, storage units and miscellaneous expenses',
+                badge: data.warehouse.length + ' Records', tone: 'purple', cols: WAREHOUSE_COLS, rows: data.warehouse.map(warehouseCells),
+                footLabel: 'Total (' + data.warehouse.length + ' records)', footSpan: 4, footValue: money(s.warehouse.total), footTail: 0
+            }
+        ];
+    }
+
+    const TONE_TEXT = { emerald: 'text-emerald-700', amber: 'text-amber-700', blue: 'text-blue-700', purple: 'text-purple-700' };
+    const BADGE_CLASS = {
+        emerald: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+        amber: 'text-amber-700 bg-amber-50 border-amber-200',
+        purple: 'text-purple-700 bg-purple-50 border-purple-200'
     };
 
-    let totalRevenue = 0;
-    let totalExpenses = 0;
+    function screenSection(sec) {
+        const head = sec.cols.map((c) => `<th class="p-3 border text-center${c.tone ? ' ' + TONE_TEXT[c.tone] : ''}">${esc(c.h)}</th>`).join('');
+        const body = sec.rows.length
+            ? sec.rows.map((cells) => `<tr class="hover:bg-slate-50 transition-colors text-slate-700 text-xs">${cells.map((v, i) => {
+                const c = sec.cols[i];
+                return `<td class="p-2.5 border-r text-center${c.b ? ' font-bold' : ''}${c.tone ? ' ' + TONE_TEXT[c.tone] : ''}">${esc(v)}</td>`;
+            }).join('')}</tr>`).join('')
+            : `<tr><td colspan="${sec.cols.length}" class="p-5 text-center text-slate-400">No records found in this period</td></tr>`;
+        const foot = sec.rows.length
+            ? `<tfoot><tr class="bg-emerald-50 text-emerald-800 font-extrabold text-xs">
+                    <td colspan="${sec.footSpan}" class="p-2.5 text-right">${esc(sec.footLabel)}</td>
+                    <td class="p-2.5 text-center">${esc(sec.footValue)}</td>
+                    ${sec.footTail ? `<td colspan="${sec.footTail}"></td>` : ''}
+               </tr></tfoot>`
+            : '';
+        return `
+        <div class="glass-panel rounded-2xl overflow-hidden bg-white shadow-xs p-5 border border-slate-200 space-y-3 w-full">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm">${esc(sec.title)}</h4>
+                    <p class="text-[11px] text-slate-400">${esc(sec.subtitle)}</p>
+                </div>
+                <span class="text-xs font-bold ${BADGE_CLASS[sec.tone]} px-3 py-1 rounded-lg border">${esc(sec.badge)}</span>
+            </div>
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left text-xs border-collapse${sec.key === 'jobs' ? ' min-w-[1100px]' : ' min-w-[640px]'}">
+                    <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200"><tr>${head}</tr></thead>
+                    <tbody class="divide-y divide-slate-100">${body}</tbody>
+                    ${foot}
+                </table>
+            </div>
+        </div>`;
+    }
 
-    // 3. تجميع الإيرادات والمصاريف التشغيلية لكل مهمة بدقة تامة
-    jobs.forEach(j => {
-        const rev = parseExpenseNumber(j.total || j.total_amount);
-        totalRevenue += rev;
+    // ==========================================
+    // 8. SCREEN RENDERING
+    // ==========================================
+    function setText(id, value) {
+        const el = $(id);
+        if (el) el.innerText = value;
+    }
 
-        const diesel = parseExpenseNumber(j.diesel || j.diesel_expense);
-        const hotel = parseExpenseNumber(j.hotel || j.hotel_expense); // معالجة آمنة حتى لو احتوت على أيام أو نصوص
-        const foremanCost = rev > 0 ? Math.round(rev * 0.1) : 0;
-        const helpersCost = parseExpenseNumber(j.helpers || j.helpers_cost);
-        const driversCost = parseExpenseNumber(j.drivers || j.drivers_cost);
+    function setHTML(id, html) {
+        const el = $(id);
+        if (el) el.innerHTML = html;
+    }
 
-        totalExpenses += (diesel + hotel + foremanCost + helpersCost + driversCost);
-    });
+    function renderCards(s) {
+        setText('sumTotalJobs', s.nonDeliveryJobs);
+        setText('sumTotalDeliveries', s.deliveries);
+        setText('sumTotalRevenue', money(s.revenue));
+        setText('sumTotalExpenses', money(s.expenses));
+    }
 
-    // 4. إضافة مصاريف الشاحنات المستأجرة والمستودع بطريقة نظيفة وآمنة
-    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-    rentals.forEach(r => {
-        totalExpenses += parseExpenseNumber(r.amount);
-    });
+    function renderSummary(s) {
+        setHTML('monthlyRevenueContainer', breakdownHTML(s));
+        setHTML('paymentSummaryContainer', paymentHTML(s));
+        setHTML('summaryReportContainer', officialHTML(s));
+        const truckId = $('truckRentalPDFSummarySection') ? 'truckRentalPDFSummarySection' : 'truckRentalSummaryContainer';
+        setHTML(truckId, rentalSummaryHTML(s));
+        setHTML('warehousePDFSummarySection', warehouseSummaryHTML(s));
+    }
 
-    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-    warehouse.forEach(w => {
-        totalExpenses += parseExpenseNumber(w.amount);
-    });
+    function renderDetailed(data, s) {
+        const host = $('detailedReportContainer') || $('detailedReportView');
+        if (!host) return;
+        host.innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-slate-500">
+                <span><i class="fa-regular fa-calendar mr-1.5 text-emerald-600"></i>Period: <span class="text-slate-800">${esc(periodText(data.start, data.end))}</span></span>
+                <span class="text-slate-400">${data.jobs.length} jobs &middot; ${data.rentals.length} rentals &middot; ${data.warehouse.length} warehouse records</span>
+            </div>
+            ${detailSections(data, s).map(screenSection).join('')}`;
+    }
 
-    // 5. تحديث عناصر الـ HTML في البطاقات العلوية بالتنسيق المالي النظيف
-    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    function activeMode() {
+        const detailed = $('detailedReportView');
+        return detailed && !detailed.classList.contains('hidden') ? 'detailed' : 'summary';
+    }
 
-    setEl('sumTotalJobs', adjustedTotalJobs);
-    setEl('sumTotalDeliveries', totalDeliveries);
-    setEl('sumTotalRevenue', `$${formatCleanNumber(totalRevenue)}`);
-    setEl('sumTotalExpenses', `$${formatCleanNumber(totalExpenses)}`);
-}
-window.updateOfficialReportSummaryCards = updateOfficialReportSummaryCards;
+    function renderActive(mode) {
+        const data = getReportData();
+        const s = computeSummary(data);
+        renderCards(s);
+        if (mode === 'detailed') renderDetailed(data, s);
+        else renderSummary(s);
+    }
 
-// 1. دالة توليد جدول تصنيف الطلبات (G, C, P, T, Delivery)
-function generateMonthlyRevenueTableHTML(filteredData) {
-    let countG = 0, revenueG = 0;
-    let countC = 0, revenueC = 0;
-    let countP = 0, revenueP = 0;
-    let countT = 0, revenueT = 0;
-    let countOther = 0, revenueOther = 0;
+    function switchReportMode(mode) {
+        const summaryView = $('summaryReportView');
+        const detailedView = $('detailedReportView');
+        const btnSummary = $('btnSummaryMode');
+        const btnDetailed = $('btnDetailedMode');
+        if (!summaryView || !detailedView) return;
 
-    (filteredData || []).forEach(item => {
-        const jobNoStr = String(item.jobNo || item.job_no || '').trim();
-        const jobNoUpper = jobNoStr.toUpperCase();
-        const firstLetter = jobNoUpper.charAt(0);
-        
-        const itemTotal = parseCurrency(item.total || item.total_amount);
+        const on = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition cursor-pointer';
+        const off = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer';
 
-        // الاعتماد حصراً على رقم الوظيفة (job_no) لاستبعاد التوصيلات
-        if (jobNoStr.toLowerCase().includes('delivery')) {
-            return; 
-        }
-
-        if (firstLetter === 'G') {
-            countG++;
-            revenueG += itemTotal;
-        } else if (firstLetter === 'C') {
-            countC++;
-            revenueC += itemTotal;
-        } else if (firstLetter === 'P') {
-            countP++;
-            revenueP += itemTotal;
-        } else if (firstLetter === 'T') {
-            countT++;
-            revenueT += itemTotal;
+        if (mode === 'detailed') {
+            summaryView.classList.add('hidden');
+            detailedView.classList.remove('hidden');
+            if (btnDetailed) btnDetailed.className = on;
+            if (btnSummary) btnSummary.className = off;
         } else {
-            countOther++;
-            revenueOther += itemTotal;
+            mode = 'summary';
+            summaryView.classList.remove('hidden');
+            detailedView.classList.add('hidden');
+            if (btnSummary) btnSummary.className = on;
+            if (btnDetailed) btnDetailed.className = off;
         }
-    });
+        renderActive(mode);
+    }
 
-    const totalJobsCount = (filteredData || []).length;
-    const grandTotalRevenue = revenueG + revenueC + revenueP + revenueT + revenueOther;
+    function applyReportFilters() {
+        renderActive(activeMode());
+    }
 
-    // إرجاع الـ HTML النصي حصراً لمنع تكسير التنسيق في الصفحة
-    return `
-        <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4 w-full">
-            <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wide">Jobs Breakdown by Prefix (G, C, P, T & Others)</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-center border-collapse text-xs min-w-[700px]">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-700 uppercase text-[10px] tracking-wider border-b border-slate-200">
-                            <th class="p-2.5 border-r">Category</th>
-                            <th class="p-2.5 border-r text-emerald-700 font-bold">G (${countG})</th>
-                            <th class="p-2.5 border-r text-blue-700 font-bold">C (${countC})</th>
-                            <th class="p-2.5 border-r text-amber-700 font-bold">P (${countP})</th>
-                            <th class="p-2.5 border-r text-purple-700 font-bold">T (${countT})</th>
-                            <th class="p-2.5 border-r text-slate-600 font-bold">Other (${countOther})</th>
-                            <th class="p-2.5 bg-emerald-600 text-white font-extrabold">Grand Total (${totalJobsCount})</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="font-bold text-xs">
-                            <td class="p-3 border-r bg-slate-50 text-slate-800">Total Revenue</td>
-                            <td class="p-3 border-r text-emerald-600">$${formatCleanNumber(revenueG)}</td>
-                            <td class="p-3 border-r text-blue-600">$${formatCleanNumber(revenueC)}</td>
-                            <td class="p-3 border-r text-amber-600">$${formatCleanNumber(revenueP)}</td>
-                            <td class="p-3 border-r text-purple-600">$${formatCleanNumber(revenueT)}</td>
-                            <td class="p-3 border-r text-slate-600">$${formatCleanNumber(revenueOther)}</td>
-                            <td class="p-3 bg-emerald-50 text-emerald-800 font-extrabold text-sm">$${formatCleanNumber(grandTotalRevenue)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+    function resetReportFilters() {
+        const startEl = $('reportStartDate');
+        const endEl = $('reportEndDate');
+        if (startEl) startEl.value = '';
+        if (endEl) endEl.value = '';
+        renderActive(activeMode());
+    }
+
+    // Fresh truck rental / warehouse data each time the Reports tab opens
+    async function refreshSources() {
+        try {
+            if (typeof window.loadPrivateTruckRentals === 'function') await window.loadPrivateTruckRentals();
+            else if (typeof window.loadTruckRentals === 'function') await window.loadTruckRentals();
+        } catch (e) { console.error('Reports: truck rentals not refreshed', e); }
+        try {
+            if (typeof window.loadWarehouseData === 'function') await window.loadWarehouseData();
+            else if (typeof window.loadWarehouseRecords === 'function') await window.loadWarehouseRecords();
+        } catch (e) { console.error('Reports: warehouse records not refreshed', e); }
+    }
+
+    async function renderReportsTab() {
+        switchReportMode('summary');
+        await refreshSources();
+        renderActive(activeMode());
+    }
+
+    // ==========================================
+    // 9. PDF (Summary first, then Detailed - same period)
+    // ==========================================
+    const PDF_CSS = `
+        :root { --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --soft:#f8fafc; --brand:#047857; --brand-dark:#064e3b; --brand-soft:#ecfdf5; }
+        @page { size: A4 landscape; margin: 9mm; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body { font-family: "Segoe UI", Inter, system-ui, -apple-system, Arial, sans-serif; color: var(--ink); font-size: 10px; line-height: 1.4;
+               -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .hero { background: linear-gradient(120deg, #064e3b 0%, #047857 60%, #10b981 130%); color: #fff; border-radius: 12px; padding: 16px 20px;
+                display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+        .brand { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; opacity: .8; font-weight: 700; }
+        .hero h1 { margin: 3px 0 0; font-size: 21px; font-weight: 800; letter-spacing: -.01em; }
+        .hero .period { text-align: right; }
+        .hero .period .lbl { font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; opacity: .75; font-weight: 700; }
+        .hero .period .val { font-size: 14px; font-weight: 800; margin-top: 2px; }
+        .hero .period .meta { font-size: 8.5px; opacity: .75; margin-top: 3px; }
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0 4px; }
+        .kpi { border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 10px; padding: 9px 12px; background: #fff; }
+        .kpi .l { font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+        .kpi .v { font-size: 19px; font-weight: 800; margin-top: 2px; letter-spacing: -.01em; }
+        .kpi.blue { border-left-color: #2563eb; } .kpi.amber { border-left-color: #d97706; } .kpi.rose { border-left-color: #e11d48; }
+        .sec { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; font-size: 12.5px; font-weight: 800; color: var(--brand-dark); }
+        .sec::before { content: ""; width: 4px; height: 15px; border-radius: 2px; background: #10b981; }
+        .sec small { font-size: 9px; color: var(--muted); font-weight: 600; margin-left: 4px; }
+        .card { border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px 6px; margin-bottom: 10px; background: #fff; break-inside: avoid; page-break-inside: avoid; }
+        .card h3 { margin: 0 0 6px; font-size: 10px; font-weight: 800; color: #334155; letter-spacing: .02em; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 9px; }
+        thead { display: table-header-group; }
+        tfoot { display: table-row-group; }
+        tr { break-inside: avoid; page-break-inside: avoid; }
+        th { background: #f1f5f9; color: #334155; font-weight: 800; font-size: 7.6px; text-transform: uppercase; letter-spacing: .04em;
+             padding: 6px 4px; border-bottom: 1.5px solid #cbd5e1; text-align: center; }
+        td { padding: 5px 4px; border-bottom: 1px solid #eef2f7; text-align: center; }
+        tbody tr:nth-child(even) td { background: #fafcfd; }
+        td.b { font-weight: 700; }
+        .t-emerald { color: #047857; } .t-amber { color: #b45309; } .t-blue { color: #1d4ed8; } .t-purple { color: #7e22ce; }
+        th.hl { background: var(--brand); color: #fff; border-bottom-color: var(--brand); }
+        td.hl { background: var(--brand-soft) !important; color: #065f46; font-weight: 800; }
+        tfoot td { background: var(--brand-soft); color: #065f46; font-weight: 800; border-top: 1.5px solid #a7f3d0; border-bottom: none; padding: 6px 4px; }
+        td.r { text-align: right; padding-right: 10px; }
+        .empty { text-align: center; color: var(--muted); padding: 14px; font-size: 10px; }
+        .pagebreak { break-before: page; page-break-before: always; }
+        .foot { margin-top: 14px; padding-top: 6px; border-top: 1px solid var(--line); color: var(--muted); font-size: 8px; display: flex; justify-content: space-between; }
+    `;
+
+    function pdfTable(cols, rowsHtml) {
+        return `<table><thead><tr>${cols}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
+    }
+
+    function pdfDetailSection(sec) {
+        const head = sec.cols.map((c) => `<th>${esc(c.h)}</th>`).join('');
+        const rows = sec.rows.length
+            ? sec.rows.map((cells) => `<tr>${cells.map((v, i) => {
+                const c = sec.cols[i];
+                const cls = [c.b ? 'b' : '', c.tone ? 't-' + c.tone : ''].filter(Boolean).join(' ');
+                return `<td${cls ? ' class="' + cls + '"' : ''}>${esc(v)}</td>`;
+            }).join('')}</tr>`).join('')
+            : `<tr><td colspan="${sec.cols.length}" class="empty">No records found in this period</td></tr>`;
+        const foot = sec.rows.length
+            ? `<tfoot><tr><td colspan="${sec.footSpan}" class="r">${esc(sec.footLabel)}</td><td>${esc(sec.footValue)}</td>${sec.footTail ? `<td colspan="${sec.footTail}"></td>` : ''}</tr></tfoot>`
+            : '';
+        return `
+            <div class="sec">${esc(sec.title)}<small>${esc(sec.badge)}</small></div>
+            <table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody>${foot}</table>`;
+    }
+
+    function buildPdfHTML(data, s) {
+        const b = s.breakdown, p = s.payments, o = s.official;
+        const paymentTotal = Object.keys(p).reduce((n, k) => n + p[k], 0);
+        const typeLabel = { all: '', delivery: 'Deliveries only', moving: 'Moving jobs only' }[data.type] || '';
+        const generated = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+
+        const breakdown = `
+            <div class="card"><h3>Jobs Breakdown by Prefix</h3>
+            ${pdfTable(
+                `<th>Category</th><th class="t-emerald">G (${b.G.n})</th><th class="t-blue">C (${b.C.n})</th><th class="t-amber">P (${b.P.n})</th><th class="t-purple">T (${b.T.n})</th><th>Other (${b.Other.n})</th><th class="hl">Grand Total (${s.categorizedJobs})</th>`,
+                `<tr><td class="b">Total Revenue</td><td>${money(b.G.rev)}</td><td>${money(b.C.rev)}</td><td>${money(b.P.rev)}</td><td>${money(b.T.rev)}</td><td>${money(b.Other.rev)}</td><td class="hl">${money(s.categorizedRevenue)}</td></tr>`
+            )}</div>`;
+
+        const payments = `
+            <div class="card"><h3>Payment Methods Summary (PU Payments + Destination Payments)</h3>
+            ${pdfTable(
+                ['Cash', 'Zelle', 'Cheque', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Others', 'Unspecified'].map((n) => `<th>${n}</th>`).join('') + '<th class="hl">Total Amount</th>',
+                `<tr>${['Cash', 'Zelle', 'Cheque', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Others', 'Unspecified'].map((n) => `<td>${money(p[n])}</td>`).join('')}<td class="hl">${money(paymentTotal)}</td></tr>`
+            )}</div>`;
+
+        const official = `
+            <div class="card"><h3>Official Period Financial Summary</h3>
+            ${pdfTable(
+                `<th>Foreman 10%</th><th>Helpers</th><th>Drivers</th><th>Cash Diesel</th><th>Cash PU</th><th>Cash Dest</th><th>PMO PU</th><th>PU (No Cash/PMO)</th><th>Balance (No Cash/PMO)</th><th>PMO Deliveries</th><th>Dest Zelle</th><th class="hl">Total After Deposit</th>`,
+                `<tr><td>${money(o.foreman)}</td><td>${money(o.helpers)}</td><td>${money(o.drivers)}</td><td>${money(o.cashDiesel)}</td><td>${money(o.cashPu)}</td><td>${money(o.cashDest)}</td><td>${money(o.pmoPu)}</td><td>${money(o.puOther)}</td><td>${money(o.destOther)}</td><td>${money(o.pmoDeliveries)}</td><td>${money(o.destZelle)}</td><td class="hl">${money(o.total)}</td></tr>`
+            )}</div>`;
+
+        const rental = `
+            <div class="card"><h3>Private Truck Rental Summary (${s.rental.count} records)</h3>
+            ${pdfTable(
+                `<th>Total Days</th><th>Cash Payments</th><th>Other Payments</th><th class="hl">Grand Total</th>`,
+                `<tr><td>${s.rental.days} Days</td><td>${money(s.rental.cash)}</td><td>${money(s.rental.other)}</td><td class="hl">${money(s.rental.total)}</td></tr>`
+            )}</div>`;
+
+        const warehouse = `
+            <div class="card"><h3>Warehouse & Others Summary (${s.warehouse.count} records)</h3>
+            ${pdfTable(
+                `<th>Total Items</th><th>Cash Payments</th><th>Other Payments</th><th class="hl">Grand Total</th>`,
+                `<tr><td>${s.warehouse.count} Items</td><td>${money(s.warehouse.cash)}</td><td>${money(s.warehouse.other)}</td><td class="hl">${money(s.warehouse.total)}</td></tr>`
+            )}</div>`;
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wathek - Financial & Operations Report</title>
+<style>${PDF_CSS}</style>
+</head>
+<body>
+    <div class="hero">
+        <div>
+            <div class="brand">Wathek</div>
+            <h1>Financial &amp; Operations Report</h1>
         </div>
-    `;
-}
-window.generateMonthlyRevenueTableHTML = generateMonthlyRevenueTableHTML;
+        <div class="period">
+            <div class="lbl">Report period</div>
+            <div class="val">${esc(periodText(data.start, data.end))}</div>
+            <div class="meta">${typeLabel ? esc(typeLabel) + ' &middot; ' : ''}Generated ${esc(generated)}</div>
+        </div>
+    </div>
 
+    <div class="kpis">
+        <div class="kpi"><div class="l">Total Jobs</div><div class="v">${s.nonDeliveryJobs}</div></div>
+        <div class="kpi blue"><div class="l">Total Deliveries</div><div class="v">${s.deliveries}</div></div>
+        <div class="kpi"><div class="l">Total Revenue</div><div class="v t-emerald">${money(s.revenue)}</div></div>
+        <div class="kpi rose"><div class="l">Total Expenses</div><div class="v" style="color:#be123c">${money(s.expenses)}</div>
+            <div style="font-size:7.5px;color:#64748b;margin-top:1px">Diesel ${money(s.diesel)} &middot; Hotel ${money(s.hotel)} &middot; Rentals ${money(s.rental.total)} &middot; Warehouse ${money(s.warehouse.total)}</div></div>
+    </div>
 
+    <div class="sec">Summary</div>
+    ${breakdown}
+    ${payments}
+    ${official}
+    <div class="grid2">${rental}${warehouse}</div>
 
+    <div class="pagebreak"></div>
+    <div class="sec" style="margin-top:0">Detailed Records<small>${esc(periodText(data.start, data.end))}</small></div>
+    ${detailSections(data, s).map(pdfDetailSection).join('')}
 
-
-
-// 2. تحديث دالة العرض الرئيسية لديك لتقوم بحقن الجدول في الـ Container الخاص به تلقائياً
-const originalRenderSummary = window.renderSummaryPageWithDetailedTables || window.updateSummaryReportView;
-if (typeof originalRenderSummary === 'function') {
-    // سنقوم بتضمينه تلقائياً عند أي عملية رندر أصلية
-}
-
-// ضعي هذا السطر داخل دالة رندر الصفحة الأصلية لديك، أو استدعيها هكذا:
-function renderMonthlyTableWrapper(filteredData) {
-    const container = document.getElementById('monthlyRevenueContainer');
-    if (container && typeof window.generateMonthlyRevenueTableHTML === 'function') {
-        const result = window.generateMonthlyRevenueTableHTML(filteredData);
-        container.innerHTML = result.html;
-    }
-}
-window.renderMonthlyTableWrapper = renderMonthlyTableWrapper;
-
-function populateSummaryTables(filteredData) {
-    // 1. جدول تصنيف الطلبات والأحرف (G, C, P, T, Delivery)
-    const revenueContainer = document.getElementById('monthlyRevenueContainer');
-    if (revenueContainer && typeof window.generateMonthlyRevenueTableHTML === 'function') {
-        const revenueResult = window.generateMonthlyRevenueTableHTML(filteredData);
-        revenueContainer.innerHTML = typeof revenueResult === 'object' ? revenueResult.html : revenueResult;
-    }
-
-    // 2. ملخص طرق الدفع (Payment Methods Summary)
-    const summaryPaymentContainer = document.getElementById('paymentSummaryContainer');
-    if (summaryPaymentContainer && typeof window.generatePaymentMethodSummaryTableHTML === 'function') {
-        const paymentRes = window.generatePaymentMethodSummaryTableHTML(filteredData);
-        summaryPaymentContainer.innerHTML = typeof paymentRes === 'object' ? paymentRes.html : paymentRes;
+    <div class="foot"><span>Wathek &middot; Enterprise Moving &amp; Logistics Management</span><span>${esc(periodText(data.start, data.end))}</span></div>
+    <script>
+        window.onload = function () { setTimeout(function () { window.print(); }, 400); };
+    <\/script>
+</body>
+</html>`;
     }
 
-    // 3. الملخص العام للعمليات والتشغيل (Job Report / Official Summary)
-    const summaryContainer = document.getElementById('summaryReportContainer');
-    if (summaryContainer) {
-        const summaryFunc = window.generateOfficialSummaryHTML || window.generateOfficialSummaryTable;
-        if (typeof summaryFunc === 'function') {
-            const summaryRes = summaryFunc(filteredData);
-            summaryContainer.innerHTML = typeof summaryRes === 'object' ? summaryRes.html : summaryRes;
+    function exportOfficialPDF() {
+        const data = getReportData();
+        const s = computeSummary(data);
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('The PDF window was blocked by the browser. Please allow pop-ups for this site and try again.');
+            return;
         }
+        printWindow.document.write(buildPdfHTML(data, s));
+        printWindow.document.close();
     }
 
-    // 4. ملخص تأجير الشاحنات (Truck Rental Summary) - الربط مع الحاوية الثابتة truckRentalPDFSummarySection
-    const truckContainer = document.getElementById('truckRentalPDFSummarySection') || document.getElementById('truckRentalSummaryContainer');
-    if (truckContainer && typeof window.generateTruckRentalSummaryTableHTML === 'function') {
-        const truckResult = window.generateTruckRentalSummaryTableHTML(filteredData);
-        truckContainer.innerHTML = typeof truckResult === 'object' ? truckResult.html : truckResult;
-    }
+    // ==========================================
+    // 10. EXPORTS (names used by the other files)
+    // ==========================================
+    window.parseCurrency = parseMoney;
+    window.formatCleanNumber = fmt;
+    window.parseLocalDate = parseLocalDate;
+    window.switchReportMode = switchReportMode;
+    window.applyReportFilters = applyReportFilters;
+    window.filterReportData = applyReportFilters;
+    window.resetReportFilters = resetReportFilters;
+    window.renderReportsTab = renderReportsTab;
+    window.exportOfficialPDF = exportOfficialPDF;
+    window.updateOfficialReportSummaryCards = function () { renderCards(computeSummary(getReportData())); };
+    window.generateSummaryReportData = function () { renderActive('summary'); };
+    window.populateSummaryTables = function () { renderActive('summary'); };
+    window.generateDetailedReportData = function () { renderActive('detailed'); };
+    window.renderMonthlyTableWrapper = function () { setHTML('monthlyRevenueContainer', breakdownHTML(computeSummary(getReportData()))); };
+    window.generateMonthlyRevenueTableHTML = function () { return breakdownHTML(computeSummary(getReportData())); };
+    window.generatePaymentMethodSummaryTableHTML = function () { return paymentHTML(computeSummary(getReportData())); };
+    window.generateOfficialSummaryTable = function () { return officialHTML(computeSummary(getReportData())); };
+    window.generateTruckRentalSummaryTableHTML = function () {
+        const s = computeSummary(getReportData());
+        return { count: s.rental.count, totalDays: s.rental.days, sumCash: s.rental.cash, sumOther: s.rental.other, grandTotal: s.rental.total, html: rentalSummaryHTML(s) };
+    };
+    window.generateWarehouseSummaryTableHTML = function () {
+        const s = computeSummary(getReportData());
+        return { count: s.warehouse.count, sumCash: s.warehouse.cash, sumOthers: s.warehouse.other, grandTotal: s.warehouse.total, html: warehouseSummaryHTML(s) };
+    };
 
-    // 5. ملخص المستودع والمصاريف الأخرى (Warehouse Summary)
-    const warehouseContainer = document.getElementById('warehousePDFSummarySection');
-    if (warehouseContainer && typeof window.generateWarehouseSummaryTableHTML === 'function') {
-        const warehouseResult = window.generateWarehouseSummaryTableHTML(filteredData);
-        warehouseContainer.innerHTML = typeof warehouseResult === 'object' ? warehouseResult.html : warehouseResult;
-    }
-}
-window.populateSummaryTables = populateSummaryTables;
-
-
-
-
-function exportOfficialPDF() {
-    const jobs = getFilteredJobsData();
-    const rentals = window.currentTruckRentals || JSON.parse(localStorage.getItem('movepro_private_truck_rentals')) || [];
-    const warehouse = window.currentWarehouseRecords || JSON.parse(localStorage.getItem('movepro_warehouse_records')) || [];
-
-    const startDateVal = document.getElementById('filterStartDate')?.value || 'All Dates';
-    const endDateVal = document.getElementById('filterEndDate')?.value || 'All Dates';
-
-    const startDate = startDateVal !== 'All Dates' ? parseLocalDate(startDateVal) : null;
-    const endDate = endDateVal !== 'All Dates' ? parseLocalDate(endDateVal) : null;
-    if (endDate) endDate.setHours(23, 59, 59, 999);
-
-    const filteredRentals = rentals.filter(r => {
-        if (!r.date) return true;
-        const rDate = parseLocalDate(r.date);
-        if (startDate && rDate < startDate) return false;
-        if (endDate && rDate > endDate) return false;
-        return true;
-    });
-
-    const filteredWarehouse = warehouse.filter(w => {
-        if (!w.date) return true;
-        const wDate = parseLocalDate(w.date);
-        if (startDate && wDate < startDate) return false;
-        if (endDate && wDate > endDate) return false;
-        return true;
-    });
-
-    const paymentMethodObj = generatePaymentMethodSummaryTableHTML();
-
-    let sumForeman10 = 0, sumHelpers = 0, sumDrivers = 0, sumCashDiesel = 0;
-    let sumCashPu = 0, sumCashDest = 0, sumPmoPu = 0, sumZellePu = 0;
-    let sumDestZelle = 0, sumDestNoCashPmo = 0, sumPmoDeliveries = 0, sumTotalAfterDeposit = 0;
-
-    jobs.forEach(item => {
-        const totalVal = parseCurrency(item.total || item.total_amount);
-        sumTotalAfterDeposit += totalVal;
-        sumForeman10 += totalVal > 0 ? (totalVal * 0.1) : 0;
-        sumHelpers += parseCurrency(item.helpers || item.helpers_cost);
-        sumDrivers += parseCurrency(item.drivers || item.drivers_cost);
-
-        const dieselValStr = item.diesel || item.diesel_expense;
-        if (dieselValStr && dieselValStr !== '-') {
-            let dieselStr = String(dieselValStr);
-            let dieselParts = dieselStr.split('+');
-            dieselParts.forEach(part => {
-                if (part.toLowerCase().includes('cash')) {
-                    sumCashDiesel += parseCurrency(part);
-                }
-            });
-        }
-
-        const puStr = String(item.pu || item.pu_payments || '').toLowerCase();
-        let cashPuVal = 0;
-        if (puStr.includes('cash')) {
-            const cashMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            cashPuVal = cashMatch ? parseCurrency(cashMatch[1]) : parseCurrency(item.pu || item.pu_payments);
-            sumCashPu += cashPuVal;
-        }
-
-        let pmoPuVal = 0;
-        if (puStr.includes('pmo')) {
-            const pmoMatch = puStr.match(/([0-9,.]+)\s*(?:\$)?\s*pmo/);
-            pmoPuVal = pmoMatch ? parseCurrency(pmoMatch[1]) : parseCurrency(item.pu || item.pu_payments);
-            sumPmoPu += pmoPuVal;
-        }
-
-        const rawPuVal = parseCurrency(item.pu || item.pu_payments);
-        const puVal = (rawPuVal < 50000) ? rawPuVal : 0;
-
-        let netPuWithoutCashPmo = puVal;
-        if (puStr.includes('cash')) netPuWithoutCashPmo -= cashPuVal;
-        if (puStr.includes('pmo')) netPuWithoutCashPmo -= pmoPuVal;
-
-        if (netPuWithoutCashPmo > 0) sumZellePu += netPuWithoutCashPmo;
-
-        const destStr = String(item.dest || item.destination || item.destination_payments || '').toLowerCase();
-        let cashDestVal = 0;
-        if (destStr.includes('cash')) {
-            const cashDestMatch = destStr.match(/([0-9,.]+)\s*(?:\$)?\s*cash/);
-            cashDestVal = cashDestMatch ? parseCurrency(cashDestMatch[1]) : parseCurrency(item.dest || item.destination || item.destination_payments);
-        }
-
-        const rawDestVal = parseCurrency(item.dest || item.destination || item.destination_payments);
-        const destVal = (rawDestVal < 50000) ? rawDestVal : 0;
-
-        if (destStr.includes('cash')) {
-            sumCashDest += (cashDestVal > 0 ? cashDestVal : destVal);
-        } else if (destStr.includes('zelle')) {
-            sumDestZelle += destVal;
-            sumDestNoCashPmo += destVal;
-        } else if (!destStr.includes('pmo') && destVal > 0) {
-            sumDestNoCashPmo += destVal;
-        }
-
-        if ((item.jobNo || item.job_no) && String(item.jobNo || item.job_no).toLowerCase().includes('delivery') && puStr.includes('pmo')) {
-            sumPmoDeliveries += puVal;
-        }
-    });
-
-    let rentalPdfDays = 0, rentalPdfCash = 0, rentalPdfOther = 0, rentalPdfTotal = 0;
-    filteredRentals.forEach(r => {
-        rentalPdfDays += parseInt(String(r.days || r.Days || '0').replace(/[^0-9]/g, '')) || 0;
-        const amt = parseCurrency(r.amount);
-        rentalPdfTotal += amt;
-        if (String(r.paymentType || r.paymentMethod || '').toLowerCase().includes('cash')) rentalPdfCash += amt;
-        else rentalPdfOther += amt;
-    });
-
-    let warehousePdfCash = 0, warehousePdfOthers = 0, warehousePdfTotal = 0;
-    filteredWarehouse.forEach(w => {
-        const amt = parseCurrency(w.amount);
-        warehousePdfTotal += amt;
-        if (String(w.paymentType || w.paymentMethod || '').toLowerCase().includes('cash')) warehousePdfCash += amt;
-        else warehousePdfOthers += amt;
-    });
-
-    const printWindow = window.open('', '_blank');
-    
-    const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <title>MovePro Executive Financial Report</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-            <style>
-                @page { size: A4 landscape; margin: 6mm; }
-                body { font-family: system-ui, -apple-system, sans-serif; color: #1e293b; background: #fff; padding: 10px; }
-                .table-pdf { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 12px; page-break-inside: avoid; }
-                .table-pdf th { background-color: #f1f5f9; color: #334155; font-weight: 700; border: 1px solid #cbd5e1; padding: 5px; text-align: center; }
-                .table-pdf td { border: 1px solid #e2e8f0; padding: 4px; text-align: center; }
-                .page-break { page-break-before: always; }
-                .summary-header { background-color: #e2e8f0; color: #0f172a; font-weight: bold; }
-                .rental-header { background-color: #f8fafc; color: #1e293b; font-weight: bold; }
-                .warehouse-header { background-color: #faf5ff; color: #581c87; font-weight: bold; }
-            </style>
-        </head>
-        <body>
-            <div class="text-center mb-4 border-b pb-3">
-                <h1 class="text-xl font-bold text-emerald-800">Total Cash, PMO & Expenses Report</h1>
-                <p class="text-xs font-semibold text-slate-600 mt-1">Period: <span class="text-slate-800">${startDateVal}</span> to <span class="text-slate-800">${endDateVal}</span></p>
-            </div>
-
-            <div class="mb-4">
-                ${paymentMethodObj.html}
-            </div>
-
-            <div class="mb-4">
-                <h3 class="text-xs font-bold uppercase text-slate-600 mb-1">Executive Financial Summary</h3>
-                <table class="table-pdf">
-                    <thead>
-                        <tr class="summary-header">
-                            <th>Foreman 10%</th>
-                            <th>Helpers</th>
-                            <th>Drivers</th>
-                            <th>Cash Diesel</th>
-                            <th>Cash PU</th>
-                            <th>Cash Dest</th>
-                            <th>PMO PU</th>
-                            <th>PU (No Cash/PMO)</th>
-                            <th>Balance (No Cash/PMO)</th>
-                            <th>PMO Deliveries</th>
-                            <th>Dest Zelle</th>
-                            <th class="bg-emerald-700 text-white">Total After Deposit</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="font-bold text-slate-800">
-                            <td>$${formatCleanNumber(sumForeman10)}</td>
-                            <td>$${formatCleanNumber(sumHelpers)}</td>
-                            <td>$${formatCleanNumber(sumDrivers)}</td>
-                            <td>$${formatCleanNumber(sumCashDiesel)}</td>
-                            <td>$${formatCleanNumber(sumCashPu)}</td>
-                            <td>$${formatCleanNumber(sumCashDest)}</td>
-                            <td>$${formatCleanNumber(sumPmoPu)}</td>
-                            <td>$${formatCleanNumber(sumZellePu)}</td>
-                            <td>$${formatCleanNumber(sumDestNoCashPmo)}</td>
-                            <td>$${formatCleanNumber(sumPmoDeliveries)}</td>
-                            <td>$${formatCleanNumber(sumDestZelle)}</td>
-                            <td class="bg-emerald-50 text-emerald-900 font-extrabold">$${formatCleanNumber(sumTotalAfterDeposit)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mb-4">
-                <h3 class="text-xs font-bold uppercase text-slate-600 mb-1">Private Truck Rental Summary (${filteredRentals.length} Records)</h3>
-                <table class="table-pdf">
-                    <thead>
-                        <tr class="rental-header">
-                            <th>Total Rental Days</th>
-                            <th class="text-emerald-700">Cash Payments</th>
-                            <th class="text-blue-700">Other Payments</th>
-                            <th class="bg-amber-600 text-white">Grand Total Rental Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="font-bold text-slate-800">
-                            <td>${rentalPdfDays} Days</td>
-                            <td class="text-emerald-600">$${formatCleanNumber(rentalPdfCash)}</td>
-                            <td class="text-blue-600">$${formatCleanNumber(rentalPdfOther)}</td>
-                            <td class="bg-amber-50 text-amber-900 font-extrabold">$${formatCleanNumber(rentalPdfTotal)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mb-4">
-                <h3 class="text-xs font-bold uppercase text-slate-600 mb-1">Warehouse & Others Summary (${filteredWarehouse.length} Records)</h3>
-                <table class="table-pdf">
-                    <thead>
-                        <tr class="warehouse-header">
-                            <th>Total Items / Expenses</th>
-                            <th class="text-emerald-700">Cash Payments</th>
-                            <th class="text-blue-700">Other Payments</th>
-                            <th class="bg-purple-700 text-white">Grand Total Warehouse Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="font-bold text-slate-800">
-                            <td>${filteredWarehouse.length} Items</td>
-                            <td class="text-emerald-600">$${formatCleanNumber(warehousePdfCash)}</td>
-                            <td class="text-blue-600">$${formatCleanNumber(warehousePdfOthers)}</td>
-                            <td class="bg-purple-50 text-purple-900 font-extrabold">$${formatCleanNumber(warehousePdfTotal)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="page-break"></div>
-
-            <div class="mt-4">
-                <h3 class="text-xs font-bold uppercase text-slate-600 mb-1">Detailed Dispatch Operations Ledger (${jobs.length} Records)</h3>
-                <table class="table-pdf">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Job No</th>
-                            <th>From State</th>
-                            <th>To State</th>
-                            <th>Foreman Name</th>
-                            <th>Foreman 10%</th>
-                            <th>Helpers</th>
-                            <th>Drivers</th>
-                            <th>Diesel</th>
-                            <th>Hotel</th>
-                            <th>Total After Deposit</th>
-                            <th>P.U Payment</th>
-                            <th>Dest Balance</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${jobs.map(j => {
-                            const totalNum = parseCurrency(j.total || j.total_amount);
-                            const foreman10 = totalNum > 0 ? '$' + formatCleanNumber(totalNum * 0.1) : '-';
-                            const helpersDisplay = typeof window.parseHelpersDisplay === 'function' ? window.parseHelpersDisplay(j.helpers || j.helpers_cost) : (j.helpers || j.helpers_cost || '-');
-                            const driversDisplay = typeof window.parseDriversDisplay === 'function' ? window.parseDriversDisplay(j.drivers || j.drivers_cost) : (j.drivers || j.drivers_cost || '-');
-
-                            return `
-                                <tr>
-                                    <td>${formatDateOnly(j.date)}</td>
-                                    <td class="font-bold">${j.jobNo || j.job_no || '-'}</td>
-                                    <td>${j.route ? j.route.split('→')[0] : (j.route_from || '-')}</td>
-                                    <td>${j.route ? j.route.split('→')[1] || '-' : (j.route_to || '-')}</td>
-                                    <td>${j.foreman || j.foreman_name || '-'}</td>
-                                    <td class="font-bold text-emerald-700">${foreman10}</td>
-                                    <td>${helpersDisplay}</td>
-                                    <td>${driversDisplay}</td>
-                                    <td>${j.diesel || j.diesel_expense || '-'}</td>
-                                    <td>${j.hotel || j.hotel_expense || '-'}</td>
-                                    <td class="font-bold text-emerald-600">$${formatCleanNumber(j.total || j.total_amount)}</td>
-                                    <td>${j.pu || j.pu_payments || '-'}</td>
-                                    <td>${j.dest || j.destination || j.destination_payments || '-'}</td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </div>
-
-            <script>
-                window.onload = function() {
-                    setTimeout(() => { window.print(); }, 400);
-                }
-            <\/script>
-        </body>
-        </html>
-    `;
-
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-}
-window.exportOfficialPDF = exportOfficialPDF;
-
-function renderReportsTab() {
-    switchReportMode('summary');
-    if (typeof generateSummaryReportData === 'function') {
-        generateSummaryReportData();
-    }
-}
-window.renderReportsTab = renderReportsTab;
-
-// تعريف دالة تصفية التقارير لمنع توقف ملف reports.js
-function resetReportFilters() {
-    const startInput = document.getElementById('reportStartDate') || document.getElementById('ledgerFromDate');
-    const endInput = document.getElementById('reportEndDate') || document.getElementById('ledgerToDate');
-    
-    if (startInput) startInput.value = '';
-    if (endInput) endInput.value = '';
-    
-    window.currentFilteredJobs = window.masterJobs || [];
-    
-    // 🌟 تحديث البطاقات العلوية فور إعادة التعيين
-    if (typeof updateOfficialReportSummaryCards === 'function') {
-        updateOfficialReportSummaryCards();
-    }
-
-    if (typeof window.renderSummaryPageWithDetailedTables === 'function') {
-        window.renderSummaryPageWithDetailedTables();
-    } else if (typeof filterLedgerTable === 'function') {
-        filterLedgerTable();
-    }
-
-    if (typeof renderMonthlyTableWrapper === 'function') {
-        renderMonthlyTableWrapper(window.currentFilteredJobs);
-    }
-}
-window.resetReportFilters = resetReportFilters;
-
-// تعريف دالة filterReportData لتفادي خطأ عدم وجود الدالة
-function filterReportData() {
-    if (typeof applyReportFilters === 'function') {
-        applyReportFilters();
-    } else if (typeof generateSummaryReportData === 'function') {
-        generateSummaryReportData();
-    }
-    
-    // تحديث جدول الإيرادات والأحرف تلقائياً
-    const activeData = window.currentFilteredJobs || window.masterJobs || [];
-    if (typeof renderMonthlyTableWrapper === 'function') {
-        renderMonthlyTableWrapper(activeData);
-    }
-}
-window.filterReportData = filterReportData;
-
-
-
-// 🌟 تسجيل وتصدير جميع الدوال للاستخدام المباشر
-window.switchReportMode = switchReportMode;
-window.parseCurrency = parseCurrency;
-window.formatCleanNumber = formatCleanNumber;
-window.applyReportFilters = applyReportFilters;
-window.filterReportData = filterReportData;
-window.resetReportFilters = resetReportFilters;
-window.parseLocalDate = parseLocalDate;
-window.getFilteredJobsData = getFilteredJobsData;
-window.processPaymentString = processPaymentString;
-window.generateTruckRentalSummaryTableHTML = generateTruckRentalSummaryTableHTML;
-window.generateWarehouseSummaryTableHTML = generateWarehouseSummaryTableHTML;
-window.generatePaymentMethodSummaryTableHTML = generatePaymentMethodSummaryTableHTML;
-window.generateOfficialSummaryTable = generateOfficialSummaryTable;
-window.generateDetailedReportData = generateDetailedReportData;
-window.updateSummaryReportView = updateSummaryReportView;
-window.generateSummaryReportData = generateSummaryReportData;
-window.exportOfficialPDF = exportOfficialPDF;
-window.renderReportsTab = renderReportsTab;
-
-window.exportOfficialPDF = exportOfficialPDF;
-window.renderReportsTab = renderReportsTab;
-window.filterReportData = filterReportData;
-
-async function initializeReportData(eventData) {
-    const data = eventData || window.currentFilteredJobs || window.masterJobs || [];
-
-    // 1. جلب بيانات المستودع والشاحنات دائماً بغض النظر عن حالة الوظائف لتجنب ظهور الأصفار
-    if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
-    if (typeof loadWarehouseRecords === 'function') await loadWarehouseRecords();
-
-    // 🌟 2. تحديث البطاقات العلوية وملخص المستودع والشاحنات
-    if (typeof updateOfficialReportSummaryCards === 'function') {
-        updateOfficialReportSummaryCards();
-    }
-
-    // 3. تحديث باقي الجداول الإجمالية والتفصيلية فقط إذا توفرت بيانات الوظائف
-    if (data.length > 0) {
-        if (typeof generateSummaryReportData === 'function') generateSummaryReportData();
-        if (typeof renderMonthlyTableWrapper === 'function') renderMonthlyTableWrapper(data);
-        if (typeof populateSummaryTables === 'function') populateSummaryTables(data);
-        if (typeof generateDetailedReportData === 'function') generateDetailedReportData();
-    }
-}
-
-// الاستماع لأحداث النظام
-document.addEventListener('supabaseDataReady', async (e) => {
-    await initializeReportData(e.detail);
-});
-
-document.addEventListener('DOMContentLoaded', async () => {
-    await initializeReportData();
-});
+    // Test hook (not used by the app)
+    window.__reportsInternals = { toDateKey: toDateKey, getReportData: getReportData, computeSummary: computeSummary, buildPdfHTML: buildPdfHTML };
+})();
