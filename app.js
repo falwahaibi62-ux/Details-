@@ -1037,6 +1037,8 @@ window.saveJob = saveJob;
 // ==========================================
 // 8. RECYCLE BIN & TRASH MANAGEMENT (النسخة النهائية المصححة)
 // ==========================================
+
+
 async function softDeleteRecord(tableName, recordId) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
     if (!window.supabaseClient) {
