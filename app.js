@@ -1050,25 +1050,29 @@ async function softDeleteRecord(tableName, recordId) {
         return false;
     }
 
-    // تنظيف الـ ID بعناية (دعم الأرقام والنصوص والـ UUID)
     const cleanId = typeof recordId === 'string' ? recordId.trim() : recordId;
+    console.log(`🗑️ [SoftDelete] جاري نقل السجل: Table=${tableName}, ID=`, cleanId);
 
-    console.log(`🗑️ جاري نقل السجل إلى سلة المحذوفات: Table=${tableName}, ID=`, cleanId);
-
-    const { error } = await window.supabaseClient
+    // ملاحظة: تأكد أن عمود المفتاح الأساسي في الجداول الثلاثة هو 'id' أو قم بتغييره إذا كان مختلفاً
+    const { data, error } = await window.supabaseClient
         .from(tableName)
         .update({ is_deleted: true })
-        .eq('id', cleanId);
+        .eq('id', cleanId)
+        .select();
 
     if (error) {
-        console.error("❌ خطأ Supabase أثناء الحذف المؤقت:", error.message);
-        alert('Failed to move record to recycle bin: ' + error.message);
+        console.error(`❌ [SoftDelete Error] فشل تحديث جدول ${tableName}:`, error.message);
+        alert(`Failed to move record from ${tableName} to recycle bin: ` + error.message);
         return false;
     } else {
+        console.log(`✅ [SoftDelete Success] تم نقل السجل بنجاح من ${tableName}:`, data);
         alert('Record moved to Recycle Bin successfully!');
         
-        // تحديث البيانات والجداول فوراً
+        // تحديث الواجهات والجداول فوراً
         if (typeof initMasterJobsData === 'function') await initMasterJobsData();
+        if (typeof loadWarehouseData === 'function') await loadWarehouseData();
+        if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
+        
         if (typeof renderTable === 'function' && window.masterJobs) {
             renderTable(window.masterJobs);
         }
@@ -1081,26 +1085,19 @@ async function softDeleteRecord(tableName, recordId) {
 window.softDeleteRecord = softDeleteRecord;
 
 async function deleteJob(jobId) { 
-    if (!jobId) {
-        alert("Invalid Job ID!");
-        return;
-    }
     await softDeleteRecord('jobs_report', jobId); 
 }
 window.deleteJob = deleteJob;
 
 async function deleteWarehouseRecord(id) {
-    if (!id) return;
     await softDeleteRecord('warehouse_expenses', id);
 }
 window.deleteWarehouseRecord = deleteWarehouseRecord;
 
 async function deleteTruckRental(id) {
-    if (!id) return;
     await softDeleteRecord('truck_rental', id);
 }
 window.deleteTruckRental = deleteTruckRental;
-
 
 async function renderTrashBin() {
     try {
@@ -1111,14 +1108,16 @@ async function renderTrashBin() {
         
         let allDeletedRecords = [];
 
-        // 1. جلب العمليات المحذوفة من جدول jobs_report
+        // 1. جلب جدول jobs_report
         const { data: jobsData, error: jobsErr } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (!jobsErr && jobsData) {
+        if (jobsErr) {
+            console.error("❌ [Trash] خطأ في جلب jobs_report:", jobsErr.message);
+        } else if (jobsData) {
             allDeletedRecords.push(...jobsData.map(item => ({ 
                 ...item, 
                 tableName: 'jobs_report', 
@@ -1130,14 +1129,16 @@ async function renderTrashBin() {
             })));
         }
 
-        // 2. جلب السجلات المحذوفة من جدول warehouse_expenses
+        // 2. جلب جدول warehouse_expenses
         const { data: warehouseData, error: warehouseErr } = await window.supabaseClient
             .from('warehouse_expenses')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (!warehouseErr && warehouseData) {
+        if (warehouseErr) {
+            console.error("❌ [Trash] خطأ في جلب warehouse_expenses:", warehouseErr.message);
+        } else if (warehouseData) {
             allDeletedRecords.push(...warehouseData.map(item => ({ 
                 ...item, 
                 tableName: 'warehouse_expenses', 
@@ -1149,14 +1150,16 @@ async function renderTrashBin() {
             })));
         }
 
-        // 3. جلب السجلات المحذوفة من جدول truck_rental
+        // 3. جلب جدول truck_rental
         const { data: rentalData, error: rentalErr } = await window.supabaseClient
             .from('truck_rental')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (!rentalErr && rentalData) {
+        if (rentalErr) {
+            console.error("❌ [Trash] خطأ في جلب truck_rental:", rentalErr.message);
+        } else if (rentalData) {
             allDeletedRecords.push(...rentalData.map(item => ({ 
                 ...item, 
                 tableName: 'truck_rental', 
@@ -1167,6 +1170,8 @@ async function renderTrashBin() {
                 amount: item.total_amount || item.cost || '$0'
             })));
         }
+
+        console.log(`📦 [Trash Total] إجمالي السجلات المحذوفة المكتشفة: ${allDeletedRecords.length}`, allDeletedRecords);
 
         const trashContainer = document.getElementById('trashTableBody');
         if (!trashContainer) {
@@ -1179,7 +1184,7 @@ async function renderTrashBin() {
             return;
         }
 
-        // رسم السجلات المجمعة من كافة الجداول مع خياري Restore و Delete
+        // رسم الجدول مع خياري Restore و Delete
         trashContainer.innerHTML = allDeletedRecords.map(item => `
             <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
                 <td class="p-3 text-slate-800 font-medium">${item.date || item.created_at?.split('T')[0] || '-'}</td>
@@ -1201,10 +1206,10 @@ async function renderTrashBin() {
             </tr>
         `).join('');
 
-        console.log(`✅ تم تحديث سلة المحذوفات وعرض ${allDeletedRecords.length} سجل من كافة الأقسام.`);
+        console.log(`✅ تم تحديث سلة المحذوفات وعرض ${allDeletedRecords.length} سجل بنجاح.`);
 
     } catch (e) {
-        console.error("Error in renderTrashBin:", e);
+        console.error("❌ Error in renderTrashBin:", e);
     }
 }
 window.renderTrashBin = renderTrashBin;
@@ -1224,6 +1229,8 @@ async function restoreRecord(tableName, recordId) {
         alert('Record restored successfully!');
         if (typeof renderTrashBin === 'function') await renderTrashBin();
         if (typeof initMasterJobsData === 'function') await initMasterJobsData();
+        if (typeof loadWarehouseData === 'function') await loadWarehouseData();
+        if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
         if (typeof renderTable === 'function' && window.masterJobs) {
             renderTable(window.masterJobs);
         }
@@ -1250,16 +1257,6 @@ async function permanentDeleteRecord(tableName, recordId) {
     }
 }
 window.permanentDeleteRecord = permanentDeleteRecord;
-
-async function restoreJob(jobId) { 
-    await restoreRecord('jobs_report', jobId); 
-}
-window.restoreJob = restoreJob;
-
-async function permanentDeleteJob(jobId) { 
-    await permanentDeleteRecord('jobs_report', jobId); 
-}
-window.permanentDeleteJob = permanentDeleteJob;
 
 // ==========================================
 // 9. DASHBOARD ANALYTICS & CHARTS
