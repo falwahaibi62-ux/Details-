@@ -69,11 +69,6 @@ async function loadWarehouseData() {
 
         window.currentWarehouseRecords = formattedRecords;
         
-        // التحديث التلقائي للجدول بدون أخطاء
-        if (typeof refreshWarehouseData === 'function' && document.getElementById('warehouseTableBody')) {
-            refreshWarehouseData();
-        }
-        
         return formattedRecords;
 
     } catch (e) {
@@ -82,6 +77,76 @@ async function loadWarehouseData() {
     }
 }
 window.loadWarehouseData = loadWarehouseData;
+
+// دالة متوافقة مطلوبة لجلب السجلات في الـ Refresh
+async function loadWarehouseRecords() {
+    return await loadWarehouseData();
+}
+window.loadWarehouseRecords = loadWarehouseRecords;
+
+// دالة إنشاء النافذة المنبثقة للمستودع برمجياً لمنع الأخطاء
+function ensureWarehouseModalExists() {
+    let modal = document.getElementById('warehouseModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'warehouseModal';
+        modal.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4 overflow-y-auto';
+        modal.innerHTML = `
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 transform transition-all">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <h3 id="warehouseModalTitle" class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-warehouse text-amber-500"></i> Add Warehouse Expense
+                    </h3>
+                    <button type="button" onclick="closeWarehouseModal()" class="text-slate-400 hover:text-slate-600 transition p-1 cursor-pointer">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <form id="warehouseForm" onsubmit="handleWarehouseSubmit(event)" class="p-6 space-y-4 text-xs">
+                    <input type="hidden" id="editWarehouseId" value="">
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Date <span class="text-red-500">*</span></label>
+                        <input type="date" id="warehouseDate" required class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Category / Service <span class="text-red-500">*</span></label>
+                        <input type="text" id="warehouseService" required placeholder="e.g. Warehouse Labor" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Description / Details</label>
+                        <input type="text" id="warehouseDetails" placeholder="Enter description" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Payment Method</label>
+                        <select id="warehousePaymentType" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
+                            <option value="Cash">Cash</option>
+                            <option value="Zelle">Zelle</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="PMO">PMO</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Amount ($) <span class="text-red-500">*</span></label>
+                        <input type="number" id="warehouseAmount" value="0" min="0" step="0.01" required class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none transition text-slate-700">
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="closeWarehouseModal()" class="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition border border-slate-200 cursor-pointer">Cancel</button>
+                        <button type="submit" class="px-5 py-2 font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition cursor-pointer">Save Record</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+}
+window.ensureWarehouseModalExists = ensureWarehouseModalExists;
 
 function openWarehouseModal(isEdit = false) {
     ensureWarehouseModalExists();
@@ -185,8 +250,7 @@ async function refreshWarehouseData() {
         </tr>
     `).join('');
 }
-
-
+window.refreshWarehouseData = refreshWarehouseData;
 
 // تجهيز حقول التعديل بحسب المعرف
 function editWarehouseRecord(id) {
