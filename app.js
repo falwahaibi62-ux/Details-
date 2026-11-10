@@ -1107,18 +1107,21 @@ window.deleteTruckRental = deleteTruckRental;
 // ==========================================
 async function renderTrashBin() {
     try {
-        if (!window.supabaseClient) return;
+        if (!window.supabaseClient) {
+            console.error("❌ Supabase client is not initialized!");
+            return;
+        }
         
         let allDeletedRecords = [];
 
         // 1. جلب محذوفات العمليات (Jobs)
-        const { data: jobsData } = await window.supabaseClient
+        const { data: jobsData, error: jobsErr } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (jobsData) {
+        if (!jobsErr && jobsData) {
             allDeletedRecords.push(...jobsData.map(item => ({ 
                 ...item, 
                 tableName: 'jobs_report', 
@@ -1132,14 +1135,14 @@ async function renderTrashBin() {
             })));
         }
 
-        // 2. جلب محذوفات المستودع (Warehouse) - بناءً على أعمدة جدولك الفعلية
-        const { data: warehouseData } = await window.supabaseClient
+        // 2. جلب محذوفات المستودع (Warehouse)
+        const { data: warehouseData, error: warehouseErr } = await window.supabaseClient
             .from('warehouse_expenses')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (warehouseData) {
+        if (!warehouseErr && warehouseData) {
             allDeletedRecords.push(...warehouseData.map(item => ({ 
                 ...item, 
                 tableName: 'warehouse_expenses', 
@@ -1153,14 +1156,14 @@ async function renderTrashBin() {
             })));
         }
 
-        // 3. جلب محذوفات الشاحنات (Truck Rental) - بناءً على أعمدة جدولك الفعلية
-        const { data: rentalData } = await window.supabaseClient
+        // 3. جلب محذوفات الشاحنات (Truck Rental)
+        const { data: rentalData, error: rentalErr } = await window.supabaseClient
             .from('truck_rental')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (rentalData) {
+        if (!rentalErr && rentalData) {
             allDeletedRecords.push(...rentalData.map(item => ({ 
                 ...item, 
                 tableName: 'truck_rental', 
@@ -1175,14 +1178,17 @@ async function renderTrashBin() {
         }
 
         const trashContainer = document.getElementById('trashTableBody');
-        if (!trashContainer) return;
+        if (!trashContainer) {
+            console.warn("⚠️ عنصر جدول سلة المحذوفات (trashTableBody) غير موجود في الصفحة.");
+            return;
+        }
 
         if (allDeletedRecords.length === 0) {
             trashContainer.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 font-medium">Trash bin is empty</td></tr>`;
             return;
         }
 
-        // رسم الجدول في سلة المحذوفات
+        // رسم السجلات مع خياري Restore و Delete
         trashContainer.innerHTML = allDeletedRecords.map(item => `
             <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
                 <td class="p-3 text-slate-800 font-medium">${item.date || '-'}</td>
@@ -1204,7 +1210,7 @@ async function renderTrashBin() {
             </tr>
         `).join('');
 
-        console.log(`✅ تم تحديث سلة المحذوفات وعرض ${allDeletedRecords.length} سجل.`);
+        console.log(`✅ تم تحديث سلة المحذوفات وعرض ${allDeletedRecords.length} سجل بنجاح.`);
 
     } catch (e) {
         console.error("Error in renderTrashBin:", e);
@@ -1252,6 +1258,25 @@ async function permanentDeleteRecord(tableName, recordId) {
     }
 }
 window.permanentDeleteRecord = permanentDeleteRecord;
+
+async function emptyTrashBin() {
+    if (!confirm('Are you sure you want to permanently delete ALL items in the Recycle Bin?')) return;
+    if (!window.supabaseClient) return;
+
+    try {
+        // حذف نهائي لكافة السجلات التي تحمل is_deleted = true في الجداول الثلاثة
+        await window.supabaseClient.from('jobs_report').delete().eq('is_deleted', true);
+        await window.supabaseClient.from('warehouse_expenses').delete().eq('is_deleted', true);
+        await window.supabaseClient.from('truck_rental').delete().eq('is_deleted', true);
+
+        alert('Recycle Bin emptied successfully!');
+        await renderTrashBin();
+    } catch (e) {
+        console.error("Error emptying trash:", e);
+        alert('Failed to empty trash bin.');
+    }
+}
+window.emptyTrashBin = emptyTrashBin;
 
 // ==========================================
 // 9. DASHBOARD ANALYTICS & CHARTS
