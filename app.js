@@ -1038,7 +1038,6 @@ window.saveJob = saveJob;
 // 8. RECYCLE BIN & TRASH MANAGEMENT (النسخة النهائية المصححة)
 // ==========================================
 
-
 async function softDeleteRecord(tableName, recordId) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
     if (!window.supabaseClient) {
@@ -1052,18 +1051,21 @@ async function softDeleteRecord(tableName, recordId) {
     }
 
     const cleanId = typeof recordId === 'string' ? recordId.trim() : Number(recordId);
-    console.log(`🗑️ جاري نقل السجل إلى سلة المحذوفات: Table=${tableName}, ID=`, cleanId);
+    console.log(`🗑️ [SoftDelete] جاري نقل السجل إلى سلة المحذوفات: Table=${tableName}, ID=`, cleanId);
 
-    const { error } = await window.supabaseClient
+    // تحديث حقل is_deleted إلى true بغض النظر عن محتوى الحقول الأخرى
+    const { data, error } = await window.supabaseClient
         .from(tableName)
         .update({ is_deleted: true })
-        .eq('id', cleanId);
+        .eq('id', cleanId)
+        .select();
 
     if (error) {
-        console.error(`❌ خطأ أثناء الحذف من ${tableName}:`, error.message);
+        console.error(`❌ [SoftDelete Error] فشل تحديث السجل في ${tableName}:`, error.message);
         alert('Failed to move record to recycle bin: ' + error.message);
         return false;
     } else {
+        console.log(`✅ [SoftDelete Success] تم نقل السجل بنجاح:`, data);
         alert('Record moved to Recycle Bin successfully!');
         
         // تحديث الواجهات حسب الجدول المُعدّل
@@ -1085,7 +1087,7 @@ async function softDeleteRecord(tableName, recordId) {
 }
 window.softDeleteRecord = softDeleteRecord;
 
-// ربط الدوال المباشرة للأقسام الثلاثة
+// دوال الحذف المباشرة للأقسام
 async function deleteJob(jobId) { 
     await softDeleteRecord('jobs_report', jobId); 
 }
@@ -1102,6 +1104,7 @@ async function deleteTruckRental(id) {
 window.deleteTruckRental = deleteTruckRental;
 
 
+
 // ==========================================
 // 📦 دالة عرض سلة المحذوفات الموحدة لكافة الأقسام (محصنة ضد القيم الفارغة)
 // ==========================================
@@ -1115,13 +1118,13 @@ async function renderTrashBin() {
         let allDeletedRecords = [];
 
         // 1. جلب محذوفات العمليات (Jobs)
-        const { data: jobsData, error: jobsErr } = await window.supabaseClient
+        const { data: jobsData } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (!jobsErr && jobsData) {
+        if (jobsData) {
             allDeletedRecords.push(...jobsData.map(item => ({ 
                 ...item, 
                 tableName: 'jobs_report', 
@@ -1136,13 +1139,13 @@ async function renderTrashBin() {
         }
 
         // 2. جلب محذوفات المستودع (Warehouse)
-        const { data: warehouseData, error: warehouseErr } = await window.supabaseClient
+        const { data: warehouseData } = await window.supabaseClient
             .from('warehouse_expenses')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (!warehouseErr && warehouseData) {
+        if (warehouseData) {
             allDeletedRecords.push(...warehouseData.map(item => ({ 
                 ...item, 
                 tableName: 'warehouse_expenses', 
@@ -1157,13 +1160,13 @@ async function renderTrashBin() {
         }
 
         // 3. جلب محذوفات الشاحنات (Truck Rental)
-        const { data: rentalData, error: rentalErr } = await window.supabaseClient
+        const { data: rentalData } = await window.supabaseClient
             .from('truck_rental')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (!rentalErr && rentalData) {
+        if (rentalData) {
             allDeletedRecords.push(...rentalData.map(item => ({ 
                 ...item, 
                 tableName: 'truck_rental', 
@@ -1188,17 +1191,17 @@ async function renderTrashBin() {
             return;
         }
 
-        // رسم السجلات مع خياري Restore و Delete بدقة
+        // رسم السجلات مع استخدام قيم افتراضية (-) لو كانت الحقول فارغة تماماً لضمان عدم حدوث خطأ في العرض
         trashContainer.innerHTML = allDeletedRecords.map(item => `
             <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
                 <td class="p-3 text-slate-800 font-medium">${item.date || item.created_at?.split('T')[0] || '-'}</td>
-                <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType}</span></td>
-                <td class="p-3 text-slate-700 font-semibold">${item.identifier}</td>
-                <td class="p-3 text-slate-600">${item.details}</td>
-                <td class="p-3 text-slate-600">${item.assigned}</td>
-                <td class="p-3 text-purple-700">${item.helpers}</td>
-                <td class="p-3 text-blue-700">${item.drivers}</td>
-                <td class="p-3 font-bold text-emerald-600">${item.amount}</td>
+                <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType || 'Record'}</span></td>
+                <td class="p-3 text-slate-700 font-semibold">${item.identifier || `ID: ${item.id}`}</td>
+                <td class="p-3 text-slate-600">${item.details || '-'}</td>
+                <td class="p-3 text-slate-600">${item.assigned || '-'}</td>
+                <td class="p-3 text-purple-700">${item.helpers || '-'}</td>
+                <td class="p-3 text-blue-700">${item.drivers || '-'}</td>
+                <td class="p-3 font-bold text-emerald-600">${item.amount || '$0'}</td>
                 <td class="p-3 text-center space-x-1">
                     <button type="button" onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer shadow-xs" title="Restore">
                         <i class="fa-solid fa-rotate-left mr-1"></i> Restore
@@ -1210,7 +1213,7 @@ async function renderTrashBin() {
             </tr>
         `).join('');
 
-        console.log(`✅ تم تحديث سلة المحذوفات وعرض ${allDeletedRecords.length} سجل بنجاح.`);
+        console.log(`✅ [Trash] تم عرض ${allDeletedRecords.length} سجل في سلة المحذوفات بنجاح.`);
 
     } catch (e) {
         console.error("Error in renderTrashBin:", e);
