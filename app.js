@@ -1037,7 +1037,6 @@ window.saveJob = saveJob;
 // ==========================================
 // 8. RECYCLE BIN & TRASH MANAGEMENT (النسخة النهائية المصححة)
 // ==========================================
-
 async function softDeleteRecord(tableName, recordId) {
     if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
     if (!window.supabaseClient) {
@@ -1050,32 +1049,32 @@ async function softDeleteRecord(tableName, recordId) {
         return false;
     }
 
-    const cleanId = typeof recordId === 'string' ? recordId.trim() : recordId;
-    console.log(`🗑️ [SoftDelete] جاري نقل السجل: Table=${tableName}, ID=`, cleanId);
+    const cleanId = typeof recordId === 'string' ? recordId.trim() : Number(recordId);
+    console.log(`🗑️ جاري نقل السجل إلى سلة المحذوفات: Table=${tableName}, ID=`, cleanId);
 
-    // ملاحظة: تأكد أن عمود المفتاح الأساسي في الجداول الثلاثة هو 'id' أو قم بتغييره إذا كان مختلفاً
-    const { data, error } = await window.supabaseClient
+    const { error } = await window.supabaseClient
         .from(tableName)
         .update({ is_deleted: true })
-        .eq('id', cleanId)
-        .select();
+        .eq('id', cleanId);
 
     if (error) {
-        console.error(`❌ [SoftDelete Error] فشل تحديث جدول ${tableName}:`, error.message);
-        alert(`Failed to move record from ${tableName} to recycle bin: ` + error.message);
+        console.error(`❌ خطأ أثناء الحذف من ${tableName}:`, error.message);
+        alert('Failed to move record to recycle bin: ' + error.message);
         return false;
     } else {
-        console.log(`✅ [SoftDelete Success] تم نقل السجل بنجاح من ${tableName}:`, data);
         alert('Record moved to Recycle Bin successfully!');
         
-        // تحديث الواجهات والجداول فوراً
-        if (typeof initMasterJobsData === 'function') await initMasterJobsData();
-        if (typeof loadWarehouseData === 'function') await loadWarehouseData();
-        if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
-        
-        if (typeof renderTable === 'function' && window.masterJobs) {
-            renderTable(window.masterJobs);
+        // تحديث الواجهات حسب الجدول المُعدّل
+        if (tableName === 'jobs_report') {
+            if (typeof initMasterJobsData === 'function') await initMasterJobsData();
+            if (typeof renderTable === 'function' && window.masterJobs) renderTable(window.masterJobs);
+        } else if (tableName === 'warehouse_expenses') {
+            if (typeof loadWarehouseData === 'function') await loadWarehouseData();
+        } else if (tableName === 'truck_rental') {
+            if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
         }
+
+        // تحديث سلة المحذوفات فوراً
         if (typeof renderTrashBin === 'function') await renderTrashBin();
         if (typeof updateDashboardAnalytics === 'function') updateDashboardAnalytics();
         
@@ -1084,6 +1083,7 @@ async function softDeleteRecord(tableName, recordId) {
 }
 window.softDeleteRecord = softDeleteRecord;
 
+// ربط الدوال المباشرة للأقسام الثلاثة
 async function deleteJob(jobId) { 
     await softDeleteRecord('jobs_report', jobId); 
 }
@@ -1099,101 +1099,97 @@ async function deleteTruckRental(id) {
 }
 window.deleteTruckRental = deleteTruckRental;
 
+
+// ==========================================
+// 📦 دالة عرض سلة المحذوفات الموحدة لكافة الأقسام
+// ==========================================
 async function renderTrashBin() {
     try {
-        if (!window.supabaseClient) {
-            console.error("❌ Supabase client is not initialized!");
-            return;
-        }
+        if (!window.supabaseClient) return;
         
         let allDeletedRecords = [];
 
-        // 1. جلب جدول jobs_report
-        const { data: jobsData, error: jobsErr } = await window.supabaseClient
+        // 1. جلب محذوفات العمليات (Jobs)
+        const { data: jobsData } = await window.supabaseClient
             .from('jobs_report')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (jobsErr) {
-            console.error("❌ [Trash] خطأ في جلب jobs_report:", jobsErr.message);
-        } else if (jobsData) {
+        if (jobsData) {
             allDeletedRecords.push(...jobsData.map(item => ({ 
                 ...item, 
                 tableName: 'jobs_report', 
                 displayType: 'Job Report',
-                identifier: item.job_no || item.jobNo || `Job #${item.id}`,
+                identifier: item.job_no || `Job #${item.id}`,
                 details: item.route || '-',
                 assigned: item.foreman_name || '-',
+                helpers: item.helpers_cost || '-',
+                drivers: item.drivers_cost || '-',
                 amount: item.total_amount || '$0'
             })));
         }
 
-        // 2. جلب جدول warehouse_expenses
-        const { data: warehouseData, error: warehouseErr } = await window.supabaseClient
+        // 2. جلب محذوفات المستودع (Warehouse) - بناءً على أعمدة جدولك الفعلية
+        const { data: warehouseData } = await window.supabaseClient
             .from('warehouse_expenses')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (warehouseErr) {
-            console.error("❌ [Trash] خطأ في جلب warehouse_expenses:", warehouseErr.message);
-        } else if (warehouseData) {
+        if (warehouseData) {
             allDeletedRecords.push(...warehouseData.map(item => ({ 
                 ...item, 
                 tableName: 'warehouse_expenses', 
                 displayType: 'Warehouse',
-                identifier: item.item_name || item.name || `Item #${item.id}`,
-                details: item.category || item.description || '-',
-                assigned: item.supplier || item.paid_by || '-',
-                amount: item.cost || item.amount || '$0'
+                identifier: item.services || `Item #${item.id}`,
+                details: item.details || '-',
+                assigned: item.paymentType || '-',
+                helpers: '-',
+                drivers: '-',
+                amount: item.amount || '$0'
             })));
         }
 
-        // 3. جلب جدول truck_rental
-        const { data: rentalData, error: rentalErr } = await window.supabaseClient
+        // 3. جلب محذوفات الشاحنات (Truck Rental) - بناءً على أعمدة جدولك الفعلية
+        const { data: rentalData } = await window.supabaseClient
             .from('truck_rental')
             .select('*')
             .eq('is_deleted', true)
             .order('id', { ascending: false });
             
-        if (rentalErr) {
-            console.error("❌ [Trash] خطأ في جلب truck_rental:", rentalErr.message);
-        } else if (rentalData) {
+        if (rentalData) {
             allDeletedRecords.push(...rentalData.map(item => ({ 
                 ...item, 
                 tableName: 'truck_rental', 
                 displayType: 'Truck Rental',
-                identifier: item.truck_no || item.plate_no || `Rental #${item.id}`,
-                details: item.route || item.notes || '-',
-                assigned: item.driver_name || '-',
-                amount: item.total_amount || item.cost || '$0'
+                identifier: item.truckLabel || `Rental #${item.id}`,
+                details: item.paymentType || '-',
+                assigned: item.paidBy || '-',
+                helpers: '-',
+                drivers: '-',
+                amount: item.amount || '$0'
             })));
         }
 
-        console.log(`📦 [Trash Total] إجمالي السجلات المحذوفة المكتشفة: ${allDeletedRecords.length}`, allDeletedRecords);
-
         const trashContainer = document.getElementById('trashTableBody');
-        if (!trashContainer) {
-            console.warn("⚠️ عنصر جدول سلة المحذوفات (trashTableBody) غير موجود في الصفحة.");
-            return;
-        }
+        if (!trashContainer) return;
 
         if (allDeletedRecords.length === 0) {
             trashContainer.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 font-medium">Trash bin is empty</td></tr>`;
             return;
         }
 
-        // رسم الجدول مع خياري Restore و Delete
+        // رسم الجدول في سلة المحذوفات
         trashContainer.innerHTML = allDeletedRecords.map(item => `
             <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
-                <td class="p-3 text-slate-800 font-medium">${item.date || item.created_at?.split('T')[0] || '-'}</td>
+                <td class="p-3 text-slate-800 font-medium">${item.date || '-'}</td>
                 <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType}</span></td>
                 <td class="p-3 text-slate-700 font-semibold">${item.identifier}</td>
                 <td class="p-3 text-slate-600">${item.details}</td>
                 <td class="p-3 text-slate-600">${item.assigned}</td>
-                <td class="p-3 text-purple-600">-</td>
-                <td class="p-3 text-blue-600">-</td>
+                <td class="p-3 text-purple-700">${item.helpers}</td>
+                <td class="p-3 text-blue-700">${item.drivers}</td>
                 <td class="p-3 font-bold text-emerald-600">${item.amount}</td>
                 <td class="p-3 text-center space-x-1">
                     <button type="button" onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer shadow-xs" title="Restore">
@@ -1206,17 +1202,17 @@ async function renderTrashBin() {
             </tr>
         `).join('');
 
-        console.log(`✅ تم تحديث سلة المحذوفات وعرض ${allDeletedRecords.length} سجل بنجاح.`);
+        console.log(`✅ تم تحديث سلة المحذوفات وعرض ${allDeletedRecords.length} سجل.`);
 
     } catch (e) {
-        console.error("❌ Error in renderTrashBin:", e);
+        console.error("Error in renderTrashBin:", e);
     }
 }
 window.renderTrashBin = renderTrashBin;
 
 async function restoreRecord(tableName, recordId) {
     if (!window.supabaseClient) return;
-    const cleanId = typeof recordId === 'string' ? recordId.trim() : recordId;
+    const cleanId = typeof recordId === 'string' ? recordId.trim() : Number(recordId);
 
     const { error } = await window.supabaseClient
         .from(tableName)
@@ -1228,12 +1224,9 @@ async function restoreRecord(tableName, recordId) {
     } else {
         alert('Record restored successfully!');
         if (typeof renderTrashBin === 'function') await renderTrashBin();
-        if (typeof initMasterJobsData === 'function') await initMasterJobsData();
-        if (typeof loadWarehouseData === 'function') await loadWarehouseData();
-        if (typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
-        if (typeof renderTable === 'function' && window.masterJobs) {
-            renderTable(window.masterJobs);
-        }
+        if (tableName === 'jobs_report' && typeof initMasterJobsData === 'function') await initMasterJobsData();
+        if (tableName === 'warehouse_expenses' && typeof loadWarehouseData === 'function') await loadWarehouseData();
+        if (tableName === 'truck_rental' && typeof loadPrivateTruckRentals === 'function') await loadPrivateTruckRentals();
     }
 }
 window.restoreRecord = restoreRecord;
@@ -1242,7 +1235,7 @@ async function permanentDeleteRecord(tableName, recordId) {
     if (!confirm('Are you sure you want to permanently delete this record? This action cannot be undone.')) return;
     if (!window.supabaseClient) return;
     
-    const cleanId = typeof recordId === 'string' ? recordId.trim() : recordId;
+    const cleanId = typeof recordId === 'string' ? recordId.trim() : Number(recordId);
 
     const { error } = await window.supabaseClient
         .from(tableName)
