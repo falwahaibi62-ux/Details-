@@ -11,13 +11,18 @@ if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChar
 // 1. DATA INITIALIZATION & SUPABASE CLOUD SYNC
 // ==========================================
 
+// The users list is loaded from the user_role table (see fetchUsersFromSupabase)
 if (typeof window.systemUsers === 'undefined') {
-    window.systemUsers = [
-        { name: "Enterprise Admin", email: "admin@movepro.com", role: "Admin" },
-        { name: "Operations Supervisor", email: "ops@movepro.com", role: "Member" },
-        { name: "Guest Viewer", email: "viewer@movepro.com", role: "Viewer" }
-    ];
+    window.systemUsers = [];
 }
+
+// Escapes text before it is placed inside HTML
+function escapeHtml(value) {
+    return String(value === null || value === undefined ? '' : value).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+window.escapeHtml = escapeHtml;
 
 async function loadDataFromSupabase() {
     const { data, error } = await supabase.from('jobs_report').select('*');
@@ -422,6 +427,16 @@ function filterJobsTable() {
 window.filterJobsTable = filterJobsTable;
 window.filterLedgerTable = filterJobsTable;
 
+// Reset button of the Jobs page: clears the two dates and shows all records
+function resetDateFilter() {
+    ['ledgerFromDate', 'ledgerToDate'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    filterJobsTable();
+}
+window.resetDateFilter = resetDateFilter;
+
 // ==========================================
 // 4. USERS & PERMISSIONS MANAGEMENT
 // ==========================================
@@ -434,7 +449,10 @@ async function fetchUsersFromSupabase() {
             .select('*')
             .order('id', { ascending: true });
 
-        if (error) return;
+        if (error) {
+            console.error("Error fetching users:", error.message);
+            return;
+        }
 
         window.systemUsers = data || [];
         if (typeof renderUsers === 'function') renderUsers();
@@ -495,8 +513,8 @@ function renderUsers() {
                             <i class="fa-solid ${roleIcon}"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-slate-800 text-sm group-hover:text-emerald-600 transition-colors">${u.name}</h4>
-                            <p class="text-xs text-slate-400 font-medium">${u.email}</p>
+                            <h4 class="font-bold text-slate-800 text-sm group-hover:text-emerald-600 transition-colors">${escapeHtml(u.name)}</h4>
+                            <p class="text-xs text-slate-400 font-medium">${escapeHtml(u.email)}</p>
                         </div>
                     </div>
                     
@@ -535,8 +553,13 @@ async function openAddUserModal() {
     const userEmail = prompt("Enter user email address:");
     if (!userEmail) return;
 
-    const userRole = prompt("Enter user role (Admin, Member, Viewer):", "Member");
-    if (!userRole) return;
+    const roleInput = prompt("Enter user role (Admin, Member, Viewer):", "Member");
+    if (!roleInput) return;
+    const userRole = ['Admin', 'Member', 'Viewer'].find(r => r.toLowerCase() === roleInput.trim().toLowerCase());
+    if (!userRole) {
+        alert('Role must be Admin, Member or Viewer.');
+        return;
+    }
 
     if (typeof supabaseClient === 'undefined') return;
 
@@ -545,7 +568,8 @@ async function openAddUserModal() {
             .from('user_role')
             .insert([{ name: userName, email: userEmail, role: userRole, status: 'enable' }]);
 
-        if (!error) fetchUsersFromSupabase();
+        if (error) alert('Failed to add user: ' + error.message);
+        else fetchUsersFromSupabase();
     } catch (err) {
         console.error("Error adding user:", err);
     }
@@ -564,7 +588,8 @@ async function updateUserField(userId, fieldName, fieldValue) {
             .update(updateData)
             .eq('id', userId);
 
-        if (!error) fetchUsersFromSupabase();
+        if (error) alert('Failed to update user: ' + error.message);
+        else fetchUsersFromSupabase();
     } catch (err) {
         console.error("Error updating user field:", err);
     }
@@ -592,8 +617,8 @@ function checkPermissions() {
     } else {
         if (addJobBtn) addJobBtn.style.display = 'flex';
         if (addUserBtn) addUserBtn.style.display = 'flex';
-        editButtons.forEach(btn => { btn.style.display = 'flex'; btn.disabled = false; });
-        deleteButtons.forEach(btn => { btn.style.display = 'flex'; btn.disabled = false; });
+        editButtons.forEach(btn => { btn.style.display = ''; btn.disabled = false; });
+        deleteButtons.forEach(btn => { btn.style.display = ''; btn.disabled = false; });
     }
 }
 window.checkPermissions = checkPermissions;
@@ -655,7 +680,7 @@ window.addDieselEntryField = function(amount = '', method = 'Unspecified') {
     const div = document.createElement('div');
     div.className = 'flex items-center gap-2 diesel-row pt-2';
     div.innerHTML = `
-        <input type="text" placeholder="Amount" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 diesel-amount" value="${amount}">
+        <input type="text" placeholder="Amount" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 diesel-amount" value="${escapeHtml(amount)}">
         <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white diesel-method">
             <option value="Unspecified" ${method === 'Unspecified' ? 'selected' : ''}>Unspecified</option>
             <option value="Cash" ${method === 'Cash' ? 'selected' : ''}>Cash</option>
@@ -697,7 +722,7 @@ function addPaymentRow(containerId, amount = '', method = '') {
     rowDiv.id = rowId;
 
     rowDiv.innerHTML = `
-        <input type="text" placeholder="Amount (e.g. 500)" value="${safeAmount}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
+        <input type="text" placeholder="Amount (e.g. 500)" value="${escapeHtml(safeAmount)}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-emerald-500 payment-amount">
         <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-emerald-500 payment-method">
             <option value="" ${safeMethod === '' || safeMethod === 'unspecified' ? 'selected' : ''}>Unspecified</option>
             <option value="Cash" ${safeMethod === 'cash' ? 'selected' : ''}>Cash</option>
@@ -786,8 +811,13 @@ function openAddModal(isEdit = false) {
     }
 
     const jobForm = document.getElementById('jobForm');
+    const modalTitleEl = document.getElementById('modalTitle');
+    if (modalTitleEl) modalTitleEl.innerText = isEdit ? 'Edit Job' : 'Add New Job';
     if (!isEdit) {
-        if (jobForm) jobForm.reset();
+        if (jobForm) {
+            jobForm.removeAttribute('data-edit-id');
+            jobForm.reset();
+        }
         const dieselContainer = document.getElementById('diesel-entries-container');
         if (dieselContainer) {
             dieselContainer.innerHTML = '';
@@ -907,7 +937,7 @@ function populatePaymentContainer(containerId, paymentStr) {
     container.innerHTML = '';
     if (!paymentStr || paymentStr === '-' || paymentStr === '---' || paymentStr.toUpperCase() === 'NULL') return;
 
-    String(paymentStr).split(',').forEach(p => {
+    String(paymentStr).split(/,(?!\d{3}(?:\D|$))/).forEach(p => {
         let trimmed = p.trim();
         if (!trimmed) return;
         let amount = '', method = 'Unspecified';
@@ -938,6 +968,8 @@ function parseAndSumDiesel(val) {
 window.parseAndSumDiesel = parseAndSumDiesel;
 
 function closeModal() {
+    const jobFormEl = document.getElementById('jobForm');
+    if (jobFormEl) jobFormEl.removeAttribute('data-edit-id');
     const modal = document.getElementById('jobModal');
     if (modal) {
         modal.classList.add('hidden');
@@ -951,13 +983,7 @@ async function saveJob(event) {
     if (event) event.preventDefault();
 
     const jobNoInput = document.getElementById('jobNo');
-    if (!jobNoInput || !jobNoInput.value.trim()) {
-        alert('Please enter the Job Number.');
-        if (jobNoInput) jobNoInput.focus();
-        return;
-    }
-
-    const jobNoVal = jobNoInput.value.trim();
+    const jobNoVal = jobNoInput ? jobNoInput.value.trim() : '';
     const dateInput = document.getElementById('jobDate');
     const dateVal = dateInput && dateInput.value ? formatJobDateToSlash(dateInput.value) : '';
 
@@ -1192,14 +1218,14 @@ async function renderTrashBin() {
             // رسم السجلات مع استخدام قيم افتراضية (-) لو كانت الحقول فارغة تماماً
             trashContainer.innerHTML = allDeletedRecords.map(item => `
                 <tr class="border-b hover:bg-slate-50 text-xs transition-colors">
-                    <td class="p-3 text-slate-800 font-medium">${item.date || item.created_at?.split('T')[0] || '-'}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${item.displayType || 'Record'}</span></td>
-                    <td class="p-3 text-slate-700 font-semibold">${item.identifier || `ID: ${item.id}`}</td>
-                    <td class="p-3 text-slate-600">${item.details || '-'}</td>
-                    <td class="p-3 text-slate-600">${item.assigned || '-'}</td>
-                    <td class="p-3 text-purple-700">${item.helpers || '-'}</td>
-                    <td class="p-3 text-blue-700">${item.drivers || '-'}</td>
-                    <td class="p-3 font-bold text-emerald-600">${item.amount || '$0'}</td>
+                    <td class="p-3 text-slate-800 font-medium">${escapeHtml(item.date || item.created_at?.split('T')[0] || '-')}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-semibold">${escapeHtml(item.displayType || 'Record')}</span></td>
+                    <td class="p-3 text-slate-700 font-semibold">${escapeHtml(item.identifier || `ID: ${item.id}`)}</td>
+                    <td class="p-3 text-slate-600">${escapeHtml(item.details || '-')}</td>
+                    <td class="p-3 text-slate-600">${escapeHtml(item.assigned || '-')}</td>
+                    <td class="p-3 text-purple-700">${escapeHtml(item.helpers || '-')}</td>
+                    <td class="p-3 text-blue-700">${escapeHtml(item.drivers || '-')}</td>
+                    <td class="p-3 font-bold text-emerald-600">${escapeHtml(item.amount || '$0')}</td>
                     <td class="p-3 text-center space-x-1">
                         <button type="button" onclick="restoreRecord('${item.tableName}', '${item.id}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700 transition cursor-pointer shadow-xs" title="Restore">
                             <i class="fa-solid fa-rotate-left mr-1"></i> Restore
@@ -1266,9 +1292,17 @@ async function emptyTrashBin() {
     if (!window.supabaseClient) return;
 
     try {
-        await window.supabaseClient.from('jobs_report').delete().eq('is_deleted', true);
-        await window.supabaseClient.from('warehouse_expenses').delete().eq('is_deleted', true);
-        await window.supabaseClient.from('truck_rental').delete().eq('is_deleted', true);
+        const results = [
+            await window.supabaseClient.from('jobs_report').delete().eq('is_deleted', true),
+            await window.supabaseClient.from('warehouse_expenses').delete().eq('is_deleted', true),
+            await window.supabaseClient.from('truck_rental').delete().eq('is_deleted', true)
+        ];
+        const failed = results.find(r => r && r.error);
+        if (failed) {
+            alert('Failed to empty trash bin: ' + failed.error.message);
+            await renderTrashBin();
+            return;
+        }
 
         alert('Recycle Bin emptied successfully!');
         await renderTrashBin();
@@ -1284,126 +1318,8 @@ window.emptyTrashBin = emptyTrashBin;
 // ==========================================
 // 9. DASHBOARD ANALYTICS & CHARTS
 // ==========================================
-function updateDashboardAnalytics() {
-    try {
-        if (!window.masterJobs || window.masterJobs.length === 0) {
-            const revEl = document.getElementById('dashTotalRevenue');
-            if (revEl) revEl.innerText = '$0';
-            const jobsTextEl = document.getElementById('dashCompletedJobsText');
-            if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-fast mr-1"></i>0 Active Dispatches`;
-            const avgEl = document.getElementById('dashAvgJobValue');
-            if (avgEl) avgEl.innerText = '$0';
-            const dieselEl = document.getElementById('dashTotalDiesel');
-            if (dieselEl) dieselEl.innerText = '$0';
-            return;
-        }
-
-        let totalRev = 0, totalDieselCost = 0, validJobsCount = 0;
-        const routeRevenueMap = {};
-        const paymentMethodMap = { Cash: 0, Zelle: 0, Cheque: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 };
-        const monthlyRev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-        window.masterJobs.forEach(job => {
-            if (job.jobNo && (job.jobNo.toLowerCase().includes('cancel') || job.jobNo.toLowerCase().includes('none'))) return;
-            validJobsCount++;
-            totalDieselCost += typeof parseAndSumDiesel === 'function' ? parseAndSumDiesel(job.diesel || job.diesel_expense) : 0;
-
-            let amt = parseFloat(String(job.total || job.total_amount || 0).replace(/[^0-9.]/g, '')) || 0;
-            totalRev += amt;
-
-            if (job.month && job.month >= 1 && job.month <= 12) monthlyRev[job.month - 1] += amt;
-            
-            const jobRoute = job.route || (job.route_from && job.route_to ? `${job.route_from} → ${job.route_to}` : '');
-            if (jobRoute) routeRevenueMap[jobRoute] = (routeRevenueMap[jobRoute] || 0) + amt;
-
-            let puStr = String(job.pu || job.pu_payments || '').trim();
-            let destStr = String(job.dest || job.destination_payments || '').trim();
-            let hasPu = puStr !== '' && puStr !== '-' && puStr !== '---';
-            let hasDest = destStr !== '' && destStr !== '-' && destStr !== '---';
-
-            if (typeof assignPaymentMethodRevenue === 'function') {
-                if (hasPu && !hasDest) assignPaymentMethodRevenue(puStr, amt, paymentMethodMap);
-                else if (!hasPu && hasDest) assignPaymentMethodRevenue(destStr, amt, paymentMethodMap);
-                else if (hasPu && hasDest) {
-                    assignPaymentMethodRevenue(puStr, amt / 2, paymentMethodMap);
-                    assignPaymentMethodRevenue(destStr, amt / 2, paymentMethodMap);
-                } else {
-                    paymentMethodMap.Unspecified += amt;
-                }
-            } else {
-                paymentMethodMap.Unspecified += amt;
-            }
-        });
-
-        window.currentPaymentMethodMap = paymentMethodMap;
-        const avgJobVal = validJobsCount > 0 ? (totalRev / validJobsCount) : 0;
-
-        const revEl = document.getElementById('dashTotalRevenue');
-        if (revEl) revEl.innerText = '$' + totalRev.toLocaleString('en-US');
-
-        const jobsTextEl = document.getElementById('dashCompletedJobsText');
-        if (jobsTextEl) jobsTextEl.innerHTML = `<i class="fa-solid fa-truck-check mr-1"></i>${validJobsCount} Active Dispatches`;
-
-        const avgEl = document.getElementById('dashAvgJobValue');
-        if (avgEl) avgEl.innerText = '$' + Math.round(avgJobVal).toLocaleString('en-US');
-
-        const dieselEl = document.getElementById('dashTotalDiesel');
-        if (dieselEl) dieselEl.innerText = '$' + totalDieselCost.toLocaleString('en-US');
-
-        const topCorridorsContainer = document.getElementById('topCorridorsContainer');
-        if (topCorridorsContainer) {
-            const sortedRoutes = Object.entries(routeRevenueMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
-            topCorridorsContainer.innerHTML = sortedRoutes.map(([route, rev], idx) => `
-                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
-                        <span class="font-bold text-emerald-800">${route}</span>
-                    </div>
-                    <span class="font-extrabold text-slate-900">$${rev.toLocaleString('en-US')}</span>
-                </div>
-            `).join('');
-        }
-
-        if (typeof renderDashboardCharts === 'function') renderDashboardCharts(monthlyRev, paymentMethodMap);
-    } catch (e) {
-        console.error("Error updating dashboard analytics:", e);
-    }
-}
-window.updateDashboardAnalytics = updateDashboardAnalytics;
-
-function renderDashboardCharts(monthlyData, paymentData) {
-    try {
-        const ctxRevenue = document.getElementById('revenueChart');
-        if (ctxRevenue && typeof Chart !== 'undefined') {
-            if (window.revenueChartInstance) window.revenueChartInstance.destroy();
-            window.revenueChartInstance = new Chart(ctxRevenue, {
-                type: 'bar',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: [{ label: 'Monthly Revenue ($)', data: monthlyData, backgroundColor: 'rgba(5, 150, 105, 0.85)', borderRadius: 8 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-        }
-
-        const ctxPayment = document.getElementById('paymentMixChart');
-        if (ctxPayment && typeof Chart !== 'undefined') {
-            if (window.paymentMixChartInstance) window.paymentMixChartInstance.destroy();
-            const paymentColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#64748b', '#cbd5e1'];
-            window.paymentMixChartInstance = new Chart(ctxPayment, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(paymentData),
-                    datasets: [{ data: Object.values(paymentData), backgroundColor: paymentColors, borderWidth: 2, borderColor: '#ffffff' }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }, cutout: '65%' }
-            });
-        }
-    } catch (e) {
-        console.error("Error rendering charts:", e);
-    }
-}
-window.renderDashboardCharts = renderDashboardCharts;
+// Moved to Dashboard.js (updateDashboardAnalytics / renderDashboardCharts).
+// It used to be defined in both files and this copy silently overrode Dashboard.js.
 
 // ==========================================
 // 10. NAVIGATION & TABS
@@ -1421,23 +1337,23 @@ function renderTable(data) {
 
     tbody.innerHTML = activeData.map(item => `
         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-            <td class="p-3 text-center">${item.date || '-'}</td>
-            <td class="p-3 font-semibold text-slate-800">${item.jobNo || item.job_no || '-'}</td>
-            <td class="p-3 text-slate-600">${item.route || '-'}</td>
-            <td class="p-3 text-slate-600">${item.foreman_name || item.foreman || '-'}</td>
-            <td class="p-3 text-emerald-600 font-medium">${item.foreman_cost || item.foreman10pct || '-'}</td>
-            <td class="p-3 text-purple-600">${item.helpers_cost || item.helpers || '-'}</td>
-            <td class="p-3 text-blue-600">${item.drivers_cost || item.drivers || '-'}</td>
-            <td class="p-3 font-bold text-slate-900">${item.total_amount || item.total || '-'}</td>
-            <td class="p-3 text-slate-600">${item.pu_payments || item.pu || '-'}</td>
-            <td class="p-3 text-slate-600">${item.destination_payments || item.dest || '-'}</td>
-            <td class="p-3 text-slate-600">${item.diesel_expense || item.diesel || '-'}</td>
-            <td class="p-3 text-slate-600">${item.hotel_expense || item.hotel || '-'}</td>
+            <td class="p-3 text-center">${escapeHtml(item.date || '-')}</td>
+            <td class="p-3 font-semibold text-slate-800">${escapeHtml(item.jobNo || item.job_no || '-')}</td>
+            <td class="p-3 text-slate-600">${escapeHtml(item.route || '-')}</td>
+            <td class="p-3 text-slate-600">${escapeHtml(item.foreman_name || item.foreman || '-')}</td>
+            <td class="p-3 text-emerald-600 font-medium">${escapeHtml(item.foreman_cost || item.foreman10pct || '-')}</td>
+            <td class="p-3 text-purple-600">${escapeHtml(item.helpers_cost || item.helpers || '-')}</td>
+            <td class="p-3 text-blue-600">${escapeHtml(item.drivers_cost || item.drivers || '-')}</td>
+            <td class="p-3 font-bold text-slate-900">${escapeHtml(item.total_amount || item.total || '-')}</td>
+            <td class="p-3 text-slate-600">${escapeHtml(item.pu_payments || item.pu || '-')}</td>
+            <td class="p-3 text-slate-600">${escapeHtml(item.destination_payments || item.dest || '-')}</td>
+            <td class="p-3 text-slate-600">${escapeHtml(item.diesel_expense || item.diesel || '-')}</td>
+            <td class="p-3 text-slate-600">${escapeHtml(item.hotel_expense || item.hotel || '-')}</td>
             <td class="p-3 text-center space-x-1">
-                <button type="button" onclick="openEditJobModal('${item.id}')" class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
+                <button type="button" onclick="openEditJobModal('${item.id}')" class="edit-action-btn p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Edit">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </button>
-                <button type="button" onclick="deleteJob('${item.id}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
+                <button type="button" onclick="deleteJob('${item.id}')" class="delete-action-btn p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition cursor-pointer" title="Delete">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </td>
@@ -1449,6 +1365,8 @@ function renderTable(data) {
     if (counterEl) {
         counterEl.innerText = `Showing ${activeData.length} of ${totalMasterCount} records`;
     }
+
+    if (typeof checkPermissions === 'function') checkPermissions();
 }
 window.renderTable = renderTable;
 
@@ -1521,8 +1439,9 @@ function switchTab(tabName) {
         } else if (tabName === 'reports') {
             if (typeof renderReportsTab === 'function') renderReportsTab();
             if (typeof window.renderSummaryPageWithDetailedTables === 'function') window.renderSummaryPageWithDetailedTables();
-        } else if (tabName === 'users' && typeof renderUsers === 'function') {
-            renderUsers();
+        } else if (tabName === 'users') {
+            if (typeof renderUsers === 'function') renderUsers();
+            if (typeof fetchUsersFromSupabase === 'function') fetchUsersFromSupabase();
         } else if (tabName === 'trash') {
             if (typeof renderTrashBin === 'function') renderTrashBin();
         }
