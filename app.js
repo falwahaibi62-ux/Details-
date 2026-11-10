@@ -1212,14 +1212,6 @@ async function renderTrashBin() {
             `).join('');
         }
 
-        // 🌟 التعديل الإضافي الهامة: إجبار قسم سلة المحذوفات على الظهور بصرياً على الشاشة
-        const trashTab = document.getElementById('tab-trash');
-        if (trashTab) {
-            trashTab.classList.remove('hidden');
-            trashTab.classList.add('flex');
-            trashTab.style.setProperty('display', 'flex', 'important');
-        }
-
         console.log(`✅ [Trash] تم عرض ${allDeletedRecords.length} سجل في سلة المحذوفات بنجاح.`);
 
     } catch (e) {
