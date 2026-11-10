@@ -31,42 +31,21 @@ window.formatDateToSlash = formatDateToSlash;
 
 // 2. Fetch Data from Supabase
 async function loadPrivateTruckRentals() {
-    try {
-        if (!window.supabaseClient) {
-            console.error("Supabase client is not initialized!");
-            return [];
-        }
+    if (!window.supabaseClient) return;
 
-        // جلب إيجارات الشاحنات غير المحذوفة فقط من Supabase
-        const { data, error } = await window.supabaseClient
-            .from('truck_rental')
-            .select('*')
-            .or('is_deleted.is.null,is_deleted.eq.false')
-            .order('id', { ascending: false });
+    const { data, error } = await window.supabaseClient
+        .from('truck_rental')
+        .select('*')
+        .or('is_deleted.is.null,is_deleted.eq.false') // 👈 ضعه هنا أيضاً لاستبعاد المحذوفات
+        .order('id', { ascending: false });
 
-        if (error) {
-            console.error('Error fetching truck rentals from Supabase:', error);
-            return [];
-        }
-
-        const formattedRentals = (data || []).map(item => ({
-            id: item.id,
-            date: item.date || '',
-            days: parseInt(item.Days) || 0,
-            amount: item.amount || '$0',
-            paymentType: item.paymentType || 'Cash',
-            paidBy: item.paidBy || '',
-            truckLabel: item.truckLabel || ''
-        }));
-
-        window.currentTruckRentals = formattedRentals;
-        return formattedRentals;
-    } catch (e) {
-        console.error('Error loading private truck rentals:', e);
-        return [];
+    if (!error && data) {
+        // كود عرض البيانات في جدول إيجارات الشاحنات
+        window.truckRentalData = data;
+        renderTruckRentalTable(data);
     }
 }
-window.loadPrivateTruckRentals = loadPrivateTruckRentals;
+
 
 // 3. Interface Rendering Function
 async function renderPrivateTruckRentalTab() {
