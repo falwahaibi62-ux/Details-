@@ -204,6 +204,7 @@
         const s = {
             jobs: data.jobs.length,
             deliveries: 0,
+            deliveryCollections: 0, // money received on delivery jobs (Dest Balance); deliveries have no Total, so no Foreman 10%
             revenue: 0,
             diesel: 0,
             hotel: 0,
@@ -246,6 +247,9 @@
 
             const puEntries = parsePaymentEntries(j.pu || j.pu_payments);
             const destEntries = parsePaymentEntries(j.dest || j.destination || j.destination_payments);
+            if (delivery) {
+                puEntries.concat(destEntries).forEach((e) => { s.deliveryCollections += e.amount; });
+            }
 
             puEntries.forEach((e) => {
                 s.payments[e.method] += e.amount;
@@ -290,6 +294,9 @@
         s.categorizedRevenue = Object.keys(s.breakdown).reduce((n, k) => n + s.breakdown[k].rev, 0);
         // Total Expenses = Diesel + Hotel + Warehouse + Truck Rentals
         s.expenses = s.diesel + s.hotel + s.warehouse.total + s.rental.total;
+        // Reconciliation: Total Revenue + Delivery Collections + entry differences = Payment Methods Total
+        s.paymentsTotal = Object.keys(s.payments).reduce((n, k) => n + s.payments[k], 0);
+        s.paymentGap = s.paymentsTotal - s.revenue - s.deliveryCollections;
         return s;
     }
 
@@ -369,7 +376,25 @@
                     </tbody>
                 </table>
             </div>
+            ${reconciliationHTML(s)}
         </div>`;
+    }
+
+    // One line that explains why Total Amount is higher than Total Revenue
+    function reconciliationHTML(s) {
+        const gap = Math.round(s.paymentGap);
+        const gapPart = gap === 0 ? '' : `
+                <span class="text-surface-400">${gap < 0 ? '&minus;' : '+'}</span>
+                <span title="Jobs whose Total does not match their PU + Destination payments">Entry differences <b class="${gap < 0 ? 'text-alert-700' : 'text-warning-700'}">${money(Math.abs(gap))}</b></span>`;
+        return `
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-surface-600 bg-surface-50 rounded-xl px-4 py-2.5">
+                <span>Total Revenue <b class="text-surface-800">${money(s.revenue)}</b></span>
+                <span class="text-surface-400">+</span>
+                <span title="Dest Balance received on delivery jobs (no Total, so no Foreman 10%)">Delivery Collections <b class="text-info-700">${money(s.deliveryCollections)}</b></span>
+                ${gapPart}
+                <span class="text-surface-400">=</span>
+                <span>Total Amount <b class="text-primary-800">${money(s.paymentsTotal)}</b></span>
+            </div>`;
     }
 
     function officialHTML(s) {
@@ -620,6 +645,7 @@
     function renderCards(s) {
         setText('sumTotalJobs', s.nonDeliveryJobs);
         setText('sumTotalDeliveries', s.deliveries);
+        setText('sumDeliveryCollections', 'Collections ' + money(s.deliveryCollections));
         setText('sumTotalRevenue', money(s.revenue));
         setText('sumTotalExpenses', money(s.expenses));
     }
@@ -803,7 +829,10 @@
             ${pdfTable(
                 ['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Unspecified'].map((n) => `<th>${n}</th>`).join('') + '<th class="hl">Total Amount</th>',
                 `<tr>${['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Unspecified'].map((n) => `<td>${money(p[n])}</td>`).join('')}<td class="hl">${money(paymentTotal)}</td></tr>`
-            )}</div>`;
+            )}
+            <div style="margin-top:6px;font-size:8.5px;color:${T('surface', 600)}">
+                Total Revenue <b>${money(s.revenue)}</b> + Delivery Collections <b style="color:${T('info', 700)}">${money(s.deliveryCollections)}</b>${Math.round(s.paymentGap) === 0 ? '' : ` ${s.paymentGap < 0 ? '&minus;' : '+'} Entry differences <b>${money(Math.abs(Math.round(s.paymentGap)))}</b>`} = Total Amount <b>${money(paymentTotal)}</b>
+            </div></div>`;
 
         const official = `
             <div class="card"><h3>Official Period Financial Summary</h3>
@@ -848,7 +877,8 @@
 
     <div class="kpis">
         <div class="kpi"><div class="l">Total Jobs</div><div class="v">${s.nonDeliveryJobs}</div></div>
-        <div class="kpi blue"><div class="l">Total Deliveries</div><div class="v">${s.deliveries}</div></div>
+        <div class="kpi blue"><div class="l">Total Deliveries</div><div class="v">${s.deliveries}</div>
+            <div style="font-size:7.5px;color:${T('surface', 500)};margin-top:1px">Collections ${money(s.deliveryCollections)}</div></div>
         <div class="kpi"><div class="l">Total Revenue</div><div class="v t-emerald">${money(s.revenue)}</div></div>
         <div class="kpi rose"><div class="l">Total Expenses</div><div class="v" style="color:${T('alert', 700)}">${money(s.expenses)}</div>
             <div style="font-size:7.5px;color:${T('surface', 500)};margin-top:1px">Diesel ${money(s.diesel)} &middot; Hotel ${money(s.hotel)} &middot; Rentals ${money(s.rental.total)} &middot; Warehouse ${money(s.warehouse.total)}</div></div>
