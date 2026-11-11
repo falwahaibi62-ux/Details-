@@ -75,6 +75,15 @@ window.formatJobDateToSlash = formatJobDateToSlash;
 // ==========================================
 // 2. Operations Ledger table filter
 // ==========================================
+
+// Job No search box: keeps only jobs whose number contains the typed text (not case-sensitive)
+function applyJobNoSearch(data) {
+    const searchInput = document.getElementById('ledgerJobSearch');
+    const searchText = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    if (!searchText) return data;
+    return data.filter(item => String(item.jobNo || item.job_no || '').toLowerCase().includes(searchText));
+}
+
 function filterLedgerTable() {
     const fromInput = document.getElementById('ledgerFromDate') || 
                       document.getElementById('reportStartDate') || 
@@ -146,6 +155,7 @@ function filterLedgerTable() {
         return true;
     });
 
+    data = applyJobNoSearch(data);
     window.currentFilteredJobs = data;
 
     if (typeof renderTable === 'function') {
@@ -405,7 +415,7 @@ function filterJobsTable() {
         return true;
     });
 
-    window.currentFilteredJobs = (!startValStr && !endValStr) ? rawData : filtered;
+    window.currentFilteredJobs = applyJobNoSearch((!startValStr && !endValStr) ? rawData : filtered);
     const activeDisplayData = window.currentFilteredJobs;
 
     if (typeof renderTable === 'function') {
@@ -427,9 +437,9 @@ function filterJobsTable() {
 window.filterJobsTable = filterJobsTable;
 window.filterLedgerTable = filterJobsTable;
 
-// Reset button of the Jobs page: clears the two dates and shows all records
+// Reset button of the Jobs page: clears the two dates and the Job No search, and shows all records
 function resetDateFilter() {
-    ['ledgerFromDate', 'ledgerToDate'].forEach(id => {
+    ['ledgerFromDate', 'ledgerToDate', 'ledgerJobSearch'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });

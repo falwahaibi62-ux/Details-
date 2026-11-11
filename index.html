@@ -265,6 +265,11 @@
             </div>
             
             <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4 bg-white shadow-xs">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 text-xs"></i>
+                    <input type="search" id="ledgerJobSearch" oninput="filterJobsTable()" placeholder="Search Job No..." autocomplete="off" class="bg-surface-50 border border-surface-200 rounded-xl pl-8 pr-3 py-1.5 text-xs w-48 focus:outline-none focus:border-primary-500">
+                </div>
+
                 <div class="flex items-center space-x-2">
                     <label class="text-xs font-bold text-surface-600">From Date:</label>
                     <input type="date" id="ledgerFromDate" onchange="filterJobsTable()" class="bg-surface-50 border border-surface-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-primary-500">
