@@ -879,13 +879,17 @@
     function exportOfficialPDF() {
         const data = getReportData();
         const s = computeSummary(data);
-        const printWindow = window.open('', '_blank');
+        // Open the report as a real page (blob URL) instead of writing into an empty
+        // "about:blank" window: phone browsers often print that empty window as a blank page.
+        const blob = new Blob([buildPdfHTML(data, s)], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const printWindow = window.open(url, '_blank');
         if (!printWindow) {
+            URL.revokeObjectURL(url);
             alert('The PDF window was blocked by the browser. Please allow pop-ups for this site and try again.');
             return;
         }
-        printWindow.document.write(buildPdfHTML(data, s));
-        printWindow.document.close();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
     }
 
     // ==========================================
