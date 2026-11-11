@@ -169,13 +169,11 @@
     const METHOD_PATTERNS = [
         ['Cash', /(^|[^a-z])cash([^a-z]|$)/],
         ['Zelle', /(^|[^a-z])zelle([^a-z]|$)/],
-        ['Others', /(^|[^a-z])(cheque|check|chq|ck)([^a-z]|$)/],
         ['PMO', /(^|[^a-z])pmo([^a-z]|$)/],
         ['BC', /(^|[^a-z])bc([^a-z]|$)/],
         ['PC', /(^|[^a-z])pc([^a-z]|$)/],
         ['CC', /(^|[^a-z])(cc|card)([^a-z]|$)/],
-        ['WT', /(^|[^a-z])wt([^a-z]|$)/],
-        ['Others', /(^|[^a-z])others?([^a-z]|$)/]
+        ['WT', /(^|[^a-z])wt([^a-z]|$)/]
     ];
 
     function detectMethod(text) {
@@ -210,7 +208,7 @@
             diesel: 0,
             hotel: 0,
             breakdown: { G: { n: 0, rev: 0 }, C: { n: 0, rev: 0 }, P: { n: 0, rev: 0 }, T: { n: 0, rev: 0 }, Other: { n: 0, rev: 0 } },
-            payments: { Cash: 0, Zelle: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Others: 0, Unspecified: 0 },
+            payments: { Cash: 0, Zelle: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Unspecified: 0 },
             official: { foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, destZelle: 0, total: 0 },
             rental: { count: 0, days: 0, cash: 0, other: 0, total: 0 },
             warehouse: { count: 0, cash: 0, other: 0, total: 0 }
@@ -352,7 +350,6 @@
                             <th class="p-2 border-r">PC</th>
                             <th class="p-2 border-r">CC</th>
                             <th class="p-2 border-r">WT</th>
-                            <th class="p-2 border-r">Others</th>
                             <th class="p-2 border-r">Unspecified</th>
                             <th class="p-2 bg-primary-600 text-white font-bold">Total Amount</th>
                         </tr>
@@ -366,7 +363,6 @@
                             <td class="p-3 border-r text-extra2-600">${money(p.PC)}</td>
                             <td class="p-3 border-r text-extra3-600">${money(p.CC)}</td>
                             <td class="p-3 border-r text-highlight-600">${money(p.WT)}</td>
-                            <td class="p-3 border-r text-warning-600">${money(p.Others)}</td>
                             <td class="p-3 border-r text-surface-600">${money(p.Unspecified)}</td>
                             <td class="p-3 bg-primary-50 text-primary-800 font-extrabold text-sm">${money(grand)}</td>
                         </tr>
@@ -805,8 +801,8 @@
         const payments = `
             <div class="card"><h3>Payment Methods Summary (PU Payments + Destination Payments)</h3>
             ${pdfTable(
-                ['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Others', 'Unspecified'].map((n) => `<th>${n}</th>`).join('') + '<th class="hl">Total Amount</th>',
-                `<tr>${['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Others', 'Unspecified'].map((n) => `<td>${money(p[n])}</td>`).join('')}<td class="hl">${money(paymentTotal)}</td></tr>`
+                ['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Unspecified'].map((n) => `<th>${n}</th>`).join('') + '<th class="hl">Total Amount</th>',
+                `<tr>${['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Unspecified'].map((n) => `<td>${money(p[n])}</td>`).join('')}<td class="hl">${money(paymentTotal)}</td></tr>`
             )}</div>`;
 
         const official = `
