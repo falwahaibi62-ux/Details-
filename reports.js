@@ -215,6 +215,15 @@
             warehouse: { count: 0, cash: 0, other: 0, total: 0 }
         };
 
+        // Official table split: one row for regular jobs, one for deliveries, one for the total
+        const zeroOfficial = () => ({ foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, destZelle: 0, total: 0 });
+        s.officialJobs = zeroOfficial();
+        s.officialDeliveries = zeroOfficial();
+        const addOff = (delivery, key, value) => {
+            s.official[key] += value;
+            (delivery ? s.officialDeliveries : s.officialJobs)[key] += value;
+        };
+
         data.jobs.forEach((j) => {
             const total = jobTotalOf(j);
             const delivery = isDeliveryJob(j);
@@ -222,15 +231,15 @@
             const hotelText = j.hotel || j.hotel_expense || '';
 
             s.revenue += total;
-            s.official.total += total;
-            s.official.foreman += total > 0 ? total * 0.1 : 0;
-            s.official.helpers += laborCost(j.helpers || j.helpers_cost);
-            s.official.drivers += laborCost(j.drivers || j.drivers_cost);
+            addOff(delivery, 'total', total);
+            addOff(delivery, 'foreman', total > 0 ? total * 0.1 : 0);
+            addOff(delivery, 'helpers', laborCost(j.helpers || j.helpers_cost));
+            addOff(delivery, 'drivers', laborCost(j.drivers || j.drivers_cost));
 
             s.diesel += sumPlusSeparated(dieselText);
             s.hotel += sumPlusSeparated(hotelText);
             String(dieselText).split('+').forEach((part) => {
-                if (detectMethod(part) === 'Cash') s.official.cashDiesel += firstNumber(part);
+                if (detectMethod(part) === 'Cash') addOff(delivery, 'cashDiesel', firstNumber(part));
             });
 
             if (delivery) {
@@ -253,21 +262,21 @@
 
             puEntries.forEach((e) => {
                 s.payments[e.method] += e.amount;
-                if (e.method === 'Cash') s.official.cashPu += e.amount;
+                if (e.method === 'Cash') addOff(delivery, 'cashPu', e.amount);
                 else if (e.method === 'PMO') {
-                    s.official.pmoPu += e.amount;
-                    if (delivery) s.official.pmoDeliveries += e.amount;
-                } else s.official.puOther += e.amount;
+                    addOff(delivery, 'pmoPu', e.amount);
+                    if (delivery) addOff(delivery, 'pmoDeliveries', e.amount);
+                } else addOff(delivery, 'puOther', e.amount);
             });
 
             destEntries.forEach((e) => {
                 s.payments[e.method] += e.amount;
-                if (e.method === 'Cash') s.official.cashDest += e.amount;
+                if (e.method === 'Cash') addOff(delivery, 'cashDest', e.amount);
                 else if (e.method === 'PMO') {
-                    if (delivery) s.official.pmoDeliveries += e.amount;
+                    if (delivery) addOff(delivery, 'pmoDeliveries', e.amount);
                 } else {
-                    s.official.destOther += e.amount;
-                    if (e.method === 'Zelle') s.official.destZelle += e.amount;
+                    addOff(delivery, 'destOther', e.amount);
+                    if (e.method === 'Zelle') addOff(delivery, 'destZelle', e.amount);
                 }
             });
         });
@@ -398,8 +407,19 @@
             </div>`;
     }
 
+    // Rows of the Official table: Jobs, Deliveries, Total.
+    // Deliveries have no Total column (no Foreman 10%), so their "Total After Deposit" is what was collected (PU + Dest).
+    function officialRows(s) {
+        const jobsAfter = s.officialJobs.total;
+        const delAfter = s.deliveryCollections;
+        return [
+            { label: 'Jobs', note: s.nonDeliveryJobs + ' jobs', o: s.officialJobs, after: jobsAfter, afterNote: 'Sum of Total column' },
+            { label: 'Deliveries', note: s.deliveries + ' deliveries', o: s.officialDeliveries, after: delAfter, afterNote: 'Collections (PU + Dest)' },
+            { label: 'Total', note: 'Jobs + Deliveries', o: s.official, after: jobsAfter + delAfter, afterNote: 'Jobs + Deliveries', isTotal: true }
+        ];
+    }
+
     function officialHTML(s) {
-        const o = s.official;
         return `
         <div class="space-y-6">
             <div class="bg-white rounded-2xl shadow-sm border border-surface-200/80 p-6 space-y-4 mt-6 print:p-2">
@@ -413,6 +433,7 @@
                     <table class="w-full text-left border-collapse text-[11px]">
                         <thead>
                             <tr class="bg-surface-50 text-surface-600 uppercase font-bold border-b border-surface-200/80 text-[10px]">
+                                <th class="p-2.5 border-r text-left">Type</th>
                                 <th class="p-2.5 border-r text-center">Foreman</th>
                                 <th class="p-2.5 border-r text-center">Helpers</th>
                                 <th class="p-2.5 border-r text-center">Drivers</th>
@@ -428,20 +449,22 @@
                             </tr>
                         </thead>
                         <tbody class="font-semibold text-surface-700 divide-y divide-surface-100">
-                            <tr class="hover:bg-surface-50 transition-colors">
-                                <td class="p-2.5 border-r text-center">${money(o.foreman)}</td>
-                                <td class="p-2.5 border-r text-center">${money(o.helpers)}</td>
-                                <td class="p-2.5 border-r text-center">${money(o.drivers)}</td>
-                                <td class="p-2.5 border-r text-center text-warning-700 font-bold bg-warning-50/20">${money(o.cashDiesel)}</td>
-                                <td class="p-2.5 border-r text-center text-primary-600 font-bold">${money(o.cashPu)}</td>
-                                <td class="p-2.5 border-r text-center text-primary-600 font-bold">${money(o.cashDest)}</td>
-                                <td class="p-2.5 border-r text-center">${money(o.pmoPu)}</td>
-                                <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(o.puOther)}</td>
-                                <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(o.destOther)}</td>
-                                <td class="p-2.5 border-r text-center">${money(o.pmoDeliveries)}</td>
-                                <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(o.destZelle)}</td>
-                                <td class="p-2.5 border-r text-center bg-primary-50 text-primary-800 font-extrabold text-xs">${money(o.total)}</td>
-                            </tr>
+                            ${officialRows(s).map((r) => `
+                            <tr class="${r.isTotal ? 'bg-surface-50 font-extrabold text-surface-900 border-t-2 border-surface-300' : 'hover:bg-surface-50 transition-colors'}">
+                                <td class="p-2.5 border-r text-left whitespace-nowrap">${r.label}<div class="text-[9px] font-medium text-surface-400">${r.note}</div></td>
+                                <td class="p-2.5 border-r text-center">${money(r.o.foreman)}</td>
+                                <td class="p-2.5 border-r text-center">${money(r.o.helpers)}</td>
+                                <td class="p-2.5 border-r text-center">${money(r.o.drivers)}</td>
+                                <td class="p-2.5 border-r text-center text-warning-700 font-bold bg-warning-50/20">${money(r.o.cashDiesel)}</td>
+                                <td class="p-2.5 border-r text-center text-primary-600 font-bold">${money(r.o.cashPu)}</td>
+                                <td class="p-2.5 border-r text-center text-primary-600 font-bold">${money(r.o.cashDest)}</td>
+                                <td class="p-2.5 border-r text-center">${money(r.o.pmoPu)}</td>
+                                <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(r.o.puOther)}</td>
+                                <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(r.o.destOther)}</td>
+                                <td class="p-2.5 border-r text-center">${money(r.o.pmoDeliveries)}</td>
+                                <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.destZelle)}</td>
+                                <td class="p-2.5 border-r text-center bg-primary-50 text-primary-800 font-extrabold text-xs">${money(r.after)}<div class="text-[9px] font-medium text-surface-400">${r.afterNote}</div></td>
+                            </tr>`).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -840,8 +863,8 @@
         const official = `
             <div class="card"><h3>Official Period Financial Summary</h3>
             ${pdfTable(
-                `<th>Foreman 10%</th><th>Helpers</th><th>Drivers</th><th>Cash Diesel</th><th>Cash PU</th><th>Cash Dest</th><th>PMO PU</th><th>PU (No Cash/PMO)</th><th>Balance (No Cash/PMO)</th><th>PMO Deliveries</th><th>Dest Zelle</th><th class="hl">Total After Deposit</th>`,
-                `<tr><td>${money(o.foreman)}</td><td>${money(o.helpers)}</td><td>${money(o.drivers)}</td><td>${money(o.cashDiesel)}</td><td>${money(o.cashPu)}</td><td>${money(o.cashDest)}</td><td>${money(o.pmoPu)}</td><td>${money(o.puOther)}</td><td>${money(o.destOther)}</td><td>${money(o.pmoDeliveries)}</td><td>${money(o.destZelle)}</td><td class="hl">${money(o.total)}</td></tr>`
+                `<th>Type</th><th>Foreman 10%</th><th>Helpers</th><th>Drivers</th><th>Cash Diesel</th><th>Cash PU</th><th>Cash Dest</th><th>PMO PU</th><th>PU (No Cash/PMO)</th><th>Balance (No Cash/PMO)</th><th>PMO Deliveries</th><th>Dest Zelle</th><th class="hl">Total After Deposit</th>`,
+                officialRows(s).map((r) => `<tr${r.isTotal ? ' style="font-weight:800;border-top:2px solid ' + T('surface', 300) + '"' : ''}><td class="b">${r.label}<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">${r.note}</div></td><td>${money(r.o.foreman)}</td><td>${money(r.o.helpers)}</td><td>${money(r.o.drivers)}</td><td>${money(r.o.cashDiesel)}</td><td>${money(r.o.cashPu)}</td><td>${money(r.o.cashDest)}</td><td>${money(r.o.pmoPu)}</td><td>${money(r.o.puOther)}</td><td>${money(r.o.destOther)}</td><td>${money(r.o.pmoDeliveries)}</td><td>${money(r.o.destZelle)}</td><td class="hl">${money(r.after)}<div style="font-size:6.5px;font-weight:500">${r.afterNote}</div></td></tr>`).join('')
             )}</div>`;
 
         const rental = `
