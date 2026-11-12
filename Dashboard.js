@@ -96,6 +96,7 @@
     function compute(jobs) {
         const r = {
             jobs: 0,
+            deliveries: 0,
             revenue: 0,
             diesel: 0,
             routes: {},
@@ -105,8 +106,12 @@
         };
 
         (jobs || []).forEach((job) => {
-            const total = parseMoney(job.total || job.total_amount || 0);
+            // Revenue = money collected on the job: PU Payments + Dest Balance (deliveries included)
+            const entries = parsePaymentEntries(job.pu || job.pu_payments)
+                .concat(parsePaymentEntries(job.dest || job.destination || job.destination_payments));
+            const total = entries.reduce((n, e) => n + e.amount, 0);
             r.jobs++;
+            if (String(job.jobNo || job.job_no || '').toLowerCase().includes('delivery')) r.deliveries++;
             r.revenue += total;
             r.diesel += sumPlusSeparated(job.diesel || job.diesel_expense);
 
@@ -123,9 +128,7 @@
                 r.foremen[foreman].jobs++;
             }
 
-            parsePaymentEntries(job.pu || job.pu_payments)
-                .concat(parsePaymentEntries(job.dest || job.destination || job.destination_payments))
-                .forEach((e) => { r.payments[e.method] += e.amount; });
+            entries.forEach((e) => { r.payments[e.method] += e.amount; });
         });
 
         r.paymentsTotal = PAYMENT_KEYS.reduce((n, k) => n + r.payments[k], 0);
@@ -197,11 +200,12 @@
 
     function renderCards(r) {
         const jobsLabel = r.jobs + (r.jobs === 1 ? ' Job' : ' Jobs');
+        const regular = r.jobs - r.deliveries;
         setText('dashTotalRevenue', money(r.revenue));
         const jobsEl = $('dashCompletedJobsText');
-        if (jobsEl) jobsEl.innerHTML = '<i class="fa-solid fa-truck-fast mr-1.5"></i>' + jobsLabel;
+        if (jobsEl) jobsEl.innerHTML = '<i class="fa-solid fa-truck-fast mr-1.5"></i>' + regular + ' Jobs &middot; ' + r.deliveries + ' Deliveries';
         setText('dashAvgJobValue', money(r.jobs > 0 ? r.revenue / r.jobs : 0));
-        setText('dashAvgNote', 'Across ' + jobsLabel.toLowerCase());
+        setText('dashAvgNote', 'Revenue ÷ ' + r.jobs + ' (jobs & deliveries)');
         setText('dashTotalDiesel', money(r.diesel));
         setText('dashChartBadge', jobsLabel.toLowerCase());
         setText('dashLastUpdated', 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));

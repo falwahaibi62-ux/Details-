@@ -323,7 +323,8 @@
                     </thead>
                     <tbody>
                         <tr class="font-bold text-xs">
-                            <td class="p-3 border-r bg-surface-50 text-surface-800">Total Revenue</td>
+                            <td class="p-3 border-r bg-surface-50 text-surface-800">Job Totals
+                                <div class="text-[9px] font-medium text-surface-400 normal-case">Sum of Total column (Foreman 10% base)</div></td>
                             <td class="p-3 border-r text-primary-600">${money(b.G.rev)}</td>
                             <td class="p-3 border-r text-info-600">${money(b.C.rev)}</td>
                             <td class="p-3 border-r text-warning-600">${money(b.P.rev)}</td>
@@ -380,7 +381,7 @@
         </div>`;
     }
 
-    // One line that explains why Total Amount is higher than Total Revenue
+    // One line that explains how Total Revenue (PU + Dest) relates to the Job Totals (Total column)
     function reconciliationHTML(s) {
         const gap = Math.round(s.paymentGap);
         const gapPart = gap === 0 ? '' : `
@@ -388,12 +389,12 @@
                 <span title="Jobs whose Total does not match their PU + Destination payments">Entry differences <b class="${gap < 0 ? 'text-alert-700' : 'text-warning-700'}">${money(Math.abs(gap))}</b></span>`;
         return `
             <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-surface-600 bg-surface-50 rounded-xl px-4 py-2.5">
-                <span>Total Revenue <b class="text-surface-800">${money(s.revenue)}</b></span>
+                <span title="Sum of the Total column of regular jobs (Foreman 10% base)">Job Totals <b class="text-surface-800">${money(s.revenue)}</b></span>
                 <span class="text-surface-400">+</span>
                 <span title="Dest Balance received on delivery jobs (no Total, so no Foreman 10%)">Delivery Collections <b class="text-info-700">${money(s.deliveryCollections)}</b></span>
                 ${gapPart}
                 <span class="text-surface-400">=</span>
-                <span>Total Amount <b class="text-primary-800">${money(s.paymentsTotal)}</b></span>
+                <span>Total Revenue (PU + Dest) <b class="text-primary-800">${money(s.paymentsTotal)}</b></span>
             </div>`;
     }
 
@@ -646,7 +647,7 @@
         setText('sumTotalJobs', s.nonDeliveryJobs);
         setText('sumTotalDeliveries', s.deliveries);
         setText('sumDeliveryCollections', 'Collections ' + money(s.deliveryCollections));
-        setText('sumTotalRevenue', money(s.revenue));
+        setText('sumTotalRevenue', money(s.paymentsTotal));
         setText('sumTotalExpenses', money(s.expenses));
     }
 
@@ -821,7 +822,7 @@
             <div class="card"><h3>Jobs Breakdown by Prefix</h3>
             ${pdfTable(
                 `<th>Category</th><th class="t-emerald">G (${b.G.n})</th><th class="t-blue">C (${b.C.n})</th><th class="t-amber">P (${b.P.n})</th><th class="t-purple">T (${b.T.n})</th><th>Other (${b.Other.n})</th><th class="hl">Grand Total (${s.categorizedJobs})</th>`,
-                `<tr><td class="b">Total Revenue</td><td>${money(b.G.rev)}</td><td>${money(b.C.rev)}</td><td>${money(b.P.rev)}</td><td>${money(b.T.rev)}</td><td>${money(b.Other.rev)}</td><td class="hl">${money(s.categorizedRevenue)}</td></tr>`
+                `<tr><td class="b">Job Totals<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">Sum of Total column (Foreman 10% base)</div></td><td>${money(b.G.rev)}</td><td>${money(b.C.rev)}</td><td>${money(b.P.rev)}</td><td>${money(b.T.rev)}</td><td>${money(b.Other.rev)}</td><td class="hl">${money(s.categorizedRevenue)}</td></tr>`
             )}</div>`;
 
         const payments = `
@@ -831,7 +832,7 @@
                 `<tr>${['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Unspecified'].map((n) => `<td>${money(p[n])}</td>`).join('')}<td class="hl">${money(paymentTotal)}</td></tr>`
             )}
             <div style="margin-top:6px;font-size:8.5px;color:${T('surface', 600)}">
-                Total Revenue <b>${money(s.revenue)}</b> + Delivery Collections <b style="color:${T('info', 700)}">${money(s.deliveryCollections)}</b>${Math.round(s.paymentGap) === 0 ? '' : ` ${s.paymentGap < 0 ? '&minus;' : '+'} Entry differences <b>${money(Math.abs(Math.round(s.paymentGap)))}</b>`} = Total Amount <b>${money(paymentTotal)}</b>
+                Job Totals <b>${money(s.revenue)}</b> + Delivery Collections <b style="color:${T('info', 700)}">${money(s.deliveryCollections)}</b>${Math.round(s.paymentGap) === 0 ? '' : ` ${s.paymentGap < 0 ? '&minus;' : '+'} Entry differences <b>${money(Math.abs(Math.round(s.paymentGap)))}</b>`} = Total Revenue (PU + Dest) <b>${money(paymentTotal)}</b>
             </div></div>`;
 
         const official = `
@@ -879,7 +880,8 @@
         <div class="kpi"><div class="l">Total Jobs</div><div class="v">${s.nonDeliveryJobs}</div></div>
         <div class="kpi blue"><div class="l">Total Deliveries</div><div class="v">${s.deliveries}</div>
             <div style="font-size:7.5px;color:${T('surface', 500)};margin-top:1px">Collections ${money(s.deliveryCollections)}</div></div>
-        <div class="kpi"><div class="l">Total Revenue</div><div class="v t-emerald">${money(s.revenue)}</div></div>
+        <div class="kpi"><div class="l">Total Revenue</div><div class="v t-emerald">${money(s.paymentsTotal)}</div>
+            <div style="font-size:7.5px;color:${T('surface', 500)};margin-top:1px">PU Payments + Dest Balance (jobs &amp; deliveries)</div></div>
         <div class="kpi rose"><div class="l">Total Expenses</div><div class="v" style="color:${T('alert', 700)}">${money(s.expenses)}</div>
             <div style="font-size:7.5px;color:${T('surface', 500)};margin-top:1px">Diesel ${money(s.diesel)} &middot; Hotel ${money(s.hotel)} &middot; Rentals ${money(s.rental.total)} &middot; Warehouse ${money(s.warehouse.total)}</div></div>
     </div>
