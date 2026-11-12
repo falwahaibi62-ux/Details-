@@ -648,6 +648,8 @@
         setText('sumTotalDeliveries', s.deliveries);
         setText('sumDeliveryCollections', 'Collections ' + money(s.deliveryCollections));
         setText('sumTotalRevenue', money(s.paymentsTotal));
+        setText('sumRevenueSplit', s.nonDeliveryJobs + ' Jobs (' + money(s.paymentsTotal - s.deliveryCollections) + ') + ' +
+            s.deliveries + ' Deliveries (' + money(s.deliveryCollections) + ')');
         setText('sumTotalExpenses', money(s.expenses));
     }
 
@@ -881,7 +883,7 @@
         <div class="kpi blue"><div class="l">Total Deliveries</div><div class="v">${s.deliveries}</div>
             <div style="font-size:7.5px;color:${T('surface', 500)};margin-top:1px">Collections ${money(s.deliveryCollections)}</div></div>
         <div class="kpi"><div class="l">Total Revenue</div><div class="v t-emerald">${money(s.paymentsTotal)}</div>
-            <div style="font-size:7.5px;color:${T('surface', 500)};margin-top:1px">PU Payments + Dest Balance (jobs &amp; deliveries)</div></div>
+            <div style="font-size:7.5px;color:${T('surface', 500)};margin-top:1px">PU Payments + Dest Balance: ${s.nonDeliveryJobs} Jobs (${money(s.paymentsTotal - s.deliveryCollections)}) + ${s.deliveries} Deliveries (${money(s.deliveryCollections)})</div></div>
         <div class="kpi rose"><div class="l">Total Expenses</div><div class="v" style="color:${T('alert', 700)}">${money(s.expenses)}</div>
             <div style="font-size:7.5px;color:${T('surface', 500)};margin-top:1px">Diesel ${money(s.diesel)} &middot; Hotel ${money(s.hotel)} &middot; Rentals ${money(s.rental.total)} &middot; Warehouse ${money(s.warehouse.total)}</div></div>
     </div>

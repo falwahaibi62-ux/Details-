@@ -97,6 +97,7 @@
         const r = {
             jobs: 0,
             deliveries: 0,
+            deliveryRevenue: 0,
             revenue: 0,
             diesel: 0,
             routes: {},
@@ -111,7 +112,10 @@
                 .concat(parsePaymentEntries(job.dest || job.destination || job.destination_payments));
             const total = entries.reduce((n, e) => n + e.amount, 0);
             r.jobs++;
-            if (String(job.jobNo || job.job_no || '').toLowerCase().includes('delivery')) r.deliveries++;
+            if (String(job.jobNo || job.job_no || '').toLowerCase().includes('delivery')) {
+                r.deliveries++;
+                r.deliveryRevenue += total;
+            }
             r.revenue += total;
             r.diesel += sumPlusSeparated(job.diesel || job.diesel_expense);
 
@@ -203,7 +207,11 @@
         const regular = r.jobs - r.deliveries;
         setText('dashTotalRevenue', money(r.revenue));
         const jobsEl = $('dashCompletedJobsText');
-        if (jobsEl) jobsEl.innerHTML = '<i class="fa-solid fa-truck-fast mr-1.5"></i>' + regular + ' Jobs &middot; ' + r.deliveries + ' Deliveries';
+        if (jobsEl) {
+            jobsEl.innerHTML = '<i class="fa-solid fa-truck-fast mr-1.5"></i>' +
+                regular + ' Jobs (' + money(r.revenue - r.deliveryRevenue) + ') + ' +
+                r.deliveries + ' Deliveries (' + money(r.deliveryRevenue) + ')';
+        }
         setText('dashAvgJobValue', money(r.jobs > 0 ? r.revenue / r.jobs : 0));
         setText('dashAvgNote', 'Revenue ÷ ' + r.jobs + ' (jobs & deliveries)');
         setText('dashTotalDiesel', money(r.diesel));
