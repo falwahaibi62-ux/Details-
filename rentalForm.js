@@ -133,7 +133,7 @@ async function renderPrivateTruckRentalTab() {
                     <span id="sumRentalCashCell" class="text-lg font-extrabold text-primary-600 mt-1 block">$0.00</span>
                 </div>
                 <div class="p-4 bg-info-50/40 rounded-xl border border-info-100 text-center">
-                    <span class="text-[10px] uppercase font-bold text-info-700 block">Other Payments (Zelle/Check)</span>
+                    <span class="text-[10px] uppercase font-bold text-info-700 block">Other Payments (Zelle/Card)</span>
                     <span id="sumRentalOtherCell" class="text-lg font-extrabold text-info-600 mt-1 block">$0.00</span>
                 </div>
                 <div class="p-4 bg-warning-500 rounded-xl text-white text-center shadow-xs">
@@ -289,7 +289,6 @@ function injectPrivateTruckModalHTML() {
                         <label class="block font-semibold text-surface-700 mb-1">Payment Type</label>
                         <select id="rentalPaymentType" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-primary-500 bg-white font-semibold">
                             <option value="Cash">Cash</option>
-                            <option value="Cheque">Cheque</option>
                             <option value="Zelle">Zelle</option>
                             <option value="Card">Card</option>
                         </select>

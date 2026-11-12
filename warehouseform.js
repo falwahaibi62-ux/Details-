@@ -125,7 +125,6 @@ function ensureWarehouseModalExists() {
                         <select id="warehousePaymentType" class="w-full px-3.5 py-2.5 bg-white border border-surface-200 rounded-xl focus:outline-none transition text-surface-700">
                             <option value="Cash">Cash</option>
                             <option value="Zelle">Zelle</option>
-                            <option value="Cheque">Cheque</option>
                             <option value="PMO">PMO</option>
                             <option value="Others">Others</option>
                         </select>

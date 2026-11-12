@@ -211,7 +211,6 @@ function assignPaymentMethodRevenue(paymentStr, amount, paymentMethodMap) {
     const lower = paymentStr.toLowerCase();
     if (lower.includes('cash')) paymentMethodMap.Cash = (paymentMethodMap.Cash || 0) + amount;
     else if (lower.includes('zelle')) paymentMethodMap.Zelle = (paymentMethodMap.Zelle || 0) + amount;
-    else if (lower.includes('cheque') || lower.includes('check') || lower.includes('ck')) paymentMethodMap.Cheque = (paymentMethodMap.Cheque || 0) + amount;
     else if (lower.includes('pmo')) paymentMethodMap.PMO = (paymentMethodMap.PMO || 0) + amount;
     else if (lower.includes('bc')) paymentMethodMap.BC = (paymentMethodMap.BC || 0) + amount;
     else if (lower.includes('pc')) paymentMethodMap.PC = (paymentMethodMap.PC || 0) + amount;
@@ -788,7 +787,6 @@ function addPaymentRow(containerId, amount = '', method = '') {
             <option value="" ${safeMethod === '' || safeMethod === 'unspecified' ? 'selected' : ''}>Unspecified</option>
             <option value="Cash" ${safeMethod === 'cash' ? 'selected' : ''}>Cash</option>
             <option value="Zelle" ${safeMethod === 'zelle' ? 'selected' : ''}>Zelle</option>
-            <option value="Cheque" ${['cheque', 'ck', 'check'].includes(safeMethod) ? 'selected' : ''}>Cheque</option>
             <option value="PMO" ${safeMethod === 'pmo' ? 'selected' : ''}>PMO</option>
             <option value="BC" ${safeMethod === 'bc' ? 'selected' : ''}>BC</option>
             <option value="PC" ${safeMethod === 'pc' ? 'selected' : ''}>PC</option>

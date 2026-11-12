@@ -29,7 +29,7 @@ const THEME = {
     danger:    'red',        // Delete buttons and errors
     alert:     'rose',       // Total expenses, permanent delete buttons
     highlight: 'orange',     // Diesel card on the dashboard
-    secondary: 'plum',       // Warehouse save button, truck rental menu icon, cheque column
+    secondary: 'plum',       // Warehouse save button, truck rental menu icon
     extra1:    'sand',       // Reports: BC payment column
     extra2:    'sage',       // Reports: PC payment column
     extra3:    'copper'      // Reports: CC payment column
