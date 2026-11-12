@@ -601,15 +601,14 @@
                 </div>
 
                 <div class="border-t border-surface-200 pt-3 space-y-2">
-                    <label class="block font-bold text-surface-700">Hotel Expense</label>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="hotelAmount" placeholder="Amount (e.g. 200)" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-primary-500">
-                        <select id="hotelMethod" class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white">
-                            <option value="Cash">Cash</option>
-                            <option value="Zelle">Zelle</option>
-                            <option value="others">others</option>
-                        </select>
+                    <div class="flex justify-between items-center">
+                        <label class="block font-bold text-surface-700">Hotel Expense</label>
+                        <button type="button" onclick="addHotelEntryField()" class="text-primary-600 hover:text-primary-700 text-xs font-bold flex items-center gap-1">
+                            + Add Hotel
+                        </button>
                     </div>
+                    <!-- Rows are added by addHotelEntryField() in app.js -->
+                    <div id="hotel-entries-container" class="space-y-2"></div>
                 </div>
 
                 <div>

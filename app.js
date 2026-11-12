@@ -718,6 +718,57 @@ function collectDieselDataForSave() {
 }
 window.collectDieselDataForSave = collectDieselDataForSave;
 
+// Hotel Expense: several rows, same as Diesel. Saved as "200 Cash + 150 Zelle".
+const HOTEL_METHODS = ['Cash', 'Zelle', 'others'];
+
+window.addHotelEntryField = function(amount = '', method = 'Cash') {
+    const container = document.getElementById('hotel-entries-container');
+    if (!container) return;
+
+    // Old records may hold "Others"/"OTHERS"; match the list without caring about case
+    const known = HOTEL_METHODS.find(m => m.toLowerCase() === String(method).toLowerCase());
+    const methods = known ? HOTEL_METHODS : HOTEL_METHODS.concat([method]);
+    const selected = known || method;
+
+    const div = document.createElement('div');
+    div.className = 'flex items-center gap-2 hotel-row' + (container.children.length ? ' pt-2' : '');
+    div.innerHTML = `
+        <input type="text" placeholder="Amount (e.g. 200)" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-primary-500 hotel-amount" value="${escapeHtml(amount)}">
+        <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white hotel-method">
+            ${methods.map(m => `<option value="${escapeHtml(m)}" ${m === selected ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('')}
+        </select>
+        <button type="button" onclick="this.parentElement.remove()" class="text-danger-500 hover:text-danger-700 px-2 font-bold text-sm">×</button>
+    `;
+    container.appendChild(div);
+};
+
+function collectHotelDataForSave() {
+    const entries = [];
+    document.querySelectorAll('#hotel-entries-container .hotel-row').forEach(row => {
+        const amount = row.querySelector('.hotel-amount').value.trim();
+        const method = row.querySelector('.hotel-method').value;
+        if (amount) entries.push(`${amount} ${method}`);
+    });
+    return entries.join(' + ');
+}
+window.collectHotelDataForSave = collectHotelDataForSave;
+
+// Fills the hotel rows from a saved value ("-", "200 Cash" or "200 Cash + 150 Zelle")
+function fillHotelEntries(value) {
+    const container = document.getElementById('hotel-entries-container');
+    if (!container) return;
+    container.innerHTML = '';
+    const text = String(value || '').trim();
+    if (text && text !== '-') {
+        text.split('+').forEach(entry => {
+            const parts = entry.trim().split(' ');
+            if (!parts[0]) return;
+            window.addHotelEntryField(parts[0], parts.slice(1).join(' ') || 'Cash');
+        });
+    }
+    if (!container.children.length) window.addHotelEntryField('', 'Cash');
+}
+
 function addPaymentRow(containerId, amount = '', method = '') {
     let container = document.getElementById(containerId);
     if (!container && containerId === 'destContextContainer') container = document.getElementById('destContainer');
@@ -833,6 +884,7 @@ function openAddModal(isEdit = false) {
             dieselContainer.innerHTML = '';
             if (typeof window.addDieselEntryField === 'function') window.addDieselEntryField('', 'Unspecified');
         }
+        fillHotelEntries('');
         const puContainer = document.getElementById('puContainer');
         const destContainer = document.getElementById('destContainer') || document.getElementById('destContextContainer');
         if (puContainer) puContainer.innerHTML = '';
@@ -926,13 +978,7 @@ function openEditJobModal(jobIdOrNo) {
         if (typeof window.addDieselEntryField === 'function') window.addDieselEntryField('', 'Unspecified');
     }
 
-    const hotelValStr = String(job.hotel || job.hotel_expense || '');
-    const hotelParts = hotelValStr.split(' ');
-    setVal('hotelAmount', hotelParts[0] !== '-' ? hotelParts[0] : '');
-    if (hotelParts.length > 1) {
-        const hotelMethod = document.getElementById('hotelMethod');
-        if (hotelMethod) hotelMethod.value = hotelParts[1];
-    }
+    fillHotelEntries(job.hotel || job.hotel_expense);
 
     if (typeof populatePaymentContainer === 'function') {
         if (job.pu || job.pu_payments) populatePaymentContainer('puContainer', job.pu || job.pu_payments);
@@ -1008,9 +1054,7 @@ async function saveJob(event) {
     const dieselCollected = typeof collectDieselDataForSave === 'function' ? collectDieselDataForSave() : '';
     const dieselFormatted = dieselCollected ? dieselCollected : '-';
 
-    const hotelRaw = document.getElementById('hotelAmount') ? document.getElementById('hotelAmount').value.trim() : '';
-    const hotelMethod = document.getElementById('hotelMethod') ? document.getElementById('hotelMethod').value : 'Cash';
-    const hotelFormatted = hotelRaw ? `${hotelRaw} ${hotelMethod}` : '-';
+    const hotelFormatted = collectHotelDataForSave() || '-';
 
     const helpersSelect = document.getElementById('helpersCost');
     const helpersFormatted = helpersSelect && helpersSelect.selectedIndex > 0 ? helpersSelect.options[helpersSelect.selectedIndex].text : '-';
