@@ -200,6 +200,21 @@
     // ==========================================
     // 5. SUMMARY NUMBERS
     // ==========================================
+    // What kind of job number ended up under "Other" (used for the description under the Other column)
+    const OTHER_KINDS = ['Numeric-only', 'Storage/Warehouse', 'Cancel', 'Continue', 'Named', 'Blank'];
+    function otherKindOf(jobNo) {
+        const t = String(jobNo || '').trim().toLowerCase();
+        if (!t) return 'Blank';
+        if (t.includes('cancel')) return 'Cancel';
+        if (t.includes('storage') || t.includes('warehouse')) return 'Storage/Warehouse';
+        if (t.includes('continu')) return 'Continue';
+        if (/^[0-9]+$/.test(t)) return 'Numeric-only';
+        return 'Named';
+    }
+    function otherKindsText(kinds) {
+        return OTHER_KINDS.filter((k) => kinds[k]).map((k) => k + ' ' + kinds[k]).join(' · ');
+    }
+
     function computeSummary(data) {
         const s = {
             jobs: data.jobs.length,
@@ -208,7 +223,7 @@
             revenue: 0,
             diesel: 0,
             hotel: 0,
-            breakdown: { G: { n: 0, rev: 0 }, C: { n: 0, rev: 0 }, P: { n: 0, rev: 0 }, T: { n: 0, rev: 0 }, Other: { n: 0, rev: 0 } },
+            breakdown: { G: { n: 0, rev: 0 }, C: { n: 0, rev: 0 }, P: { n: 0, rev: 0 }, T: { n: 0, rev: 0 }, Other: { n: 0, rev: 0, kinds: {} } },
             payments: { Cash: 0, Zelle: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Unspecified: 0 },
             official: { foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, destZelle: 0, total: 0 },
             rental: { count: 0, days: 0, cash: 0, other: 0, total: 0 },
@@ -252,6 +267,10 @@
                 const bucket = ['G', 'C', 'P', 'T'].indexOf(first) !== -1 ? s.breakdown[first] : s.breakdown.Other;
                 bucket.n++;
                 bucket.rev += total;
+                if (bucket === s.breakdown.Other) {
+                    const kind = otherKindOf(jobNoOf(j));
+                    bucket.kinds[kind] = (bucket.kinds[kind] || 0) + 1;
+                }
             }
 
             const puEntries = parsePaymentEntries(j.pu || j.pu_payments);
@@ -314,11 +333,16 @@
     // ==========================================
     function breakdownHTML(s) {
         const b = s.breakdown;
+        const allTotal = s.categorizedRevenue + s.deliveryCollections;
+        const note = (t) => `<div class="text-[9px] font-medium normal-case tracking-normal opacity-70">${t}</div>`;
         return `
         <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs space-y-3 mb-4 w-full">
-            <h3 class="font-bold text-surface-900 text-sm uppercase tracking-wide">Jobs Breakdown by Prefix (G, C, P, T & Others)</h3>
+            <div>
+                <h3 class="font-bold text-surface-900 text-sm uppercase tracking-wide">Jobs Breakdown by Prefix (G, C, P, T & Others) + Deliveries</h3>
+                <p class="text-[11px] text-surface-500"><b>Other</b> = jobs whose number does not start with G, C, P or T${b.Other.n ? ' (' + otherKindsText(b.Other.kinds) + ')' : ''}. Deliveries are shown in their own column and are <b>not</b> part of Other.</p>
+            </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-center border-collapse text-xs min-w-[700px]">
+                <table class="w-full text-center border-collapse text-xs min-w-[900px]">
                     <thead>
                         <tr class="bg-surface-50 text-surface-700 uppercase text-[10px] tracking-wider border-b border-surface-200">
                             <th class="p-2.5 border-r">Category</th>
@@ -326,20 +350,24 @@
                             <th class="p-2.5 border-r text-info-700 font-bold">C (${b.C.n})</th>
                             <th class="p-2.5 border-r text-warning-700 font-bold">P (${b.P.n})</th>
                             <th class="p-2.5 border-r text-accent-700 font-bold">T (${b.T.n})</th>
-                            <th class="p-2.5 border-r text-surface-600 font-bold">Other (${b.Other.n})</th>
-                            <th class="p-2.5 bg-primary-600 text-white font-extrabold">Grand Total (${s.categorizedJobs})</th>
+                            <th class="p-2.5 border-r text-surface-600 font-bold cursor-help w-[150px]" title="Other (${b.Other.n}): ${otherKindsText(b.Other.kinds) || 'none'}">Other (${b.Other.n}) <i class="fa-solid fa-circle-info text-[9px] opacity-60"></i>${note('No G/C/P/T prefix: Numeric-only, Storage/Warehouse, Continue, Cancel, Named &amp; Blank')}</th>
+                            <th class="p-2.5 border-r bg-primary-100 text-primary-800 font-extrabold">Jobs Total (${s.categorizedJobs})${note('G + C + P + T + Other')}</th>
+                            <th class="p-2.5 border-r border-l-4 border-l-info-300 bg-info-50 text-info-800 font-extrabold">Deliveries (${s.deliveries})${note('Separate - no Foreman 10%')}</th>
+                            <th class="p-2.5 bg-primary-600 text-white font-extrabold">Grand Total (${s.categorizedJobs + s.deliveries})${note('Jobs + Deliveries')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr class="font-bold text-xs">
-                            <td class="p-3 border-r bg-surface-50 text-surface-800">Job Totals
-                                <div class="text-[9px] font-medium text-surface-400 normal-case">Sum of Total column (Foreman 10% base)</div></td>
+                            <td class="p-3 border-r bg-surface-50 text-surface-800">Amount
+                                <div class="text-[9px] font-medium text-surface-400 normal-case">Jobs: Total column &middot; Deliveries: PU + Dest collected</div></td>
                             <td class="p-3 border-r text-primary-600">${money(b.G.rev)}</td>
                             <td class="p-3 border-r text-info-600">${money(b.C.rev)}</td>
                             <td class="p-3 border-r text-warning-600">${money(b.P.rev)}</td>
                             <td class="p-3 border-r text-accent-600">${money(b.T.rev)}</td>
                             <td class="p-3 border-r text-surface-600">${money(b.Other.rev)}</td>
-                            <td class="p-3 bg-primary-50 text-primary-800 font-extrabold text-sm">${money(s.categorizedRevenue)}</td>
+                            <td class="p-3 border-r bg-primary-50 text-primary-800 font-extrabold">${money(s.categorizedRevenue)}${note('Foreman 10% base')}</td>
+                            <td class="p-3 border-r border-l-4 border-l-info-300 bg-info-50/50 text-info-700 font-extrabold">${money(s.deliveryCollections)}${note('Collections (PU + Dest)')}</td>
+                            <td class="p-3 bg-primary-50 text-primary-800 font-extrabold text-sm">${money(allTotal)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -844,11 +872,12 @@
         const generated = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 
         const breakdown = `
-            <div class="card"><h3>Jobs Breakdown by Prefix</h3>
+            <div class="card"><h3>Jobs Breakdown by Prefix + Deliveries</h3>
             ${pdfTable(
-                `<th>Category</th><th class="t-emerald">G (${b.G.n})</th><th class="t-blue">C (${b.C.n})</th><th class="t-amber">P (${b.P.n})</th><th class="t-purple">T (${b.T.n})</th><th>Other (${b.Other.n})</th><th class="hl">Grand Total (${s.categorizedJobs})</th>`,
-                `<tr><td class="b">Job Totals<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">Sum of Total column (Foreman 10% base)</div></td><td>${money(b.G.rev)}</td><td>${money(b.C.rev)}</td><td>${money(b.P.rev)}</td><td>${money(b.T.rev)}</td><td>${money(b.Other.rev)}</td><td class="hl">${money(s.categorizedRevenue)}</td></tr>`
-            )}</div>`;
+                `<th>Category</th><th class="t-emerald">G (${b.G.n})</th><th class="t-blue">C (${b.C.n})</th><th class="t-amber">P (${b.P.n})</th><th class="t-purple">T (${b.T.n})</th><th>Other (${b.Other.n})<div style="font-size:6px;font-weight:500">No G/C/P/T prefix</div></th><th>Jobs Total (${s.categorizedJobs})<div style="font-size:6px;font-weight:500">G + C + P + T + Other</div></th><th style="border-left:3px solid ${T('info', 300)};color:${T('info', 700)}">Deliveries (${s.deliveries})<div style="font-size:6px;font-weight:500">Separate - no Foreman 10%</div></th><th class="hl">Grand Total (${s.categorizedJobs + s.deliveries})<div style="font-size:6px;font-weight:500">Jobs + Deliveries</div></th>`,
+                `<tr><td class="b">Amount<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">Jobs: Total column &middot; Deliveries: PU + Dest collected</div></td><td>${money(b.G.rev)}</td><td>${money(b.C.rev)}</td><td>${money(b.P.rev)}</td><td>${money(b.T.rev)}</td><td>${money(b.Other.rev)}</td><td class="b">${money(s.categorizedRevenue)}<div style="font-size:6px;font-weight:500;color:${T('surface', 500)}">Foreman 10% base</div></td><td class="b" style="border-left:3px solid ${T('info', 300)};color:${T('info', 700)}">${money(s.deliveryCollections)}<div style="font-size:6px;font-weight:500">Collections (PU + Dest)</div></td><td class="hl">${money(s.categorizedRevenue + s.deliveryCollections)}</td></tr>`
+            )}
+            <div style="margin-top:4px;font-size:7.5px;color:${T('surface', 500)}"><b>Other</b> = jobs whose number does not start with G, C, P or T${b.Other.n ? ': ' + otherKindsText(b.Other.kinds) : ''}. Deliveries are shown in their own column and are not part of Other.</div></div>`;
 
         const payments = `
             <div class="card"><h3>Payment Methods Summary (PU Payments + Destination Payments)</h3>
