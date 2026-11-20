@@ -73,11 +73,28 @@
         });
     }
 
+    // Save any review table as a PDF (landscape A4). Uses the html2pdf library already loaded by index.html.
+    function toPdf(title, table, file) {
+        if (!window.html2pdf) { alert('The PDF tool is not loaded. Check your internet connection and refresh the page.'); return; }
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'padding:16px;font-family:Arial,sans-serif;color:#111;background:#fff;width:1050px';
+        var h = '<h2 style="margin:0 0 4px;font-size:18px">' + esc(title) + '</h2><p style="margin:0 0 12px;font-size:11px;color:#555">Wathek - ' +
+            new Date().toLocaleDateString('en-US') + ' - ' + (table.length - 1) + ' row(s)</p><table style="width:100%;border-collapse:collapse;font-size:10px">';
+        table.forEach(function (r, i) {
+            var tag = i ? 'td' : 'th';
+            h += '<tr style="page-break-inside:avoid">' + r.map(function (c) {
+                return '<' + tag + ' style="border:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top;' + (i ? '' : 'background:#eee;font-weight:bold;') + '">' + esc(c) + '</' + tag + '>';
+            }).join('') + '</tr>';
+        });
+        wrap.innerHTML = h + '</table>';
+        html2pdf().set({ margin: 8, filename: file, image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: ['css', 'legacy'] } }).from(wrap).save();
+    }
+    function today() { return new Date().toISOString().slice(0, 10); }
+
     function exportDeclined() {
-        var csv = [['Order / Job No', 'Document file', 'Declined by', 'Declined on']].concat(declined.map(function (d) { return [d.order_raw || d.order_no, d.file_name || '', d.declined_by || '', String(d.declined_at || '').slice(0, 10)]; }))
-            .map(function (l) { return l.map(function (v) { v = String(v).replace(/"/g, '""'); return /^[=+\-@]/.test(v) ? '"\'' + v + '"' : '"' + v + '"'; }).join(','); }).join('\r\n');
-        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
-        a.download = 'orders-not-created-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+        var tbl = [['Order / Job No', 'Document file', 'Declined by', 'Declined on']].concat(declined.map(function (d) { return [d.order_raw || d.order_no, d.file_name || '', d.declined_by || '', String(d.declined_at || '').slice(0, 10)]; }))
+        toPdf('Orders declined (not created)', tbl, 'orders-not-created-' + today() + '.pdf');
     }
 
     var noDocQuery = '';
@@ -103,10 +120,8 @@
         }).join('');
     }
     function exportNoDoc() {
-        var csv = [['Date', 'Job No', 'Route', 'Amount', 'Lot']].concat(noDocList().map(function (j) { return [String(j.date || '').split(' ')[0], j.jobNo || j.job_no || '', j.route || '', j.total_amount || j.total || '', j.lot_no || '']; }))
-            .map(function (l) { return l.map(function (v) { v = String(v).replace(/"/g, '""'); return /^[=+\-@]/.test(v) ? '"\'' + v + '"' : '"' + v + '"'; }).join(','); }).join('\r\n');
-        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
-        a.download = 'jobs-without-document-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+        var tbl = [['Date', 'Job No', 'Route', 'Amount', 'Lot']].concat(noDocList().map(function (j) { return [String(j.date || '').split(' ')[0], j.jobNo || j.job_no || '', j.route || '', j.total_amount || j.total || '', j.lot_no || '']; }))
+        toPdf('Jobs without a document', tbl, 'jobs-without-document-' + today() + '.pdf');
     }
 
     function draw() {
@@ -150,14 +165,13 @@
 
     function exportCsv() {
         var head = ['Date', 'Job No', 'Route', 'Order read', 'Lot (system)', 'Lot (read)', 'Amount (system)', 'Total (doc)', 'Deposit (doc)', 'Status', 'Notes', 'Reviewed'];
-        var out = [head].concat(rows.map(function (r) {
+        var shown = rows.filter(function (r) { if (onlyUnread && r.rv) return false; return !onlyCheck || (r.flags.length && !(r.rv && r.rv.reviewed)); }); // same rows as on screen
+        var out = [head].concat(shown.map(function (r) {
             var j = r.job, rv = r.rv || {};
             return [String(j.date || '').split(' ')[0], j.jobNo || j.job_no || '', j.route || '', rv.order_read || '', j.lot_no || '', rv.lot_read || '', money(j.total_amount || j.total) == null ? '' : money(j.total_amount || j.total),
                 rv.total_read == null ? '' : rv.total_read, rv.deposit_read == null ? '' : rv.deposit_read, r.flags.length ? 'Check' : 'OK', r.flags.join(' | '), rv.reviewed ? 'Yes' : 'No'];
         }));
-        var csv = out.map(function (l) { return l.map(function (v) { v = String(v).replace(/"/g, '""'); return /^[=+\-@]/.test(v) ? '"\'' + v + '"' : '"' + v + '"'; }).join(','); }).join('\r\n');
-        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
-        a.download = 'document-review-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+        toPdf('Document Review - Jobs with notes', out, 'document-review-' + today() + '.pdf');
     }
 
     // ---------- Read stored documents with AI (Admin) ----------
