@@ -95,6 +95,7 @@
         var h = document.getElementById('jobTapeColor'); if (h) h.value = '';
         var f = document.getElementById('jobDocFile'); if (f) f.value = '';
         setDocStatus('');
+        paintRemoveButton(null);
         paintLotPreview();
     }
 
@@ -104,8 +105,21 @@
         var col = document.getElementById('jobTapeColor'); if (col) col.value = colorKey(job.tape_color);
         var f = document.getElementById('jobDocFile'); if (f) f.value = '';
         var d = docsByJob[String(job.id)];
-        setDocStatus(d ? 'Attached: ' + (d.file_name || 'document.pdf') + ' (to replace it, ask the Admin to remove it first)' : '');
+        setDocStatus(d ? 'Attached: ' + (d.file_name || 'document') + (role() === 'Admin' ? '' : ' (to replace it, ask the Admin to remove it first)') : '');
+        paintRemoveButton(d ? job.id : null);
         paintLotPreview();
+    }
+
+    // Admin-only "Remove document" button inside the Edit Job form (the same action as in the viewer).
+    function paintRemoveButton(jobId) {
+        var old = document.getElementById('jobDocRemove'); if (old) old.remove();
+        var st = document.getElementById('jobDocStatus');
+        if (!st || jobId == null || role() !== 'Admin') return;
+        var b = document.createElement('button');
+        b.id = 'jobDocRemove'; b.type = 'button'; b.textContent = 'Remove document';
+        b.style.cssText = 'margin-top:6px;padding:6px 12px;border-radius:10px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;font-size:12px;font-weight:600;cursor:pointer';
+        b.addEventListener('click', function () { removeDoc(jobId); });
+        st.insertAdjacentElement('afterend', b);
     }
 
     function lotValues() {
@@ -676,6 +690,7 @@
         if (r2.error) { alert('File removed, but the record could not be deleted: ' + r2.error.message); }
         closeViewer();
         await loadIndex();
+        paintRemoveButton(null); setDocStatus('');
     }
 
     window.WathekDocs = {
