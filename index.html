@@ -513,7 +513,7 @@
                     <label class="text-xs text-surface-700 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" onchange="WathekReview.toggleShowAll(this.checked)"> Show all documents</label>
                     <label class="text-xs text-surface-700 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" onchange="WathekReview.toggleOnlyUnread(this.checked)"> Show only unread</label>
                     <button onclick="WathekReview.readAllUnread()" class="px-3 py-2 text-xs bg-surface-900 hover:bg-surface-800 text-white rounded-xl font-semibold transition cursor-pointer">Double check</button>
-                    <button onclick="WathekReview.exportCsv()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Export CSV</button>
+                    <button onclick="WathekReview.exportCsv()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Save PDF</button>
                 </div>
             </div>
             <div class="glass-panel rounded-2xl bg-white shadow-xs border border-surface-200 overflow-x-auto">
@@ -532,7 +532,7 @@
                         <p class="text-xs text-surface-500">Order numbers read from documents that you declined to create. Only the number is saved, no other data.</p>
                         <p id="declinedCount" class="text-xs text-surface-600 mt-1"></p>
                     </div>
-                    <button onclick="WathekReview.exportDeclined()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Export CSV</button>
+                    <button onclick="WathekReview.exportDeclined()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Save PDF</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
@@ -553,7 +553,7 @@
                     <div class="flex items-center gap-2">
                         <input id="noDocSearch" oninput="WathekReview.searchNoDoc(this.value)" placeholder="Search Job No..." class="px-3 py-2 text-xs border border-surface-200 rounded-xl bg-white w-40">
                         <button onclick="WathekDocs.openBulk()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Attach PDFs</button>
-                        <button onclick="WathekReview.exportNoDoc()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Export CSV</button>
+                        <button onclick="WathekReview.exportNoDoc()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Save PDF</button>
                     </div>
                 </div>
                 <div class="overflow-x-auto" style="max-height:480px;overflow-y:auto">
