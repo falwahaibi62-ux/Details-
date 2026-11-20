@@ -94,16 +94,13 @@
         var box = document.getElementById('noDocBody'); if (!box) return;
         var list = noDocList();
         var c = document.getElementById('noDocCount'); if (c) c.textContent = list.length + ' job(s) without a document';
-        if (!list.length) { box.innerHTML = '<tr><td colspan="5" class="p-5 text-center text-surface-500 text-xs">Every job has a document.</td></tr>'; return; }
+        if (!list.length) { box.innerHTML = '<p class="p-5 text-center text-surface-500 text-xs w-full">Every job has a document.</p>'; return; }
         box.innerHTML = list.map(function (j) {
-            return '<tr class="border-b border-surface-100"><td class="p-3 text-xs whitespace-nowrap">' + esc(String(j.date || '').split(' ')[0]) + '</td>' +
-                '<td class="p-3 text-xs font-semibold">' + esc(j.jobNo || j.job_no) + '</td><td class="p-3 text-xs">' + esc(j.route || '') + '</td>' +
-                '<td class="p-3 text-xs">' + esc(j.total_amount || j.total || '') + '</td>' +
-                '<td class="p-3 text-xs">' + (j.lot_no ? esc(j.lot_no) + (j.tape_color ? ' (' + esc(j.tape_color) + ')' : '') : '-') + '</td></tr>';
+            return '<span class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-surface-100 border border-surface-200 text-surface-800">' + esc(j.jobNo || j.job_no) + '</span>';
         }).join('');
     }
     function exportNoDoc() {
-        var csv = [['Date', 'Job No', 'Route', 'Amount', 'Lot']].concat(noDocList().map(function (j) { return [String(j.date || '').split(' ')[0], j.jobNo || j.job_no || '', j.route || '', j.total_amount || j.total || '', j.lot_no || '']; }))
+        var csv = [['Job No']].concat(noDocList().map(function (j) { return [j.jobNo || j.job_no || '']; }))
             .map(function (l) { return l.map(function (v) { v = String(v).replace(/"/g, '""'); return /^[=+\-@]/.test(v) ? '"\'' + v + '"' : '"' + v + '"'; }).join(','); }).join('\r\n');
         var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
         a.download = 'jobs-without-document-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
