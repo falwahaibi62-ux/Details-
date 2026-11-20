@@ -273,6 +273,12 @@
         document.getElementById('wd-bulk-files').addEventListener('change', onBulkFiles);
         document.getElementById('wd-bulk-go').addEventListener('click', runBulk);
         document.getElementById('wd-bulk-ai').addEventListener('click', readAllAI);
+        document.getElementById('wd-bulk-list').addEventListener('click', function (e) {
+            var t = e.target.closest ? e.target.closest('button[data-accept],button[data-decline]') : null;
+            if (!t) return;
+            if (t.hasAttribute('data-accept')) acceptNew(+t.getAttribute('data-accept'));
+            else declineNew(+t.getAttribute('data-decline'));
+        });
     }
 
     function bulkMsg(t, err) { var e = document.getElementById('wd-bulk-msg'); if (e) { e.textContent = t || ''; e.style.color = err ? '#b91c1c' : '#64748b'; } }
@@ -380,6 +386,11 @@
             fr.readAsDataURL(file);
         });
     }
+    function clearSel(i) {
+        if (bulkRows[i]) bulkRows[i].jobId = '';
+        var sel = document.querySelector('#wd-bulk-list .wd-bulk-sel[data-i="' + i + '"]');
+        if (sel) sel.value = '';
+    }
     function setSel(i, jobId) {
         var sel = document.querySelector('#wd-bulk-list .wd-bulk-sel[data-i="' + i + '"]');
         if (!sel) return;
@@ -389,6 +400,79 @@
         }
         sel.value = String(jobId);
     }
+    // ---------- New order (no job in the system yet): Accept creates it, Decline only records the number ----------
+    function slashDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? (+m[2]) + '/' + (+m[3]) + '/' + m[1] : ''; }
+    function newJobPayload(r) {
+        var a = r.ai, date = slashDate(a.pickup), from = String(a.origin || '').toUpperCase(), to = String(a.dest || '').toUpperCase();
+        var missing = [];
+        if (!a.order) missing.push('order number');
+        if (!date) missing.push('pick up date');
+        if (!/^[A-Z]{2}$/.test(from) || !/^[A-Z]{2}$/.test(to)) missing.push('route');
+        if (a.total === null || a.deposit === null) missing.push('amounts');
+        if (missing.length) return { missing: missing };
+        var amount = Math.round(a.total - a.deposit);
+        var okColor = ['orange', 'yellow', 'green', 'blue', 'red', 'pink', 'purple', 'white'].indexOf(String(a.color).toLowerCase()) >= 0;
+        var p = {
+            date: date, job_no: String(a.order).trim(), route: from + ' \u2192 ' + to, foreman_name: '', foreman_cost: amount > 0 ? String(Math.round(amount * 0.1)) : '0',
+            total_amount: '$' + amount, helpers_cost: '-', drivers_cost: '-', pu_payments: '-', destination_payments: '-', diesel_expense: '-', hotel_expense: '-', storage: '-'
+        };
+        if (a.lot && a.lotConf !== 'low') { p.lot_no = String(a.lot).toUpperCase(); p.tape_color = okColor ? String(a.color).toLowerCase() : null; }
+        return { payload: p };
+    }
+    function newOrderHtml(i, r) {
+        var np = newJobPayload(r);
+        var h = '<span style="color:#b45309;font-weight:700">New order: no job ' + esc(r.ai.order) + ' in the system.</span>';
+        if (r.ai.conf === 'low') return h + '<br><span style="color:#b45309">Low confidence on the number - check it with View.</span>';
+        if (np.missing) return h + '<br><span style="color:#b45309">Cannot create it automatically (missing: ' + esc(np.missing.join(', ')) + '). Add the job manually.</span>' +
+            ' <button type="button" data-decline="' + i + '" class="wd-btn" style="border:1px solid #cbd5e1;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer">Decline</button>';
+        var p = np.payload;
+        return h + '<div style="margin-top:3px;font-size:11px;color:#334155">Will create: ' + esc(p.job_no) + ' &middot; ' + esc(p.date) + ' &middot; ' + esc(p.route) + ' &middot; ' + esc(p.total_amount) +
+            (p.lot_no ? ' &middot; Lot ' + esc(p.lot_no) : '') + '<br>Other fields (costs, payments, diesel, hotel) stay empty - complete them from Edit.</div>' +
+            '<div style="margin-top:4px;display:flex;gap:6px"><button type="button" data-accept="' + i + '" style="background:#0f766e;color:#fff;border:0;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">Accept</button>' +
+            '<button type="button" data-decline="' + i + '" style="border:1px solid #cbd5e1;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">Decline</button></div>';
+    }
+    function setRowNote(i, html) { var r = bulkRows[i]; if (!r) return; r.aiNote = html; refreshBulkState(); }
+    async function acceptNew(i) {
+        var r = bulkRows[i]; if (!r || !r.ai || r.done) return;
+        var np = newJobPayload(r); if (!np.payload) return;
+        var p = np.payload;
+        if (!window.confirm('Create job ' + p.job_no + '?\n\nDate: ' + p.date + '\nRoute: ' + p.route + '\nAmount: ' + p.total_amount + (p.lot_no ? '\nLot: ' + p.lot_no : '') + '\n\nThe document will be attached to it.')) return;
+        setRowNote(i, 'Creating job...');
+        if (p.lot_no) { // a lot code already used by another job is not copied
+            var lr = await sb().from('jobs_report').select('id').eq('lot_no', p.lot_no).or('is_deleted.is.null,is_deleted.eq.false').limit(1);
+            if (!lr.error && lr.data && lr.data.length) { delete p.lot_no; delete p.tape_color; }
+        }
+        var ins = await sb().from('jobs_report').insert([p]).select('id');
+        if (ins.error || !ins.data || !ins.data[0]) {
+            var dup = ins.error && /duplicate|unique/i.test(ins.error.message);
+            setRowNote(i, '<span style="color:#b91c1c">' + (dup ? 'A job with this number already exists.' : 'Could not create the job: ' + esc(ins.error ? ins.error.message : 'unknown error')) + '</span>');
+            return;
+        }
+        var newId = ins.data[0].id;
+        var up = await uploadDoc(newId, p.job_no, r.file, r.hash);
+        if (typeof window.initMasterJobsData === 'function') { try { await window.initMasterJobsData(); } catch (e) {} }
+        await loadIndex();
+        if (r.ai) {
+            await sb().from('job_document_review').upsert({
+                job_id: newId, order_read: r.ai.order || null, order_conf: r.ai.conf, lot_read: r.ai.lot || null, color_read: r.ai.color || null, lot_conf: r.ai.lotConf,
+                total_read: r.ai.total, deposit_read: r.ai.deposit, balance_read: r.ai.balance, warnings: r.ai.warnings || [], read_at: new Date().toISOString(), read_by: userEmail()
+            }, { onConflict: 'job_id' });
+        }
+        r.done = true; r.jobId = String(newId);
+        setRowNote(i, up.ok ? '<span style="color:#0f766e;font-weight:700">Job created and document attached</span>' : '<span style="color:#b91c1c">Job created, but the document was not attached: ' + esc(up.message) + '</span>');
+        var st = document.getElementById('wd-st-' + i); if (st) st.innerHTML = r.aiNote;
+    }
+    async function declineNew(i) {
+        var r = bulkRows[i]; if (!r || !r.ai || r.done) return;
+        var key = normNo(r.ai.order);
+        if (!key) { setRowNote(i, 'Declined (no readable order number to record).'); r.done = true; return; }
+        var res = await sb().from('orders_not_created').upsert({ order_no: key, order_raw: r.ai.order, file_name: r.file.name, declined_by: userEmail() }, { onConflict: 'order_no', ignoreDuplicates: true });
+        r.done = true; r.jobId = '';
+        var html = res.error ? '<span style="color:#b91c1c">Could not record the decline: ' + esc(res.error.message) + '</span>' : '<span style="color:#475569;font-weight:700">Declined. Only the order number is recorded (Document Review).</span>';
+        setRowNote(i, html);
+        var st = document.getElementById('wd-st-' + i); if (st) st.innerHTML = html;
+    }
+
     async function readOneAI(i) {
         var r = bulkRows[i], st = document.getElementById('wd-st-' + i);
         if (!r || r.problem || r.done) return;
@@ -407,15 +491,16 @@
             var amt = function (k) { return f[k] && typeof f[k].value === 'number' ? f[k].value : null; };
             r.ai = { order: ord.value || '', conf: ord.confidence || 'low', lot: lot.value || '', lotConf: lot.confidence || 'low', color: col.value || '',
                      total: amt('total_amount'), deposit: amt('prepaid_deposit'), balance: amt('balance_due_at_destination'),
+                     pickup: (f.pickup_date && f.pickup_date.value) || '', origin: (f.origin_state && f.origin_state.value) || '', dest: (f.destination_state && f.destination_state.value) || '',
                      warnings: (res.data.warnings || []).filter(function (w) { return !/^Total \(/.test(w); }) };
             var want = normNo(r.ai.order), note = 'Read: ' + esc(r.ai.order || '-') + (r.ai.lot ? ' · Lot ' + esc(r.ai.lot) + (r.ai.color ? ' ' + esc(r.ai.color) : '') : '');
             var hit = want ? (window.masterJobs || []).filter(function (j) { return !isDelivery(j) && normNo(j.jobNo || j.job_no) === want; }) : [];
             var detail;
             if (!want) detail = '<span style="color:#b45309">Order number not readable</span>';
-            else if (hit.length === 0) detail = '<span style="color:#b45309">No job ' + esc(r.ai.order) + ' in the system</span>';
-            else if (hit.length > 1) detail = '<span style="color:#b45309">Several jobs have this number - use the list</span>';
-            else if (docsByJob[String(hit[0].id)]) detail = '<span style="color:#b91c1c">Job already has a document</span>';
-            else if (r.ai.conf === 'low') { detail = '<span style="color:#b45309">Low confidence - check the number, then choose the job</span>'; setSel(i, hit[0].id); }
+            else if (hit.length === 0) { r.newOrder = true; clearSel(i); detail = newOrderHtml(i, r); }
+            else if (hit.length > 1) { clearSel(i); detail = '<span style="color:#b45309">Several jobs have this number - use the list</span>'; }
+            else if (docsByJob[String(hit[0].id)]) { clearSel(i); detail = '<span style="color:#b91c1c">Job already has a document</span>'; }
+            else if (r.ai.conf === 'low') { clearSel(i); detail = '<span style="color:#b45309">Low confidence - check the number, then choose the job</span>'; }
             else { r.jobId = String(hit[0].id); setSel(i, hit[0].id); detail = ''; }
             if (hit.length === 1 && r.ai.total !== null && r.ai.deposit !== null) {
                 var sys = money(hit[0].total_amount || hit[0].total), exp = r.ai.total - r.ai.deposit;
