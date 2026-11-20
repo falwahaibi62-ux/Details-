@@ -201,16 +201,11 @@
         return { ok: true };
     }
 
-    // ---------- After the job is saved: upload ----------
-    async function attach(jobId, jobNo) {
-        var file = selectedFile();
-        if (!file || !jobId) return { ok: true, skipped: true };
-        var hash = window.__wathekPendingHash || await sha256Hex(file);
-        window.__wathekPendingHash = null;
+    // ---------- Upload one file for one job (shared by the job form and the bulk page) ----------
+    async function uploadDoc(jobId, jobNo, file, hash) {
         var path = String(jobId) + '/' + hash.slice(0, 24) + '.pdf';
-
         var up = await sb().storage.from(BUCKET).upload(path, file, { contentType: 'application/pdf', upsert: false });
-        if (up.error) { alert('Job saved, but the document upload failed: ' + up.error.message); return { ok: false }; }
+        if (up.error) return { ok: false, message: up.error.message };
 
         var ins = await sb().from('job_documents').insert([{
             job_id: jobId, job_no: jobNo || null, file_path: path, file_name: file.name,
@@ -219,11 +214,161 @@
         if (ins.error) {
             await sb().storage.from(BUCKET).remove([path]); // do not leave an orphan file
             var dup = /duplicate|unique/i.test(ins.error.message);
-            alert('Job saved, but the document was not attached: ' + (dup ? 'this file (or this job) already has a document.' : ins.error.message));
-            return { ok: false };
+            return { ok: false, message: dup ? 'this file (or this job) already has a document' : ins.error.message };
         }
+        return { ok: true };
+    }
+
+    // ---------- After the job is saved: upload ----------
+    async function attach(jobId, jobNo) {
+        var file = selectedFile();
+        if (!file || !jobId) return { ok: true, skipped: true };
+        var hash = window.__wathekPendingHash || await sha256Hex(file);
+        window.__wathekPendingHash = null;
+        var r = await uploadDoc(jobId, jobNo, file, hash);
+        if (!r.ok) { alert('Job saved, but the document was not attached: ' + r.message); return { ok: false }; }
         await loadIndex();
         return { ok: true };
+    }
+
+    // ---------- Bulk attach (old documents) ----------
+    // The scan date in the file name (YYYY-MM-DD_HH-MM) suggests the job; you confirm every match before anything is uploaded.
+    function dateParts(s) {
+        var m = String(s || '').trim().split(' ')[0].split('/');
+        return m.length === 3 ? { m: +m[0], d: +m[1], y: +m[2] } : null;
+    }
+    function nameDate(fileName) {
+        var m = /(\d{4})-(\d{2})-(\d{2})/.exec(fileName);
+        return m ? { y: +m[1], m: +m[2], d: +m[3] } : null;
+    }
+    function sameDay(a, b) { return a && b && a.y === b.y && a.m === b.m && a.d === b.d; }
+    function jobLabel(j) {
+        return (j.jobNo || j.job_no || '-') + '  |  ' + (j.route || '') + '  |  ' + (j.total_amount || j.total || '') + '  |  ' + String(j.date || '').split(' ')[0];
+    }
+
+    var bulkRows = [];
+
+    function closeBulk() { var m = document.getElementById('wd-bulk'); if (m) m.remove(); bulkRows = []; }
+
+    function openBulk() {
+        if (role() !== 'Admin' && role() !== 'Member') { alert('You do not have permission to attach documents.'); return; }
+        closeBulk();
+        var wrap = document.createElement('div');
+        wrap.id = 'wd-bulk';
+        wrap.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.65);display:flex;align-items:center;justify-content:center;padding:12px';
+        wrap.innerHTML =
+            '<div style="background:#fff;border-radius:16px;width:100%;max-width:1000px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.35)">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0"><strong style="font-size:15px">Attach documents to jobs</strong><button id="wd-bulk-x" type="button" style="font-size:22px;background:none;border:0;cursor:pointer;color:#475569">&times;</button></div>' +
+            '<div style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#475569">Choose PDF files (one file per job). The date in each file name suggests the job; check every match, then press Attach. Duplicate files and jobs that already have a document are skipped.' +
+            '<div style="margin-top:8px"><input id="wd-bulk-files" type="file" accept="application/pdf,.pdf" multiple></div></div>' +
+            '<div id="wd-bulk-list" style="padding:8px 16px;overflow:auto;flex:1;font-size:12px"></div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid #e2e8f0"><span id="wd-bulk-msg" style="font-size:12px;color:#64748b"></span>' +
+            '<button id="wd-bulk-go" type="button" disabled style="background:#0f766e;color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer;opacity:.5">Attach</button></div></div>';
+        document.body.appendChild(wrap);
+        document.getElementById('wd-bulk-x').addEventListener('click', closeBulk);
+        document.getElementById('wd-bulk-files').addEventListener('change', onBulkFiles);
+        document.getElementById('wd-bulk-go').addEventListener('click', runBulk);
+    }
+
+    function bulkMsg(t, err) { var e = document.getElementById('wd-bulk-msg'); if (e) { e.textContent = t || ''; e.style.color = err ? '#b91c1c' : '#64748b'; } }
+
+    async function onBulkFiles(ev) {
+        var files = Array.prototype.slice.call(ev.target.files || []);
+        bulkRows = [];
+        var seenHash = {};
+        var jobs = (window.masterJobs || []);
+        bulkMsg('Checking ' + files.length + ' file(s)...');
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i], row = { file: f, hash: null, problem: null, jobId: '' };
+            try {
+                if (f.size > MAX_BYTES) row.problem = 'Larger than 15 MB';
+                else if (!(await looksLikePdf(f))) row.problem = 'Not a valid PDF';
+                else {
+                    row.hash = await sha256Hex(f);
+                    if (seenHash[row.hash]) row.problem = 'Same file chosen twice';
+                    seenHash[row.hash] = true;
+                }
+            } catch (e) { row.problem = 'Could not read the file'; }
+            bulkRows.push(row);
+        }
+        // already attached (same content)?
+        var hashes = bulkRows.filter(function (r) { return r.hash && !r.problem; }).map(function (r) { return r.hash; });
+        if (hashes.length) {
+            var q = await sb().from('job_documents').select('file_hash,job_no').in('file_hash', hashes);
+            if (!q.error) (q.data || []).forEach(function (d) {
+                bulkRows.forEach(function (r) { if (r.hash === d.file_hash && !r.problem) r.problem = 'Already attached to job ' + (d.job_no || '-'); });
+            });
+        }
+        // suggest the job from the scan date
+        bulkRows.forEach(function (r) {
+            if (r.problem) return;
+            var nd = nameDate(r.file.name);
+            var cands = nd ? jobs.filter(function (j) { return sameDay(nd, dateParts(j.date)) && !docsByJob[String(j.id)]; }) : [];
+            r.cands = cands;
+            if (cands.length === 1) r.jobId = String(cands[0].id);
+        });
+        renderBulk();
+    }
+
+    function renderBulk() {
+        var box = document.getElementById('wd-bulk-list');
+        if (!box) return;
+        var jobs = (window.masterJobs || []).filter(function (j) { return !docsByJob[String(j.id)]; });
+        var html = '<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b;font-size:11px"><th style="padding:6px">File</th><th style="padding:6px">Job</th><th style="padding:6px">Status</th></tr></thead><tbody>';
+        bulkRows.forEach(function (r, i) {
+            html += '<tr style="border-top:1px solid #f1f5f9"><td style="padding:6px;word-break:break-all">' + esc(r.file.name) + '</td><td style="padding:6px">';
+            if (r.problem) html += '<span style="color:#94a3b8">-</span>';
+            else {
+                var list = (r.cands && r.cands.length ? r.cands : jobs);
+                html += '<select data-i="' + i + '" class="wd-bulk-sel" style="max-width:420px;width:100%;padding:5px;border:1px solid #cbd5e1;border-radius:8px"><option value="">' + (r.cands && r.cands.length > 1 ? 'Choose the job (' + r.cands.length + ' on this date)...' : (r.cands && r.cands.length ? '' : 'No job on this date - choose...')) + '</option>';
+                list.forEach(function (j) { html += '<option value="' + esc(j.id) + '"' + (String(j.id) === r.jobId ? ' selected' : '') + '>' + esc(jobLabel(j)) + '</option>'; });
+                html += '</select>';
+            }
+            html += '</td><td style="padding:6px;white-space:nowrap" id="wd-st-' + i + '">' + (r.problem ? '<span style="color:#b91c1c">' + esc(r.problem) + '</span>' : (r.jobId ? '<span style="color:#0f766e">Ready</span>' : '<span style="color:#b45309">Choose a job</span>')) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        box.innerHTML = bulkRows.length ? html : '';
+        box.querySelectorAll('.wd-bulk-sel').forEach(function (s) {
+            s.addEventListener('change', function () { bulkRows[+s.getAttribute('data-i')].jobId = s.value; refreshBulkState(); });
+        });
+        refreshBulkState();
+    }
+
+    function refreshBulkState() {
+        // a job can take one document only
+        var used = {}, dupJob = {};
+        bulkRows.forEach(function (r, i) { if (!r.problem && r.jobId) { if (used[r.jobId] !== undefined) dupJob[i] = dupJob[used[r.jobId]] = true; else used[r.jobId] = i; } });
+        var ready = 0;
+        bulkRows.forEach(function (r, i) {
+            var st = document.getElementById('wd-st-' + i);
+            if (!st || r.problem || r.done) return;
+            if (!r.jobId) st.innerHTML = '<span style="color:#b45309">Choose a job</span>';
+            else if (dupJob[i]) st.innerHTML = '<span style="color:#b91c1c">Two files for one job</span>';
+            else { st.innerHTML = '<span style="color:#0f766e">Ready</span>'; ready++; }
+        });
+        var go = document.getElementById('wd-bulk-go');
+        if (go) { go.disabled = !ready; go.style.opacity = ready ? '1' : '.5'; go.textContent = ready ? 'Attach ' + ready + ' document' + (ready > 1 ? 's' : '') : 'Attach'; }
+        bulkMsg(bulkRows.length ? bulkRows.length + ' file(s) chosen, ' + ready + ' ready' : '');
+    }
+
+    async function runBulk() {
+        var go = document.getElementById('wd-bulk-go');
+        if (go) { go.disabled = true; go.style.opacity = '.5'; }
+        var jobs = window.masterJobs || [], used = {}, ok = 0, failed = 0;
+        for (var i = 0; i < bulkRows.length; i++) {
+            var r = bulkRows[i], st = document.getElementById('wd-st-' + i);
+            if (r.problem || !r.jobId || r.done) continue;
+            if (used[r.jobId]) { if (st) st.innerHTML = '<span style="color:#b91c1c">Two files for one job - skipped</span>'; continue; }
+            used[r.jobId] = true;
+            if (st) st.textContent = 'Uploading...';
+            var job = jobs.find(function (j) { return String(j.id) === String(r.jobId); }) || {};
+            var res = await uploadDoc(r.jobId, job.jobNo || job.job_no, r.file, r.hash);
+            r.done = true;
+            if (res.ok) { ok++; if (st) st.innerHTML = '<span style="color:#0f766e;font-weight:700">Attached</span>'; }
+            else { failed++; if (st) st.innerHTML = '<span style="color:#b91c1c">Failed: ' + esc(res.message) + '</span>'; }
+        }
+        await loadIndex();
+        bulkMsg('Done: ' + ok + ' attached' + (failed ? ', ' + failed + ' failed' : '') + '.', failed > 0);
     }
 
     // ---------- Show Job viewer ----------
@@ -281,7 +426,7 @@
 
     window.WathekDocs = {
         loadIndex: loadIndex, precheck: precheck, attach: attach, show: show, remove: removeDoc,
-        showButton: showButton, lotBadge: lotBadge, lotValues: lotValues,
+        showButton: showButton, openBulk: openBulk, lotBadge: lotBadge, lotValues: lotValues,
         fillForm: fillForm, resetForm: resetForm, hasDoc: function (id) { return !!docsByJob[String(id)]; }
     };
 

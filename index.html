@@ -260,9 +260,14 @@
                     <h3 class="font-bold text-surface-900 text-base">Operations & Logistics Management</h3>
                     <p class="text-xs text-surface-500">Filter records by custom date range</p>
                 </div>
+                <div class="flex items-center gap-2">
+                <button type="button" id="bulkAttachBtn" onclick="WathekDocs.openBulk()" class="px-4 py-2 bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl text-xs font-semibold flex items-center shadow-sm transition cursor-pointer" title="Attach PDF documents to jobs">
+                    <i class="fa-solid fa-paperclip mr-1.5"></i> Attach PDFs
+                </button>
                 <button type="button" id="addJobBtn" onclick="openAddModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-semibold flex items-center shadow-sm transition cursor-pointer">
                     <i class="fa-solid fa-plus mr-1.5"></i> Add New Job
                 </button>
+                </div>
             </div>
             
             <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-4 bg-white shadow-xs">
