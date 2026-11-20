@@ -30,11 +30,9 @@
     }
 
     async function load() {
-        var box = document.getElementById('reviewBody'); if (!box) return;
-        box.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-surface-500 text-xs">Loading...</td></tr>';
         var jobs = window.masterJobs || [];
         var q = await sb().from('job_document_review').select('*');
-        if (q.error) { box.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-danger-600 text-xs">Could not load: ' + esc(q.error.message) + '</td></tr>'; return; }
+        if (q.error) { var c0 = document.getElementById('reviewCount'); if (c0) c0.textContent = 'Could not load: ' + q.error.message; return; }
         var byJob = {}; (q.data || []).forEach(function (r) { byJob[String(r.job_id)] = r; });
         rows = [];
         jobs.forEach(function (j) {
