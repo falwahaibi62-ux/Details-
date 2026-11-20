@@ -10,7 +10,7 @@
 
     var rows = [];      // built table rows
     var declined = [];
-    var onlyCheck = false;
+    var onlyCheck = true;   // by default only documents that have notes are listed
     var onlyUnread = false;
 
     function flagsFor(job, rv) {
@@ -80,14 +80,44 @@
         a.download = 'orders-not-created-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
     }
 
+    var noDocQuery = '';
+    function noDocList() {
+        var q = norm(noDocQuery);
+        return (window.masterJobs || []).filter(function (j) {
+            var no = String(j.jobNo || j.job_no || '').trim();
+            if (!no || no === '-' || /^delivery/i.test(no)) return false;
+            if (window.WathekDocs && window.WathekDocs.hasDoc(j.id)) return false;
+            return !q || norm(no).indexOf(q) >= 0;
+        });
+    }
+    function drawNoDoc() {
+        var box = document.getElementById('noDocBody'); if (!box) return;
+        var list = noDocList();
+        var c = document.getElementById('noDocCount'); if (c) c.textContent = list.length + ' job(s) without a document';
+        if (!list.length) { box.innerHTML = '<tr><td colspan="5" class="p-5 text-center text-surface-500 text-xs">Every job has a document.</td></tr>'; return; }
+        box.innerHTML = list.map(function (j) {
+            return '<tr class="border-b border-surface-100"><td class="p-3 text-xs whitespace-nowrap">' + esc(String(j.date || '').split(' ')[0]) + '</td>' +
+                '<td class="p-3 text-xs font-semibold">' + esc(j.jobNo || j.job_no) + '</td><td class="p-3 text-xs">' + esc(j.route || '') + '</td>' +
+                '<td class="p-3 text-xs">' + esc(j.total_amount || j.total || '') + '</td>' +
+                '<td class="p-3 text-xs">' + (j.lot_no ? esc(j.lot_no) + (j.tape_color ? ' (' + esc(j.tape_color) + ')' : '') : '-') + '</td></tr>';
+        }).join('');
+    }
+    function exportNoDoc() {
+        var csv = [['Date', 'Job No', 'Route', 'Amount', 'Lot']].concat(noDocList().map(function (j) { return [String(j.date || '').split(' ')[0], j.jobNo || j.job_no || '', j.route || '', j.total_amount || j.total || '', j.lot_no || '']; }))
+            .map(function (l) { return l.map(function (v) { v = String(v).replace(/"/g, '""'); return /^[=+\-@]/.test(v) ? '"\'' + v + '"' : '"' + v + '"'; }).join(','); }).join('\r\n');
+        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+        a.download = 'jobs-without-document-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    }
+
     function draw() {
+        drawNoDoc();
         drawDeclined();
         var box = document.getElementById('reviewBody'); if (!box) return;
         var list = rows.filter(function (r) { if (onlyUnread && r.rv) return false; return !onlyCheck || (r.flags.length && !(r.rv && r.rv.reviewed)); });
         var c = document.getElementById('reviewCount');
         var need = rows.filter(function (r) { return r.flags.length && !(r.rv && r.rv.reviewed); }).length;
         if (c) c.textContent = rows.length + ' documents, ' + need + ' need checking';
-        if (!list.length) { box.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-surface-500 text-xs">Nothing to show.</td></tr>'; return; }
+        if (!list.length) { box.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-surface-500 text-xs">' + (onlyCheck ? 'No documents with notes.' : 'Nothing to show.') + '</td></tr>'; return; }
         box.innerHTML = list.map(function (r, i) {
             var j = r.job, rv = r.rv, ok = !r.flags.length;
             var lotSys = j.lot_no ? esc(j.lot_no) + (j.tape_color ? ' (' + esc(j.tape_color) + ')' : '') : '-';
@@ -188,9 +218,11 @@
 
     window.WathekReview = {
         exportDeclined: exportDeclined,
+        exportNoDoc: exportNoDoc,
+        searchNoDoc: function (v) { noDocQuery = v || ''; drawNoDoc(); },
         readRow: readRow, readAllUnread: readAllUnread,
         render: function () { if (window.currentUserRole !== 'Admin') return; load(); },
-        toggleOnlyCheck: function (v) { onlyCheck = !!v; draw(); },
+        toggleShowAll: function (v) { onlyCheck = !v; draw(); },
         toggleOnlyUnread: function (v) { onlyUnread = !!v; draw(); },
         exportCsv: exportCsv
     };
