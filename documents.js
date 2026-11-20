@@ -263,8 +263,9 @@
             '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0"><strong style="font-size:15px">Attach documents to jobs</strong><button id="wd-bulk-x" type="button" style="font-size:22px;background:none;border:0;cursor:pointer;color:#475569">&times;</button></div>' +
             '<div style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#475569">Choose PDF files (one file per job). The scan date in each file name suggests jobs from the 3 days before it; check every match, then press Attach. Duplicate files and jobs that already have a document are skipped.' +
             '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center"><input id="wd-bulk-files" type="file" accept="application/pdf,.pdf" multiple>' +
-            '<button id="wd-bulk-ai" type="button" disabled style="background:#1e293b;color:#fff;border:0;border-radius:10px;padding:7px 14px;font-weight:700;font-size:12px;cursor:pointer;opacity:.5">Read docs</button></div>' +
-            '<div style="margin-top:4px;font-size:11px;color:#94a3b8">AI reading sends each selected PDF to the Claude service to read only the order number, lot and tape color. It costs a small amount per file. Check every match before pressing Attach.</div></div>' +
+            '<button id="wd-bulk-ai" type="button" disabled style="background:#1e293b;color:#fff;border:0;border-radius:10px;padding:7px 14px;font-weight:700;font-size:12px;cursor:pointer;opacity:.5">Read docs</button>' +
+            '<label style="font-size:12px;color:#475569;display:flex;align-items:center;gap:5px;cursor:pointer"><input id="wd-bulk-unread" type="checkbox"> Show only unread</label></div>' +
+            '<div style="margin-top:4px;font-size:11px;color:#94a3b8">AI reading sends each selected PDF to the Claude service to read only the order number, lot and tape color. It costs about 3 cents per file. Files that were already read are reused for free. Check every match before pressing Attach.</div></div>' +
             '<div id="wd-bulk-list" style="padding:8px 16px;overflow:auto;flex:1;font-size:12px"></div>' +
             '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid #e2e8f0"><span id="wd-bulk-msg" style="font-size:12px;color:#64748b"></span>' +
             '<button id="wd-bulk-go" type="button" disabled style="background:#0f766e;color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer;opacity:.5">Attach</button></div></div>';
@@ -273,6 +274,7 @@
         document.getElementById('wd-bulk-files').addEventListener('change', onBulkFiles);
         document.getElementById('wd-bulk-go').addEventListener('click', runBulk);
         document.getElementById('wd-bulk-ai').addEventListener('click', readAllAI);
+        document.getElementById('wd-bulk-unread').addEventListener('change', renderBulk);
         document.getElementById('wd-bulk-list').addEventListener('click', function (e) {
             var t = e.target.closest ? e.target.closest('button[data-accept],button[data-decline]') : null;
             if (!t) return;
@@ -310,6 +312,15 @@
                 bulkRows.forEach(function (r) { if (r.hash === d.file_hash && !r.problem) r.problem = 'Already attached to job ' + (d.job_no || '-'); });
             });
         }
+        // which files were already read (free to reuse)?
+        var rh = bulkRows.filter(function (r) { return r.hash && !r.problem; }).map(function (r) { return r.hash; });
+        if (rh.length) {
+            try {
+                var cr = await sb().functions.invoke('extract-job', { body: { check_hashes: rh } });
+                var got = (cr && cr.data && cr.data.cached) || [];
+                bulkRows.forEach(function (r) { if (r.hash && got.indexOf(r.hash) >= 0) r.cached = true; });
+            } catch (e) { /* the status tags are optional */ }
+        }
         // suggest the job from the scan date
         bulkRows.forEach(function (r) {
             if (r.problem) return;
@@ -334,7 +345,10 @@
         var jobs = (window.masterJobs || []).filter(function (j) { return !isDelivery(j) && !docsByJob[String(j.id)]; });
         var html = '<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b;font-size:11px"><th style="padding:6px">File</th><th style="padding:6px">Job</th><th style="padding:6px">Status</th></tr></thead><tbody>';
         bulkRows.forEach(function (r, i) {
-            html += '<tr style="border-top:1px solid #f1f5f9"><td style="padding:6px;word-break:break-all">' + esc(r.file.name) + (r.problem ? '' : ' <a href="#" class="wd-bulk-view" data-i="' + i + '" style="color:#0f766e;font-weight:700">View</a>') + '</td><td style="padding:6px">';
+            var onlyUnread = document.getElementById('wd-bulk-unread') && document.getElementById('wd-bulk-unread').checked;
+            var hide = onlyUnread && !r.problem && (r.cached || r.ai);
+            var tag = r.problem ? '' : (r.cached || r.ai ? '<div style="font-size:10px;color:#0f766e">Read - reused free</div>' : '<div style="font-size:10px;color:#b45309">Not read yet</div>');
+            html += '<tr style="border-top:1px solid #f1f5f9' + (hide ? ';display:none' : '') + '"><td style="padding:6px;word-break:break-all">' + esc(r.file.name) + (r.problem ? '' : ' <a href="#" class="wd-bulk-view" data-i="' + i + '" style="color:#0f766e;font-weight:700">View</a>') + tag + '</td><td style="padding:6px">';
             if (r.problem) html += '<span style="color:#94a3b8">-</span>';
             else {
                 var list = (r.cands && r.cands.length ? r.cands : jobs);
@@ -479,14 +493,16 @@
         if (r.file.size > 10 * 1024 * 1024) { r.aiNote = '<span style="color:#b45309">Too large for AI reading - choose manually</span>'; refreshBulkState(); return; }
         if (st) st.textContent = 'Reading...';
         try {
-            var b64 = await fileToBase64(r.file);
-            var res = await sb().functions.invoke('extract-job', { body: { pdf_base64: b64 } });
+            var res = null;
+            if (r.cached && r.hash) res = await sb().functions.invoke('extract-job', { body: { hash: r.hash } });
+            if (!res || res.error || !res.data || !res.data.fields) res = await sb().functions.invoke('extract-job', { body: { pdf_base64: await fileToBase64(r.file) } });
             if (res.error || !res.data || !res.data.fields) {
                 var msg = 'Could not read';
                 try { if (res.error && res.error.context && res.error.context.json) { var j = await res.error.context.json(); if (j && j.error) msg = j.error; } } catch (e) {}
                 r.aiNote = '<span style="color:#b91c1c">' + esc(msg) + '</span>'; refreshBulkState();
                 return;
             }
+            r.cached = true;
             var f = res.data.fields, ord = f.order_no || {}, lot = f.lot_no || {}, col = f.tape_color || {};
             var amt = function (k) { return f[k] && typeof f[k].value === 'number' ? f[k].value : null; };
             r.ai = { order: ord.value || '', conf: ord.confidence || 'low', lot: lot.value || '', lotConf: lot.confidence || 'low', color: col.value || '',
@@ -514,9 +530,12 @@
     }
     async function readAllAI() {
         var btn = document.getElementById('wd-bulk-ai');
-        if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
         var idx = [];
         bulkRows.forEach(function (r, i) { if (!r.problem && !r.done && !r.ai) idx.push(i); });
+        var fresh = idx.filter(function (i) { return !bulkRows[i].cached; }).length, free = idx.length - fresh;
+        if (!idx.length) { bulkMsg('Nothing to read.'); return; }
+        if (fresh > 0 && !window.confirm('Read ' + idx.length + ' document(s)?\n\n' + fresh + ' will be read with AI now (about 3 cents each, roughly $' + (fresh * 0.035).toFixed(2) + ').\n' + free + ' were already read and are reused for free.')) return;
+        if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
         var n = 0;
         async function worker() { while (n < idx.length) { var k = idx[n++]; await readOneAI(k); } }
         await Promise.all([worker(), worker()]);

@@ -11,6 +11,7 @@
     var rows = [];      // built table rows
     var declined = [];
     var onlyCheck = false;
+    var onlyUnread = false;
 
     function flagsFor(job, rv) {
         var f = [];
@@ -82,7 +83,7 @@
     function draw() {
         drawDeclined();
         var box = document.getElementById('reviewBody'); if (!box) return;
-        var list = rows.filter(function (r) { return !onlyCheck || (r.flags.length && !(r.rv && r.rv.reviewed)); });
+        var list = rows.filter(function (r) { if (onlyUnread && r.rv) return false; return !onlyCheck || (r.flags.length && !(r.rv && r.rv.reviewed)); });
         var c = document.getElementById('reviewCount');
         var need = rows.filter(function (r) { return r.flags.length && !(r.rv && r.rv.reviewed); }).length;
         if (c) c.textContent = rows.length + ' documents, ' + need + ' need checking';
@@ -133,12 +134,12 @@
     function toB64(blob) {
         return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(String(fr.result).split(',')[1] || ''); }; fr.onerror = rej; fr.readAsDataURL(blob); });
     }
-    async function readOne(jobId) {
+    async function readOne(jobId, force) {
         var j = (window.masterJobs || []).find(function (x) { return String(x.id) === String(jobId); }) || {};
         var blob = await window.WathekDocs.getBlob(jobId);
         if (!blob) return 'Could not open the document';
         if (blob.size > 10 * 1024 * 1024) return 'Too large for AI reading (over 10 MB)';
-        var res = await sb().functions.invoke('extract-job', { body: { pdf_base64: await toB64(blob) } });
+        var res = await sb().functions.invoke('extract-job', { body: { pdf_base64: await toB64(blob), force: force === true } });
         if (res.error || !res.data || !res.data.fields) {
             var msg = 'Could not read';
             try { if (res.error && res.error.context && res.error.context.json) { var e = await res.error.context.json(); if (e && e.error) msg = e.error; } } catch (x) {}
@@ -159,13 +160,13 @@
         if (row) { row.rv = rec; row.flags = flagsFor(row.job, rec); }
         return null;
     }
-    async function readIds(ids) {
+    async function readIds(ids, force) {
         var n = 0, fails = [], c = document.getElementById('reviewCount');
         async function worker() {
             while (n < ids.length) {
                 var id = ids[n++];
                 if (c) c.textContent = 'Reading with AI... ' + n + ' of ' + ids.length;
-                var err = await readOne(id);
+                var err = await readOne(id, force);
                 if (err) fails.push((rows.find(function (x) { return String(x.job.id) === String(id); }) || { job: {} }).job.jobNo + ': ' + err);
             }
         }
@@ -176,12 +177,12 @@
     function readRow(jobId) {
         var row = rows.find(function (x) { return String(x.job.id) === String(jobId); });
         if (row && row.rv && !confirm('This document was already read. Read it again? This replaces the saved reading and clears its Reviewed tick.')) return;
-        readIds([jobId]);
+        readIds([jobId], !!(row && row.rv));
     }
     function readAllUnread() {
         var ids = rows.filter(function (r) { return r.has && !r.rv; }).map(function (r) { return r.job.id; });
         if (!ids.length) { alert('Every document already has a saved reading.'); return; }
-        if (!confirm('Read ' + ids.length + ' document(s) with AI?\n\nEach PDF is sent to the Claude service to read only the order number, lot, tape color and amounts. It costs a small amount per document. No job data is changed.')) return;
+        if (!confirm('Read ' + ids.length + ' document(s) with AI?\n\nEach PDF is sent to the Claude service to read only the order number, lot, tape color and amounts. A document that was already read is reused for free; a new reading costs about 3 cents. No job data is changed.')) return;
         readIds(ids);
     }
 
@@ -190,6 +191,7 @@
         readRow: readRow, readAllUnread: readAllUnread,
         render: function () { if (window.currentUserRole !== 'Admin') return; load(); },
         toggleOnlyCheck: function (v) { onlyCheck = !!v; draw(); },
+        toggleOnlyUnread: function (v) { onlyUnread = !!v; draw(); },
         exportCsv: exportCsv
     };
 })();
