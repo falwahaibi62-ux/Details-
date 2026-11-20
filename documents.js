@@ -316,13 +316,13 @@
         var jobs = (window.masterJobs || []).filter(function (j) { return !docsByJob[String(j.id)]; });
         var html = '<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b;font-size:11px"><th style="padding:6px">File</th><th style="padding:6px">Job</th><th style="padding:6px">Status</th></tr></thead><tbody>';
         bulkRows.forEach(function (r, i) {
-            html += '<tr style="border-top:1px solid #f1f5f9"><td style="padding:6px;word-break:break-all">' + esc(r.file.name) + '</td><td style="padding:6px">';
+            html += '<tr style="border-top:1px solid #f1f5f9"><td style="padding:6px;word-break:break-all">' + esc(r.file.name) + (r.problem ? '' : ' <a href="#" class="wd-bulk-view" data-i="' + i + '" style="color:#0f766e;font-weight:700">View</a>') + '</td><td style="padding:6px">';
             if (r.problem) html += '<span style="color:#94a3b8">-</span>';
             else {
                 var list = (r.cands && r.cands.length ? r.cands : jobs);
                 html += '<select data-i="' + i + '" class="wd-bulk-sel" style="max-width:420px;width:100%;padding:5px;border:1px solid #cbd5e1;border-radius:8px"><option value="">' + (r.cands && r.cands.length > 1 ? 'Choose the job (' + r.cands.length + ' on this date)...' : (r.cands && r.cands.length ? '' : 'No job on this date - choose...')) + '</option>';
                 list.forEach(function (j) { html += '<option value="' + esc(j.id) + '"' + (String(j.id) === r.jobId ? ' selected' : '') + '>' + esc(jobLabel(j)) + '</option>'; });
-                html += '</select>';
+                html += '</select><input class="wd-bulk-no" data-i="' + i + '" placeholder="or type Job No" style="margin-top:4px;width:100%;max-width:420px;padding:5px;border:1px solid #cbd5e1;border-radius:8px">';
             }
             html += '</td><td style="padding:6px;white-space:nowrap" id="wd-st-' + i + '">' + (r.problem ? '<span style="color:#b91c1c">' + esc(r.problem) + '</span>' : (r.jobId ? '<span style="color:#0f766e">Ready</span>' : '<span style="color:#b45309">Choose a job</span>')) + '</td></tr>';
         });
@@ -330,6 +330,27 @@
         box.innerHTML = bulkRows.length ? html : '';
         box.querySelectorAll('.wd-bulk-sel').forEach(function (s) {
             s.addEventListener('change', function () { bulkRows[+s.getAttribute('data-i')].jobId = s.value; refreshBulkState(); });
+        });
+        box.querySelectorAll('.wd-bulk-view').forEach(function (v) {
+            v.addEventListener('click', function (e) { e.preventDefault(); window.open(URL.createObjectURL(bulkRows[+v.getAttribute('data-i')].file), '_blank'); });
+        });
+        box.querySelectorAll('.wd-bulk-no').forEach(function (inp) {
+            inp.addEventListener('change', function () {
+                var i = +inp.getAttribute('data-i'), want = inp.value.trim().toLowerCase();
+                if (!want) return;
+                var hit = (window.masterJobs || []).filter(function (j) { return String(j.jobNo || j.job_no || '').trim().toLowerCase() === want; });
+                var st = document.getElementById('wd-st-' + i);
+                if (hit.length === 1 && !docsByJob[String(hit[0].id)]) {
+                    bulkRows[i].jobId = String(hit[0].id);
+                    var sel = box.querySelector('.wd-bulk-sel[data-i="' + i + '"]');
+                    if (sel) { if (!sel.querySelector('option[value="' + hit[0].id + '"]')) { var o = document.createElement('option'); o.value = hit[0].id; o.textContent = jobLabel(hit[0]); sel.appendChild(o); } sel.value = String(hit[0].id); }
+                    refreshBulkState();
+                } else if (st) {
+                    bulkRows[i].jobId = '';
+                    st.innerHTML = '<span style="color:#b91c1c">' + (hit.length > 1 ? 'Several jobs have this number - use the list' : (hit.length ? 'This job already has a document' : 'No job with this number')) + '</span>';
+                    refreshBulkState();
+                }
+            });
         });
         refreshBulkState();
     }
