@@ -550,6 +550,12 @@
     window.WathekDocs = {
         loadIndex: loadIndex, precheck: precheck, attach: attach, show: show, remove: removeDoc,
         showButton: showButton, openBulk: openBulk, lotBadge: lotBadge, lotValues: lotValues,
+        getBlob: async function (jobId) {
+            var x = docsByJob[String(jobId)];
+            if (!x) return null;
+            var dl = await sb().storage.from(BUCKET).download(x.file_path);
+            return dl.error ? null : dl.data;
+        },
         fillForm: fillForm, resetForm: resetForm, hasDoc: function (id) { return !!docsByJob[String(id)]; }
     };
 
