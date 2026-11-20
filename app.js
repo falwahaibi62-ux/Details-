@@ -2,7 +2,7 @@
  * MovePro - Core Application & Operations Management (Production Ready & Cleaned)
  */
 
-if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Admin';
+if (typeof window.currentUserRole === 'undefined') window.currentUserRole = 'Viewer'; // real role is loaded from user_role after sign-in (auth.js)
 if (typeof window.currentLoggedInUser === 'undefined') window.currentLoggedInUser = null;
 if (typeof window.revenueChartInstance === 'undefined') window.revenueChartInstance = null;
 if (typeof window.paymentMixChartInstance === 'undefined') window.paymentMixChartInstance = null;
@@ -620,7 +620,7 @@ function checkPermissions() {
         deleteButtons.forEach(btn => btn.style.display = 'none');
     } else if (currentRole === 'Member') {
         if (addJobBtn) addJobBtn.style.display = 'flex';
-        if (addUserBtn) addUserBtn.style.display = 'flex';
+        if (addUserBtn) addUserBtn.style.display = 'none';
         editButtons.forEach(btn => { btn.style.display = 'none'; btn.disabled = true; });
         deleteButtons.forEach(btn => { btn.style.display = 'none'; btn.disabled = true; });
     } else {
@@ -1507,7 +1507,9 @@ window.switchTab = switchTab;
 // ==========================================
 window.addEventListener('DOMContentLoaded', async () => {
     try {
-        window.currentUserRole = 'Admin';
+        // Wait for sign-in (auth.js); the role comes from the user_role table, not from the browser
+        if (!window.WathekAuth) throw new Error('auth.js is not loaded');
+        await window.WathekAuth.require();
         if (typeof checkPermissions === 'function') checkPermissions();
         if (typeof renderUsers === 'function') renderUsers();
 
