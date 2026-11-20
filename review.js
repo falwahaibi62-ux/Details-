@@ -85,7 +85,7 @@
         var q = norm(noDocQuery);
         return (window.masterJobs || []).filter(function (j) {
             var no = String(j.jobNo || j.job_no || '').trim();
-            if (!no || no === '-' || /^delivery/i.test(no)) return false;
+            if (!/^[A-Za-z]{1,2}\d{5,8}$/.test(no)) return false; // real order numbers only (no cancel, delivery, storage or name entries)
             if (window.WathekDocs && window.WathekDocs.hasDoc(j.id)) return false;
             return !q || norm(no).indexOf(q) >= 0;
         });
