@@ -563,7 +563,7 @@
     // 7. DETAILED TABLES (shared by the Detailed page and the PDF)
     // ==========================================
     const JOB_COLS = [
-        { h: 'Date' }, { h: 'Job No', b: 1 }, { h: 'From State' }, { h: 'To State' }, { h: 'Foreman Name' },
+        { h: 'Date' }, { h: 'Job No', b: 1 }, { h: 'Lot' }, { h: 'From State' }, { h: 'To State' }, { h: 'Foreman Name' },
         { h: 'Foreman 10%', b: 1, tone: 'emerald' }, { h: 'Helpers' }, { h: 'Drivers' },
         { h: 'Diesel', b: 1, tone: 'amber' }, { h: 'Hotel', b: 1, tone: 'blue' },
         { h: 'Total After Deposit', b: 1, tone: 'emerald' }, { h: 'P.U Payment' }, { h: 'Dest Balance' }
@@ -587,6 +587,7 @@
         return [
             displayDate(jobDateOf(j)),
             jobNoOf(j) || '-',
+            j.lot_no ? String(j.lot_no) + (j.tape_color ? ' (' + String(j.tape_color) + ')' : '') : '-',
             route[0],
             route[1],
             j.foreman || j.foremanName || j.foreman_name || '-',
@@ -625,7 +626,7 @@
             {
                 key: 'jobs', title: '1. Dispatch Operations Detailed Records', subtitle: 'Detailed job operations, crew allocations, and revenues',
                 badge: data.jobs.length + ' Jobs', tone: 'emerald', cols: JOB_COLS, rows: data.jobs.map(jobCells),
-                footLabel: 'Total (' + data.jobs.length + ' records)', footSpan: 10, footValue: money(s.revenue), footTail: 2
+                footLabel: 'Total (' + data.jobs.length + ' records)', footSpan: 11, footValue: money(s.revenue), footTail: 2
             },
             {
                 key: 'rentals', title: '2. Private Truck Rental Detailed Records', subtitle: 'External truck rentals inside the selected period',
