@@ -65,9 +65,10 @@
                 '<td class="p-3 text-xs">' + fmt(money(j.total_amount || j.total)) + '<div class="text-surface-500">doc: ' + fmt(exp) + '</div></td>' +
                 '<td class="p-3 text-xs">' + (ok ? '<span class="text-success-600 font-semibold">OK</span>' : '<span class="text-warning-600 font-semibold">Check</span>' + r.flags.map(function (x) { return '<div class="text-surface-600">' + esc(x) + '</div>'; }).join('')) + '</td>' +
                 '<td class="p-3 text-xs text-center">' + (rv ? '<input type="checkbox" data-rev="' + esc(j.id) + '" ' + (rv.reviewed ? 'checked' : '') + '>' : '') + '</td>' +
-                '<td class="p-3 text-xs whitespace-nowrap">' + esc(rv && rv.read_at ? String(rv.read_at).slice(0, 10) : '') + '</td></tr>';
+                '<td class="p-3 text-xs whitespace-nowrap">' + esc(rv && rv.read_at ? String(rv.read_at).slice(0, 10) : '') + (r.has ? '<div><a href="#" data-read="' + esc(j.id) + '" class="text-primary-600 font-semibold">' + (rv ? 'Read again' : 'Read with AI') + '</a></div>' : '') + '</td></tr>';
         }).join('');
         box.querySelectorAll('[data-view]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); window.WathekDocs.show(a.getAttribute('data-view')); }); });
+        box.querySelectorAll('[data-read]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); readRow(a.getAttribute('data-read')); }); });
         box.querySelectorAll('[data-rev]').forEach(function (cb) {
             cb.addEventListener('change', async function () {
                 var id = cb.getAttribute('data-rev'), on = cb.checked;
@@ -92,7 +93,64 @@
         a.download = 'document-review-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
     }
 
+    // ---------- Read stored documents with AI (Admin) ----------
+    function toB64(blob) {
+        return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(String(fr.result).split(',')[1] || ''); }; fr.onerror = rej; fr.readAsDataURL(blob); });
+    }
+    async function readOne(jobId) {
+        var j = (window.masterJobs || []).find(function (x) { return String(x.id) === String(jobId); }) || {};
+        var blob = await window.WathekDocs.getBlob(jobId);
+        if (!blob) return 'Could not open the document';
+        if (blob.size > 10 * 1024 * 1024) return 'Too large for AI reading (over 10 MB)';
+        var res = await sb().functions.invoke('extract-job', { body: { pdf_base64: await toB64(blob) } });
+        if (res.error || !res.data || !res.data.fields) {
+            var msg = 'Could not read';
+            try { if (res.error && res.error.context && res.error.context.json) { var e = await res.error.context.json(); if (e && e.error) msg = e.error; } } catch (x) {}
+            return msg;
+        }
+        var f = res.data.fields, v = function (k) { return f[k] && f[k].value != null ? f[k].value : null; }, cf = function (k) { return (f[k] && f[k].confidence) || 'low'; };
+        var rec = {
+            job_id: jobId, order_read: v('order_no'), order_conf: cf('order_no'), lot_read: v('lot_no'), color_read: v('tape_color'), lot_conf: cf('lot_no'),
+            total_read: typeof v('total_amount') === 'number' ? v('total_amount') : null, deposit_read: typeof v('prepaid_deposit') === 'number' ? v('prepaid_deposit') : null,
+            balance_read: typeof v('balance_due_at_destination') === 'number' ? v('balance_due_at_destination') : null,
+            warnings: (res.data.warnings || []).filter(function (w) { return !/^Total \(/.test(w); }),
+            read_at: new Date().toISOString(), read_by: (window.currentLoggedInUser && window.currentLoggedInUser.email) || null,
+            reviewed: false, reviewed_by: null, reviewed_at: null
+        };
+        var up = await sb().from('job_document_review').upsert(rec, { onConflict: 'job_id' });
+        if (up.error) return 'Could not save: ' + up.error.message;
+        var row = rows.find(function (x) { return String(x.job.id) === String(jobId); });
+        if (row) { row.rv = rec; row.flags = flagsFor(row.job, rec); }
+        return null;
+    }
+    async function readIds(ids) {
+        var n = 0, fails = [], c = document.getElementById('reviewCount');
+        async function worker() {
+            while (n < ids.length) {
+                var id = ids[n++];
+                if (c) c.textContent = 'Reading with AI... ' + n + ' of ' + ids.length;
+                var err = await readOne(id);
+                if (err) fails.push((rows.find(function (x) { return String(x.job.id) === String(id); }) || { job: {} }).job.jobNo + ': ' + err);
+            }
+        }
+        await Promise.all([worker(), worker()]);
+        draw();
+        if (fails.length) alert('Some documents could not be read:\n' + fails.slice(0, 8).join('\n'));
+    }
+    function readRow(jobId) {
+        var row = rows.find(function (x) { return String(x.job.id) === String(jobId); });
+        if (row && row.rv && !confirm('This document was already read. Read it again? This replaces the saved reading and clears its Reviewed tick.')) return;
+        readIds([jobId]);
+    }
+    function readAllUnread() {
+        var ids = rows.filter(function (r) { return r.has && !r.rv; }).map(function (r) { return r.job.id; });
+        if (!ids.length) { alert('Every document already has a saved reading.'); return; }
+        if (!confirm('Read ' + ids.length + ' document(s) with AI?\n\nEach PDF is sent to the Claude service to read only the order number, lot, tape color and amounts. It costs a small amount per document. No job data is changed.')) return;
+        readIds(ids);
+    }
+
     window.WathekReview = {
+        readRow: readRow, readAllUnread: readAllUnread,
         render: function () { if (window.currentUserRole !== 'Admin') return; load(); },
         toggleOnlyCheck: function (v) { onlyCheck = !!v; draw(); },
         exportCsv: exportCsv
