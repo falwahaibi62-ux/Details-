@@ -261,7 +261,7 @@
         wrap.innerHTML =
             '<div style="background:#fff;border-radius:16px;width:100%;max-width:1000px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.35)">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0"><strong style="font-size:15px">Attach documents to jobs</strong><button id="wd-bulk-x" type="button" style="font-size:22px;background:none;border:0;cursor:pointer;color:#475569">&times;</button></div>' +
-            '<div style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#475569">Choose PDF files (one file per job). The date in each file name suggests the job; check every match, then press Attach. Duplicate files and jobs that already have a document are skipped.' +
+            '<div style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#475569">Choose PDF files (one file per job). The scan date in each file name suggests jobs from the 3 days before it; check every match, then press Attach. Duplicate files and jobs that already have a document are skipped.' +
             '<div style="margin-top:8px"><input id="wd-bulk-files" type="file" accept="application/pdf,.pdf" multiple></div></div>' +
             '<div id="wd-bulk-list" style="padding:8px 16px;overflow:auto;flex:1;font-size:12px"></div>' +
             '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid #e2e8f0"><span id="wd-bulk-msg" style="font-size:12px;color:#64748b"></span>' +
@@ -305,7 +305,12 @@
         bulkRows.forEach(function (r) {
             if (r.problem) return;
             var nd = nameDate(r.file.name);
-            var cands = nd ? jobs.filter(function (j) { return sameDay(nd, dateParts(j.date)) && !docsByJob[String(j.id)]; }) : [];
+            var cands = nd ? jobs.filter(function (j) {
+                var p = dateParts(j.date);
+                if (!p || docsByJob[String(j.id)]) return false;
+                var diff = (Date.UTC(nd.y, nd.m - 1, nd.d) - Date.UTC(p.y, p.m - 1, p.d)) / 86400000;
+                return diff >= 0 && diff <= 3; // scanned on, or up to 3 days after, the job date
+            }) : [];
             r.cands = cands;
             if (cands.length === 1) r.jobId = String(cands[0].id);
         });
@@ -322,7 +327,7 @@
             if (r.problem) html += '<span style="color:#94a3b8">-</span>';
             else {
                 var list = (r.cands && r.cands.length ? r.cands : jobs);
-                html += '<select data-i="' + i + '" class="wd-bulk-sel" style="max-width:420px;width:100%;padding:5px;border:1px solid #cbd5e1;border-radius:8px"><option value="">' + (r.cands && r.cands.length > 1 ? 'Choose the job (' + r.cands.length + ' on this date)...' : (r.cands && r.cands.length ? '' : 'No job on this date - choose...')) + '</option>';
+                html += '<select data-i="' + i + '" class="wd-bulk-sel" style="max-width:420px;width:100%;padding:5px;border:1px solid #cbd5e1;border-radius:8px"><option value="">' + (r.cands && r.cands.length > 1 ? 'Choose the job (' + r.cands.length + ' in the last 3 days)...' : (r.cands && r.cands.length ? '' : 'No job in the last 3 days - choose...')) + '</option>';
                 list.forEach(function (j) { html += '<option value="' + esc(j.id) + '"' + (String(j.id) === r.jobId ? ' selected' : '') + '>' + esc(jobLabel(j)) + '</option>'; });
                 html += '</select><input class="wd-bulk-no" data-i="' + i + '" placeholder="or type Job No" style="margin-top:4px;width:100%;max-width:420px;padding:5px;border:1px solid #cbd5e1;border-radius:8px">';
             }
