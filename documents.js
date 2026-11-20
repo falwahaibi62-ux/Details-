@@ -95,6 +95,7 @@
         var h = document.getElementById('jobTapeColor'); if (h) h.value = '';
         var f = document.getElementById('jobDocFile'); if (f) f.value = '';
         setDocStatus('');
+        var rv = document.getElementById('jobDocReview'); if (rv) { rv.classList.add('hidden'); rv.innerHTML = ''; }
         paintLotPreview();
     }
 
@@ -279,10 +280,116 @@
         await loadIndex();
     }
 
+    // ---------- Read data from the PDF (Edge Function "extract-job") ----------
+    function toBase64(buf) {
+        var bytes = new Uint8Array(buf), chunk = 0x8000, s = '';
+        for (var i = 0; i < bytes.length; i += chunk) s += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        return btoa(s);
+    }
+
+    function mark(el) {
+        if (!el) return;
+        el.style.background = '#fef9c3';
+        el.style.outline = '2px solid #facc15';
+        var clear = function () { el.style.background = ''; el.style.outline = ''; el.removeEventListener('input', clear); el.removeEventListener('change', clear); };
+        el.addEventListener('input', clear); el.addEventListener('change', clear);
+    }
+
+    function setField(id, val) {
+        var el = document.getElementById(id);
+        if (!el || val === null || val === undefined || val === '') return false;
+        el.value = val;
+        mark(el);
+        return true;
+    }
+
+    function money(n) { return '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+
+    function renderReview(res) {
+        var box = document.getElementById('jobDocReview');
+        if (!box) return;
+        var names = {
+            order_no: 'Order No', pickup_date: 'Date', origin_state: 'From', destination_state: 'To', foreman_name: 'Foreman',
+            total_amount: 'Total', prepaid_deposit: 'Deposit on document', balance_due_at_destination: 'Balance at destination',
+            lot_no: 'Lot', tape_color: 'Sticker color'
+        };
+        var html = '<div class="font-bold text-amber-800 mb-1">Read from the document - check every value before saving</div>';
+        Object.keys(names).forEach(function (k) {
+            var f = res.fields[k] || {};
+            var empty = f.value === null || f.value === undefined || f.value === '';
+            var low = f.confidence === 'low' || empty;
+            var val = empty ? 'not found' : (k === 'total_amount' || k === 'prepaid_deposit' || k === 'balance_due_at_destination' ? money(f.value) : f.value);
+            html += '<div style="display:flex;justify-content:space-between;gap:8px;' + (low ? 'color:#b91c1c;font-weight:600' : '') + '"><span>' + esc(names[k]) + '</span><span>' + esc(val) +
+                (empty ? '' : ' <span style="color:#94a3b8;font-weight:400">(page ' + esc(f.page || '?') + ', ' + esc(f.confidence) + ')</span>') + '</span></div>';
+        });
+        (res.warnings || []).forEach(function (w) { html += '<div style="color:#b91c1c;font-weight:600">&#9888; ' + esc(w) + '</div>'; });
+        html += '<div style="color:#64748b">Highlighted fields in the form were filled from the document. Deposit is shown for your reference only and was not entered.</div>';
+        box.innerHTML = html;
+        box.classList.remove('hidden');
+    }
+
+    async function readFromPdf() {
+        var file = selectedFile();
+        if (!file) { setDocStatus('Choose a PDF first.', true); return; }
+        if (file.size > 10 * 1024 * 1024) { setDocStatus('This PDF is too large to read automatically (max 10 MB). You can still attach it and enter the data by hand.', true); return; }
+        if (!(await looksLikePdf(file))) { setDocStatus('This is not a valid PDF file.', true); return; }
+
+        var btn = document.getElementById('jobDocRead');
+        var old = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.textContent = 'Reading... (up to a minute)'; }
+        setDocStatus('');
+        try {
+            var b64 = toBase64(await file.arrayBuffer());
+            var r = await sb().functions.invoke('extract-job', { body: { pdf_base64: b64 } });
+            if (r.error) {
+                var msg = 'Could not read the document.';
+                try { var j = await r.error.context.json(); if (j && j.error) msg = j.error; } catch (e) {}
+                setDocStatus(msg, true);
+                return;
+            }
+            var res = r.data;
+            if (!res || !res.fields) { setDocStatus('No data could be read from this document.', true); return; }
+            var f = function (k) { var x = res.fields[k]; return x && x.value !== undefined ? x.value : null; };
+
+            // date (form uses an <input type="date">)
+            setField('jobDate', f('pickup_date'));
+            setField('jobNo', f('order_no'));
+            setField('routeFrom', f('origin_state') ? String(f('origin_state')).toUpperCase() : null);
+            setField('routeTo', f('destination_state') ? String(f('destination_state')).toUpperCase() : null);
+            setField('jobForeman', f('foreman_name'));
+            if (f('total_amount') !== null) setField('jobTotal', money(f('total_amount')));
+
+            // Balance at destination -> Destination Payments (method left as Unspecified for you to choose)
+            if (f('balance_due_at_destination') !== null && typeof window.addPaymentRow === 'function') {
+                var dc = document.getElementById('destContainer');
+                if (dc) {
+                    dc.innerHTML = '';
+                    window.addPaymentRow('destContainer', String(f('balance_due_at_destination')), '');
+                    mark(dc.querySelector('.payment-amount'));
+                }
+            }
+
+            // Lot + color
+            if (f('lot_no')) {
+                setField('jobLotNo', String(f('lot_no')).toUpperCase().replace(/\s+/g, ''));
+                var c = colorKey(f('tape_color'));
+                var hc = document.getElementById('jobTapeColor'); if (hc) hc.value = c;
+                paintLotPreview();
+                mark(document.getElementById('jobLotNo'));
+            }
+            renderReview(res);
+        } catch (e) {
+            console.error('Read from PDF failed:', e);
+            setDocStatus('Could not read the document. Check your connection and try again.', true);
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = old; }
+        }
+    }
+
     window.WathekDocs = {
         loadIndex: loadIndex, precheck: precheck, attach: attach, show: show, remove: removeDoc,
         showButton: showButton, lotBadge: lotBadge, lotValues: lotValues,
-        fillForm: fillForm, resetForm: resetForm, hasDoc: function (id) { return !!docsByJob[String(id)]; }
+        fillForm: fillForm, resetForm: resetForm, readFromPdf: readFromPdf, hasDoc: function (id) { return !!docsByJob[String(id)]; }
     };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildLotControls);
