@@ -128,6 +128,19 @@
         return Array.prototype.map.call(new Uint8Array(digest), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
     }
 
+    // Detects the real type from the first bytes (not from the file name): 'pdf', 'jpg', 'png', 'webp' or null.
+    async function fileKind(file) {
+        var h = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+        var ascii = function (a, b) { return String.fromCharCode.apply(null, Array.prototype.slice.call(h, a, b)); };
+        if (ascii(0, 5) === '%PDF-') return 'pdf';
+        if (h[0] === 0xFF && h[1] === 0xD8 && h[2] === 0xFF) return 'jpg';
+        if (h[0] === 0x89 && ascii(1, 4) === 'PNG') return 'png';
+        if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return 'webp';
+        return null;
+    }
+    var KIND_MIME = { pdf: 'application/pdf', jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+    function isPhotoPath(path) { return /\.(jpg|png|webp)$/i.test(String(path || '')); }
+
     async function looksLikePdf(file) {
         var head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
         return String.fromCharCode.apply(null, head) === '%PDF-';
@@ -175,8 +188,8 @@
 
         if (!file) return { ok: true };
 
-        if (file.size > MAX_BYTES) { setDocStatus('File is larger than 15 MB.', true); alert('The PDF is larger than 15 MB.'); return { ok: false }; }
-        if (!(await looksLikePdf(file))) { setDocStatus('This is not a valid PDF file.', true); alert('This is not a valid PDF file.'); return { ok: false }; }
+        if (file.size > MAX_BYTES) { setDocStatus('File is larger than 15 MB.', true); alert('The file is larger than 15 MB.'); return { ok: false }; }
+        if (!(await fileKind(file))) { setDocStatus('Please choose a PDF or a photo (JPG, PNG or WebP).', true); alert('Please choose a PDF or a photo (JPG, PNG or WebP).'); return { ok: false }; }
 
         if (editId && docsByJob[String(editId)] && role() !== 'Admin') {
             alert('This job already has a document. Ask the Admin to remove it before attaching another one.');
@@ -203,8 +216,10 @@
 
     // ---------- Upload one file for one job (shared by the job form and the bulk page) ----------
     async function uploadDoc(jobId, jobNo, file, hash) {
-        var path = String(jobId) + '/' + hash.slice(0, 24) + '.pdf';
-        var up = await sb().storage.from(BUCKET).upload(path, file, { contentType: 'application/pdf', upsert: false });
+        var kind = await fileKind(file);
+        if (!kind) return { ok: false, message: 'Not a PDF or a supported photo (JPG, PNG, WebP).' };
+        var path = String(jobId) + '/' + hash.slice(0, 24) + '.' + kind;
+        var up = await sb().storage.from(BUCKET).upload(path, file, { contentType: KIND_MIME[kind], upsert: false });
         if (up.error) return { ok: false, message: up.error.message };
 
         var ins = await sb().from('job_documents').insert([{
@@ -612,7 +627,9 @@
 
         var dl = await sb().storage.from(BUCKET).download(d.file_path);
         if (dl.error || !dl.data) { alert('Could not open the document: ' + (dl.error ? dl.error.message : 'unknown error')); return; }
-        currentBlobUrl = URL.createObjectURL(new Blob([dl.data], { type: 'application/pdf' }));
+        var photo = isPhotoPath(d.file_path);
+        var ext = String(d.file_path).split('.').pop().toLowerCase();
+        currentBlobUrl = URL.createObjectURL(new Blob([dl.data], { type: photo ? KIND_MIME[ext] : 'application/pdf' }));
 
         var job = (window.masterJobs || []).find(function (j) { return String(j.id) === String(jobId); }) || {};
         var wrap = document.createElement('div');
@@ -628,7 +645,8 @@
             '<a id="wd-open" href="' + currentBlobUrl + '" target="_blank" rel="noopener" style="font-size:12px;color:#0f766e;font-weight:600;text-decoration:none">Open in new tab</a>' +
             (role() === 'Admin' ? '<button id="wd-remove" type="button" style="font-size:12px;color:#b91c1c;font-weight:600;background:none;border:0;cursor:pointer">Remove document</button>' : '') +
             '<button id="wd-close" type="button" style="font-size:20px;line-height:1;background:none;border:0;cursor:pointer;color:#475569" aria-label="Close">&times;</button></div></div>' +
-            '<iframe title="Job document" src="' + currentBlobUrl + '" style="flex:1;border:0;width:100%"></iframe>' +
+            (photo ? '<div style="flex:1;overflow:auto;background:#f1f5f9;text-align:center"><img alt="Job document photo" src="' + currentBlobUrl + '" style="max-width:100%;height:auto"></div>'
+                   : '<iframe title="Job document" src="' + currentBlobUrl + '" style="flex:1;border:0;width:100%"></iframe>') +
             '<div style="padding:6px 14px;font-size:10px;color:#94a3b8;border-top:1px solid #e2e8f0">Private document - opened for you only, no shareable link is created.</div>' +
             '</div>';
         document.body.appendChild(wrap);
@@ -660,7 +678,8 @@
             var dl = await sb().storage.from(BUCKET).download(x.file_path);
             return dl.error ? null : dl.data;
         },
-        fillForm: fillForm, resetForm: resetForm, hasDoc: function (id) { return !!docsByJob[String(id)]; }
+        fillForm: fillForm, resetForm: resetForm, hasDoc: function (id) { return !!docsByJob[String(id)]; },
+        isPhoto: function (id) { var x = docsByJob[String(id)]; return !!x && isPhotoPath(x.file_path); }
     };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildLotControls);
