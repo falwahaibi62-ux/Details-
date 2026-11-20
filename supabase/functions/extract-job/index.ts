@@ -6,6 +6,17 @@
 // - The Anthropic key is a Supabase secret (ANTHROPIC_API_KEY); it never reaches the browser.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const d = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
 const ALLOWED_ORIGINS = ["https://falwahaibi62-ux.github.io"];
 const MODEL = "claude-sonnet-5-5";
 const MAX_BASE64_CHARS = 14 * 1024 * 1024; // about 10 MB of PDF
@@ -81,9 +92,39 @@ Deno.serve(async (req: Request) => {
 
     // 2) Input
     const body = await req.json().catch(() => null);
+    // The reading cache is reachable only from here (service role); browsers cannot query it.
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    // 2a) Which files were already read? (no PDF needed, answers yes/no only)
+    if (Array.isArray(body?.check_hashes)) {
+      const hs = body.check_hashes.filter((h: unknown) => typeof h === "string" && /^[0-9a-f]{64}$/.test(h as string)).slice(0, 500);
+      if (!hs.length) return json({ cached: [] }, 200, origin);
+      const { data } = await admin.from("doc_reading_cache").select("file_hash").in("file_hash", hs);
+      return json({ cached: (data ?? []).map((r: any) => r.file_hash) }, 200, origin);
+    }
+
+    const force = body?.force === true;
     const b64 = body?.pdf_base64;
+    let hash: string | null = null;
+
+    // 2b) Known file by hash only (free)
+    if (typeof body?.hash === "string" && /^[0-9a-f]{64}$/.test(body.hash) && typeof b64 !== "string") {
+      const { data } = await admin.from("doc_reading_cache").select("fields,warnings,model").eq("file_hash", body.hash).maybeSingle();
+      if (!data) return json({ error: "Not read yet" }, 404, origin);
+      return json({ fields: data.fields, warnings: data.warnings ?? [], model: data.model, cached: true }, 200, origin);
+    }
+
     if (typeof b64 !== "string" || b64.length < 100) return json({ error: "No PDF received" }, 400, origin);
     if (b64.length > MAX_BASE64_CHARS) return json({ error: "PDF is too large to read (max about 10 MB)" }, 413, origin);
+
+    // 2c) Same file already read? Return the saved reading, no charge.
+    try {
+      hash = await sha256Hex(b64ToBytes(b64));
+      if (!force) {
+        const { data } = await admin.from("doc_reading_cache").select("fields,warnings,model").eq("file_hash", hash).maybeSingle();
+        if (data) return json({ fields: data.fields, warnings: data.warnings ?? [], model: data.model, cached: true }, 200, origin);
+      }
+    } catch (e) { console.error("cache lookup failed", String(e).slice(0, 120)); }
 
     const key = Deno.env.get("ANTHROPIC_API_KEY");
     if (!key) return json({ error: "Reading is not configured yet (missing API key)" }, 503, origin);
@@ -140,7 +181,13 @@ Deno.serve(async (req: Request) => {
     const lot = String(v("lot_no") ?? "");
     if (lot && !/^[A-Za-z0-9-]{3,20}$/.test(lot)) warnings.push("Lot number has an unusual format. Check it.");
 
-    return json({ fields, warnings, model: MODEL }, 200, origin);
+    if (hash) {
+      let who: string | null = null;
+      try { const u = await supa.auth.getUser(); who = u.data?.user?.email ?? null; } catch (_) { /* ignore */ }
+      const { error: cErr } = await admin.from("doc_reading_cache").upsert({ file_hash: hash, fields, warnings, model: MODEL, read_by: who, read_at: new Date().toISOString() }, { onConflict: "file_hash" });
+      if (cErr) console.error("cache save failed", cErr.message.slice(0, 120));
+    }
+    return json({ fields, warnings, model: MODEL, cached: false }, 200, origin);
   } catch (e) {
     console.error("extract-job failed", String(e).slice(0, 200));
     return json({ error: "Unexpected error" }, 500, origin);
