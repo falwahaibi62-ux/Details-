@@ -534,7 +534,7 @@
         bulkRows.forEach(function (r, i) { if (!r.problem && !r.done && !r.ai) idx.push(i); });
         var fresh = idx.filter(function (i) { return !bulkRows[i].cached; }).length, free = idx.length - fresh;
         if (!idx.length) { bulkMsg('Nothing to read.'); return; }
-        if (fresh > 0 && !window.confirm('Read ' + idx.length + ' document(s)?\n\n' + fresh + ' will be read with AI now (about 3 cents each, roughly $' + (fresh * 0.035).toFixed(2) + ').\n' + free + ' were already read and are reused for free.')) return;
+        if (fresh > 0 && !window.confirm('Hello Wathek, the Checker will read the document.')) return;
         if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
         var n = 0;
         async function worker() { while (n < idx.length) { var k = idx[n++]; await readOneAI(k); } }

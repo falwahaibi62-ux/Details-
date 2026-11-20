@@ -182,7 +182,7 @@
     function readAllUnread() {
         var ids = rows.filter(function (r) { return r.has && !r.rv; }).map(function (r) { return r.job.id; });
         if (!ids.length) { alert('Every document already has a saved reading.'); return; }
-        if (!confirm('Read ' + ids.length + ' document(s) with AI?\n\nEach PDF is sent to the Claude service to read only the order number, lot, tape color and amounts. A document that was already read is reused for free; a new reading costs about 3 cents. No job data is changed.')) return;
+        if (!confirm('Hello Wathek, the Checker will read the document.')) return;
         readIds(ids);
     }
 
