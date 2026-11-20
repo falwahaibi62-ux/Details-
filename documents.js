@@ -246,6 +246,8 @@
         return (j.jobNo || j.job_no || '-') + '  |  ' + (j.route || '') + '  |  ' + (j.total_amount || j.total || '') + '  |  ' + String(j.date || '').split(' ')[0];
     }
 
+    function isDelivery(j) { return /^\s*delivery/i.test(String(j.jobNo || j.job_no || '')); }
+
     var bulkRows = [];
 
     function closeBulk() { var m = document.getElementById('wd-bulk'); if (m) m.remove(); bulkRows = []; }
@@ -276,7 +278,7 @@
         var files = Array.prototype.slice.call(ev.target.files || []);
         bulkRows = [];
         var seenHash = {};
-        var jobs = (window.masterJobs || []);
+        var jobs = (window.masterJobs || []).filter(function (j) { return !isDelivery(j); });
         bulkMsg('Checking ' + files.length + ' file(s)...');
         for (var i = 0; i < files.length; i++) {
             var f = files[i], row = { file: f, hash: null, problem: null, jobId: '' };
@@ -313,7 +315,7 @@
     function renderBulk() {
         var box = document.getElementById('wd-bulk-list');
         if (!box) return;
-        var jobs = (window.masterJobs || []).filter(function (j) { return !docsByJob[String(j.id)]; });
+        var jobs = (window.masterJobs || []).filter(function (j) { return !isDelivery(j) && !docsByJob[String(j.id)]; });
         var html = '<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b;font-size:11px"><th style="padding:6px">File</th><th style="padding:6px">Job</th><th style="padding:6px">Status</th></tr></thead><tbody>';
         bulkRows.forEach(function (r, i) {
             html += '<tr style="border-top:1px solid #f1f5f9"><td style="padding:6px;word-break:break-all">' + esc(r.file.name) + (r.problem ? '' : ' <a href="#" class="wd-bulk-view" data-i="' + i + '" style="color:#0f766e;font-weight:700">View</a>') + '</td><td style="padding:6px">';
@@ -340,6 +342,7 @@
                 if (!want) return;
                 var hit = (window.masterJobs || []).filter(function (j) { return String(j.jobNo || j.job_no || '').trim().toLowerCase() === want; });
                 var st = document.getElementById('wd-st-' + i);
+                if (hit.length === 1 && isDelivery(hit[0])) { bulkRows[i].jobId = ''; if (st) st.innerHTML = '<span style="color:#b91c1c">Delivery jobs do not take documents</span>'; return; }
                 if (hit.length === 1 && !docsByJob[String(hit[0].id)]) {
                     bulkRows[i].jobId = String(hit[0].id);
                     var sel = box.querySelector('.wd-bulk-sel[data-i="' + i + '"]');
@@ -389,6 +392,7 @@
             else { failed++; if (st) st.innerHTML = '<span style="color:#b91c1c">Failed: ' + esc(res.message) + '</span>'; }
         }
         await loadIndex();
+        if (go) { go.textContent = 'Attach'; }
         bulkMsg('Done: ' + ok + ' attached' + (failed ? ', ' + failed + ' failed' : '') + '.', failed > 0);
     }
 
