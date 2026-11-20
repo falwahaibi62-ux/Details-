@@ -540,7 +540,7 @@
         async function worker() { while (n < idx.length) { var k = idx[n++]; await readOneAI(k); } }
         await Promise.all([worker(), worker()]);
         refreshBulkState(true);
-        bulkMsg('AI reading finished. Check every row before pressing Attach.');
+        bulkMsg('Done. Everything is ready for your review.');
     }
 
     function refreshBulkState(keepNotes) {
