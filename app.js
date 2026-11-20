@@ -1107,7 +1107,11 @@ async function saveJob(event) {
     }
 
     if (error) {
-        alert('Supabase Error: ' + error.message);
+        if (error.code === '23505' && /job_no/i.test(error.message || '')) {
+            alert('This Job No already exists. Job numbers cannot be repeated (except Delivery). Check the number and try again.');
+        } else {
+            alert('Supabase Error: ' + error.message);
+        }
     } else {
         if (window.WathekDocs) await window.WathekDocs.attach(savedJobId, jobNoVal);
         if (jobForm) jobForm.removeAttribute('data-edit-id');
