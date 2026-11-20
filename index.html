@@ -522,6 +522,24 @@
                     <tbody id="reviewBody"></tbody>
                 </table>
             </div>
+            <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs border border-surface-200">
+                <div class="flex flex-wrap gap-3 justify-between items-center mb-3">
+                    <div>
+                        <h3 class="font-bold text-surface-900 text-base">Orders not created</h3>
+                        <p class="text-xs text-surface-500">Order numbers read from documents that you declined to create. Only the number is saved, no other data.</p>
+                        <p id="declinedCount" class="text-xs text-surface-600 mt-1"></p>
+                    </div>
+                    <button onclick="WathekReview.exportDeclined()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Export CSV</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead><tr class="text-[11px] text-surface-500 uppercase border-b border-surface-200">
+                            <th class="p-3">Order / Job No</th><th class="p-3">Document file</th><th class="p-3">Declined by</th><th class="p-3">Declined on</th><th class="p-3">Now</th><th class="p-3"></th>
+                        </tr></thead>
+                        <tbody id="declinedBody"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- TAB 7: RECYCLE BIN -->

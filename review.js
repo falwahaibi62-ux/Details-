@@ -9,6 +9,7 @@
     function fmt(n) { return n === null || n === undefined ? '-' : '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
 
     var rows = [];      // built table rows
+    var declined = [];
     var onlyCheck = false;
 
     function flagsFor(job, rv) {
@@ -40,11 +41,46 @@
             if (!has && !rv) return;
             rows.push({ job: j, rv: rv || null, has: !!has, flags: flagsFor(j, rv) });
         });
+        var dq = await sb().from('orders_not_created').select('*').order('declined_at', { ascending: false });
+        declined = dq.error ? [] : (dq.data || []);
         rows.sort(function (a, b) { return (a.flags.length ? 0 : 1) - (b.flags.length ? 0 : 1); });
         draw();
     }
 
+    function drawDeclined() {
+        var box = document.getElementById('declinedBody'); if (!box) return;
+        var jobs = window.masterJobs || [];
+        var c = document.getElementById('declinedCount'); if (c) c.textContent = declined.length + ' order number(s)';
+        if (!declined.length) { box.innerHTML = '<tr><td colspan="6" class="p-5 text-center text-surface-500 text-xs">No declined orders.</td></tr>'; return; }
+        box.innerHTML = declined.map(function (d) {
+            var inSys = jobs.some(function (j) { return norm(j.jobNo || j.job_no) === d.order_no; });
+            return '<tr class="border-b border-surface-100"><td class="p-3 text-xs font-semibold">' + esc(d.order_raw || d.order_no) + '</td>' +
+                '<td class="p-3 text-xs">' + esc(d.file_name || '-') + '</td><td class="p-3 text-xs">' + esc(d.declined_by || '-') + '</td>' +
+                '<td class="p-3 text-xs whitespace-nowrap">' + esc(String(d.declined_at || '').slice(0, 10)) + '</td>' +
+                '<td class="p-3 text-xs">' + (inSys ? '<span class="text-success-600 font-semibold">Now in the system</span>' : '<span class="text-surface-500">Not created</span>') + '</td>' +
+                '<td class="p-3 text-xs"><a href="#" data-undo="' + esc(d.order_no) + '" class="text-danger-600 font-semibold">Remove from list</a></td></tr>';
+        }).join('');
+        box.querySelectorAll('[data-undo]').forEach(function (a) {
+            a.addEventListener('click', async function (e) {
+                e.preventDefault();
+                if (!confirm('Remove this order number from the list?')) return;
+                var x = await sb().from('orders_not_created').delete().eq('order_no', a.getAttribute('data-undo'));
+                if (x.error) { alert('Could not remove: ' + x.error.message); return; }
+                declined = declined.filter(function (z) { return z.order_no !== a.getAttribute('data-undo'); });
+                drawDeclined();
+            });
+        });
+    }
+
+    function exportDeclined() {
+        var csv = [['Order / Job No', 'Document file', 'Declined by', 'Declined on']].concat(declined.map(function (d) { return [d.order_raw || d.order_no, d.file_name || '', d.declined_by || '', String(d.declined_at || '').slice(0, 10)]; }))
+            .map(function (l) { return l.map(function (v) { v = String(v).replace(/"/g, '""'); return /^[=+\-@]/.test(v) ? '"\'' + v + '"' : '"' + v + '"'; }).join(','); }).join('\r\n');
+        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+        a.download = 'orders-not-created-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    }
+
     function draw() {
+        drawDeclined();
         var box = document.getElementById('reviewBody'); if (!box) return;
         var list = rows.filter(function (r) { return !onlyCheck || (r.flags.length && !(r.rv && r.rv.reviewed)); });
         var c = document.getElementById('reviewCount');
@@ -150,6 +186,7 @@
     }
 
     window.WathekReview = {
+        exportDeclined: exportDeclined,
         readRow: readRow, readAllUnread: readAllUnread,
         render: function () { if (window.currentUserRole !== 'Admin') return; load(); },
         toggleOnlyCheck: function (v) { onlyCheck = !!v; draw(); },
