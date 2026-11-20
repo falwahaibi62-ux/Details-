@@ -270,6 +270,8 @@ async function initMasterJobsData() {
                 year: yVal,
                 jobNo: item.job_no || item.jobNo || item.job_number || '',
                 job_no: item.job_no || '',
+                lot_no: item.lot_no || '',
+                tape_color: item.tape_color || '',
                 route: item.route || ((item.route_from && item.route_to) ? `${item.route_from} → ${item.route_to}` : ''),
                 route_from: item.route_from || '',
                 route_to: item.route_to || '',
@@ -883,6 +885,7 @@ function openAddModal(isEdit = false) {
             if (typeof window.addDieselEntryField === 'function') window.addDieselEntryField('', 'Unspecified');
         }
         fillHotelEntries('');
+        if (window.WathekDocs) window.WathekDocs.resetForm();
         const puContainer = document.getElementById('puContainer');
         const destContainer = document.getElementById('destContainer') || document.getElementById('destContextContainer');
         if (puContainer) puContainer.innerHTML = '';
@@ -924,6 +927,7 @@ function openEditJobModal(jobIdOrNo) {
 
     setVal('jobDate', formatDateForInput(job.date || job.job_date || ''));
     setVal('jobNo', job.jobNo || job.job_no || job.job_number || '');
+    if (window.WathekDocs) window.WathekDocs.fillForm(job);
 
     let routeStr = job.route || job.route_to || '';
     let fromVal = '', toVal = '';
@@ -1075,6 +1079,7 @@ async function saveJob(event) {
         hotel_expense: hotelFormatted,
         storage: '-'
     };
+    if (window.WathekDocs) Object.assign(supabasePayload, window.WathekDocs.lotValues());
 
     if (!window.supabaseClient) {
         alert("Supabase client not initialized!");
@@ -1084,18 +1089,27 @@ async function saveJob(event) {
     const jobForm = document.getElementById('jobForm');
     const editRecordId = jobForm ? jobForm.getAttribute('data-edit-id') : null;
 
+    // Duplicate checks (same PDF / same lot) before anything is saved
+    if (window.WathekDocs) {
+        const pre = await window.WathekDocs.precheck(editRecordId, supabasePayload.lot_no);
+        if (!pre.ok) return;
+    }
+
     let error = null;
+    let savedJobId = editRecordId && editRecordId !== '' ? editRecordId : null;
     if (editRecordId && editRecordId !== '') {
         const { error: updateError } = await window.supabaseClient.from('jobs_report').update(supabasePayload).eq('id', editRecordId);
         error = updateError;
     } else {
-        const { error: insertError } = await window.supabaseClient.from('jobs_report').insert([supabasePayload]);
+        const { data: insertedRows, error: insertError } = await window.supabaseClient.from('jobs_report').insert([supabasePayload]).select('id');
         error = insertError;
+        if (!insertError && insertedRows && insertedRows[0]) savedJobId = insertedRows[0].id;
     }
 
     if (error) {
         alert('Supabase Error: ' + error.message);
     } else {
+        if (window.WathekDocs) await window.WathekDocs.attach(savedJobId, jobNoVal);
         if (jobForm) jobForm.removeAttribute('data-edit-id');
         closeModal();
         
@@ -1383,7 +1397,7 @@ function renderTable(data) {
     const activeData = (data && data.length > 0) ? data : (window.currentFilteredJobs || window.masterJobs || []);
 
     if (activeData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-6 text-surface-400 font-medium">No records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="14" class="text-center py-6 text-surface-400 font-medium">No records found.</td></tr>`;
         return;
     }
 
@@ -1391,6 +1405,7 @@ function renderTable(data) {
         <tr class="border-b border-surface-100 hover:bg-surface-50 transition-colors">
             <td class="p-3 text-center">${escapeHtml(item.date || '-')}</td>
             <td class="p-3 font-semibold text-surface-800">${escapeHtml(item.jobNo || item.job_no || '-')}</td>
+            <td class="p-3">${window.WathekDocs ? window.WathekDocs.lotBadge(item.lot_no, item.tape_color) : escapeHtml(item.lot_no || '-')}</td>
             <td class="p-3 text-surface-600">${escapeHtml(item.route || '-')}</td>
             <td class="p-3 text-surface-600">${escapeHtml(item.foreman_name || item.foreman || '-')}</td>
             <td class="p-3 text-primary-600 font-medium">${escapeHtml(item.foreman_cost || item.foreman10pct || '-')}</td>
@@ -1401,7 +1416,8 @@ function renderTable(data) {
             <td class="p-3 text-surface-600">${escapeHtml(item.destination_payments || item.dest || '-')}</td>
             <td class="p-3 text-surface-600">${escapeHtml(item.diesel_expense || item.diesel || '-')}</td>
             <td class="p-3 text-surface-600">${escapeHtml(item.hotel_expense || item.hotel || '-')}</td>
-            <td class="p-3 text-center space-x-1">
+            <td class="p-3 text-center space-x-1 whitespace-nowrap">
+                ${window.WathekDocs ? window.WathekDocs.showButton(item.id) : ''}
                 <button type="button" onclick="openEditJobModal('${item.id}')" class="edit-action-btn p-1.5 bg-info-50 hover:bg-info-100 text-info-600 rounded-lg transition cursor-pointer" title="Edit">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </button>
@@ -1517,6 +1533,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (typeof initMasterJobsData === 'function') promises.push(initMasterJobsData());
         if (typeof loadPrivateTruckRentals === 'function') promises.push(loadPrivateTruckRentals());
         if (typeof loadWarehouseData === 'function') promises.push(loadWarehouseData());
+        if (window.WathekDocs) promises.push(window.WathekDocs.loadIndex());
 
         await Promise.all(promises);
 
