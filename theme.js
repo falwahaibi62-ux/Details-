@@ -21,14 +21,14 @@
    ========================================================== */
 
 const THEME = {
-    primary:   'brown',   // Main brand color: buttons, active tab, amounts, totals
-    surface:   'mocha',   // Page background, sidebar, text, borders, tables
-    info:      'olive',      // Information cards, "other payments", hotel
+    primary:   'sunset',   // Main brand color: buttons, active tab, amounts, totals
+    surface:   'deepteal',   // Page background, sidebar, text, borders, tables
+    info:      'teal',        // Information cards, "other payments", hotel
     warning:   'amber',      // Truck rentals, grand total cards
     accent:    'terracotta', // Warehouse section, helpers column
     danger:    'red',        // Delete buttons and errors
     alert:     'rose',       // Total expenses, permanent delete buttons
-    highlight: 'orange',     // Diesel card on the dashboard
+    highlight: 'amber',      // Diesel card on the dashboard
     secondary: 'plum',       // Warehouse save button, truck rental menu icon
     extra1:    'sand',       // Reports: BC payment column
     extra2:    'sage',       // Reports: PC payment column
@@ -43,7 +43,7 @@ const GLASS = {
     cardOpacity: 0.55,    // Card whiteness: 0 = fully see-through, 1 = solid white
     sidebarOpacity: 0.72, // Sidebar darkness: 0 = see-through, 1 = solid
     background: 'surface.100',                             // Base page color behind the glass
-    blobs: ['primary.400', 'primary.700', 'warning.300'],  // The 3 soft color glows in the background
+    blobs: ['primary.400', 'surface.600', 'warning.300'],  // The 3 soft color glows in the background
     blobStrength: 0.5,    // How visible the color glows are (0 - 1)
     animate: true,        // Slowly moving background glows (false = still background)
     animationSpeed: 22    // Seconds for one full movement (bigger = slower and calmer)
@@ -93,6 +93,10 @@ const PALETTES = (() => {
         fuchsia: ['#fdf4ff','#fae8ff','#f5d0fe','#f0abfc','#e879f9','#d946ef','#c026d3','#a21caf','#86198f','#701a75','#4a044e'],
         pink:    ['#fdf2f8','#fce7f3','#fbcfe8','#f9a8d4','#f472b6','#ec4899','#db2777','#be185d','#9d174d','#831843','#500724'],
         rose:    ['#fff1f2','#ffe4e6','#fecdd3','#fda4af','#fb7185','#f43f5e','#e11d48','#be123c','#9f1239','#881337','#4c0519'],
+
+        // New look (2026): deep teal surfaces + sunset orange brand color
+        deepteal: ['#f1f7f7','#e3eeef','#c8dcde','#9ec0c3','#6a9ea2','#437d82','#2f6368','#214e53','#153a3f','#0e2a2f','#081b1f'],
+        sunset:   ['#fff7ed','#ffebd5','#ffd3a3','#ffb56b','#ff9433','#ee7a12','#c2570a','#9a4308','#7a360b','#642e0c','#371504'],
 
         // Custom warm palettes (not part of Tailwind)
         brown:   ['#fbf6f1','#f4e9de','#e8d2bc','#d6b393','#bf8f66','#a3734b','#87603d','#6e4d33','#583e2b','#463224','#271a12'], // Medium-to-dark brown
