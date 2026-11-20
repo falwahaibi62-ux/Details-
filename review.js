@@ -15,7 +15,7 @@
 
     function flagsFor(job, rv) {
         var f = [];
-        if (!rv) return ['Not read by AI'];
+        if (!rv) return (job && window.WathekDocs && !window.WathekDocs.isPdf(job.id)) ? [] : ['Not read by AI']; // only PDFs are read by AI
         if (rv.order_read && norm(rv.order_read) !== norm(job.jobNo || job.job_no)) f.push('Order number differs from Job No');
         if (!rv.order_read) f.push('Order number not read');
         if (rv.order_conf === 'low') f.push('Low confidence on order number');
@@ -166,6 +166,7 @@
     }
     async function readOne(jobId, force) {
         var j = (window.masterJobs || []).find(function (x) { return String(x.id) === String(jobId); }) || {};
+        if (!window.WathekDocs.isPdf(jobId)) return 'AI reads PDF files only';
         var blob = await window.WathekDocs.getBlob(jobId);
         if (!blob) return 'Could not open the document';
         if (blob.size > 10 * 1024 * 1024) return 'Too large for AI reading (over 10 MB)';
@@ -210,7 +211,7 @@
         readIds([jobId], !!(row && row.rv));
     }
     function readAllUnread() {
-        var ids = rows.filter(function (r) { return r.has && !r.rv; }).map(function (r) { return r.job.id; });
+        var ids = rows.filter(function (r) { return r.has && !r.rv && window.WathekDocs.isPdf(r.job.id); }).map(function (r) { return r.job.id; });
         if (!ids.length) { alert('Every document already has a saved reading.'); return; }
         if (!confirm('Hello Wathek, the Checker will read the document.')) return;
         readIds(ids);
