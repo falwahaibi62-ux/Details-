@@ -509,7 +509,7 @@
                     <p id="reviewCount" class="text-xs text-surface-600 mt-1"></p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <label class="text-xs text-surface-700 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" onchange="WathekReview.toggleOnlyCheck(this.checked)"> Show only items to check</label>
+                    <label class="text-xs text-surface-700 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" onchange="WathekReview.toggleShowAll(this.checked)"> Show all documents</label>
                     <label class="text-xs text-surface-700 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" onchange="WathekReview.toggleOnlyUnread(this.checked)"> Show only unread</label>
                     <button onclick="WathekReview.readAllUnread()" class="px-3 py-2 text-xs bg-surface-900 hover:bg-surface-800 text-white rounded-xl font-semibold transition cursor-pointer">Double check</button>
                     <button onclick="WathekReview.exportCsv()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Export CSV</button>

@@ -10,7 +10,7 @@
 
     var rows = [];      // built table rows
     var declined = [];
-    var onlyCheck = false;
+    var onlyCheck = true;   // by default only documents that have notes are listed
     var onlyUnread = false;
 
     function flagsFor(job, rv) {
@@ -87,7 +87,7 @@
         var c = document.getElementById('reviewCount');
         var need = rows.filter(function (r) { return r.flags.length && !(r.rv && r.rv.reviewed); }).length;
         if (c) c.textContent = rows.length + ' documents, ' + need + ' need checking';
-        if (!list.length) { box.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-surface-500 text-xs">Nothing to show.</td></tr>'; return; }
+        if (!list.length) { box.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-surface-500 text-xs">' + (onlyCheck ? 'No documents with notes.' : 'Nothing to show.') + '</td></tr>'; return; }
         box.innerHTML = list.map(function (r, i) {
             var j = r.job, rv = r.rv, ok = !r.flags.length;
             var lotSys = j.lot_no ? esc(j.lot_no) + (j.tape_color ? ' (' + esc(j.tape_color) + ')' : '') : '-';
@@ -190,7 +190,7 @@
         exportDeclined: exportDeclined,
         readRow: readRow, readAllUnread: readAllUnread,
         render: function () { if (window.currentUserRole !== 'Admin') return; load(); },
-        toggleOnlyCheck: function (v) { onlyCheck = !!v; draw(); },
+        toggleShowAll: function (v) { onlyCheck = !v; draw(); },
         toggleOnlyUnread: function (v) { onlyUnread = !!v; draw(); },
         exportCsv: exportCsv
     };
