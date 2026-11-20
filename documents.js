@@ -370,6 +370,7 @@
 
 
     // ---------- AI reading of order number / lot / color (optional, per click) ----------
+    function money(s) { var n = parseFloat(String(s == null ? '' : s).replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : null; }
     function normNo(s) { return String(s || '').replace(/\s+/g, '').toUpperCase(); }
     function fileToBase64(file) {
         return new Promise(function (resolve, reject) {
@@ -403,7 +404,10 @@
                 return;
             }
             var f = res.data.fields, ord = f.order_no || {}, lot = f.lot_no || {}, col = f.tape_color || {};
-            r.ai = { order: ord.value || '', conf: ord.confidence || 'low', lot: lot.value || '', lotConf: lot.confidence || 'low', color: col.value || '', warnings: res.data.warnings || [] };
+            var amt = function (k) { return f[k] && typeof f[k].value === 'number' ? f[k].value : null; };
+            r.ai = { order: ord.value || '', conf: ord.confidence || 'low', lot: lot.value || '', lotConf: lot.confidence || 'low', color: col.value || '',
+                     total: amt('total_amount'), deposit: amt('prepaid_deposit'), balance: amt('balance_due_at_destination'),
+                     warnings: (res.data.warnings || []).filter(function (w) { return !/^Total \(/.test(w); }) };
             var want = normNo(r.ai.order), note = 'Read: ' + esc(r.ai.order || '-') + (r.ai.lot ? ' · Lot ' + esc(r.ai.lot) + (r.ai.color ? ' ' + esc(r.ai.color) : '') : '');
             var hit = want ? (window.masterJobs || []).filter(function (j) { return !isDelivery(j) && normNo(j.jobNo || j.job_no) === want; }) : [];
             var detail;
@@ -413,6 +417,10 @@
             else if (docsByJob[String(hit[0].id)]) detail = '<span style="color:#b91c1c">Job already has a document</span>';
             else if (r.ai.conf === 'low') { detail = '<span style="color:#b45309">Low confidence - check the number, then choose the job</span>'; setSel(i, hit[0].id); }
             else { r.jobId = String(hit[0].id); setSel(i, hit[0].id); detail = ''; }
+            if (hit.length === 1 && r.ai.total !== null && r.ai.deposit !== null) {
+                var sys = money(hit[0].total_amount || hit[0].total), exp = r.ai.total - r.ai.deposit;
+                if (sys !== null && Math.abs(sys - exp) > 2) r.ai.warnings.push('System amount ' + sys + ' differs from the document (total - deposit = ' + exp + ').');
+            }
             r.aiNote = note + (detail ? '<br>' + detail : '') + (r.ai.warnings.length ? '<br><span style="color:#b45309">' + esc(r.ai.warnings[0]) + '</span>' : '');
             refreshBulkState();
         } catch (e) {
@@ -469,6 +477,13 @@
                     var color = ['orange','yellow','green','blue','red','pink','purple','white'].indexOf(String(r.ai.color).toLowerCase()) >= 0 ? String(r.ai.color).toLowerCase() : null;
                     var up = await sb().from('jobs_report').update({ lot_no: String(r.ai.lot).toUpperCase(), tape_color: color }).eq('id', r.jobId);
                     if (!up.error) { job.lot_no = String(r.ai.lot).toUpperCase(); job.tape_color = color; extra = ' + Lot ' + esc(job.lot_no); }
+                }
+                if (r.ai) {
+                    await sb().from('job_document_review').upsert({
+                        job_id: r.jobId, order_read: r.ai.order || null, order_conf: r.ai.conf, lot_read: r.ai.lot || null, color_read: r.ai.color || null, lot_conf: r.ai.lotConf,
+                        total_read: r.ai.total, deposit_read: r.ai.deposit, balance_read: r.ai.balance, warnings: r.ai.warnings || [],
+                        read_at: new Date().toISOString(), read_by: userEmail()
+                    }, { onConflict: 'job_id' });
                 }
                 if (st) st.innerHTML = '<span style="color:#0f766e;font-weight:700">Attached' + extra + '</span>';
             }
