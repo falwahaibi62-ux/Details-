@@ -242,3 +242,21 @@ html.glass aside {
     height: 240px; /* Fixed height prevents the chart from being clipped */
     max-height: 240px;
 }
+
+
+/* ===== New look (2026): headings font + soft 3D depth on dashboard cards ===== */
+h1, h2, h3 { font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.01em; }
+#tab-dashboard .group {
+    transition: transform .35s ease, box-shadow .35s ease;
+    transform-style: preserve-3d;
+}
+@media (hover: hover) and (min-width: 768px) {
+    #tab-dashboard .group:hover {
+        transform: perspective(900px) rotateX(3deg) rotateY(-3deg) translateY(-3px);
+        box-shadow: 0 24px 40px -18px rgb(var(--surface-900-rgb) / 0.35);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    #tab-dashboard .group { transition: none; }
+    #tab-dashboard .group:hover { transform: none; }
+}
