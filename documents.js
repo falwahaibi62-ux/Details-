@@ -262,7 +262,9 @@
             '<div style="background:#fff;border-radius:16px;width:100%;max-width:1000px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.35)">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0"><strong style="font-size:15px">Attach documents to jobs</strong><button id="wd-bulk-x" type="button" style="font-size:22px;background:none;border:0;cursor:pointer;color:#475569">&times;</button></div>' +
             '<div style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#475569">Choose PDF files (one file per job). The scan date in each file name suggests jobs from the 3 days before it; check every match, then press Attach. Duplicate files and jobs that already have a document are skipped.' +
-            '<div style="margin-top:8px"><input id="wd-bulk-files" type="file" accept="application/pdf,.pdf" multiple></div></div>' +
+            '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center"><input id="wd-bulk-files" type="file" accept="application/pdf,.pdf" multiple>' +
+            '<button id="wd-bulk-ai" type="button" disabled style="background:#1e293b;color:#fff;border:0;border-radius:10px;padding:7px 14px;font-weight:700;font-size:12px;cursor:pointer;opacity:.5">Read order numbers with AI</button></div>' +
+            '<div style="margin-top:4px;font-size:11px;color:#94a3b8">AI reading sends each selected PDF to the Claude service to read only the order number, lot and tape color. It costs a small amount per file. Check every match before pressing Attach.</div></div>' +
             '<div id="wd-bulk-list" style="padding:8px 16px;overflow:auto;flex:1;font-size:12px"></div>' +
             '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid #e2e8f0"><span id="wd-bulk-msg" style="font-size:12px;color:#64748b"></span>' +
             '<button id="wd-bulk-go" type="button" disabled style="background:#0f766e;color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer;opacity:.5">Attach</button></div></div>';
@@ -270,6 +272,7 @@
         document.getElementById('wd-bulk-x').addEventListener('click', closeBulk);
         document.getElementById('wd-bulk-files').addEventListener('change', onBulkFiles);
         document.getElementById('wd-bulk-go').addEventListener('click', runBulk);
+        document.getElementById('wd-bulk-ai').addEventListener('click', readAllAI);
     }
 
     function bulkMsg(t, err) { var e = document.getElementById('wd-bulk-msg'); if (e) { e.textContent = t || ''; e.style.color = err ? '#b91c1c' : '#64748b'; } }
@@ -315,6 +318,8 @@
             if (cands.length === 1) r.jobId = String(cands[0].id);
         });
         renderBulk();
+        var aib = document.getElementById('wd-bulk-ai');
+        if (aib) { var any = bulkRows.some(function (r) { return !r.problem; }); aib.disabled = !any; aib.style.opacity = any ? '1' : '.5'; }
     }
 
     function renderBulk() {
@@ -363,7 +368,70 @@
         refreshBulkState();
     }
 
-    function refreshBulkState() {
+
+    // ---------- AI reading of order number / lot / color (optional, per click) ----------
+    function normNo(s) { return String(s || '').replace(/\s+/g, '').toUpperCase(); }
+    function fileToBase64(file) {
+        return new Promise(function (resolve, reject) {
+            var fr = new FileReader();
+            fr.onload = function () { resolve(String(fr.result).split(',')[1] || ''); };
+            fr.onerror = function () { reject(new Error('read failed')); };
+            fr.readAsDataURL(file);
+        });
+    }
+    function setSel(i, jobId) {
+        var sel = document.querySelector('#wd-bulk-list .wd-bulk-sel[data-i="' + i + '"]');
+        if (!sel) return;
+        if (!sel.querySelector('option[value="' + jobId + '"]')) {
+            var j = (window.masterJobs || []).find(function (x) { return String(x.id) === String(jobId); });
+            var o = document.createElement('option'); o.value = jobId; o.textContent = j ? jobLabel(j) : String(jobId); sel.appendChild(o);
+        }
+        sel.value = String(jobId);
+    }
+    async function readOneAI(i) {
+        var r = bulkRows[i], st = document.getElementById('wd-st-' + i);
+        if (!r || r.problem || r.done) return;
+        if (r.file.size > 10 * 1024 * 1024) { r.aiNote = '<span style="color:#b45309">Too large for AI reading - choose manually</span>'; refreshBulkState(); return; }
+        if (st) st.textContent = 'Reading...';
+        try {
+            var b64 = await fileToBase64(r.file);
+            var res = await sb().functions.invoke('extract-job', { body: { pdf_base64: b64 } });
+            if (res.error || !res.data || !res.data.fields) {
+                var msg = 'Could not read';
+                try { if (res.error && res.error.context && res.error.context.json) { var j = await res.error.context.json(); if (j && j.error) msg = j.error; } } catch (e) {}
+                r.aiNote = '<span style="color:#b91c1c">' + esc(msg) + '</span>'; refreshBulkState();
+                return;
+            }
+            var f = res.data.fields, ord = f.order_no || {}, lot = f.lot_no || {}, col = f.tape_color || {};
+            r.ai = { order: ord.value || '', conf: ord.confidence || 'low', lot: lot.value || '', lotConf: lot.confidence || 'low', color: col.value || '', warnings: res.data.warnings || [] };
+            var want = normNo(r.ai.order), note = 'Read: ' + esc(r.ai.order || '-') + (r.ai.lot ? ' · Lot ' + esc(r.ai.lot) + (r.ai.color ? ' ' + esc(r.ai.color) : '') : '');
+            var hit = want ? (window.masterJobs || []).filter(function (j) { return !isDelivery(j) && normNo(j.jobNo || j.job_no) === want; }) : [];
+            var detail;
+            if (!want) detail = '<span style="color:#b45309">Order number not readable</span>';
+            else if (hit.length === 0) detail = '<span style="color:#b45309">No job ' + esc(r.ai.order) + ' in the system</span>';
+            else if (hit.length > 1) detail = '<span style="color:#b45309">Several jobs have this number - use the list</span>';
+            else if (docsByJob[String(hit[0].id)]) detail = '<span style="color:#b91c1c">Job already has a document</span>';
+            else if (r.ai.conf === 'low') { detail = '<span style="color:#b45309">Low confidence - check the number, then choose the job</span>'; setSel(i, hit[0].id); }
+            else { r.jobId = String(hit[0].id); setSel(i, hit[0].id); detail = ''; }
+            r.aiNote = note + (detail ? '<br>' + detail : '') + (r.ai.warnings.length ? '<br><span style="color:#b45309">' + esc(r.ai.warnings[0]) + '</span>' : '');
+            refreshBulkState();
+        } catch (e) {
+            r.aiNote = '<span style="color:#b91c1c">Could not read</span>'; refreshBulkState();
+        }
+    }
+    async function readAllAI() {
+        var btn = document.getElementById('wd-bulk-ai');
+        if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+        var idx = [];
+        bulkRows.forEach(function (r, i) { if (!r.problem && !r.done && !r.ai) idx.push(i); });
+        var n = 0;
+        async function worker() { while (n < idx.length) { var k = idx[n++]; await readOneAI(k); } }
+        await Promise.all([worker(), worker()]);
+        refreshBulkState(true);
+        bulkMsg('AI reading finished. Check every row before pressing Attach.');
+    }
+
+    function refreshBulkState(keepNotes) {
         // a job can take one document only
         var used = {}, dupJob = {};
         bulkRows.forEach(function (r, i) { if (!r.problem && r.jobId) { if (used[r.jobId] !== undefined) dupJob[i] = dupJob[used[r.jobId]] = true; else used[r.jobId] = i; } });
@@ -371,9 +439,10 @@
         bulkRows.forEach(function (r, i) {
             var st = document.getElementById('wd-st-' + i);
             if (!st || r.problem || r.done) return;
-            if (!r.jobId) st.innerHTML = '<span style="color:#b45309">Choose a job</span>';
-            else if (dupJob[i]) st.innerHTML = '<span style="color:#b91c1c">Two files for one job</span>';
-            else { st.innerHTML = '<span style="color:#0f766e">Ready</span>'; ready++; }
+            var note = r.aiNote ? '<div style="font-size:11px;color:#475569;margin-top:2px">' + r.aiNote + '</div>' : '';
+            if (!r.jobId) st.innerHTML = '<span style="color:#b45309">Choose a job</span>' + note;
+            else if (dupJob[i]) st.innerHTML = '<span style="color:#b91c1c">Two files for one job</span>' + note;
+            else { st.innerHTML = '<span style="color:#0f766e">Ready</span>' + note; ready++; }
         });
         var go = document.getElementById('wd-bulk-go');
         if (go) { go.disabled = !ready; go.style.opacity = ready ? '1' : '.5'; go.textContent = ready ? 'Attach ' + ready + ' document' + (ready > 1 ? 's' : '') : 'Attach'; }
@@ -393,7 +462,16 @@
             var job = jobs.find(function (j) { return String(j.id) === String(r.jobId); }) || {};
             var res = await uploadDoc(r.jobId, job.jobNo || job.job_no, r.file, r.hash);
             r.done = true;
-            if (res.ok) { ok++; if (st) st.innerHTML = '<span style="color:#0f766e;font-weight:700">Attached</span>'; }
+            if (res.ok) {
+                ok++;
+                var extra = '';
+                if (r.ai && r.ai.lot && r.ai.lotConf !== 'low' && !job.lot_no) {
+                    var color = ['orange','yellow','green','blue','red','pink','purple','white'].indexOf(String(r.ai.color).toLowerCase()) >= 0 ? String(r.ai.color).toLowerCase() : null;
+                    var up = await sb().from('jobs_report').update({ lot_no: String(r.ai.lot).toUpperCase(), tape_color: color }).eq('id', r.jobId);
+                    if (!up.error) { job.lot_no = String(r.ai.lot).toUpperCase(); job.tape_color = color; extra = ' + Lot ' + esc(job.lot_no); }
+                }
+                if (st) st.innerHTML = '<span style="color:#0f766e;font-weight:700">Attached' + extra + '</span>';
+            }
             else { failed++; if (st) st.innerHTML = '<span style="color:#b91c1c">Failed: ' + esc(res.message) + '</span>'; }
         }
         await loadIndex();
