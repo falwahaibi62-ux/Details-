@@ -615,6 +615,12 @@ function checkPermissions() {
 
     const currentRole = window.currentUserRole || 'Viewer';
 
+    // Users & Roles and Recycle Bin are for the Admin only
+    ['nav-users', 'nav-trash'].forEach(id => {
+        const navBtn = document.getElementById(id);
+        if (navBtn) navBtn.style.display = currentRole === 'Admin' ? '' : 'none';
+    });
+
     if (currentRole === 'Viewer') {
         if (addJobBtn) addJobBtn.style.display = 'none';
         if (addUserBtn) addUserBtn.style.display = 'none';
@@ -1444,6 +1450,11 @@ function switchTab(tabName) {
         // Normalize the name to match the real HTML ID, which is "trash"
         if (tabName === 'recycle-bin' || tabName === 'trash') {
             tabName = 'trash';
+        }
+
+        // Admin-only screens: anyone else is sent back to the dashboard
+        if ((tabName === 'trash' || tabName === 'users') && window.currentUserRole !== 'Admin') {
+            tabName = 'dashboard';
         }
 
         const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report'];
