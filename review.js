@@ -102,6 +102,7 @@
             var no = String(j.jobNo || j.job_no || '').trim();
             if (!/^[A-Za-z]{1,2}\d{5,8}$/.test(no)) return false; // real order numbers only (no cancel, delivery, storage or name entries)
             if (window.WathekDocs && window.WathekDocs.hasDoc(j.id)) return false;
+            if (!money(j.total_amount || j.total)) return false; // jobs with a total of 0 (or empty) are not listed
             return !q || norm(no).indexOf(q) >= 0;
         });
     }
