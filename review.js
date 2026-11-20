@@ -1,0 +1,100 @@
+/* Wathek - Document Review (Admin only). Display only: it never changes job records.
+   Shows what the AI read from each attached PDF next to what is in the system, and lets the Admin tick "Reviewed". */
+(function () {
+    'use strict';
+    function sb() { return window.supabaseClient; }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function money(s) { var n = parseFloat(String(s == null ? '' : s).replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : null; }
+    function norm(s) { return String(s || '').replace(/\s+/g, '').toUpperCase(); }
+    function fmt(n) { return n === null || n === undefined ? '-' : '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+
+    var rows = [];      // built table rows
+    var onlyCheck = false;
+
+    function flagsFor(job, rv) {
+        var f = [];
+        if (!rv) return ['Not read by AI'];
+        if (rv.order_read && norm(rv.order_read) !== norm(job.jobNo || job.job_no)) f.push('Order number differs from Job No');
+        if (!rv.order_read) f.push('Order number not read');
+        if (rv.order_conf === 'low') f.push('Low confidence on order number');
+        if (rv.lot_read && job.lot_no && norm(rv.lot_read) !== norm(job.lot_no)) f.push('Lot differs from the system');
+        if (rv.lot_read && !job.lot_no) f.push('Lot read but not saved in the system');
+        if (rv.total_read != null && rv.deposit_read != null) {
+            var sys = money(job.total_amount || job.total), exp = Number(rv.total_read) - Number(rv.deposit_read);
+            if (sys !== null && Math.abs(sys - exp) > 2) f.push('Amount differs (system ' + sys + ' vs document ' + exp + ')');
+        }
+        (rv.warnings || []).forEach(function (w) { if (f.indexOf(w) < 0) f.push(w); });
+        return f;
+    }
+
+    async function load() {
+        var box = document.getElementById('reviewBody'); if (!box) return;
+        box.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-surface-500 text-xs">Loading...</td></tr>';
+        var jobs = window.masterJobs || [];
+        var q = await sb().from('job_document_review').select('*');
+        if (q.error) { box.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-danger-600 text-xs">Could not load: ' + esc(q.error.message) + '</td></tr>'; return; }
+        var byJob = {}; (q.data || []).forEach(function (r) { byJob[String(r.job_id)] = r; });
+        rows = [];
+        jobs.forEach(function (j) {
+            var has = window.WathekDocs && window.WathekDocs.hasDoc(j.id), rv = byJob[String(j.id)];
+            if (!has && !rv) return;
+            rows.push({ job: j, rv: rv || null, has: !!has, flags: flagsFor(j, rv) });
+        });
+        rows.sort(function (a, b) { return (a.flags.length ? 0 : 1) - (b.flags.length ? 0 : 1); });
+        draw();
+    }
+
+    function draw() {
+        var box = document.getElementById('reviewBody'); if (!box) return;
+        var list = rows.filter(function (r) { return !onlyCheck || (r.flags.length && !(r.rv && r.rv.reviewed)); });
+        var c = document.getElementById('reviewCount');
+        var need = rows.filter(function (r) { return r.flags.length && !(r.rv && r.rv.reviewed); }).length;
+        if (c) c.textContent = rows.length + ' documents, ' + need + ' need checking';
+        if (!list.length) { box.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-surface-500 text-xs">Nothing to show.</td></tr>'; return; }
+        box.innerHTML = list.map(function (r, i) {
+            var j = r.job, rv = r.rv, ok = !r.flags.length;
+            var lotSys = j.lot_no ? esc(j.lot_no) + (j.tape_color ? ' (' + esc(j.tape_color) + ')' : '') : '-';
+            var lotRead = rv && rv.lot_read ? esc(rv.lot_read) + (rv.color_read ? ' (' + esc(rv.color_read) + ')' : '') : '-';
+            var exp = rv && rv.total_read != null && rv.deposit_read != null ? Number(rv.total_read) - Number(rv.deposit_read) : null;
+            return '<tr class="border-b border-surface-100 ' + (ok ? '' : 'bg-warning-50/40') + '">' +
+                '<td class="p-3 text-xs whitespace-nowrap">' + esc(String(j.date || '').split(' ')[0]) + '</td>' +
+                '<td class="p-3 text-xs font-semibold">' + esc(j.jobNo || j.job_no || '-') + '<div class="font-normal text-surface-500">' + esc(j.route || '') + '</div></td>' +
+                '<td class="p-3 text-xs">' + (r.has ? '<a href="#" data-view="' + esc(j.id) + '" class="text-primary-600 font-semibold">View</a>' : '-') + '</td>' +
+                '<td class="p-3 text-xs">' + esc(rv && rv.order_read || '-') + '</td>' +
+                '<td class="p-3 text-xs">' + lotSys + '<div class="text-surface-500">read: ' + lotRead + '</div></td>' +
+                '<td class="p-3 text-xs">' + fmt(money(j.total_amount || j.total)) + '<div class="text-surface-500">doc: ' + fmt(exp) + '</div></td>' +
+                '<td class="p-3 text-xs">' + (ok ? '<span class="text-success-600 font-semibold">OK</span>' : '<span class="text-warning-600 font-semibold">Check</span>' + r.flags.map(function (x) { return '<div class="text-surface-600">' + esc(x) + '</div>'; }).join('')) + '</td>' +
+                '<td class="p-3 text-xs text-center">' + (rv ? '<input type="checkbox" data-rev="' + esc(j.id) + '" ' + (rv.reviewed ? 'checked' : '') + '>' : '') + '</td>' +
+                '<td class="p-3 text-xs whitespace-nowrap">' + esc(rv && rv.read_at ? String(rv.read_at).slice(0, 10) : '') + '</td></tr>';
+        }).join('');
+        box.querySelectorAll('[data-view]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); window.WathekDocs.show(a.getAttribute('data-view')); }); });
+        box.querySelectorAll('[data-rev]').forEach(function (cb) {
+            cb.addEventListener('change', async function () {
+                var id = cb.getAttribute('data-rev'), on = cb.checked;
+                var email = (window.currentLoggedInUser && window.currentLoggedInUser.email) || null;
+                var u = await sb().from('job_document_review').update({ reviewed: on, reviewed_by: on ? email : null, reviewed_at: on ? new Date().toISOString() : null }).eq('job_id', id);
+                if (u.error) { alert('Could not save: ' + u.error.message); cb.checked = !on; return; }
+                var row = rows.find(function (x) { return String(x.job.id) === String(id); }); if (row && row.rv) row.rv.reviewed = on;
+                draw();
+            });
+        });
+    }
+
+    function exportCsv() {
+        var head = ['Date', 'Job No', 'Route', 'Order read', 'Lot (system)', 'Lot (read)', 'Amount (system)', 'Total (doc)', 'Deposit (doc)', 'Status', 'Notes', 'Reviewed'];
+        var out = [head].concat(rows.map(function (r) {
+            var j = r.job, rv = r.rv || {};
+            return [String(j.date || '').split(' ')[0], j.jobNo || j.job_no || '', j.route || '', rv.order_read || '', j.lot_no || '', rv.lot_read || '', money(j.total_amount || j.total) == null ? '' : money(j.total_amount || j.total),
+                rv.total_read == null ? '' : rv.total_read, rv.deposit_read == null ? '' : rv.deposit_read, r.flags.length ? 'Check' : 'OK', r.flags.join(' | '), rv.reviewed ? 'Yes' : 'No'];
+        }));
+        var csv = out.map(function (l) { return l.map(function (v) { v = String(v).replace(/"/g, '""'); return /^[=+\-@]/.test(v) ? '"\'' + v + '"' : '"' + v + '"'; }).join(','); }).join('\r\n');
+        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+        a.download = 'document-review-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    window.WathekReview = {
+        render: function () { if (window.currentUserRole !== 'Admin') return; load(); },
+        toggleOnlyCheck: function (v) { onlyCheck = !!v; draw(); },
+        exportCsv: exportCsv
+    };
+})();

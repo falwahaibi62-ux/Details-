@@ -616,7 +616,7 @@ function checkPermissions() {
     const currentRole = window.currentUserRole || 'Viewer';
 
     // Users & Roles and Recycle Bin are for the Admin only
-    ['nav-users', 'nav-trash'].forEach(id => {
+    ['nav-users', 'nav-trash', 'nav-review'].forEach(id => {
         const navBtn = document.getElementById(id);
         if (navBtn) navBtn.style.display = currentRole === 'Admin' ? '' : 'none';
     });
@@ -1453,11 +1453,11 @@ function switchTab(tabName) {
         }
 
         // Admin-only screens: anyone else is sent back to the dashboard
-        if ((tabName === 'trash' || tabName === 'users') && window.currentUserRole !== 'Admin') {
+        if ((tabName === 'trash' || tabName === 'users' || tabName === 'review') && window.currentUserRole !== 'Admin') {
             tabName = 'dashboard';
         }
 
-        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'trash', 'rentals', 'warehouse', 'pdf-report'];
+        const tabs = ['dashboard', 'jobs', 'users', 'reports', 'review', 'trash', 'rentals', 'warehouse', 'pdf-report'];
         
         tabs.forEach(t => {
             // Hide every possible tab container
@@ -1521,6 +1521,8 @@ function switchTab(tabName) {
         } else if (tabName === 'users') {
             if (typeof renderUsers === 'function') renderUsers();
             if (typeof fetchUsersFromSupabase === 'function') fetchUsersFromSupabase();
+        } else if (tabName === 'review') {
+            if (window.WathekReview) window.WathekReview.render();
         } else if (tabName === 'trash') {
             if (typeof renderTrashBin === 'function') renderTrashBin();
         }

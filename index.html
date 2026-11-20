@@ -67,6 +67,10 @@
                     <i class="fa-solid fa-users-gear w-5 text-center text-primary-400"></i>
                     <span>Users & Roles</span>
                 </button>
+                <button onclick="switchTab('review')" id="nav-review" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition cursor-pointer">
+                    <i class="fa-solid fa-file-circle-check w-5 text-center text-primary-400"></i>
+                    <span>Document Review</span>
+                </button>
                 <button onclick="switchTab('reports')" id="nav-reports" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition cursor-pointer">
                     <i class="fa-solid fa-file-pdf w-5 text-center text-primary-400"></i>
                     <span>Official PDF Report</span>
@@ -496,6 +500,29 @@
             </div>
         </div> <!-- END TAB 6 -->
         
+        <!-- TAB: DOCUMENT REVIEW (Admin only) -->
+        <div id="tab-review" class="hidden space-y-6 w-full flex-col view-section">
+            <div class="glass-panel p-5 rounded-2xl flex flex-wrap gap-3 justify-between items-center bg-white shadow-xs border border-surface-200">
+                <div>
+                    <h3 class="font-bold text-surface-900 text-base">Document Review</h3>
+                    <p class="text-xs text-surface-500">What was read from each attached PDF, next to what is in the system. For checking only: nothing here changes a job.</p>
+                    <p id="reviewCount" class="text-xs text-surface-600 mt-1"></p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="text-xs text-surface-700 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" onchange="WathekReview.toggleOnlyCheck(this.checked)"> Show only items to check</label>
+                    <button onclick="WathekReview.exportCsv()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Export CSV</button>
+                </div>
+            </div>
+            <div class="glass-panel rounded-2xl bg-white shadow-xs border border-surface-200 overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead><tr class="text-[11px] text-surface-500 uppercase border-b border-surface-200">
+                        <th class="p-3">Date</th><th class="p-3">Job No</th><th class="p-3">Document</th><th class="p-3">Order read</th><th class="p-3">Lot</th><th class="p-3">Amount</th><th class="p-3">Status</th><th class="p-3 text-center">Reviewed</th><th class="p-3">Read on</th>
+                    </tr></thead>
+                    <tbody id="reviewBody"></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- TAB 7: RECYCLE BIN -->
         <div id="tab-trash" class="hidden space-y-6 w-full flex-col view-section">
             <div class="glass-panel p-5 rounded-2xl flex justify-between items-center bg-white shadow-xs border border-surface-200">
@@ -688,6 +715,7 @@
     <script src="storage.js"></script>
     <script src="documents.js"></script>
     <script src="backup.js"></script>
+    <script src="review.js"></script>
     <script src="Dashboard.js"></script>
     <script src="rentalForm.js"></script>
     <script src="warehouseform.js"></script>
