@@ -675,7 +675,7 @@
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-xs border-collapse${sec.key === 'jobs' ? ' min-w-[1100px]' : ' min-w-[640px]'}">
                     <thead class="bg-surface-50 text-surface-600 uppercase text-[10px] font-bold border-b border-surface-200"><tr>${head}</tr></thead>
-                    <tbody class="divide-y divide-surface-100">${body}</tbody>
+                    <tbody class="divide-y divide-surface-100" data-compact="${sec.key}">${body}</tbody>
                     ${foot}
                 </table>
             </div>

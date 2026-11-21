@@ -56,9 +56,9 @@
         window.requestAnimationFrame(function () { queued = false; labelTables(); });
     }
 
-    // Jobs list on phones: tap a row to show / hide its full details (buttons and links keep working)
+    // Compact lists on phones: tap a row to show / hide its full details (buttons and links keep working)
     document.addEventListener('click', function (e) {
-        var tr = e.target.closest ? e.target.closest('#masterJobsTableBody tr') : null;
+        var tr = e.target.closest ? e.target.closest('#masterJobsTableBody tr, #truckRentalTableBody tr, #warehouseTableBody tr, #trashTableBody tr, #noDocBody tr, tbody[data-compact] tr') : null;
         if (!tr || tr.classList.contains('m-wide')) return;
         if (e.target.closest('button, a, input, select, label')) return;
         tr.classList.toggle('open');
