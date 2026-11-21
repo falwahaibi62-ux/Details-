@@ -64,6 +64,57 @@
         tr.classList.toggle('open');
     });
 
+    // ---- Refresh: reload the data from the server and redraw, staying on the current page ----
+    var refreshing = false;
+    function hint(text, ms) {
+        var el = document.getElementById('pullHint'); if (!el) return;
+        el.textContent = text; el.classList.remove('hidden');
+        if (ms) setTimeout(function () { el.classList.add('hidden'); }, ms);
+    }
+    window.WathekRefresh = async function () {
+        if (refreshing) return; refreshing = true;
+        var icon = document.querySelector('#mobileRefreshBtn i'); if (icon) icon.classList.add('fa-spin');
+        hint('Refreshing...');
+        try {
+            var jobs = [];
+            if (typeof window.initMasterJobsData === 'function') jobs.push(window.initMasterJobsData());
+            if (typeof window.loadPrivateTruckRentals === 'function') jobs.push(window.loadPrivateTruckRentals());
+            if (typeof window.loadWarehouseData === 'function') jobs.push(window.loadWarehouseData());
+            if (window.WathekDocs) jobs.push(window.WathekDocs.loadIndex());
+            await Promise.all(jobs);
+            if (typeof window.filterLedgerTable === 'function') { try { window.filterLedgerTable(); } catch (e) {} }
+            if (typeof window.updateDashboardAnalytics === 'function') window.updateDashboardAnalytics();
+            if (typeof window.generateSummaryReportData === 'function') window.generateSummaryReportData();
+            if (typeof window.renderSummaryPageWithDetailedTables === 'function') window.renderSummaryPageWithDetailedTables();
+            if (window.WathekReview && window.currentUserRole === 'Admin' && current === 'review') window.WathekReview.render();
+            hint('Updated', 1200);
+        } catch (e) {
+            hint('Could not refresh', 2500);
+        } finally {
+            refreshing = false; if (icon) icon.classList.remove('fa-spin');
+        }
+    };
+
+    // Pull down from the top of the page to refresh (phones)
+    (function () {
+        var startY = null, dist = 0;
+        document.addEventListener('touchstart', function (e) {
+            var main = document.querySelector('main');
+            startY = (main && main.scrollTop <= 0 && e.touches.length === 1 && !document.querySelector('#wd-viewer, #wd-bulk') && !document.body.classList.contains('sidebar-open')) ? e.touches[0].clientY : null;
+            dist = 0;
+        }, { passive: true });
+        document.addEventListener('touchmove', function (e) {
+            if (startY === null) return;
+            dist = e.touches[0].clientY - startY;
+            if (dist > 20 && !refreshing) hint(dist > 90 ? 'Release to refresh' : 'Pull to refresh');
+        }, { passive: true });
+        document.addEventListener('touchend', function () {
+            if (startY === null) return;
+            var go = dist > 90; startY = null; dist = 0;
+            if (go) window.WathekRefresh(); else if (!refreshing) { var el = document.getElementById('pullHint'); if (el) el.classList.add('hidden'); }
+        }, { passive: true });
+    })();
+
     function init() {
         wrapSwitchTab(); paintBar(); labelTables();
         new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });

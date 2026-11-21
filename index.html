@@ -26,7 +26,7 @@
             <i class="fa-solid fa-bars"></i>
         </button>
         <h2 class="text-base font-bold">Wathek</h2>
-        <span class="w-10"></span>
+        <button type="button" id="mobileRefreshBtn" onclick="WathekRefresh()" aria-label="Refresh data" class="w-10 h-10 -mr-2 flex items-center justify-center rounded-xl hover:bg-surface-800 text-lg cursor-pointer"><i class="fa-solid fa-rotate-right"></i></button>
     </header>
 
     <!-- Dark layer behind the open menu on phones; tap it to close -->
@@ -589,6 +589,8 @@
         </div> <!-- END TAB 7 -->
 
     </main>
+
+    <div id="pullHint" class="md:hidden hidden fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-1.5 rounded-full bg-surface-900 text-white text-xs font-semibold shadow-lg"></div>
 
     <!-- MOBILE BOTTOM TAB BAR (phones only) -->
     <nav id="mobileTabBar" class="md:hidden shrink-0 flex items-stretch bg-surface-900 border-t border-surface-800 z-30" aria-label="Main">
