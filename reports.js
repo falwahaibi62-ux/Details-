@@ -797,48 +797,49 @@
     // 9. PDF (Summary first, then Detailed - same period)
     // ==========================================
     // All PDF colors come from theme.js
-    const T = window.themeColor;
+    // PDF is printed on white paper, so it keeps its own fixed formal colours
+    // (navy ink + one steel-blue accent) and does not follow the app theme.
+    const PDF_INK = { 50: '#F4F6FA', 100: '#E6EBF4', 200: '#D5DCE9', 300: '#C3CCDD', 400: '#8E9BB4', 500: '#5F6E8A', 600: '#46546F', 700: '#2A3650', 800: '#1B2538', 900: '#1B2538' };
+    const T = (role, shade) => (role === 'surface' ? (PDF_INK[shade] || PDF_INK[500]) : (role === 'primary' || role === 'info') ? '#2F5597' : '#1B2538');
     const TINT = window.PDF_TINTS;
     const PDF_CSS = `
-        :root { --ink:${T('surface', 900)}; --muted:${T('surface', 500)}; --line:${T('surface', 200)}; --soft:${T('surface', 50)}; --brand:${T('primary', 700)}; --brand-dark:${T('primary', 900)}; --brand-soft:${T('primary', 50)}; }
+        :root { --ink:#1B2538; --muted:#5F6E8A; --line:#D5DCE9; --accent:#2F5597; }
         @page { size: A4 landscape; margin: 9mm; }
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
-        body { font-family: "Segoe UI", Inter, system-ui, -apple-system, Arial, sans-serif; color: var(--ink); font-size: 10px; line-height: 1.4;
-               background: linear-gradient(150deg, ${TINT.backgroundStart} 0%, ${TINT.backgroundMiddle} 55%, ${TINT.backgroundEnd} 100%);
+        body { font-family: "Segoe UI", Inter, system-ui, -apple-system, Arial, sans-serif; color: var(--ink); font-size: 10px; line-height: 1.5; font-weight: 400; background: #fff;
                -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .hero { background: linear-gradient(120deg, ${T('primary', 900)} 0%, ${T('primary', 700)} 60%, ${T('primary', 500)} 130%); color: #fff; border-radius: 12px; padding: 16px 20px;
-                display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
-        .brand { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; opacity: .8; font-weight: 700; }
-        .hero h1 { margin: 3px 0 0; font-size: 21px; font-weight: 800; letter-spacing: -.01em; }
-        .hero .period { text-align: right; }
-        .hero .period .lbl { font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; opacity: .75; font-weight: 700; }
-        .hero .period .val { font-size: 14px; font-weight: 800; margin-top: 2px; }
-        .hero .period .meta { font-size: 8.5px; opacity: .75; margin-top: 3px; }
-        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0 4px; }
-        .kpi { border: 1px solid ${T('surface', 300, 0.7)}; border-left: 4px solid var(--brand); border-radius: 10px; padding: 9px 12px; background: rgba(255, 255, 255, 0.82); }
-        .kpi .l { font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
-        .kpi .v { font-size: 19px; font-weight: 800; margin-top: 2px; letter-spacing: -.01em; }
-        .kpi.blue { border-left-color: ${T('info', 600)}; } .kpi.amber { border-left-color: ${T('warning', 600)}; } .kpi.rose { border-left-color: ${T('alert', 600)}; }
-        .sec { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; font-size: 12.5px; font-weight: 800; color: var(--brand-dark); }
-        .sec::before { content: ""; width: 4px; height: 15px; border-radius: 2px; background: ${T('primary', 500)}; }
-        .sec small { font-size: 9px; color: var(--muted); font-weight: 600; margin-left: 4px; }
-        .card { border: 1px solid ${T('surface', 300, 0.7)}; border-radius: 10px; padding: 9px 11px 6px; margin-bottom: 10px; background: rgba(255, 255, 255, 0.82); break-inside: avoid; page-break-inside: avoid; }
-        .card h3 { margin: 0 0 6px; font-size: 10px; font-weight: 800; color: ${T('surface', 700)}; letter-spacing: .02em; }
+        b, strong { font-weight: 500; }
+        .hero { background: none; color: var(--ink); padding: 0 0 12px; border-bottom: 1px solid var(--accent); display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+        .brand { font-size: 9px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent); font-weight: 500; }
+        .hero h1 { margin: 4px 0 0; font-size: 20px; font-weight: 300; letter-spacing: .01em; }
+        .hero .period { text-align: right; color: var(--muted); }
+        .hero .period .lbl { font-size: 8px; letter-spacing: .16em; text-transform: uppercase; }
+        .hero .period .val { font-size: 12px; color: var(--ink); margin-top: 2px; }
+        .hero .period .meta { font-size: 8.5px; margin-top: 2px; }
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 16px 0 4px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+        .kpi { border: 0; border-radius: 0; padding: 10px 14px; background: none; }
+        .kpi + .kpi { border-left: 1px solid var(--line); }
+        .kpi .l { font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+        .kpi .v { font-size: 19px; font-weight: 300; margin-top: 3px; letter-spacing: -.01em; }
+        .sec { display: flex; align-items: center; gap: 10px; margin: 18px 0 8px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; color: var(--accent); }
+        .sec::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+        .sec small { font-size: 9px; color: var(--muted); font-weight: 400; letter-spacing: .04em; text-transform: none; }
+        .card { border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px 6px; margin-bottom: 10px; background: #fff; break-inside: avoid; page-break-inside: avoid; }
+        .card h3 { margin: 0 0 6px; font-size: 10px; font-weight: 500; color: var(--ink); letter-spacing: .02em; }
         .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 9px; }
         thead { display: table-header-group; }
         tfoot { display: table-row-group; }
         tr { break-inside: avoid; page-break-inside: avoid; }
-        th { background: ${T('surface', 100)}; color: ${T('surface', 700)}; font-weight: 800; font-size: 7.6px; text-transform: uppercase; letter-spacing: .04em;
-             padding: 6px 4px; border-bottom: 1.5px solid ${T('surface', 300)}; text-align: center; }
-        td { padding: 5px 4px; border-bottom: 1px solid ${TINT.rowLine}; text-align: center; }
-        tbody tr:nth-child(even) td { background: ${TINT.rowStripe}; }
-        td.b { font-weight: 700; }
-        .t-emerald { color: ${T('primary', 700)}; } .t-amber { color: ${T('warning', 700)}; } .t-blue { color: ${T('info', 700)}; } .t-purple { color: ${T('accent', 700)}; }
-        th.hl { background: var(--brand); color: #fff; border-bottom-color: var(--brand); }
-        td.hl { background: var(--brand-soft) !important; color: ${T('primary', 800)}; font-weight: 800; }
-        tfoot td { background: var(--brand-soft); color: ${T('primary', 800)}; font-weight: 800; border-top: 1.5px solid ${T('primary', 200)}; border-bottom: none; padding: 6px 4px; }
+        th { background: none; color: var(--muted); font-weight: 500; font-size: 7.6px; text-transform: uppercase; letter-spacing: .08em; padding: 6px 4px; border-bottom: 1px solid var(--ink); text-align: center; }
+        td { padding: 5px 4px; border-bottom: 1px solid #E6EAF2; text-align: center; font-weight: 400; background: none; }
+        tbody tr:nth-child(even) td { background: none; }
+        td.b { font-weight: 500; }
+        .t-emerald, .t-amber, .t-blue, .t-purple { color: var(--ink); }
+        th.hl { background: none; color: var(--accent); border-bottom-color: var(--accent); }
+        td.hl { background: none !important; color: var(--ink); font-weight: 500; }
+        tfoot td { background: none; color: var(--ink); font-weight: 500; border-top: 1px solid var(--ink); border-bottom: none; padding: 6px 4px; }
         td.r { text-align: right; padding-right: 10px; }
         .empty { text-align: center; color: var(--muted); padding: 14px; font-size: 10px; }
         .pagebreak { break-before: page; page-break-before: always; }
@@ -894,7 +895,7 @@
             <div class="card"><h3>Official Period Financial Summary</h3>
             ${pdfTable(
                 `<th>Type</th><th>Foreman 10%</th><th>Helpers</th><th>Drivers</th><th>Cash Diesel</th><th>Cash PU</th><th>Cash Dest</th><th>PMO PU</th><th>PU (No Cash/PMO)</th><th>Balance (No Cash/PMO)</th><th>PMO Deliveries</th><th>Dest Zelle</th><th class="hl">Total After Deposit</th>`,
-                officialRows(s).map((r) => `<tr${r.isTotal ? ' style="font-weight:800;border-top:2px solid ' + T('surface', 300) + '"' : ''}><td class="b">${r.label}<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">${r.note}</div></td><td>${money(r.o.foreman)}</td><td>${money(r.o.helpers)}</td><td>${money(r.o.drivers)}</td><td>${money(r.o.cashDiesel)}</td><td>${money(r.o.cashPu)}</td><td>${money(r.o.cashDest)}</td><td>${money(r.o.pmoPu)}</td><td>${money(r.o.puOther)}</td><td>${money(r.o.destOther)}</td><td>${money(r.o.pmoDeliveries)}</td><td>${money(r.o.destZelle)}</td><td class="hl">${money(r.after)}<div style="font-size:6.5px;font-weight:500">${r.afterNote}</div></td></tr>`).join('')
+                officialRows(s).map((r) => `<tr${r.isTotal ? ' style="font-weight:500;border-top:2px solid ' + T('surface', 300) + '"' : ''}><td class="b">${r.label}<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">${r.note}</div></td><td>${money(r.o.foreman)}</td><td>${money(r.o.helpers)}</td><td>${money(r.o.drivers)}</td><td>${money(r.o.cashDiesel)}</td><td>${money(r.o.cashPu)}</td><td>${money(r.o.cashDest)}</td><td>${money(r.o.pmoPu)}</td><td>${money(r.o.puOther)}</td><td>${money(r.o.destOther)}</td><td>${money(r.o.pmoDeliveries)}</td><td>${money(r.o.destZelle)}</td><td class="hl">${money(r.after)}<div style="font-size:6.5px;font-weight:500">${r.afterNote}</div></td></tr>`).join('')
             )}</div>`;
 
         const rental = `
