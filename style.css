@@ -260,3 +260,39 @@ h1, h2, h3 { font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
     #tab-dashboard .group { transition: none; }
     #tab-dashboard .group:hover { transform: none; }
 }
+
+
+/* ===== Phone app layout (under 768px): bottom tab bar + tables as cards ===== */
+#mobileTabBar { padding-bottom: env(safe-area-inset-bottom); }
+#mobileTabBar button {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; min-height: 56px; background: none; border: 0; cursor: pointer;
+    color: #9ca3af; font-size: 10px; font-weight: 600;
+}
+#mobileTabBar button i { font-size: 18px; }
+#mobileTabBar button.active { color: #ff9433; }
+
+@media (max-width: 767px) {
+    table.m-cards { min-width: 0 !important; width: 100%; }
+    table.m-cards thead { display: none; }
+    table.m-cards, table.m-cards tbody, table.m-cards tfoot, table.m-cards tr { display: block; width: 100%; }
+    table.m-cards tbody tr, table.m-cards tfoot tr {
+        margin: 0 0 10px; padding: 8px 14px;
+        border: 1px solid rgba(100, 116, 139, 0.25); border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        box-shadow: 0 6px 18px -10px rgba(15, 23, 42, 0.35);
+    }
+    table.m-cards td {
+        display: flex; justify-content: space-between; align-items: center; gap: 14px;
+        padding: 7px 0 !important; border: 0 !important; text-align: right; white-space: normal !important;
+        border-bottom: 1px dashed rgba(100, 116, 139, 0.2) !important;
+    }
+    table.m-cards td:last-child { border-bottom: 0 !important; }
+    table.m-cards td::before {
+        content: attr(data-label); flex-shrink: 0; max-width: 45%; text-align: left;
+        font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748b;
+    }
+    table.m-cards td[data-label=""]::before, table.m-cards td:not([data-label])::before { display: none; }
+    table.m-cards td:not([data-label]) { display: block; text-align: left; }
+    table.m-cards td:empty { display: none; }
+}
