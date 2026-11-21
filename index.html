@@ -590,6 +590,15 @@
 
     </main>
 
+    <!-- MOBILE BOTTOM TAB BAR (phones only) -->
+    <nav id="mobileTabBar" class="md:hidden shrink-0 flex items-stretch bg-surface-900 border-t border-surface-800 z-30" aria-label="Main">
+        <button type="button" data-mtab="dashboard" onclick="switchTab('dashboard')"><i class="fa-solid fa-gauge-high"></i><span>Home</span></button>
+        <button type="button" data-mtab="jobs" onclick="switchTab('jobs')"><i class="fa-solid fa-truck-fast"></i><span>Jobs</span></button>
+        <button type="button" data-mtab="rentals" onclick="switchTab('rentals')"><i class="fa-solid fa-truck-moving"></i><span>Rentals</span></button>
+        <button type="button" data-mtab="reports" onclick="switchTab('reports')"><i class="fa-solid fa-file-pdf"></i><span>Reports</span></button>
+        <button type="button" data-mtab="more" onclick="toggleSidebar(true)"><i class="fa-solid fa-ellipsis"></i><span>More</span></button>
+    </nav>
+
     <!-- JOB EDIT / ADD MODAL -->
     <div id="jobModal" class="fixed inset-0 bg-surface-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 overflow-y-auto" style="display: none;">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-surface-100 my-auto relative z-10 max-h-[90vh] overflow-y-auto">
@@ -752,6 +761,7 @@
     <script src="rentalForm.js"></script>
     <script src="warehouseform.js"></script>
     <script src="app.js"></script>
+    <script src="mobile.js"></script>
     <script src="reports.js"></script>
     <script>
         // Phone menu: open/close the sidebar as a slide-in drawer
