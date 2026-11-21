@@ -56,6 +56,14 @@
         window.requestAnimationFrame(function () { queued = false; labelTables(); });
     }
 
+    // Jobs list on phones: tap a row to show / hide its full details (buttons and links keep working)
+    document.addEventListener('click', function (e) {
+        var tr = e.target.closest ? e.target.closest('#masterJobsTableBody tr') : null;
+        if (!tr || tr.classList.contains('m-wide')) return;
+        if (e.target.closest('button, a, input, select, label')) return;
+        tr.classList.toggle('open');
+    });
+
     function init() {
         wrapSwitchTab(); paintBar(); labelTables();
         new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
