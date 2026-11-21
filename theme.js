@@ -21,18 +21,18 @@
    ========================================================== */
 
 const THEME = {
-    primary:   'violet',   // Main brand color: buttons, active tab, amounts, totals
-    surface:   'ink',      // Page background, sidebar, text, borders, tables
+    primary:   'steel',   // Main brand color: buttons, active tab, amounts, totals
+    surface:   'navydark',      // Page background, sidebar, text, borders, tables
     info:      'blue',     // Information cards, "other payments", hotel
     warning:   'amber',    // Truck rentals, grand total cards
-    accent:    'pink',     // Warehouse section, helpers column
+    accent:    'indigo',     // Warehouse section, helpers column
     danger:    'red',      // Delete buttons and errors
     alert:     'rose',     // Total expenses, permanent delete buttons
     highlight: 'amber',    // Diesel card on the dashboard
-    secondary: 'fuchsia',  // Warehouse save button, truck rental menu icon
+    secondary: 'sky',  // Warehouse save button, truck rental menu icon
     extra1:    'sky',      // Reports: BC payment column
     extra2:    'indigo',   // Reports: PC payment column
-    extra3:    'purple'    // Reports: CC payment column
+    extra3:    'violet'    // Reports: CC payment column
 };
 
 // Modern glass look (frosted, see-through cards over a soft blurred colorful background).
@@ -40,12 +40,12 @@ const THEME = {
 const GLASS = {
     enabled: true,
     blur: 18,             // How blurry the glass is, in pixels (8 = light, 24 = strong)
-    cardOpacity: 0.72,    // Card whiteness: 0 = fully see-through, 1 = solid white
+    cardOpacity: 1,    // Card whiteness: 0 = fully see-through, 1 = solid white
     sidebarOpacity: 0.97, // Sidebar darkness: 0 = see-through, 1 = solid
-    background: 'surface.50',                              // Base page color behind the glass
-    blobs: ['info.300', 'primary.300', 'accent.300'],  // The 3 soft color glows in the background
-    blobStrength: 0.45,    // How visible the color glows are (0 - 1)
-    animate: true,        // Slowly moving background glows (false = still background)
+    background: 'surface.100',// Base page color behind the glass
+    blobs: ['primary.500', 'info.500', 'accent.500'],  // The 3 soft color glows in the background
+    blobStrength: 0.16,    // How visible the color glows are (0 - 1)
+    animate: false,        // Slowly moving background glows (false = still background)
     animationSpeed: 22    // Seconds for one full movement (bigger = slower and calmer)
 };
 
@@ -96,8 +96,11 @@ const PALETTES = (() => {
 
         // New look (2026): deep teal surfaces + sunset orange brand color
         deepteal: ['#f1f7f7','#e3eeef','#c8dcde','#9ec0c3','#6a9ea2','#437d82','#2f6368','#214e53','#153a3f','#0e2a2f','#081b1f'],
-        // New look (Nov 2026): violet-tinted ink neutrals, deep navy at 900
-        ink:      ['#f7f5ff','#efecfb','#e0dbf2','#c3bce0','#9a92bf','#6f6893','#524b75','#3b3558','#2a2445','#1c1633','#120e24'],
+        // New look (Nov 2026, formal dark): the "surface" scale is reversed on purpose.
+        // Low numbers (50-300) are dark navy backgrounds/borders, high numbers (500-950) are light text.
+        navydark: ['#182031','#141A26','#2F3B52','#3B4963','#7F8DAA','#93A1BC','#A9B5CC','#C3CCDD','#DDE3EF','#EEF2F9','#F7F9FC'],
+        // Steel blue brand scale tuned for dark panels (600 = button, 700+ = readable text on dark)
+        steel:    ['#182338','#1F2D47','#2A3E63','#3B5C91','#5B8BD6','#5486D0','#4F7DC4','#7CA3E4','#9DBCEE','#C2D6F5','#DCE7FA'],
         sunset:   ['#fff7ed','#ffebd5','#ffd3a3','#ffb56b','#ff9433','#ee7a12','#c2570a','#9a4308','#7a360b','#642e0c','#371504'],
 
         // Custom warm palettes (not part of Tailwind)
