@@ -362,6 +362,22 @@
             info: ['border-l-info-500', 'text-info-600'],
             ok: ['border-l-primary-500', 'text-primary-600']
         };
+        // Last job entered = the record with the highest id (the table has no "created at" column)
+        let lastCard = '';
+        const all = Array.isArray(jobs) ? jobs : [];
+        if (all.length) {
+            const last = all.reduce((best, j) => (Number(j.id) > Number(best.id) ? j : best), all[0]);
+            const d = parseJobDate(last.date);
+            let ago = '';
+            if (d) {
+                const days = Math.round((new Date().setHours(0, 0, 0, 0) - d.getTime()) / 86400000);
+                ago = days <= 0 ? ' (today)' : days === 1 ? ' (1 day ago)' : ' (' + days + ' days ago)';
+            }
+            lastCard = '<div class="p-4 bg-surface-50 rounded-xl border border-surface-100 border-l-4 ' + style.info[0] + ' md:col-span-2">'
+                + '<h4 class="font-bold text-surface-800 text-xs mb-1 flex items-center"><i class="fa-solid fa-clock-rotate-left mr-1.5 ' + style.info[1] + '"></i> Last job entered</h4>'
+                + '<p class="text-[11px] text-surface-600 leading-relaxed">' + esc(jobNoText(last)) + ' &middot; dated ' + esc(last.date || 'no date') + esc(ago) + '</p></div>';
+        }
+
         const badge = $('smartAlertsBadge');
         if (badge) badge.innerText = result.alerts.length
             ? result.alerts.length + (result.alerts.length === 1 ? ' to review' : ' to review') + ' \u00b7 last ' + ALERT_DAYS + ' days'
@@ -370,10 +386,10 @@
             const empty = result.jobs
                 ? 'Nothing needs attention in the last ' + ALERT_DAYS + ' days: payments match the Totals, every payment has a method, and no day has labor recorded twice.'
                 : 'No jobs were recorded in the last ' + ALERT_DAYS + ' days.';
-            box.innerHTML = '<div class="p-4 bg-surface-50 rounded-xl border border-surface-100 border-l-4 ' + style.ok[0] + ' md:col-span-2"><h4 class="font-bold text-surface-800 text-xs mb-1 flex items-center"><i class="fa-solid fa-circle-check mr-1.5 ' + style.ok[1] + '"></i> All clear</h4><p class="text-[11px] text-surface-600 leading-relaxed">' + empty + '</p></div>';
+            box.innerHTML = lastCard + '<div class="p-4 bg-surface-50 rounded-xl border border-surface-100 border-l-4 ' + style.ok[0] + ' md:col-span-2"><h4 class="font-bold text-surface-800 text-xs mb-1 flex items-center"><i class="fa-solid fa-circle-check mr-1.5 ' + style.ok[1] + '"></i> All clear</h4><p class="text-[11px] text-surface-600 leading-relaxed">' + empty + '</p></div>';
             return;
         }
-        box.innerHTML = result.alerts.map((a) => {
+        box.innerHTML = lastCard + result.alerts.map((a) => {
             const s = style[a.level] || style.info;
             return '<div class="p-4 bg-surface-50 rounded-xl border border-surface-100 border-l-4 ' + s[0] + '">'
                 + '<h4 class="font-bold text-surface-800 text-xs mb-1 flex items-center"><i class="fa-solid ' + a.icon + ' mr-1.5 ' + s[1] + '"></i> ' + esc(a.title) + '</h4>'
