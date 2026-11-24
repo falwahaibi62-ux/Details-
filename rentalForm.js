@@ -198,7 +198,7 @@ function renderTruckRentalSummary(rentalsData) {
         grandTotal += numAmt;
 
         const paymentType = String(r.paymentType || '').toLowerCase();
-        if (paymentType.includes('cash')) {
+        if (paymentType.includes('cash') && !paymentType.includes('cashapp')) {
             sumCash += numAmt;
         } else {
             sumOther += numAmt;
@@ -290,6 +290,7 @@ function injectPrivateTruckModalHTML() {
                         <select id="rentalPaymentType" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-primary-500 bg-white font-semibold">
                             <option value="Cash">Cash</option>
                             <option value="Zelle">Zelle</option>
+                            <option value="CashApp">CashApp</option>
                             <option value="Card">Card</option>
                         </select>
                     </div>
