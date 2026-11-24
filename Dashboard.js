@@ -44,8 +44,9 @@
     const money = (value) => '$' + Math.round(value).toLocaleString('en-US');
     const percent = (part, whole) => (whole > 0 ? Math.round((part / whole) * 1000) / 10 : 0);
 
-    const PAYMENT_KEYS = ['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Others', 'Unspecified'];
+    const PAYMENT_KEYS = ['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'CashApp', 'Others', 'Unspecified'];
     const METHOD_PATTERNS = [
+        ['CashApp', /(^|[^a-z])cashapp([^a-z]|$)/],
         ['Cash', /(^|[^a-z])cash([^a-z]|$)/],
         ['Zelle', /(^|[^a-z])zelle([^a-z]|$)/],
         ['PMO', /(^|[^a-z])pmo([^a-z]|$)/],

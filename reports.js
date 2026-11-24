@@ -167,6 +167,7 @@
     // 4. PAYMENT TEXT PARSING
     // ==========================================
     const METHOD_PATTERNS = [
+        ['CashApp', /(^|[^a-z])cashapp([^a-z]|$)/],
         ['Cash', /(^|[^a-z])cash([^a-z]|$)/],
         ['Zelle', /(^|[^a-z])zelle([^a-z]|$)/],
         ['PMO', /(^|[^a-z])pmo([^a-z]|$)/],
@@ -224,7 +225,7 @@
             diesel: 0,
             hotel: 0,
             breakdown: { G: { n: 0, rev: 0 }, C: { n: 0, rev: 0 }, P: { n: 0, rev: 0 }, T: { n: 0, rev: 0 }, Other: { n: 0, rev: 0, kinds: {} } },
-            payments: { Cash: 0, Zelle: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Unspecified: 0 },
+            payments: { Cash: 0, Zelle: 0, CashApp: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Unspecified: 0 },
             official: { foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, destZelle: 0, total: 0 },
             rental: { count: 0, days: 0, cash: 0, other: 0, total: 0 },
             warehouse: { count: 0, cash: 0, other: 0, total: 0 }
@@ -305,7 +306,7 @@
             s.rental.count++;
             s.rental.days += rentalDays(r);
             s.rental.total += amount;
-            if (rentalPayType(r).toLowerCase().includes('cash')) s.rental.cash += amount;
+            if (/cash(?!app)/.test(rentalPayType(r).toLowerCase())) s.rental.cash += amount;
             else s.rental.other += amount;
         });
 
@@ -313,7 +314,7 @@
             const amount = parseMoney(w.amount);
             s.warehouse.count++;
             s.warehouse.total += amount;
-            if (warehousePayType(w).toLowerCase().includes('cash')) s.warehouse.cash += amount;
+            if (/cash(?!app)/.test(warehousePayType(w).toLowerCase())) s.warehouse.cash += amount;
             else s.warehouse.other += amount;
         });
 
@@ -390,6 +391,7 @@
                         <tr class="bg-surface-50 text-surface-700 uppercase text-[10px] tracking-wider border-b border-surface-200">
                             <th class="p-2 border-r">Cash</th>
                             <th class="p-2 border-r">Zelle</th>
+                            <th class="p-2 border-r">CashApp</th>
                             <th class="p-2 border-r">PMO</th>
                             <th class="p-2 border-r">BC</th>
                             <th class="p-2 border-r">PC</th>
@@ -403,6 +405,7 @@
                         <tr class="font-bold text-xs">
                             <td class="p-3 border-r text-primary-600">${money(p.Cash)}</td>
                             <td class="p-3 border-r text-info-600">${money(p.Zelle)}</td>
+                            <td class="p-3 border-r text-secondary-600">${money(p.CashApp)}</td>
                             <td class="p-3 border-r text-accent-600">${money(p.PMO)}</td>
                             <td class="p-3 border-r text-extra1-600">${money(p.BC)}</td>
                             <td class="p-3 border-r text-extra2-600">${money(p.PC)}</td>
@@ -884,8 +887,8 @@
         const payments = `
             <div class="card"><h3>Payment Methods Summary (PU Payments + Destination Payments)</h3>
             ${pdfTable(
-                ['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Unspecified'].map((n) => `<th>${n}</th>`).join('') + '<th class="hl">Total Amount</th>',
-                `<tr>${['Cash', 'Zelle', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Unspecified'].map((n) => `<td>${money(p[n])}</td>`).join('')}<td class="hl">${money(paymentTotal)}</td></tr>`
+                ['Cash', 'Zelle', 'CashApp', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Unspecified'].map((n) => `<th>${n}</th>`).join('') + '<th class="hl">Total Amount</th>',
+                `<tr>${['Cash', 'Zelle', 'CashApp', 'PMO', 'BC', 'PC', 'CC', 'WT', 'Unspecified'].map((n) => `<td>${money(p[n])}</td>`).join('')}<td class="hl">${money(paymentTotal)}</td></tr>`
             )}
             <div style="margin-top:6px;font-size:8.5px;color:${T('surface', 600)}">
                 Job Totals <b>${money(s.revenue)}</b> + Delivery Collections <b style="color:${T('info', 700)}">${money(s.deliveryCollections)}</b>${Math.round(s.paymentGap) === 0 ? '' : ` ${s.paymentGap < 0 ? '&minus;' : '+'} Entry differences <b>${money(Math.abs(Math.round(s.paymentGap)))}</b>`} = Total Revenue (PU + Dest) <b>${money(paymentTotal)}</b>
