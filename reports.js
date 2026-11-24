@@ -226,13 +226,13 @@
             hotel: 0,
             breakdown: { G: { n: 0, rev: 0 }, C: { n: 0, rev: 0 }, P: { n: 0, rev: 0 }, T: { n: 0, rev: 0 }, Other: { n: 0, rev: 0, kinds: {} } },
             payments: { Cash: 0, Zelle: 0, CashApp: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Unspecified: 0 },
-            official: { foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, hotel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, destZelle: 0, total: 0 },
+            official: { foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, hotel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puZelle: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, destZelle: 0, total: 0 },
             rental: { count: 0, days: 0, cash: 0, other: 0, total: 0 },
             warehouse: { count: 0, cash: 0, other: 0, total: 0 }
         };
 
         // Official table split: one row for regular jobs, one for deliveries, one for the total
-        const zeroOfficial = () => ({ foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, hotel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, destZelle: 0, total: 0 });
+        const zeroOfficial = () => ({ foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, hotel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puZelle: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, destZelle: 0, total: 0 });
         s.officialJobs = zeroOfficial();
         s.officialDeliveries = zeroOfficial();
         const addOff = (delivery, key, value) => {
@@ -287,7 +287,10 @@
                 else if (e.method === 'PMO') {
                     addOff(delivery, 'pmoPu', e.amount);
                     if (delivery) addOff(delivery, 'pmoDeliveries', e.amount);
-                } else addOff(delivery, 'puOther', e.amount);
+                } else {
+                    addOff(delivery, 'puOther', e.amount);
+                    if (e.method === 'Zelle') addOff(delivery, 'puZelle', e.amount);
+                }
             });
 
             destEntries.forEach((e) => {
@@ -478,6 +481,7 @@
                                 <th class="p-2.5 border-r text-center text-primary-700 bg-primary-50/30">Cash PU Payment</th>
                                 <th class="p-2.5 border-r text-center text-primary-700 bg-primary-50/30">Cash Dest-Balance</th>
                                 <th class="p-2.5 border-r text-center">PMO PU Payment</th>
+                                <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">Zelle PU Payment</th>
                                 <th class="p-2.5 border-r text-center text-info-700 bg-info-50/30">PU (No Cash/PMO)</th>
                                 <th class="p-2.5 border-r text-center text-info-700 bg-info-50/30">Balance (No Cash/PMO)</th>
                                 <th class="p-2.5 border-r text-center">PMO Deliveries</th>
@@ -497,6 +501,7 @@
                                 <td class="p-2.5 border-r text-center text-primary-600 font-bold">${money(r.o.cashPu)}</td>
                                 <td class="p-2.5 border-r text-center text-primary-600 font-bold">${money(r.o.cashDest)}</td>
                                 <td class="p-2.5 border-r text-center">${money(r.o.pmoPu)}</td>
+                                <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.puZelle)}</td>
                                 <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(r.o.puOther)}</td>
                                 <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(r.o.destOther)}</td>
                                 <td class="p-2.5 border-r text-center">${money(r.o.pmoDeliveries)}</td>
@@ -905,8 +910,8 @@
         const official = `
             <div class="card"><h3>Official Period Financial Summary</h3>
             ${pdfTable(
-                `<th>Type</th><th>Foreman 10%</th><th>Helpers</th><th>Drivers</th><th>Cash Diesel</th><th>Total Hotels</th><th>Cash PU</th><th>Cash Dest</th><th>PMO PU</th><th>PU (No Cash/PMO)</th><th>Balance (No Cash/PMO)</th><th>PMO Deliveries</th><th>Dest Zelle</th><th class="hl">Total After Deposit</th>`,
-                officialRows(s).map((r) => `<tr${r.isTotal ? ' style="font-weight:500;border-top:2px solid ' + T('surface', 300) + '"' : ''}><td class="b">${r.label}<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">${r.note}</div></td><td>${money(r.o.foreman)}</td><td>${money(r.o.helpers)}</td><td>${money(r.o.drivers)}</td><td>${money(r.o.cashDiesel)}</td><td>${money(r.o.hotel)}</td><td>${money(r.o.cashPu)}</td><td>${money(r.o.cashDest)}</td><td>${money(r.o.pmoPu)}</td><td>${money(r.o.puOther)}</td><td>${money(r.o.destOther)}</td><td>${money(r.o.pmoDeliveries)}</td><td>${money(r.o.destZelle)}</td><td class="hl">${money(r.after)}<div style="font-size:6.5px;font-weight:500">${r.afterNote}</div></td></tr>`).join('')
+                `<th>Type</th><th>Foreman 10%</th><th>Helpers</th><th>Drivers</th><th>Cash Diesel</th><th>Total Hotels</th><th>Cash PU</th><th>Cash Dest</th><th>PMO PU</th><th>Zelle PU</th><th>PU (No Cash/PMO)</th><th>Balance (No Cash/PMO)</th><th>PMO Deliveries</th><th>Dest Zelle</th><th class="hl">Total After Deposit</th>`,
+                officialRows(s).map((r) => `<tr${r.isTotal ? ' style="font-weight:500;border-top:2px solid ' + T('surface', 300) + '"' : ''}><td class="b">${r.label}<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">${r.note}</div></td><td>${money(r.o.foreman)}</td><td>${money(r.o.helpers)}</td><td>${money(r.o.drivers)}</td><td>${money(r.o.cashDiesel)}</td><td>${money(r.o.hotel)}</td><td>${money(r.o.cashPu)}</td><td>${money(r.o.cashDest)}</td><td>${money(r.o.pmoPu)}</td><td>${money(r.o.puZelle)}</td><td>${money(r.o.puOther)}</td><td>${money(r.o.destOther)}</td><td>${money(r.o.pmoDeliveries)}</td><td>${money(r.o.destZelle)}</td><td class="hl">${money(r.after)}<div style="font-size:6.5px;font-weight:500">${r.afterNote}</div></td></tr>`).join('')
             )}</div>`;
 
         const rental = `
