@@ -550,7 +550,8 @@
             renderCards(r);
             renderCorridors(r);
             renderInsights(r);
-            renderAlerts(jobs);
+            // Alerts are read-only and isolated: a problem in them must never stop the charts or the reports
+            try { renderAlerts(jobs); } catch (alertError) { console.error('Alerts could not be drawn:', alertError); }
             renderDashboardCharts(r.monthly, r.payments);
             checkDatabaseStatus();
         } catch (e) {
