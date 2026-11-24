@@ -362,20 +362,29 @@
             info: ['border-l-info-500', 'text-info-600'],
             ok: ['border-l-primary-500', 'text-primary-600']
         };
-        // Last job entered = the record with the highest id (the table has no "created at" column)
+        // Last job entered = the record with the highest id (the table has no "created at" column).
+        // Shown next to the job with the most recent job date, because a back-dated job can be saved last.
         let lastCard = '';
         const all = Array.isArray(jobs) ? jobs : [];
         if (all.length) {
-            const last = all.reduce((best, j) => (Number(j.id) > Number(best.id) ? j : best), all[0]);
-            const d = parseJobDate(last.date);
-            let ago = '';
-            if (d) {
+            const agoText = (d) => {
+                if (!d) return '';
                 const days = Math.round((new Date().setHours(0, 0, 0, 0) - d.getTime()) / 86400000);
-                ago = days <= 0 ? ' (today)' : days === 1 ? ' (1 day ago)' : ' (' + days + ' days ago)';
-            }
+                return days <= 0 ? ' (today)' : days === 1 ? ' (1 day ago)' : ' (' + days + ' days ago)';
+            };
+            const last = all.reduce((best, j) => (Number(j.id) > Number(best.id) ? j : best), all[0]);
+            let newest = null;
+            all.forEach((j) => {
+                const d = parseJobDate(j.date);
+                if (d && (!newest || d > newest.d)) newest = { j: j, d: d };
+            });
+            const line = (label, j, d) => '<p class="text-[11px] text-surface-600 leading-relaxed"><span class="text-surface-800 font-semibold">' + label + ':</span> '
+                + esc(jobNoText(j)) + ' &middot; job date ' + esc(j.date || 'none') + esc(agoText(d)) + '</p>';
             lastCard = '<div class="p-4 bg-surface-50 rounded-xl border border-surface-100 border-l-4 ' + style.info[0] + ' md:col-span-2">'
-                + '<h4 class="font-bold text-surface-800 text-xs mb-1 flex items-center"><i class="fa-solid fa-clock-rotate-left mr-1.5 ' + style.info[1] + '"></i> Last job entered</h4>'
-                + '<p class="text-[11px] text-surface-600 leading-relaxed">' + esc(jobNoText(last)) + ' &middot; dated ' + esc(last.date || 'no date') + esc(ago) + '</p></div>';
+                + '<h4 class="font-bold text-surface-800 text-xs mb-1 flex items-center"><i class="fa-solid fa-clock-rotate-left mr-1.5 ' + style.info[1] + '"></i> Latest jobs</h4>'
+                + line('Last entered', last, parseJobDate(last.date))
+                + (newest && newest.j !== last ? line('Most recent job date', newest.j, newest.d) : '')
+                + '</div>';
         }
 
         const badge = $('smartAlertsBadge');
