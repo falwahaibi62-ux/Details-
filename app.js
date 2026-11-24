@@ -81,7 +81,16 @@ function applyJobNoSearch(data) {
     const searchInput = document.getElementById('ledgerJobSearch');
     const searchText = searchInput ? searchInput.value.trim().toLowerCase() : '';
     if (!searchText) return data;
-    return data.filter(item => String(item.jobNo || item.job_no || '').toLowerCase().includes(searchText));
+    // Every word typed must appear somewhere in: job no, foreman, route, lot, date, helpers / drivers / payments
+    const words = searchText.split(/\s+/).filter(Boolean);
+    return data.filter(item => {
+        const hay = [
+            item.jobNo || item.job_no, item.foreman_name || item.foreman, item.route, item.lot_no, item.date,
+            item.helpers_cost || item.helpers, item.drivers_cost || item.drivers,
+            item.pu_payments || item.pu, item.destination_payments || item.dest
+        ].map(v => String(v === null || v === undefined ? '' : v)).join(' ').toLowerCase();
+        return words.every(wd => hay.includes(wd));
+    });
 }
 
 function filterLedgerTable() {
@@ -997,6 +1006,25 @@ function openEditJobModal(jobIdOrNo) {
 }
 window.openEditJobModal = openEditJobModal;
 
+// Duplicate job: opens a NEW empty job and copies only the basics (route and foreman).
+// Job No, amounts, helpers, drivers, diesel, hotel, payments and documents are NOT copied.
+function duplicateJob(jobId) {
+    const job = (window.masterJobs || []).find(j => String(j.id || '').trim() === String(jobId).trim());
+    if (!job) { alert('Job record not found!'); return; }
+    openAddModal(false);
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    const routeStr = String(job.route || job.route_to || '');
+    const parts = routeStr.split(/\u2192|->/);
+    setVal('routeFrom', (parts[0] || '').trim());
+    setVal('routeTo', (parts[1] || '').trim());
+    setVal('jobForeman', job.foreman || job.foreman_name || '');
+    const t = new Date();
+    setVal('jobDate', t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'));
+    const no = document.getElementById('jobNo');
+    if (no) no.focus();
+}
+window.duplicateJob = duplicateJob;
+
 function populatePaymentContainer(containerId, paymentStr) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -1477,6 +1505,9 @@ function renderTable(data) {
             <td class="p-3 text-surface-600">${escapeHtml(item.hotel_expense || item.hotel || '-')}</td>
             <td class="p-3 text-center space-x-1 whitespace-nowrap">
                 ${window.WathekDocs ? window.WathekDocs.showButton(item.id) : ''}
+                <button type="button" onclick="duplicateJob('${item.id}')" title="Duplicate job (copies route and foreman only)" class="edit-action-btn p-1.5 bg-primary-50 hover:bg-primary-100 text-primary-600 rounded-lg transition cursor-pointer">
+                    <i class="fa-solid fa-copy"></i>
+                </button>
                 <button type="button" onclick="openEditJobModal('${item.id}')" class="edit-action-btn p-1.5 bg-info-50 hover:bg-info-100 text-info-600 rounded-lg transition cursor-pointer" title="Edit">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </button>
