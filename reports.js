@@ -226,13 +226,13 @@
             hotel: 0,
             breakdown: { G: { n: 0, rev: 0 }, C: { n: 0, rev: 0 }, P: { n: 0, rev: 0 }, T: { n: 0, rev: 0 }, Other: { n: 0, rev: 0, kinds: {} } },
             payments: { Cash: 0, Zelle: 0, CashApp: 0, PMO: 0, BC: 0, PC: 0, CC: 0, WT: 0, Unspecified: 0 },
-            official: { foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, hotel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puZelle: 0, puPc: 0, puBc: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, cashDeliveries: 0, destPmo: 0, destZelle: 0, destBc: 0, total: 0 },
+            official: { foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, hotel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puZelle: 0, puPc: 0, puBc: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, cashDeliveries: 0, destPmo: 0, destPc: 0, puCc: 0, destCc: 0, destZelle: 0, destBc: 0, total: 0 },
             rental: { count: 0, days: 0, cash: 0, other: 0, total: 0 },
             warehouse: { count: 0, cash: 0, other: 0, total: 0 }
         };
 
         // Official table split: one row for regular jobs, one for deliveries, one for the total
-        const zeroOfficial = () => ({ foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, hotel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puZelle: 0, puPc: 0, puBc: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, cashDeliveries: 0, destPmo: 0, destZelle: 0, destBc: 0, total: 0 });
+        const zeroOfficial = () => ({ foreman: 0, helpers: 0, drivers: 0, cashDiesel: 0, hotel: 0, cashPu: 0, cashDest: 0, pmoPu: 0, puZelle: 0, puPc: 0, puBc: 0, puOther: 0, destOther: 0, pmoDeliveries: 0, cashDeliveries: 0, destPmo: 0, destPc: 0, puCc: 0, destCc: 0, destZelle: 0, destBc: 0, total: 0 });
         s.officialJobs = zeroOfficial();
         s.officialDeliveries = zeroOfficial();
         const addOff = (delivery, key, value) => {
@@ -292,6 +292,7 @@
                     if (e.method === 'Zelle') addOff(delivery, 'puZelle', e.amount);
                     if (e.method === 'PC') addOff(delivery, 'puPc', e.amount);
                     if (e.method === 'BC') addOff(delivery, 'puBc', e.amount);
+                    if (e.method === 'CC') addOff(delivery, 'puCc', e.amount);
                 }
             });
 
@@ -304,6 +305,8 @@
                 } else {
                     addOff(delivery, 'destOther', e.amount);
                     if (e.method === 'Zelle') addOff(delivery, 'destZelle', e.amount);
+                    if (e.method === 'PC') addOff(delivery, 'destPc', e.amount);
+                    if (e.method === 'CC') addOff(delivery, 'destCc', e.amount);
                     if (e.method === 'BC') addOff(delivery, 'destBc', e.amount);
                 }
             });
@@ -480,8 +483,9 @@
                                 <th class="p-1.5 border-r text-center text-[9px] tracking-wider text-primary-700" colspan="3">Cash</th>
                                 <th class="p-1.5 border-r text-center text-[9px] tracking-wider text-info-700" colspan="3">PMO</th>
                                 <th class="p-1.5 border-r text-center text-[9px] tracking-wider text-accent-700" colspan="2">Zelle</th>
-                                <th class="p-1.5 border-r text-center text-[9px] tracking-wider text-accent-700" colspan="1">PC</th>
+                                <th class="p-1.5 border-r text-center text-[9px] tracking-wider text-accent-700" colspan="2">PC</th>
                                 <th class="p-1.5 border-r text-center text-[9px] tracking-wider text-accent-700" colspan="2">BC</th>
+                                <th class="p-1.5 border-r text-center text-[9px] tracking-wider text-accent-700" colspan="2">CC</th>
                                 <th class="p-1.5 border-r text-center text-[9px] tracking-wider"></th>
                             </tr>
                             <tr class="bg-surface-50 text-surface-600 uppercase font-bold border-b border-surface-200/80 text-[10px]">
@@ -500,8 +504,11 @@
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">Zelle PU</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">Zelle Balance</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">PC PU</th>
+<th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">PC Balance</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">BC PU</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">BC Balance</th>
+<th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">CC PU</th>
+<th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">CC Balance</th>
                                 <th class="p-2.5 text-center bg-primary-600 text-white font-extrabold">Total After Deposit</th>
                             </tr>
                         </thead>
@@ -523,8 +530,11 @@
                                 <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.puZelle)}</td>
                                 <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.destZelle)}</td>
                                 <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.puPc)}</td>
+                                <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.destPc)}</td>
                                 <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.puBc)}</td>
                                 <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.destBc)}</td>
+                                <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.puCc)}</td>
+                                <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.destCc)}</td>
                                 <td class="p-2.5 border-r text-center bg-primary-50 text-primary-800 font-extrabold text-xs">${money(r.after)}<div class="text-[9px] font-medium text-surface-400">${r.afterNote}</div></td>
                             </tr>`).join('')}
                         </tbody>
@@ -929,8 +939,8 @@
         const official = `
             <div class="card"><h3>Official Period Financial Summary</h3>
             ${pdfTable(
-                `<th>Type</th><th>Foreman 10%</th><th>Helpers</th><th>Drivers</th><th>Cash Diesel</th><th>Total Hotels</th><th>Cash PU</th><th>Cash Balance</th><th>Cash Deliveries</th><th>PMO PU</th><th>PMO Balance</th><th>PMO Deliveries</th><th>Zelle PU</th><th>Zelle Balance</th><th>PC PU</th><th>BC PU</th><th>BC Balance</th><th class="hl">Total After Deposit</th>`,
-                officialRows(s).map((r) => `<tr${r.isTotal ? ' style="font-weight:500;border-top:2px solid ' + T('surface', 300) + '"' : ''}><td class="b">${r.label}<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">${r.note}</div></td><td>${money(r.o.foreman)}</td><td>${money(r.o.helpers)}</td><td>${money(r.o.drivers)}</td><td>${money(r.o.cashDiesel)}</td><td>${money(r.o.hotel)}</td><td>${money(r.o.cashPu)}</td><td>${money(r.o.cashDest)}</td><td>${money(r.o.cashDeliveries)}</td><td>${money(r.o.pmoPu)}</td><td>${money(r.o.destPmo)}</td><td>${money(r.o.pmoDeliveries)}</td><td>${money(r.o.puZelle)}</td><td>${money(r.o.destZelle)}</td><td>${money(r.o.puPc)}</td><td>${money(r.o.puBc)}</td><td>${money(r.o.destBc)}</td><td class="hl">${money(r.after)}<div style="font-size:6.5px;font-weight:500">${r.afterNote}</div></td></tr>`).join('')
+                `<th>Type</th><th>Foreman 10%</th><th>Helpers</th><th>Drivers</th><th>Cash Diesel</th><th>Total Hotels</th><th>Cash PU</th><th>Cash Balance</th><th>Cash Deliveries</th><th>PMO PU</th><th>PMO Balance</th><th>PMO Deliveries</th><th>Zelle PU</th><th>Zelle Balance</th><th>PC PU</th><th>PC Balance</th><th>BC PU</th><th>BC Balance</th><th>CC PU</th><th>CC Balance</th><th class="hl">Total After Deposit</th>`,
+                officialRows(s).map((r) => `<tr${r.isTotal ? ' style="font-weight:500;border-top:2px solid ' + T('surface', 300) + '"' : ''}><td class="b">${r.label}<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">${r.note}</div></td><td>${money(r.o.foreman)}</td><td>${money(r.o.helpers)}</td><td>${money(r.o.drivers)}</td><td>${money(r.o.cashDiesel)}</td><td>${money(r.o.hotel)}</td><td>${money(r.o.cashPu)}</td><td>${money(r.o.cashDest)}</td><td>${money(r.o.cashDeliveries)}</td><td>${money(r.o.pmoPu)}</td><td>${money(r.o.destPmo)}</td><td>${money(r.o.pmoDeliveries)}</td><td>${money(r.o.puZelle)}</td><td>${money(r.o.destZelle)}</td><td>${money(r.o.puPc)}</td><td>${money(r.o.destPc)}</td><td>${money(r.o.puBc)}</td><td>${money(r.o.destBc)}</td><td>${money(r.o.puCc)}</td><td>${money(r.o.destCc)}</td><td class="hl">${money(r.after)}<div style="font-size:6.5px;font-weight:500">${r.afterNote}</div></td></tr>`).join('')
             )}</div>`;
 
         const rental = `
