@@ -740,7 +740,7 @@ window.addHotelEntryField = function(amount = '', method = 'Cash') {
     const div = document.createElement('div');
     div.className = 'flex items-center gap-2 hotel-row' + (container.children.length ? ' pt-2' : '');
     div.innerHTML = `
-        <input type="text" placeholder="Amount (e.g. 200)" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-primary-500 hotel-amount" value="${escapeHtml(amount)}">
+        <input type="text" placeholder="Amount" autocomplete="off" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-primary-500 hotel-amount" value="${escapeHtml(amount)}">
         <select class="w-28 p-2.5 border rounded-xl text-xs font-semibold bg-white hotel-method">
             ${methods.map(m => `<option value="${escapeHtml(m)}" ${m === selected ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('')}
         </select>
@@ -790,7 +790,7 @@ function addPaymentRow(containerId, amount = '', method = '') {
     rowDiv.id = rowId;
 
     rowDiv.innerHTML = `
-        <input type="text" placeholder="Amount (e.g. 500)" value="${escapeHtml(safeAmount)}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-primary-500 payment-amount">
+        <input type="text" placeholder="Amount" autocomplete="off" value="${escapeHtml(safeAmount)}" class="flex-1 p-2.5 border rounded-xl text-xs focus:outline-none focus:border-primary-500 payment-amount">
         <select class="w-32 p-2.5 border rounded-xl text-xs font-semibold bg-white focus:outline-none focus:border-primary-500 payment-method">
             <option value="" ${safeMethod === '' || safeMethod === 'unspecified' ? 'selected' : ''}>Unspecified</option>
             <option value="Cash" ${safeMethod === 'cash' ? 'selected' : ''}>Cash</option>
