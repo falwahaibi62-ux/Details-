@@ -237,6 +237,145 @@
         if (dotEl) dotEl.className = 'w-1.5 h-1.5 rounded-full mr-1 ' + (connected ? 'bg-primary-500 animate-ping' : 'bg-alert-500');
     }
 
+
+    // ==========================================
+    // 3b. ALERTS & TIPS (from the real job data, last 60 days)
+    // ==========================================
+    const ALERT_DAYS = 60;
+
+    function parseJobDate(text) {
+        const raw = String(text || '').trim().split(' ')[0];
+        let m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (m) return new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2]));
+        m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+        return null;
+    }
+
+    const hasLaborText = (v) => { const t = String(v === null || v === undefined ? '' : v).trim(); return t !== '' && t !== '-' && t !== '0'; };
+    const jobNoText = (j) => String(j.jobNo || j.job_no || '').trim() || 'No job number';
+    const listNos = (jobs) => jobs.slice(0, 5).map((j) => jobNoText(j)).join(', ') + (jobs.length > 5 ? ' and ' + (jobs.length - 5) + ' more' : '');
+
+    function buildAlerts(jobs) {
+        const since = new Date();
+        since.setDate(since.getDate() - ALERT_DAYS);
+        since.setHours(0, 0, 0, 0);
+        const recent = (jobs || []).filter((j) => {
+            const d = parseJobDate(j.date);
+            return d && d >= since;
+        });
+
+        const alerts = [];
+        const isDelivery = (j) => jobNoText(j).toLowerCase().includes('delivery') || String(j.route || '').toLowerCase().includes('delivery');
+
+        // 1. Payments with no method
+        let collected = 0;
+        let unspecified = 0;
+        const unspecifiedJobs = [];
+        recent.forEach((j) => {
+            const entries = parsePaymentEntries(j.pu || j.pu_payments).concat(parsePaymentEntries(j.dest || j.destination || j.destination_payments));
+            let jobUnspecified = 0;
+            entries.forEach((e) => { collected += e.amount; if (e.method === 'Unspecified') jobUnspecified += e.amount; });
+            if (jobUnspecified > 0) { unspecified += jobUnspecified; unspecifiedJobs.push(j); }
+        });
+        if (collected > 0 && percent(unspecified, collected) >= 5) {
+            alerts.push({
+                level: 'warn', icon: 'fa-wallet', title: 'Payments without a method',
+                text: money(unspecified) + ' (' + percent(unspecified, collected) + '%) of collected payments has no payment method on ' + unspecifiedJobs.length + (unspecifiedJobs.length === 1 ? ' job' : ' jobs') + ' (' + listNos(unspecifiedJobs) + '). Set the method so the cash and digital totals are reliable.'
+            });
+        }
+
+        // 2. Paid less / more than the Total (deliveries have no Total)
+        const unpaid = [];
+        const over = [];
+        let unpaidSum = 0;
+        let overSum = 0;
+        recent.filter((j) => !isDelivery(j)).forEach((j) => {
+            const total = firstNumber(j.total || j.total_amount);
+            const paid = parsePaymentEntries(j.pu || j.pu_payments).concat(parsePaymentEntries(j.dest || j.destination || j.destination_payments)).reduce((n, e) => n + e.amount, 0);
+            const gap = Math.round(total - paid);
+            if (gap >= 1) { unpaid.push(j); unpaidSum += gap; }
+            else if (gap <= -1) { over.push(j); overSum += -gap; }
+        });
+        if (unpaid.length) {
+            alerts.push({
+                level: 'danger', icon: 'fa-hand-holding-dollar', title: 'Unpaid balances',
+                text: money(unpaidSum) + ' not yet collected across ' + unpaid.length + (unpaid.length === 1 ? ' job' : ' jobs') + ' (' + listNos(unpaid) + '). Follow up on these balances.'
+            });
+        }
+        if (over.length) {
+            alerts.push({
+                level: 'warn', icon: 'fa-scale-unbalanced', title: 'Payments above the Total',
+                text: over.length + (over.length === 1 ? ' job has' : ' jobs have') + ' payments higher than the Total by ' + money(overSum) + ' (' + listNos(over) + '). Check for a typing mistake or a missing Total.'
+            });
+        }
+
+        // 3. Labor recorded on more than one job on the same day (labor is paid per day)
+        const byDay = {};
+        recent.filter((j) => hasLaborText(j.helpers || j.helpers_cost) || hasLaborText(j.drivers || j.drivers_cost)).forEach((j) => {
+            const d = parseJobDate(j.date);
+            const key = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+            (byDay[key] = byDay[key] || []).push(j);
+        });
+        const doubleDays = Object.keys(byDay).filter((k) => byDay[k].length > 1);
+        if (doubleDays.length) {
+            const sample = doubleDays.slice(0, 3).map((k) => byDay[k][0].date + ' (' + listNos(byDay[k]) + ')').join('; ');
+            alerts.push({
+                level: 'warn', icon: 'fa-users', title: 'Labor recorded twice on one day',
+                text: doubleDays.length + (doubleDays.length === 1 ? ' day has' : ' days have') + ' Helpers / Drivers cost on more than one job: ' + sample + (doubleDays.length > 3 ? ' and ' + (doubleDays.length - 3) + ' more' : '') + '. Labor is paid per day, so confirm the crew was not paid twice.'
+            });
+        }
+
+        // 4. Records missing basic data
+        const noRoute = recent.filter((j) => !jobRoute(j));
+        if (noRoute.length) {
+            alerts.push({
+                level: 'info', icon: 'fa-route', title: 'Jobs without a route',
+                text: noRoute.length + (noRoute.length === 1 ? ' job has' : ' jobs have') + ' no route (' + listNos(noRoute) + '). Routes drive the Top Corridors chart.'
+            });
+        }
+
+        // 5. Diesel share of collected revenue
+        const diesel = recent.reduce((n, j) => n + sumPlusSeparated(j.diesel || j.diesel_expense), 0);
+        if (collected > 0 && percent(diesel, collected) >= 15) {
+            alerts.push({
+                level: 'info', icon: 'fa-gas-pump', title: 'Diesel is a large share of revenue',
+                text: 'Diesel is ' + percent(diesel, collected) + '% of collected revenue (' + money(diesel) + ' of ' + money(collected) + ') in the last ' + ALERT_DAYS + ' days.'
+            });
+        }
+
+        return { alerts: alerts, jobs: recent.length };
+    }
+
+    function renderAlerts(jobs) {
+        const box = $('smartAlertsContainer');
+        if (!box) return;
+        const result = buildAlerts(jobs);
+        const style = {
+            danger: ['border-l-alert-500', 'text-alert-600'],
+            warn: ['border-l-warning-500', 'text-warning-600'],
+            info: ['border-l-info-500', 'text-info-600'],
+            ok: ['border-l-primary-500', 'text-primary-600']
+        };
+        const badge = $('smartAlertsBadge');
+        if (badge) badge.innerText = result.alerts.length
+            ? result.alerts.length + (result.alerts.length === 1 ? ' to review' : ' to review') + ' \u00b7 last ' + ALERT_DAYS + ' days'
+            : 'All clear \u00b7 last ' + ALERT_DAYS + ' days';
+        if (!result.alerts.length) {
+            const empty = result.jobs
+                ? 'Nothing needs attention in the last ' + ALERT_DAYS + ' days: payments match the Totals, every payment has a method, and no day has labor recorded twice.'
+                : 'No jobs were recorded in the last ' + ALERT_DAYS + ' days.';
+            box.innerHTML = '<div class="p-4 bg-surface-50 rounded-xl border border-surface-100 border-l-4 ' + style.ok[0] + ' md:col-span-2"><h4 class="font-bold text-surface-800 text-xs mb-1 flex items-center"><i class="fa-solid fa-circle-check mr-1.5 ' + style.ok[1] + '"></i> All clear</h4><p class="text-[11px] text-surface-600 leading-relaxed">' + empty + '</p></div>';
+            return;
+        }
+        box.innerHTML = result.alerts.map((a) => {
+            const s = style[a.level] || style.info;
+            return '<div class="p-4 bg-surface-50 rounded-xl border border-surface-100 border-l-4 ' + s[0] + '">'
+                + '<h4 class="font-bold text-surface-800 text-xs mb-1 flex items-center"><i class="fa-solid ' + a.icon + ' mr-1.5 ' + s[1] + '"></i> ' + esc(a.title) + '</h4>'
+                + '<p class="text-[11px] text-surface-600 leading-relaxed">' + esc(a.text) + '</p></div>';
+        }).join('');
+    }
+
     function updateDashboardAnalytics() {
         try {
             const jobs = Array.isArray(window.masterJobs) ? window.masterJobs : [];
@@ -244,6 +383,7 @@
             renderCards(r);
             renderCorridors(r);
             renderInsights(r);
+            renderAlerts(jobs);
             renderDashboardCharts(r.monthly, r.payments);
             checkDatabaseStatus();
         } catch (e) {
@@ -306,5 +446,5 @@
 
     window.updateDashboardAnalytics = updateDashboardAnalytics;
     window.renderDashboardCharts = renderDashboardCharts;
-    window.__dashboardInternals = { compute: compute };
+    window.__dashboardInternals = { compute: compute, buildAlerts: buildAlerts };
 })();
