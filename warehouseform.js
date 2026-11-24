@@ -102,7 +102,7 @@ function ensureWarehouseModalExists() {
                     </button>
                 </div>
 
-                <form id="warehouseForm" onsubmit="handleWarehouseSubmit(event)" class="p-6 space-y-4 text-xs">
+                <form id="warehouseForm" autocomplete="off" onsubmit="handleWarehouseSubmit(event)" class="p-6 space-y-4 text-xs">
                     <input type="hidden" id="editWarehouseId" value="">
 
                     <div>
@@ -112,12 +112,12 @@ function ensureWarehouseModalExists() {
 
                     <div>
                         <label class="block font-semibold text-surface-700 mb-1">Category / Service <span class="text-danger-500">*</span></label>
-                        <input type="text" id="warehouseService" required placeholder="e.g. Warehouse Labor" class="w-full px-3.5 py-2.5 bg-white border border-surface-200 rounded-xl focus:outline-none transition text-surface-700">
+                        <input type="text" id="warehouseService" autocomplete="off" required placeholder="Category / Service" class="w-full px-3.5 py-2.5 bg-white border border-surface-200 rounded-xl focus:outline-none transition text-surface-700">
                     </div>
 
                     <div>
                         <label class="block font-semibold text-surface-700 mb-1">Description / Details</label>
-                        <input type="text" id="warehouseDetails" placeholder="Enter description" class="w-full px-3.5 py-2.5 bg-white border border-surface-200 rounded-xl focus:outline-none transition text-surface-700">
+                        <input type="text" id="warehouseDetails" autocomplete="off" placeholder="Description" class="w-full px-3.5 py-2.5 bg-white border border-surface-200 rounded-xl focus:outline-none transition text-surface-700">
                     </div>
 
                     <div>
@@ -133,7 +133,7 @@ function ensureWarehouseModalExists() {
 
                     <div>
                         <label class="block font-semibold text-surface-700 mb-1">Amount ($) <span class="text-danger-500">*</span></label>
-                        <input type="number" id="warehouseAmount" value="0" min="0" step="0.01" required class="w-full px-3.5 py-2.5 bg-white border border-surface-200 rounded-xl focus:outline-none transition text-surface-700">
+                        <input type="number" id="warehouseAmount" autocomplete="off" placeholder="Amount" min="0" step="0.01" required class="w-full px-3.5 py-2.5 bg-white border border-surface-200 rounded-xl focus:outline-none transition text-surface-700">
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-surface-100">
