@@ -215,45 +215,16 @@
                 </div>
             </div>
 
-            <!-- Strategic Business Recommendations -->
-            <div class="glass-panel p-6 rounded-2xl bg-white shadow-xs border border-surface-200 space-y-4">
+            <!-- Alerts & Tips: Admin only, filled by Dashboard.js from the real job data -->
+            <div id="smartAlertsPanel" class="hidden glass-panel p-6 rounded-2xl bg-white shadow-xs border border-surface-200 space-y-4">
                 <div class="flex items-center justify-between mb-2">
                     <h3 class="font-bold text-surface-800 text-sm flex items-center">
-                        <i class="fa-solid fa-lightbulb text-warning-500 mr-2"></i>
-                        Strategic Business Recommendations
+                        <i class="fa-solid fa-bell text-warning-500 mr-2"></i>
+                        Alerts &amp; Tips
                     </h3>
-                    <span class="text-xs bg-warning-50 text-warning-600 px-2.5 py-1 rounded-full font-medium">AI Insights</span>
+                    <span id="smartAlertsBadge" class="text-xs bg-warning-50 text-warning-600 px-2.5 py-1 rounded-full font-medium">Last 60 days</span>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-4 bg-primary-50/50 rounded-xl border border-primary-100">
-                        <h4 class="font-bold text-primary-800 text-xs mb-1 flex items-center">
-                            <i class="fa-solid fa-chart-line mr-1.5"></i> High Yield Lane Focus
-                        </h4>
-                        <p class="text-[11px] text-surface-600 leading-relaxed">Prioritize dispatch allocations on top-performing corridors to maximize revenue yield and minimize deadhead miles.</p>
-                    </div>
-
-                    <div class="p-4 bg-info-50/50 rounded-xl border border-info-100">
-                        <h4 class="font-bold text-info-800 text-xs mb-1 flex items-center">
-                            <i class="fa-solid fa-shield-halved mr-1.5"></i> Liquidity Optimization
-                        </h4>
-                        <p class="text-[11px] text-surface-600 leading-relaxed">Monitor operational cash flows closely and balance upfront pick-up collections to maintain robust financial stability.</p>
-                    </div>
-
-                    <div class="p-4 bg-accent-50/50 rounded-xl border border-accent-100">
-                        <h4 class="font-bold text-accent-800 text-xs mb-1 flex items-center">
-                            <i class="fa-solid fa-wallet mr-1.5"></i> Payment Balancing
-                        </h4>
-                        <p class="text-[11px] text-surface-600 leading-relaxed">Track digital payment channels alongside cash transactions to accelerate bank reconciliations and auditing.</p>
-                    </div>
-
-                    <div class="p-4 bg-warning-50/50 rounded-xl border border-warning-100">
-                        <h4 class="font-bold text-warning-800 text-xs mb-1 flex items-center">
-                            <i class="fa-solid fa-user-tie mr-1.5"></i> Dispatch Allocation
-                        </h4>
-                        <p class="text-[11px] text-surface-600 leading-relaxed">Assign high-value and critical transit routes to senior experienced foremen to guarantee operational excellence.</p>
-                    </div>
-                </div>
+                <div id="smartAlertsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
 
         </div> <!-- END TAB 1 -->
