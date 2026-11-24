@@ -256,6 +256,19 @@
     const jobNoText = (j) => String(j.jobNo || j.job_no || '').trim() || 'No job number';
     const listNos = (jobs) => jobs.slice(0, 5).map((j) => jobNoText(j)).join(', ') + (jobs.length > 5 ? ' and ' + (jobs.length - 5) + ' more' : '');
 
+    // Same rule as the red rows of the ledger: the word "cancel", a job number without digits,
+    // or no value at all in Total, P.U Payments and Destination
+    function isCancelledJob(j) {
+        const no = String(j.jobNo || j.job_no || '').trim();
+        const text = (no + ' ' + String(j.route || '') + ' ' + String(j.foreman_name || j.foreman || '')).toLowerCase();
+        if (text.indexOf('delivery') >= 0) return false;
+        if (text.indexOf('cancel') >= 0 || !/\d/.test(no)) return true;
+        const total = firstNumber(j.total || j.total_amount);
+        const paid = parsePaymentEntries(j.pu || j.pu_payments).concat(parsePaymentEntries(j.dest || j.destination || j.destination_payments)).reduce((n, e) => n + e.amount, 0);
+        const hasDestText = String(j.dest || j.destination || j.destination_payments || '').replace(/[^0-9]/g, '').replace(/0/g, '') !== '';
+        return !(total > 0) && !(paid > 0) && !hasDestText;
+    }
+
     function buildAlerts(jobs) {
         const since = new Date();
         since.setDate(since.getDate() - ALERT_DAYS);
@@ -327,7 +340,7 @@
         }
 
         // 4. Records missing basic data
-        const noRoute = recent.filter((j) => !jobRoute(j));
+        const noRoute = recent.filter((j) => !jobRoute(j) && !isCancelledJob(j));
         if (noRoute.length) {
             alerts.push({
                 level: 'info', icon: 'fa-route', title: 'Jobs without a route',
