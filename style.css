@@ -499,3 +499,24 @@ header.md\:hidden, #mobileTabBar { background: #182031 !important; }
 #masterJobsTableBody tr.row-delivery:hover { background-color: rgba(139, 124, 232, 0.17); }
 #masterJobsTableBody tr.row-void { background-color: rgba(214, 96, 96, 0.10); box-shadow: inset 3px 0 0 rgba(214, 96, 96, 0.75); }
 #masterJobsTableBody tr.row-void:hover { background-color: rgba(214, 96, 96, 0.17); }
+
+
+/* ===== Phone: Reports page (tables stay whole and scroll sideways; nothing is cut off) ===== */
+@media (max-width: 767px) {
+    #tab-reports, #tab-reports > *, #pdfReportContent, #summaryReportView, #detailedReportView,
+    #monthlyRevenueContainer, #paymentSummaryContainer, #summaryReportContainer,
+    #warehousePDFSummarySection, #truckRentalPDFSummarySection, #detailedReportContainer { min-width: 0; max-width: 100%; }
+    #tab-reports .overflow-x-auto { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
+    #tab-reports .overflow-x-auto::-webkit-scrollbar { height: 6px; display: block; }
+    #tab-reports .overflow-x-auto::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.55); border-radius: 999px; }
+    #tab-reports table { display: table; }
+    #tab-reports table thead { display: table-header-group; }
+    #tab-reports table tbody { display: table-row-group; }
+    #tab-reports table tfoot { display: table-footer-group; }
+    #tab-reports table tr { display: table-row; }
+    #tab-reports table td, #tab-reports table th { display: table-cell; }
+    /* date filters and buttons at the top wrap instead of running off the screen */
+    #tab-reports > div:first-child, #tab-reports > div:first-child > div { min-width: 0; max-width: 100%; }
+    #tab-reports > div:first-child .flex { flex-wrap: wrap; }
+    #tab-reports .grid { min-width: 0; }
+}
