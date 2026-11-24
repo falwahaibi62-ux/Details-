@@ -293,8 +293,8 @@
         });
         if (collected > 0 && percent(unspecified, collected) >= 5) {
             alerts.push({
-                level: 'warn', icon: 'fa-wallet', title: 'Payments without a method',
-                text: money(unspecified) + ' (' + percent(unspecified, collected) + '%) of collected payments has no payment method on ' + unspecifiedJobs.length + (unspecifiedJobs.length === 1 ? ' job' : ' jobs') + ' (' + listNos(unspecifiedJobs) + '). Set the method so the cash and digital totals are reliable.'
+                level: 'info', icon: 'fa-wallet', title: 'Unspecified payments',
+                text: money(unspecified) + ' (' + percent(unspecified, collected) + '%) of payments in the last ' + ALERT_DAYS + ' days is Unspecified on ' + unspecifiedJobs.length + (unspecifiedJobs.length === 1 ? ' job' : ' jobs') + ' (' + listNos(unspecifiedJobs) + '). This is expected when delivery is arranged through a third party and the difference is settled in the account. For information only: if one of these was paid by a known method, edit the job and select it.'
             });
         }
 
