@@ -73,7 +73,7 @@
     }
     window.WathekRefresh = async function () {
         if (refreshing) return; refreshing = true;
-        var icon = document.querySelector('#mobileRefreshBtn i'); if (icon) icon.classList.add('fa-spin');
+        var icons = document.querySelectorAll('#mobileRefreshBtn i, #desktopRefreshBtn i'); Array.prototype.forEach.call(icons, function (i) { i.classList.add('fa-spin'); });
         hint('Refreshing...');
         try {
             var jobs = [];
@@ -81,7 +81,9 @@
             if (typeof window.loadPrivateTruckRentals === 'function') jobs.push(window.loadPrivateTruckRentals());
             if (typeof window.loadWarehouseData === 'function') jobs.push(window.loadWarehouseData());
             if (window.WathekDocs) jobs.push(window.WathekDocs.loadIndex());
+            if (typeof window.fetchUsersFromSupabase === 'function' && window.currentUserRole === 'Admin') jobs.push(window.fetchUsersFromSupabase());
             await Promise.all(jobs);
+            if (current === 'trash' && typeof window.renderTrashBin === 'function') { try { await window.renderTrashBin(); } catch (e) {} }
             if (typeof window.filterLedgerTable === 'function') { try { window.filterLedgerTable(); } catch (e) {} }
             if (typeof window.updateDashboardAnalytics === 'function') window.updateDashboardAnalytics();
             if (typeof window.generateSummaryReportData === 'function') window.generateSummaryReportData();
@@ -91,7 +93,7 @@
         } catch (e) {
             hint('Could not refresh', 2500);
         } finally {
-            refreshing = false; if (icon) icon.classList.remove('fa-spin');
+            refreshing = false; Array.prototype.forEach.call(icons, function (i) { i.classList.remove('fa-spin'); });
         }
     };
 
