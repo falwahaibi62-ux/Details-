@@ -195,6 +195,33 @@ async function renderWarehouseTab() {
             </button>
         </div>
 
+        ${window.WathekDateRange ? window.WathekDateRange.barHTML('warehouseDate', 'applyWarehouseDateFilter', 'clearWarehouseDateFilter', window.warehouseDateFilter) : ''}
+
+        <div class="bg-white rounded-2xl shadow-sm border border-surface-200/80 p-6 space-y-4 w-full mb-6">
+            <div class="border-b border-surface-100 pb-3">
+                <h3 class="text-sm font-bold text-surface-800">Warehouse Financial Summary</h3>
+                <p class="text-[11px] text-surface-400">Summary of the records shown below (follows the date filter)</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs w-full">
+                <div class="p-4 bg-surface-50 rounded-xl border border-surface-200/60 text-center">
+                    <span class="text-[10px] uppercase font-bold text-surface-500 block">Total Records</span>
+                    <span id="sumWarehouseCountCell" class="text-lg font-extrabold text-surface-800 mt-1 block">0</span>
+                </div>
+                <div class="p-4 bg-primary-50/40 rounded-xl border border-primary-100 text-center">
+                    <span class="text-[10px] uppercase font-bold text-primary-700 block">Cash Payments</span>
+                    <span id="sumWarehouseCashCell" class="text-lg font-extrabold text-primary-600 mt-1 block">$0.00</span>
+                </div>
+                <div class="p-4 bg-info-50/40 rounded-xl border border-info-100 text-center">
+                    <span class="text-[10px] uppercase font-bold text-info-700 block">Other Payments</span>
+                    <span id="sumWarehouseOtherCell" class="text-lg font-extrabold text-info-600 mt-1 block">$0.00</span>
+                </div>
+                <div class="p-4 bg-warning-500 rounded-xl text-white text-center shadow-xs">
+                    <span class="text-[10px] uppercase font-bold opacity-90 block">Grand Total Warehouse Cost</span>
+                    <span id="sumWarehouseGrandTotalCell" class="text-lg font-black mt-1 block">$0.00</span>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-white rounded-2xl shadow-xs border border-surface-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
@@ -223,7 +250,39 @@ window.renderWarehouseTab = renderWarehouseTab;
 
 // Refresh the table when the data changes
 async function refreshWarehouseData() {
-    const records = await loadWarehouseRecords();
+    await loadWarehouseRecords(); // keeps the full list in window.currentWarehouseRecords (the reports read it)
+    applyWarehouseDateFilter();
+}
+window.refreshWarehouseData = refreshWarehouseData;
+
+// Separate date filter of this page: changes only what is shown here, never the saved data or the reports
+window.warehouseDateFilter = window.warehouseDateFilter || { from: '', to: '' };
+
+function applyWarehouseDateFilter() {
+    const fromEl = document.getElementById('warehouseDateFrom');
+    const toEl = document.getElementById('warehouseDateTo');
+    if (fromEl) window.warehouseDateFilter.from = fromEl.value || '';
+    if (toEl) window.warehouseDateFilter.to = toEl.value || '';
+    const f = window.warehouseDateFilter;
+
+    const all = window.currentWarehouseRecords || [];
+    const records = window.WathekDateRange ? all.filter((r) => window.WathekDateRange.inRange(r.date, f.from, f.to)) : all;
+
+    // Summary cards (same cash rule as the reports: CashApp is not cash)
+    let cash = 0;
+    let other = 0;
+    records.forEach((r) => {
+        const amount = Number(r.amount) || 0;
+        if (/cash(?!app)/.test(String(r.paymentType || '').toLowerCase())) cash += amount; else other += amount;
+    });
+    const money = (v) => '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const setText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+    setText('sumWarehouseCountCell', String(records.length));
+    setText('sumWarehouseCashCell', money(cash));
+    setText('sumWarehouseOtherCell', money(other));
+    setText('sumWarehouseGrandTotalCell', money(cash + other));
+    setText('warehouseDateCount', (f.from || f.to) ? 'Showing ' + records.length + ' of ' + all.length + ' records' : all.length + ' records');
+
     const tbody = document.getElementById('warehouseTableBody');
     if (!tbody) return;
 
@@ -250,7 +309,17 @@ async function refreshWarehouseData() {
         </tr>
     `).join('');
 }
-window.refreshWarehouseData = refreshWarehouseData;
+window.applyWarehouseDateFilter = applyWarehouseDateFilter;
+
+function clearWarehouseDateFilter() {
+    window.warehouseDateFilter = { from: '', to: '' };
+    const fromEl = document.getElementById('warehouseDateFrom');
+    const toEl = document.getElementById('warehouseDateTo');
+    if (fromEl) fromEl.value = '';
+    if (toEl) toEl.value = '';
+    applyWarehouseDateFilter();
+}
+window.clearWarehouseDateFilter = clearWarehouseDateFilter;
 
 // Fill the edit form fields for the given record ID
 function editWarehouseRecord(id) {
