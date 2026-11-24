@@ -1128,7 +1128,7 @@ async function saveJob(event) {
         const sameDay = (window.masterJobs || []).filter((j) =>
             String(j.id) !== String(editRecordId) && normDate(j.date) === thisDate && (hasLabor(j.helpers_cost) || hasLabor(j.drivers_cost)));
         if (thisDate && sameDay.length) {
-            const nos = sameDay.slice(0, 3).map((j) => j.job_no || 'No job number').join(', ') + (sameDay.length > 3 ? ' and ' + (sameDay.length - 3) + ' more' : '');
+            const nos = sameDay.map((j) => j.job_no || 'No job number').join(', ');
             const msg = 'Another job on this date already has Helpers / Drivers cost recorded (' + nos + ').\n\n'
                 + 'Labor is paid per day, so saving this may pay the same crew twice.\n\n'
                 + 'Save anyway?';
