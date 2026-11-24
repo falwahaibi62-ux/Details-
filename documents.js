@@ -24,6 +24,7 @@
         white:  { label: 'White',  bg: '#ffffff', fg: '#334155', border: '#94a3b8' }
     };
 
+    var docsLoaded = false;      // true once the documents index was read (alerts wait for it)
     var docsByJob = {};          // job_id -> document row
     var currentBlobUrl = null;
 
@@ -166,6 +167,7 @@
         if (r.error) { console.error('Documents index error:', r.error.message); return; }
         docsByJob = {};
         (r.data || []).forEach(function (d) { docsByJob[String(d.job_id)] = d; });
+        docsLoaded = true;
         if (typeof window.renderTable === 'function' && window.masterJobs) {
             var rows = (window.currentFilteredJobs && window.currentFilteredJobs.length) ? window.currentFilteredJobs : window.masterJobs;
             window.renderTable(rows);
@@ -687,7 +689,7 @@
             var dl = await sb().storage.from(BUCKET).download(x.file_path);
             return dl.error ? null : dl.data;
         },
-        fillForm: fillForm, resetForm: resetForm, hasDoc: function (id) { return !!docsByJob[String(id)]; },
+        fillForm: fillForm, resetForm: resetForm, hasDoc: function (id) { return !!docsByJob[String(id)]; }, isLoaded: function () { return docsLoaded; },
         isPdf: function (id) { var x = docsByJob[String(id)]; return !!x && isPdfPath(x.file_path); }
     };
 
