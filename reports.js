@@ -487,8 +487,6 @@
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">Zelle PU Payment</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">PC PU Payment</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">BC PU Payment</th>
-                                <th class="p-2.5 border-r text-center text-info-700 bg-info-50/30">PU (No Cash/PMO)</th>
-                                <th class="p-2.5 border-r text-center text-info-700 bg-info-50/30">Balance (No Cash/PMO)</th>
                                 <th class="p-2.5 border-r text-center">PMO Deliveries</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">Dest Balance Zelle</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">BC Balance</th>
@@ -510,8 +508,6 @@
                                 <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.puZelle)}</td>
                                 <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.puPc)}</td>
                                 <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.puBc)}</td>
-                                <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(r.o.puOther)}</td>
-                                <td class="p-2.5 border-r text-center text-info-600 font-bold">${money(r.o.destOther)}</td>
                                 <td class="p-2.5 border-r text-center">${money(r.o.pmoDeliveries)}</td>
                                 <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.destZelle)}</td>
                                 <td class="p-2.5 border-r text-center text-accent-600 font-bold">${money(r.o.destBc)}</td>
@@ -919,8 +915,8 @@
         const official = `
             <div class="card"><h3>Official Period Financial Summary</h3>
             ${pdfTable(
-                `<th>Type</th><th>Foreman 10%</th><th>Helpers</th><th>Drivers</th><th>Cash Diesel</th><th>Total Hotels</th><th>Cash PU</th><th>Cash Dest</th><th>PMO PU</th><th>Zelle PU</th><th>PC PU</th><th>BC PU</th><th>PU (No Cash/PMO)</th><th>Balance (No Cash/PMO)</th><th>PMO Deliveries</th><th>Dest Zelle</th><th>BC Balance</th><th class="hl">Total After Deposit</th>`,
-                officialRows(s).map((r) => `<tr${r.isTotal ? ' style="font-weight:500;border-top:2px solid ' + T('surface', 300) + '"' : ''}><td class="b">${r.label}<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">${r.note}</div></td><td>${money(r.o.foreman)}</td><td>${money(r.o.helpers)}</td><td>${money(r.o.drivers)}</td><td>${money(r.o.cashDiesel)}</td><td>${money(r.o.hotel)}</td><td>${money(r.o.cashPu)}</td><td>${money(r.o.cashDest)}</td><td>${money(r.o.pmoPu)}</td><td>${money(r.o.puZelle)}</td><td>${money(r.o.puPc)}</td><td>${money(r.o.puBc)}</td><td>${money(r.o.puOther)}</td><td>${money(r.o.destOther)}</td><td>${money(r.o.pmoDeliveries)}</td><td>${money(r.o.destZelle)}</td><td>${money(r.o.destBc)}</td><td class="hl">${money(r.after)}<div style="font-size:6.5px;font-weight:500">${r.afterNote}</div></td></tr>`).join('')
+                `<th>Type</th><th>Foreman 10%</th><th>Helpers</th><th>Drivers</th><th>Cash Diesel</th><th>Total Hotels</th><th>Cash PU</th><th>Cash Dest</th><th>PMO PU</th><th>Zelle PU</th><th>PC PU</th><th>BC PU</th><th>PMO Deliveries</th><th>Dest Zelle</th><th>BC Balance</th><th class="hl">Total After Deposit</th>`,
+                officialRows(s).map((r) => `<tr${r.isTotal ? ' style="font-weight:500;border-top:2px solid ' + T('surface', 300) + '"' : ''}><td class="b">${r.label}<div style="font-size:6.5px;font-weight:500;color:${T('surface', 500)}">${r.note}</div></td><td>${money(r.o.foreman)}</td><td>${money(r.o.helpers)}</td><td>${money(r.o.drivers)}</td><td>${money(r.o.cashDiesel)}</td><td>${money(r.o.hotel)}</td><td>${money(r.o.cashPu)}</td><td>${money(r.o.cashDest)}</td><td>${money(r.o.pmoPu)}</td><td>${money(r.o.puZelle)}</td><td>${money(r.o.puPc)}</td><td>${money(r.o.puBc)}</td><td>${money(r.o.pmoDeliveries)}</td><td>${money(r.o.destZelle)}</td><td>${money(r.o.destBc)}</td><td class="hl">${money(r.after)}<div style="font-size:6.5px;font-weight:500">${r.afterNote}</div></td></tr>`).join('')
             )}</div>`;
 
         const rental = `
