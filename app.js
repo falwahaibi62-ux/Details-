@@ -1119,6 +1119,23 @@ async function saveJob(event) {
     const jobForm = document.getElementById('jobForm');
     const editRecordId = jobForm ? jobForm.getAttribute('data-edit-id') : null;
 
+    // Warn before saving when another job on the same date already carries the crew's labor cost
+    // (the company pays labor per day, not per job). Skipped when this job has no Helpers/Drivers cost.
+    const hasLabor = (v) => { const t = String(v || '').trim(); return t !== '' && t !== '-' && t !== '0'; };
+    if (hasLabor(helpersFormatted) || hasLabor(driversFormatted)) {
+        const normDate = (d) => String(d || '').trim().split(' ')[0].split('/').map((x) => String(parseInt(x, 10))).join('/');
+        const thisDate = normDate(dateVal);
+        const sameDay = (window.masterJobs || []).filter((j) =>
+            String(j.id) !== String(editRecordId) && normDate(j.date) === thisDate && (hasLabor(j.helpers_cost) || hasLabor(j.drivers_cost)));
+        if (thisDate && sameDay.length) {
+            const nos = sameDay.slice(0, 3).map((j) => j.job_no || 'No job number').join(', ') + (sameDay.length > 3 ? ' and ' + (sameDay.length - 3) + ' more' : '');
+            const msg = 'Another job on this date already has Helpers / Drivers cost recorded (' + nos + ').\n\n'
+                + 'Labor is paid per day, so saving this may pay the same crew twice.\n\n'
+                + 'Save anyway?';
+            if (!window.confirm(msg)) return;
+        }
+    }
+
     // Duplicate checks (same PDF / same lot) before anything is saved
     if (window.WathekDocs) {
         const pre = await window.WathekDocs.precheck(editRecordId, supabasePayload.lot_no);
