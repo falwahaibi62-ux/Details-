@@ -349,7 +349,12 @@
 
     function renderAlerts(jobs) {
         const box = $('smartAlertsContainer');
+        const panel = $('smartAlertsPanel');
         if (!box) return;
+        // Alerts are for the Admin only: everyone else never sees the panel
+        const isAdmin = window.currentUserRole === 'Admin';
+        if (panel) panel.classList.toggle('hidden', !isAdmin);
+        if (!isAdmin) { box.innerHTML = ''; return; }
         const result = buildAlerts(jobs);
         const style = {
             danger: ['border-l-alert-500', 'text-alert-600'],
