@@ -1454,6 +1454,9 @@ function renderTable(data) {
         const all = (no + ' ' + String(item.route || '') + ' ' + String(item.foreman_name || item.foreman || '')).toLowerCase();
         if (all.includes('delivery')) return 'row-delivery';
         if (all.includes('cancel') || no === '' || no === '-' || !/\d/.test(no)) return 'row-void';
+        // No value in Total, P.U Payments and Destination = treated as cancelled
+        const empty = (v) => { const t = String(v === null || v === undefined ? '' : v).trim(); return t === '' || t === '-' || !(parseFloat(t.replace(/[^0-9.]/g, '')) > 0); };
+        if (empty(item.total_amount || item.total) && empty(item.pu_payments || item.pu) && empty(item.destination_payments || item.dest)) return 'row-void';
         return '';
     };
 
