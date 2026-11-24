@@ -109,6 +109,9 @@ async function renderPrivateTruckRentalTab() {
             </button>
         </div>
 
+        <!-- 1b. Separate date filter for this page -->
+        ${window.WathekDateRange ? window.WathekDateRange.barHTML('rentalDate', 'applyRentalDateFilter', 'clearRentalDateFilter', window.rentalDateFilter) : ''}
+
         <!-- 2. Financial Summary Cards -->
         <div class="bg-white rounded-2xl shadow-sm border border-surface-200/80 p-6 space-y-4 w-full">
             <div class="border-b border-surface-100 pb-3 flex flex-wrap justify-between items-center gap-2">
@@ -173,14 +176,42 @@ window.renderPrivateTruckRentalTab = renderPrivateTruckRentalTab;
 
 // 4. Reload Data & Update UI Components
 async function refreshPrivateTruckData() {
-    const rentals = await loadPrivateTruckRentals();
-    
-    const tbody = document.getElementById('truckRentalTableBody');
-    if (tbody) tbody.innerHTML = generateRentalRowsHTML(rentals);
-
-    renderTruckRentalSummary(rentals);
+    await loadPrivateTruckRentals(); // keeps the full list in window.currentTruckRentals (the reports read it)
+    applyRentalDateFilter();
 }
 window.refreshPrivateTruckData = refreshPrivateTruckData;
+
+// Separate date filter of this page: changes only what is shown here, never the saved data or the reports
+window.rentalDateFilter = window.rentalDateFilter || { from: '', to: '' };
+
+function applyRentalDateFilter() {
+    const fromEl = document.getElementById('rentalDateFrom');
+    const toEl = document.getElementById('rentalDateTo');
+    if (fromEl) window.rentalDateFilter.from = fromEl.value || '';
+    if (toEl) window.rentalDateFilter.to = toEl.value || '';
+    const f = window.rentalDateFilter;
+
+    const all = window.currentTruckRentals || [];
+    const shown = window.WathekDateRange ? all.filter((r) => window.WathekDateRange.inRange(r.date, f.from, f.to)) : all;
+
+    const tbody = document.getElementById('truckRentalTableBody');
+    if (tbody) tbody.innerHTML = generateRentalRowsHTML(shown);
+    renderTruckRentalSummary(shown);
+
+    const countEl = document.getElementById('rentalDateCount');
+    if (countEl) countEl.innerText = (f.from || f.to) ? 'Showing ' + shown.length + ' of ' + all.length + ' records' : all.length + ' records';
+}
+window.applyRentalDateFilter = applyRentalDateFilter;
+
+function clearRentalDateFilter() {
+    window.rentalDateFilter = { from: '', to: '' };
+    const fromEl = document.getElementById('rentalDateFrom');
+    const toEl = document.getElementById('rentalDateTo');
+    if (fromEl) fromEl.value = '';
+    if (toEl) toEl.value = '';
+    applyRentalDateFilter();
+}
+window.clearRentalDateFilter = clearRentalDateFilter;
 
 // 5. Summary Calculations
 function renderTruckRentalSummary(rentalsData) {
