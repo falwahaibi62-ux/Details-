@@ -1089,6 +1089,28 @@ async function saveJob(event) {
     };
     if (window.WathekDocs) Object.assign(supabasePayload, window.WathekDocs.lotValues());
 
+    // Warn before saving when PU + Destination payments do not match the Total.
+    // Same rule as the "Entry differences" line in the reports; deliveries have no Total, so they are skipped.
+    const isDeliveryEntry = jobNoVal.toLowerCase().includes('delivery') || routeValue.toLowerCase().includes('delivery');
+    if (!isDeliveryEntry) {
+        const sumPayments = (containerId) => Array.from(document.querySelectorAll('#' + containerId + ' .payment-row .payment-amount'))
+            .reduce((sum, input) => {
+                const m = String(input.value || '').replace(/,/g, '').match(/\d+(?:\.\d+)?/);
+                return sum + (m ? parseFloat(m[0]) : 0);
+            }, 0);
+        const paid = sumPayments('puContainer') + sumPayments('destContainer');
+        const gap = Math.round(paid - totalNum);
+        if (gap !== 0) {
+            const money = (v) => '$' + Math.abs(Math.round(v)).toLocaleString('en-US');
+            const msg = 'Payments do not match the Total.\n\n'
+                + 'Total: ' + money(totalNum) + '\n'
+                + 'PU + Destination payments: ' + money(paid) + '\n'
+                + 'Difference: ' + (gap < 0 ? '-' : '+') + money(gap) + '\n\n'
+                + 'Save anyway?';
+            if (!window.confirm(msg)) return;
+        }
+    }
+
     if (!window.supabaseClient) {
         alert("Supabase client not initialized!");
         return;
