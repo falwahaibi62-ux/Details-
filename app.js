@@ -1448,8 +1448,20 @@ function renderTable(data) {
         return;
     }
 
+    // Row color: Delivery = soft violet; Cancelled or no job number = soft red
+    const rowKind = (item) => {
+        const no = String(item.jobNo || item.job_no || '').trim();
+        const all = (no + ' ' + String(item.route || '') + ' ' + String(item.foreman_name || item.foreman || '')).toLowerCase();
+        if (all.includes('delivery')) return 'row-delivery';
+        if (all.includes('cancel') || no === '' || no === '-' || !/\d/.test(no)) return 'row-void';
+        // No value in Total, P.U Payments and Destination = treated as cancelled
+        const empty = (v) => { const t = String(v === null || v === undefined ? '' : v).trim(); return t === '' || t === '-' || !(parseFloat(t.replace(/[^0-9.]/g, '')) > 0); };
+        if (empty(item.total_amount || item.total) && empty(item.pu_payments || item.pu) && empty(item.destination_payments || item.dest)) return 'row-void';
+        return '';
+    };
+
     tbody.innerHTML = activeData.map(item => `
-        <tr class="border-b border-surface-100 hover:bg-surface-50 transition-colors">
+        <tr class="border-b border-surface-100 hover:bg-surface-50 transition-colors ${rowKind(item)}">
             <td class="p-3 text-center">${escapeHtml(item.date || '-')}</td>
             <td class="p-3 font-semibold text-surface-800">${escapeHtml(item.jobNo || item.job_no || '-')}</td>
             <td class="p-3">${window.WathekDocs ? window.WathekDocs.lotBadge(item.lot_no, item.tape_color) : escapeHtml(item.lot_no || '-')}</td>

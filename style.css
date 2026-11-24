@@ -492,3 +492,10 @@ header.md\:hidden, #mobileTabBar { background: #182031 !important; }
 @media (min-width: 768px) {
     #sidebar { margin: 12px 0 12px 12px; border-radius: 1.4rem; overflow: hidden; }
 }
+
+
+/* Operations Ledger row colors (soft tints with a thin side accent; work on the dark theme) */
+#masterJobsTableBody tr.row-delivery { background-color: rgba(139, 124, 232, 0.10); box-shadow: inset 3px 0 0 rgba(139, 124, 232, 0.75); }
+#masterJobsTableBody tr.row-delivery:hover { background-color: rgba(139, 124, 232, 0.17); }
+#masterJobsTableBody tr.row-void { background-color: rgba(214, 96, 96, 0.10); box-shadow: inset 3px 0 0 rgba(214, 96, 96, 0.75); }
+#masterJobsTableBody tr.row-void:hover { background-color: rgba(214, 96, 96, 0.17); }
