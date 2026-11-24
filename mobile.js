@@ -30,6 +30,8 @@
     // ---- Tables as cards: give each cell its column title (CSS shows it on phones) ----
     function labelTables() {
         Array.prototype.forEach.call(document.querySelectorAll('main table'), function (t) {
+            // Report tables compare many columns side by side: they keep the normal wide layout and scroll sideways
+            if (t.closest && t.closest('#tab-reports')) { t.classList.remove('m-cards'); return; }
             var head = t.tHead; if (!head || head.rows.length !== 1) return; // multi-row headers keep the scroll view
             var labels = [];
             Array.prototype.forEach.call(head.rows[0].cells, function (th) {
