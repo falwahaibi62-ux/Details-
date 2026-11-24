@@ -387,13 +387,16 @@
             if (!list || list.length < 5) return;
             const usual = medianOf(list);
             const total = firstNumber(j.total || j.total_amount);
-            if (usual > 0 && (total >= usual * 3 || total <= usual / 3)) unusual.push({ j: j, total: total, usual: usual });
+            if (!(usual > 0 && (total >= usual * 3 || total <= usual / 3))) return;
+            // Only when the payments do not add up to the Total too: a real typing mistake in the Total shows up as a difference
+            const paid = parsePaymentEntries(j.pu || j.pu_payments).concat(parsePaymentEntries(j.dest || j.destination || j.destination_payments)).reduce((n, e) => n + e.amount, 0);
+            if (Math.abs(paid - total) >= 1) unusual.push({ j: j, total: total, usual: usual, paid: paid });
         });
         if (unusual.length) {
-            const sample = unusual.slice(0, 3).map((u) => jobNoText(u.j) + ' on ' + jobRoute(u.j) + ': ' + money(u.total) + ' vs usual about ' + money(u.usual)).join('; ');
+            const sample = unusual.slice(0, 3).map((u) => jobNoText(u.j) + ' on ' + jobRoute(u.j) + ': ' + money(u.total) + ' vs usual about ' + money(u.usual) + ' (payments add up to ' + money(u.paid) + ')').join('; ');
             alerts.push({
                 level: 'warn', icon: 'fa-triangle-exclamation', title: 'Unusual job total',
-                text: unusual.length + (unusual.length === 1 ? ' job has a total' : ' jobs have totals') + ' far from the usual on the same route (3x higher or lower): ' + sample + (unusual.length > 3 ? ' and ' + (unusual.length - 3) + ' more' : '') + '. Check for a typing mistake.'
+                text: unusual.length + (unusual.length === 1 ? ' job has a total' : ' jobs have totals') + ' far from the usual on the same route (3x higher or lower) and the payments do not add up to the Total: ' + sample + (unusual.length > 3 ? ' and ' + (unusual.length - 3) + ' more' : '') + '. Check for a typing mistake.'
             });
         }
 
