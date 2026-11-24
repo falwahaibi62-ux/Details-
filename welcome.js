@@ -1,7 +1,7 @@
 /*
  * welcome.js - friendly 3-second welcome screen, shown to the Admin only,
  * once per browser session, right after sign-in.
- * - Name comes from the signed-in user's profile (user_role.name), nothing is hardcoded.
+ * - Name shown is DISPLAY_NAME below (falls back to the profile name if left empty).
  * - Tap / Esc skips it. Data keeps loading in the background.
  * - Respects "reduce motion".
  */
@@ -9,6 +9,7 @@
     'use strict';
 
     var SHOW_MS = 3000;
+    var DISPLAY_NAME = 'Wathek'; // name shown in the greeting (change here if needed)
     var KEY = 'wathekWelcomeShown';
 
     function seen() { try { return sessionStorage.getItem(KEY) === '1'; } catch (e) { return false; } }
@@ -62,7 +63,7 @@
 
     function show(user) {
         injectStyle();
-        var name = firstName(user);
+        var name = DISPLAY_NAME || firstName(user);
         var ov = document.createElement('div');
         ov.id = 'wl-overlay';
         ov.setAttribute('role', 'dialog');
