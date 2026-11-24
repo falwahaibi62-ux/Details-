@@ -347,6 +347,21 @@
         return { alerts: alerts, jobs: recent.length };
     }
 
+    // Backup reminder: the time of the last backup is kept in this browser by backup.js
+    function buildBackupAlert() {
+        let t = null;
+        try { t = localStorage.getItem('wathek_last_backup'); } catch (e) {}
+        const ms = Number(t);
+        const days = ms ? Math.floor((Date.now() - ms) / 86400000) : null;
+        if (days !== null && days < 7) return null;
+        const steps = ' Steps: 1) Open Users & Roles. 2) Under Data backup, click Full backup (.json). 3) If the browser asks to download multiple files, click Allow. 4) Copy the file to OneDrive / Google Drive and to a USB drive.';
+        return {
+            level: 'warn', icon: 'fa-database',
+            title: days === null ? 'No backup made from this browser yet' : 'Backup is ' + days + ' days old',
+            text: (days === null ? 'No backup has been downloaded from this browser.' : 'The last backup from this browser was ' + days + ' days ago.') + ' Take one at least once a week.' + steps
+        };
+    }
+
     function renderAlerts(jobs) {
         const box = $('smartAlertsContainer');
         const panel = $('smartAlertsPanel');
@@ -356,6 +371,8 @@
         if (panel) panel.classList.toggle('hidden', !isAdmin);
         if (!isAdmin) { box.innerHTML = ''; const le = $('smartAlertsLatest'); if (le) le.innerText = ''; return; }
         const result = buildAlerts(jobs);
+        const backupAlert = buildBackupAlert();
+        if (backupAlert) result.alerts.unshift(backupAlert);
         const style = {
             danger: ['border-l-alert-500', 'text-alert-600'],
             warn: ['border-l-warning-500', 'text-warning-600'],
