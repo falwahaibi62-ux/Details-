@@ -297,7 +297,7 @@ function injectPrivateTruckModalHTML() {
                 <button type="button" onclick="closePrivateTruckModal()" class="text-surface-400 hover:text-surface-600 font-bold text-lg">&times;</button>
             </div>
             
-            <form id="privateTruckForm" onsubmit="savePrivateTruckRental(event)" class="space-y-4 text-xs">
+            <form id="privateTruckForm" autocomplete="off" onsubmit="savePrivateTruckRental(event)" class="space-y-4 text-xs">
                 <input type="hidden" id="rentalEditId" value="">
                 
                 <div class="grid grid-cols-2 gap-3">
@@ -307,14 +307,14 @@ function injectPrivateTruckModalHTML() {
                     </div>
                     <div>
                         <label class="block font-semibold text-surface-700 mb-1">Number of Days</label>
-                        <input type="number" min="1" id="rentalDays" placeholder="e.g. 1" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-primary-500">
+                        <input type="number" min="1" id="rentalDays" autocomplete="off" placeholder="Days" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-primary-500">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-semibold text-surface-700 mb-1">Amount ($)</label>
-                        <input type="number" step="0.01" id="rentalAmount" placeholder="e.g. 500" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-primary-500">
+                        <input type="number" step="0.01" id="rentalAmount" autocomplete="off" placeholder="Amount" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-primary-500">
                     </div>
                     <div>
                         <label class="block font-semibold text-surface-700 mb-1">Payment Type</label>
@@ -330,11 +330,11 @@ function injectPrivateTruckModalHTML() {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-semibold text-surface-700 mb-1">Paid By</label>
-                        <input type="text" id="rentalPaidBy" placeholder="e.g. U-Haul, Sharef" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-primary-500">
+                        <input type="text" id="rentalPaidBy" autocomplete="off" placeholder="Paid by" required class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-primary-500">
                     </div>
                     <div>
                         <label class="block font-semibold text-surface-700 mb-1">Truck Label / Note</label>
-                        <input type="text" id="rentalTruckLabel" placeholder="e.g. 1 day rental" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-primary-500">
+                        <input type="text" id="rentalTruckLabel" autocomplete="off" placeholder="Note" class="w-full p-2.5 border rounded-xl focus:outline-none focus:border-primary-500">
                     </div>
                 </div>
 
