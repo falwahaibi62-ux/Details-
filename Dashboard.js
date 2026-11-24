@@ -256,6 +256,19 @@
     const jobNoText = (j) => String(j.jobNo || j.job_no || '').trim() || 'No job number';
     const listNos = (jobs) => jobs.slice(0, 5).map((j) => jobNoText(j)).join(', ') + (jobs.length > 5 ? ' and ' + (jobs.length - 5) + ' more' : '');
 
+    // Same rule as the red rows of the ledger: the word "cancel", a job number without digits,
+    // or no value at all in Total, P.U Payments and Destination
+    function isCancelledJob(j) {
+        const no = String(j.jobNo || j.job_no || '').trim();
+        const text = (no + ' ' + String(j.route || '') + ' ' + String(j.foreman_name || j.foreman || '')).toLowerCase();
+        if (text.indexOf('delivery') >= 0) return false;
+        if (text.indexOf('cancel') >= 0 || !/\d/.test(no)) return true;
+        const total = firstNumber(j.total || j.total_amount);
+        const paid = parsePaymentEntries(j.pu || j.pu_payments).concat(parsePaymentEntries(j.dest || j.destination || j.destination_payments)).reduce((n, e) => n + e.amount, 0);
+        const hasDestText = String(j.dest || j.destination || j.destination_payments || '').replace(/[^0-9]/g, '').replace(/0/g, '') !== '';
+        return !(total > 0) && !(paid > 0) && !hasDestText;
+    }
+
     function buildAlerts(jobs) {
         const since = new Date();
         since.setDate(since.getDate() - ALERT_DAYS);
@@ -327,7 +340,7 @@
         }
 
         // 4. Records missing basic data
-        const noRoute = recent.filter((j) => !jobRoute(j));
+        const noRoute = recent.filter((j) => !jobRoute(j) && !isCancelledJob(j));
         if (noRoute.length) {
             alerts.push({
                 level: 'info', icon: 'fa-route', title: 'Jobs without a route',
@@ -344,7 +357,119 @@
             });
         }
 
+        // 6. Possible duplicate job: same day, route, foreman and total under different job numbers
+        const real = (j) => !isCancelledJob(j) && !isDelivery(j) && firstNumber(j.total || j.total_amount) > 0;
+        const dupGroups = {};
+        recent.filter(real).forEach((j) => {
+            const d = parseJobDate(j.date);
+            const key = [d ? d.getTime() : '', jobRoute(j).toLowerCase(), String(j.foreman_name || j.foreman || '').trim().toLowerCase(), firstNumber(j.total || j.total_amount)].join('|');
+            (dupGroups[key] = dupGroups[key] || []).push(j);
+        });
+        const dups = Object.keys(dupGroups).map((k) => dupGroups[k]).filter((g) => g.length > 1);
+        if (dups.length) {
+            const sample = dups.slice(0, 3).map((g) => g[0].date + ' (' + listNos(g) + ')').join('; ');
+            alerts.push({
+                level: 'warn', icon: 'fa-clone', title: 'Possible duplicate jobs',
+                text: dups.length + (dups.length === 1 ? ' set of jobs has' : ' sets of jobs have') + ' the same date, route, foreman and total under different job numbers: ' + sample + (dups.length > 3 ? ' and ' + (dups.length - 3) + ' more' : '') + '. Confirm each one is a separate job.'
+            });
+        }
+
+        // 7. Unusual total compared with the usual total on the same route
+        const byRoute = {};
+        (jobs || []).filter(real).forEach((j) => {
+            const key = jobRoute(j).toLowerCase();
+            if (key) (byRoute[key] = byRoute[key] || []).push(firstNumber(j.total || j.total_amount));
+        });
+        const medianOf = (arr) => { const s = arr.slice().sort((a, b) => a - b); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+        const unusual = [];
+        recent.filter(real).forEach((j) => {
+            const list = byRoute[jobRoute(j).toLowerCase()];
+            if (!list || list.length < 5) return;
+            const usual = medianOf(list);
+            const total = firstNumber(j.total || j.total_amount);
+            if (usual > 0 && (total >= usual * 3 || total <= usual / 3)) unusual.push({ j: j, total: total, usual: usual });
+        });
+        if (unusual.length) {
+            const sample = unusual.slice(0, 3).map((u) => jobNoText(u.j) + ' on ' + jobRoute(u.j) + ': ' + money(u.total) + ' vs usual about ' + money(u.usual)).join('; ');
+            alerts.push({
+                level: 'warn', icon: 'fa-triangle-exclamation', title: 'Unusual job total',
+                text: unusual.length + (unusual.length === 1 ? ' job has a total' : ' jobs have totals') + ' far from the usual on the same route (3x higher or lower): ' + sample + (unusual.length > 3 ? ' and ' + (unusual.length - 3) + ' more' : '') + '. Check for a typing mistake.'
+            });
+        }
+
+        // 8. Gap in entries: no job recorded for several days
+        let newestJob = null;
+        (jobs || []).forEach((j) => {
+            if (isCancelledJob(j)) return;
+            const d = parseJobDate(j.date);
+            if (d && (!newestJob || d > newestJob.d)) newestJob = { j: j, d: d };
+        });
+        if (newestJob) {
+            const gap = Math.round((new Date().setHours(0, 0, 0, 0) - newestJob.d.getTime()) / 86400000);
+            if (gap >= 4) {
+                alerts.push({
+                    level: 'info', icon: 'fa-calendar-xmark', title: 'No jobs recorded for ' + gap + ' days',
+                    text: 'The latest job is ' + jobNoText(newestJob.j) + ' dated ' + newestJob.j.date + '. If work was done since then, enter it so the reports stay complete.'
+                });
+            }
+        }
+
         return { alerts: alerts, jobs: recent.length };
+    }
+
+    // Alerts that need data outside the jobs list (attached documents, warehouse expenses)
+    function buildExtraAlerts(jobs) {
+        const out = [];
+        const since = new Date();
+        since.setDate(since.getDate() - ALERT_DAYS);
+        since.setHours(0, 0, 0, 0);
+
+        // Recent jobs without a document (same rule as the Document Review "no document" list)
+        if (window.WathekDocs && typeof window.WathekDocs.hasDoc === 'function' && typeof window.WathekDocs.isLoaded === 'function' && window.WathekDocs.isLoaded()) {
+            const missing = (jobs || []).filter((j) => {
+                const d = parseJobDate(j.date);
+                if (!d || d < since) return false;
+                if (!/^[A-Za-z]{1,2}\d{5,8}$/.test(String(j.jobNo || j.job_no || '').trim())) return false;
+                if (!(firstNumber(j.total || j.total_amount) > 0)) return false;
+                return !window.WathekDocs.hasDoc(j.id);
+            });
+            if (missing.length) {
+                out.push({
+                    level: 'warn', icon: 'fa-file-circle-exclamation', title: 'Jobs without a document',
+                    text: missing.length + (missing.length === 1 ? ' job from the last ' : ' jobs from the last ') + ALERT_DAYS + ' days ' + (missing.length === 1 ? 'has' : 'have') + ' no document attached (' + listNos(missing) + ').',
+                    action: { label: 'Open Document Review', tab: 'review' }
+                });
+            }
+        }
+
+        // Monthly warehouse expense that was recorded in earlier months but not yet this month
+        const recs = Array.isArray(window.currentWarehouseRecords) ? window.currentWarehouseRecords : [];
+        const now = new Date();
+        if (recs.length && now.getDate() >= 10) {
+            const monthIndex = (d) => d.getFullYear() * 12 + d.getMonth();
+            const cur = monthIndex(now);
+            const seen = {};
+            recs.forEach((r) => {
+                const d = parseJobDate(r.date);
+                const name = String(r.services || '').trim();
+                if (!d || !name) return;
+                const key = name.toLowerCase();
+                const s = seen[key] = seen[key] || { name: name, months: {} };
+                s.months[monthIndex(d)] = true;
+            });
+            const late = Object.keys(seen).map((k) => seen[k]).filter((s) => {
+                if (s.months[cur]) return false;
+                const prev = [cur - 1, cur - 2, cur - 3].filter((m) => s.months[m]).length;
+                return prev >= 2;
+            });
+            if (late.length) {
+                out.push({
+                    level: 'info', icon: 'fa-warehouse', title: 'Monthly warehouse expense not recorded yet',
+                    text: late.slice(0, 4).map((s) => s.name).join(', ') + (late.length > 4 ? ' and ' + (late.length - 4) + ' more' : '') + ' ' + (late.length === 1 ? 'was' : 'were') + ' recorded in earlier months but not yet in ' + now.toLocaleString('en-US', { month: 'long' }) + '.'
+                });
+            }
+        }
+        return out;
     }
 
     // Backup reminder: the time of the last backup is kept in this browser by backup.js
@@ -371,6 +496,7 @@
         if (panel) panel.classList.toggle('hidden', !isAdmin);
         if (!isAdmin) { box.innerHTML = ''; const le = $('smartAlertsLatest'); if (le) le.innerText = ''; return; }
         const result = buildAlerts(jobs);
+        buildExtraAlerts(jobs).forEach((a) => result.alerts.push(a));
         const backupAlert = buildBackupAlert();
         if (backupAlert) result.alerts.unshift(backupAlert);
         const style = {
@@ -411,7 +537,9 @@
             const s = style[a.level] || style.info;
             return '<div class="p-4 bg-surface-50 rounded-xl border border-surface-100 border-l-4 ' + s[0] + '">'
                 + '<h4 class="font-bold text-surface-800 text-xs mb-1 flex items-center"><i class="fa-solid ' + a.icon + ' mr-1.5 ' + s[1] + '"></i> ' + esc(a.title) + '</h4>'
-                + '<p class="text-[11px] text-surface-600 leading-relaxed">' + esc(a.text) + '</p></div>';
+                + '<p class="text-[11px] text-surface-600 leading-relaxed">' + esc(a.text) + '</p>'
+                + (a.action ? '<button type="button" onclick="switchTab(\'' + a.action.tab + '\')" class="mt-2 px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-[11px] font-semibold cursor-pointer">' + esc(a.action.label) + '</button>' : '')
+                + '</div>';
         }).join('');
     }
 
@@ -422,7 +550,8 @@
             renderCards(r);
             renderCorridors(r);
             renderInsights(r);
-            renderAlerts(jobs);
+            // Alerts are read-only and isolated: a problem in them must never stop the charts or the reports
+            try { renderAlerts(jobs); } catch (alertError) { console.error('Alerts could not be drawn:', alertError); }
             renderDashboardCharts(r.monthly, r.payments);
             checkDatabaseStatus();
         } catch (e) {
