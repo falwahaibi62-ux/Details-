@@ -26,7 +26,7 @@
             <i class="fa-solid fa-bars"></i>
         </button>
         <h2 class="text-base font-bold">Wathek</h2>
-        <button type="button" id="mobileRefreshBtn" onclick="WathekRefresh()" aria-label="Refresh data" class="w-10 h-10 -mr-2 flex items-center justify-center rounded-xl hover:bg-surface-800 text-lg cursor-pointer"><i class="fa-solid fa-rotate-right"></i></button>
+        <button type="button" id="mobileRefreshBtn" onclick="WathekRefresh()" aria-label="Resync" class="w-10 h-10 -mr-2 flex items-center justify-center rounded-xl hover:bg-surface-800 text-lg cursor-pointer"><i class="fa-solid fa-arrows-rotate"></i></button>
     </header>
 
     <!-- Dark layer behind the open menu on phones; tap it to close -->
@@ -565,7 +565,7 @@
     </main>
 
     <!-- Refresh button for computers (phones have it in the top bar): reloads the data of the page you are on -->
-    <button type="button" id="desktopRefreshBtn" onclick="WathekRefresh()" title="Refresh data" aria-label="Refresh data" class="hidden md:flex fixed bottom-6 right-6 z-40 w-12 h-12 items-center justify-center rounded-full bg-primary-600 hover:bg-primary-700 text-white text-lg shadow-lg cursor-pointer transition"><i class="fa-solid fa-rotate-right"></i></button>
+    <button type="button" id="desktopRefreshBtn" onclick="WathekRefresh()" title="Resync" aria-label="Resync" class="hidden md:flex fixed bottom-6 right-6 z-40 w-12 h-12 items-center justify-center rounded-full bg-primary-600 hover:bg-primary-700 text-white text-lg shadow-lg cursor-pointer transition"><i class="fa-solid fa-arrows-rotate"></i></button>
 
     <div id="pullHint" class="md:hidden hidden fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-1.5 rounded-full bg-surface-900 text-white text-xs font-semibold shadow-lg"></div>
 

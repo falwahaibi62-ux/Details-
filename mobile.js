@@ -76,7 +76,7 @@
     window.WathekRefresh = async function () {
         if (refreshing) return; refreshing = true;
         var icons = document.querySelectorAll('#mobileRefreshBtn i, #desktopRefreshBtn i'); Array.prototype.forEach.call(icons, function (i) { i.classList.add('fa-spin'); });
-        hint('Refreshing...');
+        hint('Resyncing...');
         try {
             var jobs = [];
             if (typeof window.initMasterJobsData === 'function') jobs.push(window.initMasterJobsData());
@@ -91,9 +91,9 @@
             if (typeof window.generateSummaryReportData === 'function') window.generateSummaryReportData();
             if (typeof window.renderSummaryPageWithDetailedTables === 'function') window.renderSummaryPageWithDetailedTables();
             if (window.WathekReview && window.currentUserRole === 'Admin' && current === 'review') window.WathekReview.render();
-            hint('Updated', 1200);
+            hint('Synced', 1200);
         } catch (e) {
-            hint('Could not refresh', 2500);
+            hint('Could not resync', 2500);
         } finally {
             refreshing = false; Array.prototype.forEach.call(icons, function (i) { i.classList.remove('fa-spin'); });
         }
@@ -110,7 +110,7 @@
         document.addEventListener('touchmove', function (e) {
             if (startY === null) return;
             dist = e.touches[0].clientY - startY;
-            if (dist > 20 && !refreshing) hint(dist > 90 ? 'Release to refresh' : 'Pull to refresh');
+            if (dist > 20 && !refreshing) hint(dist > 90 ? 'Release to resync' : 'Pull to resync');
         }, { passive: true });
         document.addEventListener('touchend', function () {
             if (startY === null) return;
