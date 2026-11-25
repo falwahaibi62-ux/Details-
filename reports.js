@@ -500,19 +500,18 @@
                                 <th class="p-2.5 border-r text-center">Total Hotels</th>
                                 <th class="p-2.5 border-r text-center text-primary-700 bg-primary-50/30">Cash PU</th>
                                 <th class="p-2.5 border-r text-center text-primary-700 bg-primary-50/30">Cash Balance</th>
-<th class="p-2.5 border-r text-center text-primary-700 bg-primary-50/30">Cash Deliveries</th>
                                 <th class="p-2.5 border-r text-center text-info-700 bg-info-50/30">PMO PU</th>
                                 <th class="p-2.5 border-r text-center text-info-700 bg-info-50/30">PMO Balance</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">Zelle PU</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">Zelle Balance</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">PC PU</th>
-<th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">PC Balance</th>
+                                <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">PC Balance</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">BC PU</th>
                                 <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">BC Balance</th>
-<th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">CC PU</th>
-<th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">CC Balance</th>
-<th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">WT PU</th>
-<th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">WT Balance</th>
+                                <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">CC PU</th>
+                                <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">CC Balance</th>
+                                <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">WT PU</th>
+                                <th class="p-2.5 border-r text-center text-accent-700 bg-accent-50/30">WT Balance</th>
                                 <th class="p-2.5 text-center bg-primary-600 text-white font-extrabold">Total After Deposit</th>
                             </tr>
                         </thead>
