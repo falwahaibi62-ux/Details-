@@ -431,12 +431,10 @@
                 </table>
             </div>
             ${reconciliationHTML(s)}
-            <p class="text-[11px] text-surface-500 mt-2 px-1">${CASHAPP_NOTE}</p>
         </div>`;
     }
 
     // The CashApp option was added on this date; amounts before it were entered under Zelle
-    const CASHAPP_NOTE = 'Note: the CashApp option was added on 24 Nov 2026. Before this date, CashApp amounts were recorded under Zelle, so earlier Zelle totals include CashApp.';
 
     // One line that explains how Total Revenue (PU + Dest) relates to the Job Totals (Total column)
     function reconciliationHTML(s) {
@@ -936,8 +934,7 @@
             )}
             <div style="margin-top:6px;font-size:8.5px;color:${T('surface', 600)}">
                 Job Totals <b>${money(s.revenue)}</b> + Delivery Collections <b style="color:${T('info', 700)}">${money(s.deliveryCollections)}</b>${Math.round(s.paymentGap) === 0 ? '' : ` ${s.paymentGap < 0 ? '&minus;' : '+'} Entry differences <b>${money(Math.abs(Math.round(s.paymentGap)))}</b>`} = Total Revenue (PU + Dest) <b>${money(paymentTotal)}</b>
-            </div>
-            <div style="margin-top:4px;font-size:8px;color:${T('surface', 500)}">${CASHAPP_NOTE}</div></div>`;
+            </div></div>`;
 
         const official = `
             <div class="card"><h3>Official Period Financial Summary</h3>
