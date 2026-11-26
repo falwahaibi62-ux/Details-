@@ -1015,7 +1015,7 @@
         const printWindow = window.open(url, '_blank');
         if (!printWindow) {
             URL.revokeObjectURL(url);
-            alert('The PDF window was blocked by the browser. Please allow pop-ups for this site and try again.');
+            WDialog.alert('The PDF window was blocked by the browser. Please allow pop-ups for this site and try again.');
             return;
         }
         setTimeout(function () { URL.revokeObjectURL(url); }, 60000);

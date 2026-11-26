@@ -580,31 +580,39 @@ function renderUsers() {
 window.renderUsers = renderUsers;
 
 async function openAddUserModal() {
-    const userName = prompt("Enter new user name:");
-    if (!userName) return;
-    
-    const userEmail = prompt("Enter user email address:");
-    if (!userEmail) return;
-
-    const roleInput = prompt("Enter user role (Admin, Member, Viewer):", "Member");
-    if (!roleInput) return;
-    const userRole = ['Admin', 'Member', 'Viewer'].find(r => r.toLowerCase() === roleInput.trim().toLowerCase());
-    if (!userRole) {
-        alert('Role must be Admin, Member or Viewer.');
+    if (window.currentUserRole !== 'Admin') {
+        WDialog.alert('Only the Admin can add users.', { title: 'Not allowed' });
         return;
     }
-
     if (typeof supabaseClient === 'undefined') return;
+
+    const known = (window.systemUsers || []).map((u) => String(u.email || '').trim().toLowerCase());
+    const values = await WDialog.form({
+        title: 'Add New User',
+        intro: 'The role decides what the user can see and do.',
+        submitText: 'Add User',
+        fields: [
+            { name: 'name', label: 'Full name', required: true, maxLength: 80, placeholder: 'e.g. Ahmed Al Balushi' },
+            { name: 'email', label: 'Email address', type: 'email', required: true, maxLength: 120, placeholder: 'name@example.com',
+              validate: (v) => known.indexOf(v.toLowerCase()) >= 0 ? 'This email is already in the users list.' : '' },
+            { name: 'role', label: 'Role', type: 'select', value: 'Member', options: [
+                { value: 'Admin', label: 'Admin - full access' },
+                { value: 'Member', label: 'Member - add and edit records' },
+                { value: 'Viewer', label: 'Viewer - view only' } ] }
+        ]
+    });
+    if (!values) return;
 
     try {
         const { error } = await supabaseClient
             .from('user_role')
-            .insert([{ name: userName, email: userEmail, role: userRole, status: 'enable' }]);
+            .insert([{ name: values.name, email: values.email.toLowerCase(), role: values.role, status: 'enable' }]);
 
-        if (error) alert('Failed to add user: ' + error.message);
+        if (error) WDialog.alert('Failed to add user: ' + error.message, { type: 'error' });
         else fetchUsersFromSupabase();
     } catch (err) {
         console.error("Error adding user:", err);
+        WDialog.alert('Failed to add user. Please try again.', { type: 'error' });
     }
 }
 window.openAddUserModal = openAddUserModal;
@@ -621,7 +629,7 @@ async function updateUserField(userId, fieldName, fieldValue) {
             .update(updateData)
             .eq('id', userId);
 
-        if (error) alert('Failed to update user: ' + error.message);
+        if (error) WDialog.alert('Failed to update user: ' + error.message);
         else fetchUsersFromSupabase();
     } catch (err) {
         console.error("Error updating user field:", err);
@@ -929,7 +937,7 @@ function openEditJobModal(jobIdOrNo) {
     const job = jobs.find(j => String(j.id || '').trim() === targetId || String(j.jobNo || j.job_no || '').trim().toLowerCase() === targetId.toLowerCase());
 
     if (!job) {
-        alert("Job record not found!");
+        WDialog.alert("Job record not found!");
         return;
     }
 
@@ -1022,7 +1030,7 @@ window.openEditJobModal = openEditJobModal;
 // Job No, amounts, helpers, drivers, diesel, hotel, payments and documents are NOT copied.
 function duplicateJob(jobId) {
     const job = (window.masterJobs || []).find(j => String(j.id || '').trim() === String(jobId).trim());
-    if (!job) { alert('Job record not found!'); return; }
+    if (!job) { WDialog.alert('Job record not found!'); return; }
     openAddModal(false);
     const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
     const routeStr = String(job.route || job.route_to || '');
@@ -1147,12 +1155,12 @@ async function saveJob(event) {
                 + 'PU + Destination payments: ' + money(paid) + '\n'
                 + 'Difference: ' + (gap < 0 ? '-' : '+') + money(gap) + '\n\n'
                 + 'Save anyway?';
-            if (!window.confirm(msg)) return;
+            if (!(await WDialog.confirm(msg, { title: 'Payments do not match the Total', confirmText: 'Save anyway' }))) return;
         }
     }
 
     if (!window.supabaseClient) {
-        alert("Supabase client not initialized!");
+        WDialog.alert("Supabase client not initialized!");
         return;
     }
 
@@ -1172,7 +1180,7 @@ async function saveJob(event) {
             const msg = 'Another job on this date already has Helpers / Drivers cost recorded (' + nos + ').\n\n'
                 + 'Labor is paid per day, so saving this may pay the same crew twice.\n\n'
                 + 'Save anyway?';
-            if (!window.confirm(msg)) return;
+            if (!(await WDialog.confirm(msg, { title: 'Possible duplicate labor cost', confirmText: 'Save anyway' }))) return;
         }
     }
 
@@ -1194,7 +1202,7 @@ async function saveJob(event) {
     }
 
     if (error) {
-        alert('Supabase Error: ' + error.message);
+        WDialog.alert('Supabase Error: ' + error.message);
     } else {
         if (window.WathekDocs) await window.WathekDocs.attach(savedJobId, jobNoVal);
         if (jobForm) jobForm.removeAttribute('data-edit-id');
@@ -1208,7 +1216,7 @@ async function saveJob(event) {
             renderTable(window.masterJobs);
         }
 
-        alert('Record saved successfully!');
+        WDialog.alert('Record saved successfully!');
     }
 }
 window.saveJob = saveJob;
@@ -1218,14 +1226,14 @@ window.saveJob = saveJob;
 // ==========================================
 
 async function softDeleteRecord(tableName, recordId) {
-    if (!confirm('Are you sure you want to move this record to the Recycle Bin?')) return false;
+    if (!(await WDialog.confirm('This record will be moved to the Recycle Bin. You can restore it from there.', { title: 'Move to Recycle Bin', confirmText: 'Move' }))) return false;
     if (!window.supabaseClient) {
-        alert("Supabase client not initialized!");
+        WDialog.alert("Supabase client not initialized!");
         return false;
     }
 
     if (!recordId) {
-        alert("Error: Record ID is missing!");
+        WDialog.alert("Error: Record ID is missing!");
         return false;
     }
 
@@ -1241,11 +1249,11 @@ async function softDeleteRecord(tableName, recordId) {
 
     if (error) {
         console.error(`❌ [SoftDelete Error] Failed to update record in ${tableName}:`, error.message);
-        alert('Failed to move record to recycle bin: ' + error.message);
+        WDialog.alert('Failed to move record to recycle bin: ' + error.message);
         return false;
     } else {
         console.log(`✅ [SoftDelete Success] Record moved successfully:`, data);
-        alert('Record moved to Recycle Bin successfully!');
+        WDialog.alert('Record moved to Recycle Bin successfully!');
         
         // Refresh the UI for the affected table
         if (tableName === 'jobs_report') {
@@ -1409,9 +1417,9 @@ async function restoreRecord(tableName, recordId) {
         .eq('id', cleanId);
 
     if (error) {
-        alert('Failed to restore record: ' + error.message);
+        WDialog.alert('Failed to restore record: ' + error.message);
     } else {
-        alert('Record restored successfully!');
+        WDialog.alert('Record restored successfully!');
         if (typeof renderTrashBin === 'function') await renderTrashBin();
         if (tableName === 'jobs_report' && typeof initMasterJobsData === 'function') await initMasterJobsData();
         if (tableName === 'warehouse_expenses' && typeof loadWarehouseData === 'function') await loadWarehouseData();
@@ -1421,7 +1429,7 @@ async function restoreRecord(tableName, recordId) {
 window.restoreRecord = restoreRecord;
 
 async function permanentDeleteRecord(tableName, recordId) {
-    if (!confirm('Are you sure you want to permanently delete this record? This action cannot be undone.')) return;
+    if (!(await WDialog.confirm('This record will be deleted permanently. This action cannot be undone.', { title: 'Delete permanently', confirmText: 'Delete', danger: true }))) return;
     if (!window.supabaseClient) return;
     
     const cleanId = typeof recordId === 'string' ? recordId.trim() : Number(recordId);
@@ -1432,16 +1440,16 @@ async function permanentDeleteRecord(tableName, recordId) {
         .eq('id', cleanId);
 
     if (error) {
-        alert('Failed to permanently delete record: ' + error.message);
+        WDialog.alert('Failed to permanently delete record: ' + error.message);
     } else {
-        alert('Record permanently deleted!');
+        WDialog.alert('Record permanently deleted!');
         if (typeof renderTrashBin === 'function') await renderTrashBin();
     }
 }
 window.permanentDeleteRecord = permanentDeleteRecord;
 
 async function emptyTrashBin() {
-    if (!confirm('Are you sure you want to permanently delete ALL items in the Recycle Bin?')) return;
+    if (!(await WDialog.confirm('All items in the Recycle Bin will be deleted permanently. This action cannot be undone.', { title: 'Empty Recycle Bin', confirmText: 'Delete all', danger: true }))) return;
     if (!window.supabaseClient) return;
 
     try {
@@ -1452,16 +1460,16 @@ async function emptyTrashBin() {
         ];
         const failed = results.find(r => r && r.error);
         if (failed) {
-            alert('Failed to empty trash bin: ' + failed.error.message);
+            WDialog.alert('Failed to empty trash bin: ' + failed.error.message);
             await renderTrashBin();
             return;
         }
 
-        alert('Recycle Bin emptied successfully!');
+        WDialog.alert('Recycle Bin emptied successfully!');
         await renderTrashBin();
     } catch (e) {
         console.error("Error emptying trash:", e);
-        alert('Failed to empty trash bin.');
+        WDialog.alert('Failed to empty trash bin.');
     }
 }
 window.emptyTrashBin = emptyTrashBin;

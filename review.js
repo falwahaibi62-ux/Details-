@@ -62,9 +62,9 @@
         box.querySelectorAll('[data-undo]').forEach(function (a) {
             a.addEventListener('click', async function (e) {
                 e.preventDefault();
-                if (!confirm('Remove this order number from the list?')) return;
+                if (!(await WDialog.confirm('This order number will be removed from the declined list.', { title: 'Remove from list', confirmText: 'Remove', danger: true }))) return;
                 var x = await sb().from('orders_not_created').delete().eq('order_no', a.getAttribute('data-undo'));
-                if (x.error) { alert('Could not remove: ' + x.error.message); return; }
+                if (x.error) { WDialog.alert('Could not remove: ' + x.error.message); return; }
                 declined = declined.filter(function (z) { return z.order_no !== a.getAttribute('data-undo'); });
                 drawDeclined();
             });
@@ -73,7 +73,7 @@
 
     // Save any review table as a PDF (landscape A4). Uses the html2pdf library already loaded by index.html.
     function toPdf(title, table, file) {
-        if (!window.html2pdf) { alert('The PDF tool is not loaded. Check your internet connection and refresh the page.'); return; }
+        if (!window.html2pdf) { WDialog.alert('The PDF tool is not loaded. Check your internet connection and refresh the page.'); return; }
         var wrap = document.createElement('div');
         wrap.style.cssText = 'padding:16px;font-family:Arial,sans-serif;color:#111;background:#fff;width:1050px';
         var h = '<h2 style="margin:0 0 4px;font-size:18px">' + esc(title) + '</h2><p style="margin:0 0 12px;font-size:11px;color:#555">Wathek - ' +
@@ -191,7 +191,7 @@
                 var id = cb.getAttribute('data-rev'), on = cb.checked;
                 var email = (window.currentLoggedInUser && window.currentLoggedInUser.email) || null;
                 var u = await sb().from('job_document_review').update({ reviewed: on, reviewed_by: on ? email : null, reviewed_at: on ? new Date().toISOString() : null }).eq('job_id', id);
-                if (u.error) { alert('Could not save: ' + u.error.message); cb.checked = !on; return; }
+                if (u.error) { WDialog.alert('Could not save: ' + u.error.message); cb.checked = !on; return; }
                 var row = rows.find(function (x) { return String(x.job.id) === String(id); }); if (row && row.rv) row.rv.reviewed = on;
                 draw();
             });
@@ -263,17 +263,17 @@
             if (done - bad > 0 && onlyCheck) msg += ' Documents with no differences are hidden - turn on "Show all documents" to see them.';
             toast(msg);
         }
-        if (fails.length) alert('Some documents could not be read:\n' + fails.slice(0, 8).join('\n'));
+        if (fails.length) WDialog.alert('Some documents could not be read:\n' + fails.slice(0, 8).join('\n'));
     }
-    function readRow(jobId) {
+    async function readRow(jobId) {
         var row = rows.find(function (x) { return String(x.job.id) === String(jobId); });
-        if (row && row.rv && !confirm('This document was already read. Read it again? This replaces the saved reading and clears its Reviewed tick.')) return;
+        if (row && row.rv && !(await WDialog.confirm('This document was already read. Reading it again replaces the saved reading and clears its Reviewed tick.', { title: 'Read again', confirmText: 'Read again' }))) return;
         readIds([jobId], !!(row && row.rv));
     }
-    function readAllUnread() {
+    async function readAllUnread() {
         var ids = rows.filter(function (r) { return r.has && !r.rv && window.WathekDocs.isPdf(r.job.id); }).map(function (r) { return r.job.id; });
-        if (!ids.length) { alert('Every document already has a saved reading.'); return; }
-        if (!confirm('Hello Wathek, the Checker will read the document.')) return;
+        if (!ids.length) { WDialog.alert('Every document already has a saved reading.'); return; }
+        if (!(await WDialog.confirm('Hello Wathek, the Checker will read the document.', { title: 'Read documents', confirmText: 'Start reading' }))) return;
         readIds(ids);
     }
 

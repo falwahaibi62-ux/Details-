@@ -350,7 +350,7 @@ async function handleWarehouseSubmit(event) {
     if (event) event.preventDefault();
 
     if (!window.supabaseClient) {
-        alert("Supabase client is not initialized!");
+        WDialog.alert("Supabase client is not initialized!");
         return;
     }
 
@@ -382,7 +382,7 @@ async function handleWarehouseSubmit(event) {
 
     if (response.error) {
         console.error('Error saving warehouse record to Supabase:', response.error);
-        alert('Supabase Error: ' + response.error.message);
+        WDialog.alert('Supabase Error: ' + response.error.message);
     } else {
         closeWarehouseModal();
         await refreshWarehouseData();
