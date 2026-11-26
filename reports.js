@@ -1019,6 +1019,7 @@
             return;
         }
         setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+        if (window.WathekLog) window.WathekLog('Reports', 'Official PDF Report', 'Saved as PDF - ' + periodText(data.start, data.end));
     }
 
     // ==========================================
