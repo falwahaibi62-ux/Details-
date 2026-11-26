@@ -149,7 +149,7 @@
         var email = session && session.user && session.user.email;
         if (!email) { await denyAccess('errNoAccess'); return; }
 
-        var res = await sb.from('user_role').select('name,email,role,status').ilike('email', escapeLike(email)).limit(1);
+        var res = await sb.from('user_role').select('name,email,role,status,reminder_required,reminder_accepted_at').ilike('email', escapeLike(email)).limit(1);
         if (res.error) { await denyAccess('errRole', true); return; }
 
         var row = res.data && res.data[0];
@@ -164,6 +164,16 @@
         try { sb.rpc('record_login').then(function () {}, function () {}); } catch (e) {} // saves the last login time (best effort)
         hideOverlay();
         resolveReady(window.currentLoggedInUser);
+
+        // First sign-in of a user added by the Admin: a short reminder that must be acknowledged once
+        if (row.reminder_required && !row.reminder_accepted_at && window.WDialog) {
+            WDialog.alert(
+                'Some of the information you will see here is private. Please keep it within your work and do not share it with others, as this protects you and the company alike.\n\n' +
+                'Your password is yours alone, so please keep it private.\n\n' +
+                'Warm regards,\nThe Administrator',
+                { title: 'A small reminder', okText: 'I understand', type: 'info', mandatory: true }
+            ).then(function () { try { sb.rpc('accept_reminder').then(function () {}, function () {}); } catch (e) {} });
+        }
     }
 
     async function denyAccess(key, keepSession) {

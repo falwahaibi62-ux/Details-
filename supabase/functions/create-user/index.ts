@@ -1,6 +1,7 @@
 // Wathek - create-user (Admin only)
 // Adds a user in one step: login account (with the password the Admin typed) + system role.
 // - The caller must be a signed-in Admin (checked with public.current_app_role()).
+// - The new user sees a one-time confidentiality reminder at the first sign-in (reminder_required).
 // - No e-mail is sent from here; the Admin shares the welcome message himself (the app builds it).
 // - The password is never logged and never returned. If the e-mail already has a login account, only the
 //   system role is added and its password is left unchanged.
@@ -73,7 +74,7 @@ Deno.serve(async (req) => {
     }
 
     // 5) System role (same table the Users & Roles page reads)
-    const { error: insErr } = await admin.from("user_role").insert([{ name, email, role: userRole, status: "enable" }]);
+    const { error: insErr } = await admin.from("user_role").insert([{ name, email, role: userRole, status: "enable", reminder_required: true }]);
     if (insErr) {
       if (createdId) await admin.auth.admin.deleteUser(createdId); // undo, nothing half-created
       return json({ error: "Could not save the user: " + insErr.message }, 500, origin);
