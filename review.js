@@ -173,7 +173,7 @@
             var lotSys = j.lot_no ? esc(j.lot_no) + (j.tape_color ? ' (' + esc(j.tape_color) + ')' : '') : '-';
             var lotRead = rv && rv.lot_read ? esc(rv.lot_read) + (rv.color_read ? ' (' + esc(rv.color_read) + ')' : '') : '-';
             var exp = rv && rv.total_read != null && rv.deposit_read != null ? Number(rv.total_read) - Number(rv.deposit_read) : null;
-            return '<tr class="border-b border-surface-100 ' + (ok ? '' : 'bg-warning-50/40') + '">' +
+            return '<tr class="border-b border-surface-100"' + (ok ? '' : ' style="background:rgba(245,158,11,0.08);box-shadow:inset 3px 0 0 rgba(245,158,11,0.9)"') + '>' +
                 '<td class="p-3 text-xs whitespace-nowrap">' + esc(String(j.date || '').split(' ')[0]) + '</td>' +
                 '<td class="p-3 text-xs font-semibold">' + esc(j.jobNo || j.job_no || '-') + '<div class="font-normal text-surface-500">' + esc(j.route || '') + '</div></td>' +
                 '<td class="p-3 text-xs">' + (r.has ? '<a href="#" data-view="' + esc(j.id) + '" class="text-primary-600 font-semibold">View</a>' : '-') + '</td>' +
@@ -182,7 +182,7 @@
                 '<td class="p-3 text-xs">' + fmt(money(j.total_amount || j.total)) + '<div class="text-surface-500">doc: ' + fmt(exp) + '</div></td>' +
                 '<td class="p-3 text-xs">' + (ok ? '<span class="text-success-600 font-semibold">OK</span>' : '<span class="text-warning-600 font-semibold">Check</span>' + r.flags.map(function (x) { return '<div class="text-surface-600">' + esc(x) + '</div>'; }).join('')) + '</td>' +
                 '<td class="p-3 text-xs text-center">' + (rv ? '<input type="checkbox" data-rev="' + esc(j.id) + '" ' + (rv.reviewed ? 'checked' : '') + '>' : '') + '</td>' +
-                '<td class="p-3 text-xs whitespace-nowrap">' + esc(rv && rv.read_at ? String(rv.read_at).slice(0, 10) : '') + (r.has ? '<div><a href="#" data-read="' + esc(j.id) + '" class="text-primary-600 font-semibold">' + (rv ? 'Read again' : 'Read now') + '</a></div>' : '') + '</td></tr>';
+                '<td class="p-3 text-xs whitespace-nowrap">' + esc(rv && rv.read_at ? String(rv.read_at).slice(0, 10) : '') + (r.has ? '<div><button type="button" data-read="' + esc(j.id) + '" class="mt-1 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition ' + (rv ? 'bg-surface-100 hover:bg-surface-200 text-surface-800' : 'bg-primary-600 hover:bg-primary-700 text-white') + '">' + (rv ? 'Read again' : 'Read now') + '</button></div>' : '') + '</td></tr>';
         }).join('');
         box.querySelectorAll('[data-view]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); window.WathekDocs.show(a.getAttribute('data-view')); }); });
         box.querySelectorAll('[data-read]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); readRow(a.getAttribute('data-read')); }); });
@@ -233,6 +233,17 @@
         if (row) { row.rv = rec; row.flags = flagsFor(row.job, rec); }
         return null;
     }
+
+    function toast(msg) {
+        var t = document.getElementById('review-toast');
+        if (!t) {
+            t = document.createElement('div'); t.id = 'review-toast';
+            t.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:60;max-width:90vw;padding:10px 16px;border-radius:14px;background:#1e293b;color:#fff;font-size:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15)';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg; t.style.display = 'block';
+        clearTimeout(t._h); t._h = setTimeout(function () { t.style.display = 'none'; }, 6000);
+    }
     async function readIds(ids, force) {
         var n = 0, fails = [], c = document.getElementById('reviewCount');
         async function worker() {
@@ -245,6 +256,13 @@
         }
         await Promise.all([worker(), worker()]);
         draw();
+        var done = ids.length - fails.length;
+        if (done > 0) {
+            var bad = ids.filter(function (id) { var r = rows.find(function (x) { return String(x.job.id) === String(id); }); return r && r.rv && r.flags.length; }).length;
+            var msg = done + ' document(s) read: ' + (done - bad) + ' OK, ' + bad + ' need checking.';
+            if (done - bad > 0 && onlyCheck) msg += ' Documents with no differences are hidden - turn on "Show all documents" to see them.';
+            toast(msg);
+        }
         if (fails.length) alert('Some documents could not be read:\n' + fails.slice(0, 8).join('\n'));
     }
     function readRow(jobId) {
