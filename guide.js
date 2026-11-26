@@ -1,7 +1,7 @@
 /*
- * guide.js - help for Members and Viewers (the Admin has the Alerts panel instead).
- * 1. "What would you like to do?" card on the dashboard: one-click shortcuts, different for Member and Viewer.
- * 2. A small "?" button on every screen: two or three lines on what the screen is for.
+ * guide.js - help for every role.
+ * 1. Member and Viewer: "What would you like to do?" card on the dashboard (the Admin has the Alerts panel instead).
+ * 2. All roles: a small "?" button on every screen: a few lines on what the screen is for, written for the role.
  * Display only: it never changes any data.
  */
 (function () {
@@ -23,32 +23,59 @@
         ]
     };
 
+    // text = shown to everyone; member / viewer / admin = added for that role only.
+    // "base" replaces text for a role when the shared text would be wrong for it.
     var HELP = {
         dashboard: {
             title: 'Dashboard',
-            text: 'A summary of the jobs and their payments, with charts.\n\nUse the menu on the left to open any other screen, or the shortcuts above.'
+            text: 'A summary of the jobs and their payments, with charts.\n\nUse the menu on the left to open any other screen.',
+            admin: '\n\nThe Alerts panel lists what needs your attention. Each alert has a button that opens the right screen.'
         },
         jobs: {
             title: 'Operations Ledger',
-            text: 'Every job with its date, route, status and payments.\n\nUse the search and filters at the top to find a job. To change or delete a job, please ask the Admin.',
-            member: '\n\nMembers: press Add Job to record a new job.'
+            text: 'Every job with its date, route, status and payments.\n\nUse the search and filters at the top to find a job.',
+            member: '\n\nPress Add Job to record a new job. To change or delete a job, please ask the Admin.',
+            viewer: '\n\nYour account is view only. To change or delete a job, please ask the Admin.',
+            admin: '\n\nYou can add, edit and delete jobs. A deleted job goes to the Recycle Bin first, where you can restore it.'
         },
         rentals: {
             title: 'Private Truck Rental',
             text: 'The private trucks rented for jobs, with their cost and payment method.',
-            member: '\n\nMembers: press the add button to record a new rental. To change or delete one, please ask the Admin.'
+            member: '\n\nPress the add button to record a new rental. To change or delete one, please ask the Admin.',
+            viewer: '\n\nYour account is view only.',
+            admin: '\n\nYou can add, edit and delete rentals. A deleted rental goes to the Recycle Bin first.'
         },
         warehouse: {
             title: 'Warehouse and others',
             text: 'Warehouse costs and other expenses, with date, type and payment method.',
-            member: '\n\nMembers: press Add Expense to record a new one. To change or delete one, please ask the Admin.'
+            member: '\n\nPress Add Expense to record a new one. To change or delete one, please ask the Admin.',
+            viewer: '\n\nYour account is view only.',
+            admin: '\n\nYou can add, edit and delete expenses. A deleted expense goes to the Recycle Bin first.'
         },
         reports: {
             title: 'Official PDF Report',
             text: 'Choose the dates and the job type, then switch between Summary and Detailed.',
-            member: '\n\nPress Save PDF to keep a copy of the report.'
+            member: '\n\nPress Save PDF to keep a copy of the report.',
+            viewer: '\n\nYour account is view only, so you can read the report here but not save it.',
+            admin: '\n\nPress Save PDF to keep a copy of the report.'
+        },
+        users: {
+            title: 'Users & Roles',
+            text: 'The people who can sign in, with their role, status and last login.',
+            admin: '\n\nAdd User creates the account and gives you a welcome message to send. Admin can do everything, Member can add records, and Viewer can only look. Set the status to Disable to stop someone from signing in. Under Data backup you can download all the data.'
+        },
+        review: {
+            title: 'Document Review',
+            text: 'Checks the job documents against the job records.',
+            admin: '\n\nThe guide on the left explains each step. It lists jobs without a document, and the documents that were read with any differences found. It never changes the job records.'
+        },
+        trash: {
+            title: 'Recycle Bin',
+            text: 'Deleted jobs, rentals and expenses are kept here first.',
+            admin: '\n\nRestore brings a record back. Deleting from the Recycle Bin is permanent and cannot be undone.'
         }
     };
+    HELP['pdf-report'] = HELP.reports;
 
     function role() { return window.currentUserRole; }
     function go(tab) { if (typeof window.switchTab === 'function') window.switchTab(tab); }
@@ -99,7 +126,8 @@
             'width:44px;height:44px;border-radius:99px;border:1px solid #2F3B52;background:#4a6fd0;color:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.35)';
         b.addEventListener('click', function () {
             var h = HELP[currentTab()] || HELP.dashboard;
-            var text = h.text + (role() === 'Member' && h.member ? h.member : '');
+            var r = String(role() || '').toLowerCase();
+            var text = h.text + (h[r] || '');
             if (window.WDialog) WDialog.alert(text, { title: h.title, type: 'info', okText: 'Got it' });
         });
         document.body.appendChild(b);
@@ -108,8 +136,8 @@
     function init() {
         if (!window.WathekAuth) return;
         window.WathekAuth.require().then(function (user) {
-            if (!user || (user.role !== 'Member' && user.role !== 'Viewer')) return;
-            drawCard(user.role);
+            if (!user) return;
+            if (user.role === 'Member' || user.role === 'Viewer') drawCard(user.role);
             drawHelpButton();
         }).catch(function () {});
     }
