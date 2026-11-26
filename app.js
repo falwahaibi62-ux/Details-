@@ -483,6 +483,13 @@ async function fetchUsersFromSupabase() {
 }
 window.fetchUsersFromSupabase = fetchUsersFromSupabase;
 
+function formatLastLogin(v) {
+    if (!v) return 'Never';
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return 'Never';
+    return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
 function renderUsers() {
     const container = document.getElementById('usersListContainer');
     if (!container) return;
@@ -539,6 +546,11 @@ function renderUsers() {
                         </div>
                     </div>
                     
+                    <div class="hidden sm:block text-right mr-4 shrink-0">
+                        <div class="text-[10px] font-bold text-surface-400 uppercase tracking-wider">Last login</div>
+                        <div class="text-xs font-semibold ${u.last_login ? 'text-surface-700' : 'text-surface-400'}">${formatLastLogin(u.last_login)}</div>
+                    </div>
+
                     <div class="flex items-center space-x-2">
                         <div class="relative">
                             <select onchange="updateUserField(${u.id}, 'role', this.value)" class="appearance-none bg-surface-50/80 border border-surface-200/60 text-surface-700 text-xs font-bold rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:border-primary-500 transition cursor-pointer">
