@@ -15,7 +15,7 @@
 
     var T = {
         en: {
-            title: 'Wathek System', sub: 'Sign in to continue',
+            title: 'Our System', sub: 'Sign in to continue',
             email: 'E-mail', password: 'Password', signin: 'Sign in', forgot: 'Forgot password?',
             back: 'Back to sign in', sendLink: 'Send reset link',
             forgotTitle: 'Reset your password', forgotHelp: 'Enter your e-mail and we will send you a reset link.',

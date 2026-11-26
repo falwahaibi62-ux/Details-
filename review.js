@@ -76,7 +76,7 @@
         if (!window.html2pdf) { WDialog.alert('The PDF tool is not loaded. Check your internet connection and refresh the page.'); return; }
         var wrap = document.createElement('div');
         wrap.style.cssText = 'padding:16px;font-family:Arial,sans-serif;color:#111;background:#fff;width:1050px';
-        var h = '<h2 style="margin:0 0 4px;font-size:18px">' + esc(title) + '</h2><p style="margin:0 0 12px;font-size:11px;color:#555">Wathek - ' +
+        var h = '<h2 style="margin:0 0 4px;font-size:18px">' + esc(title) + '</h2><p style="margin:0 0 12px;font-size:11px;color:#555">Our System - ' +
             new Date().toLocaleDateString('en-US') + ' - ' + (table.length - 1) + ' row(s)</p><table style="width:100%;border-collapse:collapse;font-size:10px">';
         table.forEach(function (r, i) {
             var tag = i ? 'td' : 'th';
@@ -273,7 +273,7 @@
     async function readAllUnread() {
         var ids = rows.filter(function (r) { return r.has && !r.rv && window.WathekDocs.isPdf(r.job.id); }).map(function (r) { return r.job.id; });
         if (!ids.length) { WDialog.alert('Every document already has a saved reading.'); return; }
-        if (!(await WDialog.confirm('Hello Wathek, the Checker will read the document.', { title: 'Read documents', confirmText: 'Start reading' }))) return;
+        if (!(await WDialog.confirm('Hello, the Checker will read the document.', { title: 'Read documents', confirmText: 'Start reading' }))) return;
         readIds(ids);
     }
 
