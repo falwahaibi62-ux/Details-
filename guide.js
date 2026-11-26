@@ -130,6 +130,13 @@
             var text = h.text + (h[r] || '');
             if (window.WDialog) WDialog.alert(text, { title: h.title, type: 'info', okText: 'Got it' });
         });
+        // On desktop the round Resync button sits at the bottom right: stack the help button above it
+        if (!document.getElementById('help-style')) {
+            var st = document.createElement('style');
+            st.id = 'help-style';
+            st.textContent = '@media (min-width:768px){#helpBtn{bottom:84px!important;right:24px!important}}';
+            document.head.appendChild(st);
+        }
         document.body.appendChild(b);
     }
 
