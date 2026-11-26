@@ -37,7 +37,7 @@
     }
 
     // ---------- the numbers ----------
-    var COLS = ['pu', 'dest', 'helpers', 'drivers', 'diesel', 'hotel', 'rental', 'warehouse', 'added', 'returned'];
+    var COLS = ['pu', 'dest', 'helpers', 'drivers', 'diesel', 'hotel', 'rental', 'warehouse', 'other', 'added', 'returned'];
     function emptyDay() { var o = { unspec: 0, notes: [] }; COLS.forEach(function (c) { o[c] = 0; }); return o; }
 
     function compute() {
@@ -64,7 +64,8 @@
         var start = null;
         state.entries.forEach(function (e) {
             var k = String(e.entry_date).slice(0, 10), d = day(k), a = Number(e.amount) || 0;
-            if (e.kind === 'Returned to company') d.returned += a; else d.added += a;
+            if (e.kind === 'Cash count') { d.notes.push('Cash count: ' + money(a) + (e.note ? ' - ' + e.note : '')); return; }
+            if (e.kind === 'Returned to company') d.returned += a; else if (e.kind === 'Other expense') d.other += a; else d.added += a;
             d.notes.push(e.kind + ': ' + money(a) + (e.note ? ' - ' + e.note : ''));
             if (e.kind === 'Opening balance' && (!start || k < start)) start = k;
         });
@@ -72,7 +73,7 @@
         return { days: days, keys: keys, start: start, skipped: skipped };
     }
     function received(d) { return d.pu + d.dest; }
-    function spent(d) { return d.helpers + d.drivers + d.diesel + d.hotel + d.rental + d.warehouse; }
+    function spent(d) { return d.helpers + d.drivers + d.diesel + d.hotel + d.rental + d.warehouse + d.other; }
 
     // Running balance for every day, then the figures of the chosen period
     function build() {
@@ -87,7 +88,15 @@
             t.unspec += d.unspec;
             if (net !== 0 || received(d) || spent(d) || d.added || d.returned) rows.push({ key: k, d: d, balance: run });
         });
-        return { m: m, rows: rows, before: r2(before), after: r2(run), t: t };
+        var lc = state.entries.filter(function (e) { return e.kind === 'Cash count'; }).sort(function (a, c) { return String(c.entry_date).localeCompare(String(a.entry_date)) || c.id - a.id; })[0], count = null;
+        if (lc && m.start) {
+            var cd = String(lc.entry_date).slice(0, 10), sys = 0;
+            if (cd >= m.start) {
+                m.keys.forEach(function (k) { if (k <= cd) { var d = m.days[k]; sys += received(d) - spent(d) + d.added - d.returned; } });
+                count = { date: cd, counted: r2(lc.amount), system: r2(sys), diff: r2(Number(lc.amount) - sys) };
+            }
+        }
+        return { m: m, rows: rows, before: r2(before), after: r2(run), t: t, count: count };
     }
 
     // ---------- screen ----------
@@ -101,6 +110,7 @@
                 '<div><h3 class="font-bold text-surface-900 text-base">Cash Box</h3>' +
                 '<p class="text-xs text-surface-500">The cash received from customers, the cash spent, and the cash added from the company.</p></div>' +
                 '<div class="flex gap-2"><button type="button" id="cbAdd" class="px-3 py-2 text-xs bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition cursor-pointer"><i class="fa-solid fa-plus mr-1"></i> Add entry</button>' +
+                '<button type="button" id="cbCountBtn" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer"><i class="fa-solid fa-calculator mr-1"></i> Count cash</button>' +
                 '<button type="button" id="cbPdf" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer"><i class="fa-solid fa-file-pdf mr-1"></i> Save PDF</button></div>' +
               '</div>' +
               '<div class="flex flex-wrap items-center gap-2">' +
@@ -113,8 +123,9 @@
             '</div>' +
             '<div id="cbNotes"></div>' +
             '<div id="cbCards" class="grid grid-cols-2 lg:grid-cols-3 gap-3"></div>' +
+            '<div id="cbCount"></div>' +
             '<div id="cbSplit" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>' +
-            '<div class="glass-panel rounded-2xl bg-white shadow-xs border border-surface-200 overflow-hidden"><div class="p-4 border-b border-surface-100 font-bold text-xs text-surface-900 uppercase tracking-wide">Entries from the company</div><div id="cbEntries"></div></div>' +
+            '<div class="glass-panel rounded-2xl bg-white shadow-xs border border-surface-200 overflow-hidden"><div class="p-4 border-b border-surface-100 font-bold text-xs text-surface-900 uppercase tracking-wide">Cash entries</div><div id="cbEntries"></div></div>' +
             '<div class="glass-panel rounded-2xl bg-white shadow-xs border border-surface-200 overflow-hidden"><div class="p-4 border-b border-surface-100 font-bold text-xs text-surface-900 uppercase tracking-wide">Day by day</div><div id="cbDays"></div></div>';
         host.addEventListener('click', function (e) {
             var ch = e.target.closest('.cb-chip');
@@ -126,6 +137,8 @@
             if (edt) { var en = state.entries.filter(function (x) { return String(x.id) === edt.getAttribute('data-edit'); })[0]; if (en) addEntry(en); return; }
             if (del) { removeEntry(del.getAttribute('data-del')); return; }
             if (e.target.closest('#cbAdd')) addEntry();
+            if (e.target.closest('#cbCountBtn')) addEntry(null, 'Cash count');
+            if (e.target.closest('#cbRecordDiff')) recordDiff();
             if (e.target.closest('#cbPdf')) savePdf();
         });
         $('cbFrom').addEventListener('change', function () { state.from = this.value; paint(); });
@@ -167,14 +180,21 @@
         $('cbSplit').innerHTML =
             '<div class="glass-panel p-4 rounded-2xl bg-white shadow-xs border border-surface-200"><div class="font-bold text-xs text-surface-900 uppercase tracking-wide mb-1">Received</div>' + line('PU payments (cash)', t.pu) + line('Destination payments (cash)', t.dest) + line('<b>Total</b>', rec) + '</div>' +
             '<div class="glass-panel p-4 rounded-2xl bg-white shadow-xs border border-surface-200"><div class="font-bold text-xs text-surface-900 uppercase tracking-wide mb-1">Spent</div>' +
-              line('Helpers', t.helpers) + line('Drivers', t.drivers) + line('Diesel (cash)', t.diesel) + line('Hotels (cash)', t.hotel) + line('Truck rentals (cash)', t.rental) + line('Warehouse (cash)', t.warehouse) + line('<b>Total</b>', sp) + '</div>';
+              line('Helpers', t.helpers) + line('Drivers', t.drivers) + line('Diesel (cash)', t.diesel) + line('Hotels (cash)', t.hotel) + line('Truck rentals (cash)', t.rental) + line('Warehouse (cash)', t.warehouse) + (t.other ? line('Other expenses', t.other) : '') + line('<b>Total</b>', sp) + '</div>';
+
+        var cp = b.count;
+        $('cbCount').innerHTML = cp ? '<div class="p-4 rounded-2xl border ' + (cp.diff === 0 ? 'bg-primary-50 border-primary-200' : 'bg-warning-500/10 border-warning-500/30') + ' flex flex-col sm:flex-row sm:items-center gap-3">' +
+            '<div class="flex-1 text-xs text-surface-800"><div class="font-bold text-surface-900 mb-0.5">Last cash count &middot; ' + esc(nice(cp.date)) + '</div>' +
+            'Counted <b>' + money(cp.counted) + '</b> &middot; System says <b>' + money(cp.system) + '</b> &middot; ' +
+            (cp.diff === 0 ? '<b>Matches.</b>' : (cp.diff < 0 ? '<b class="text-alert-600">' + money(Math.abs(cp.diff)) + ' missing</b> (spent but not recorded?)' : '<b class="text-primary-600">' + money(cp.diff) + ' more</b> than the system')) + '</div>' +
+            (cp.diff < 0 ? '<button type="button" id="cbRecordDiff" class="px-3 py-2 text-xs bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold cursor-pointer">Record as Other expense</button>' : '') + '</div>' : '';
 
         var rows = b.rows.slice().reverse();
         $('cbDays').innerHTML = rows.length ? rows.map(function (x) {
             var d = x.d, open = state.open[x.key], net = d.added - d.returned;
             var det = open
                 ? '<div class="px-4 pb-3 text-[11px] text-surface-600 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1">' +
-                  [['PU cash', d.pu], ['Dest cash', d.dest], ['Helpers', d.helpers], ['Drivers', d.drivers], ['Diesel', d.diesel], ['Hotels', d.hotel], ['Rentals', d.rental], ['Warehouse', d.warehouse]]
+                  [['PU cash', d.pu], ['Dest cash', d.dest], ['Helpers', d.helpers], ['Drivers', d.drivers], ['Diesel', d.diesel], ['Hotels', d.hotel], ['Rentals', d.rental], ['Warehouse', d.warehouse], ['Other', d.other]]
                     .filter(function (p) { return p[1]; }).map(function (p) { return '<div>' + p[0] + ': <b>' + money(p[1]) + '</b></div>'; }).join('') +
                   d.notes.map(function (n) { return '<div class="col-span-2 sm:col-span-4 text-primary-600">' + esc(n) + '</div>'; }).join('') + '</div>'
                 : '';
@@ -188,12 +208,12 @@
 
         var es = state.entries.slice().sort(function (a, c) { return String(c.entry_date).localeCompare(String(a.entry_date)) || c.id - a.id; });
         $('cbEntries').innerHTML = es.length ? es.map(function (e) {
-            var minus = e.kind === 'Returned to company';
-            return '<div class="flex items-center gap-3 px-4 py-3 border-b border-surface-100 last:border-0"><div class="min-w-0 flex-1"><div class="text-xs font-semibold text-surface-900">' + esc(e.kind) + ' &middot; <span class="' + (minus ? 'text-alert-600' : 'text-primary-600') + '">' + (minus ? '- ' : '+ ') + money(e.amount) + '</span></div>' +
+            var minus = e.kind === 'Returned to company' || e.kind === 'Other expense', cnt = e.kind === 'Cash count';
+            return '<div class="flex items-center gap-3 px-4 py-3 border-b border-surface-100 last:border-0"><div class="min-w-0 flex-1"><div class="text-xs font-semibold text-surface-900">' + esc(e.kind) + ' &middot; <span class="' + (cnt ? 'text-surface-500' : (minus ? 'text-alert-600' : 'text-primary-600')) + '">' + (cnt ? '' : (minus ? '- ' : '+ ')) + money(e.amount) + '</span></div>' +
                 '<div class="text-[11px] text-surface-500">' + esc(nice(String(e.entry_date).slice(0, 10))) + (e.note ? ' &middot; ' + esc(e.note) : '') + '</div></div>' +
                 '<button type="button" data-edit="' + e.id + '" aria-label="Edit entry" class="w-8 h-8 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-600 text-xs cursor-pointer mr-1.5"><i class="fa-solid fa-pen"></i></button>' +
                 '<button type="button" data-del="' + e.id + '" aria-label="Delete entry" class="w-8 h-8 rounded-lg bg-danger-50 hover:bg-danger-100 text-danger-600 text-xs cursor-pointer"><i class="fa-solid fa-trash-can"></i></button></div>';
-        }).join('') : '<div class="p-6 text-center text-xs text-surface-500">No entries yet. Add the Opening balance first, then each top-up from the company.</div>';
+        }).join('') : '<div class="p-6 text-center text-xs text-surface-500">No entries yet. Add the Opening balance first, then each top-up, other expense or cash count.</div>';
     }
 
     // ---------- data ----------
@@ -218,20 +238,20 @@
         Promise.all(jobs.map(function (p) { return Promise.resolve(p).catch(function () {}); })).then(paint);
     }
 
-    function addEntry(old) {
+    function addEntry(old, preset) {
         if (window.currentUserRole !== 'Admin' || !window.WDialog) return;
         var ed = !!old;
         WDialog.form({
             title: ed ? 'Edit cash entry' : 'Add cash entry',
-            intro: 'Opening balance is the cash you had on the day you start. Top-up is cash you took from the company. Returned is cash you gave back.',
+            intro: 'Opening balance: the cash you had on the day you start. Top-up: cash taken from the company. Returned: cash given back. Other expense: cash spent that is not recorded elsewhere. Cash count: the cash you counted in the box (does not change the balance).',
             submitText: ed ? 'Save changes' : 'Save entry',
             fields: [
-                { name: 'kind', label: 'Type', type: 'select', required: true, value: ed ? old.kind : 'Top-up', options: [
-                    { value: 'Opening balance', label: 'Opening balance' }, { value: 'Top-up', label: 'Top-up from the company' }, { value: 'Returned to company', label: 'Returned to the company' }] },
+                { name: 'kind', label: 'Type', type: 'select', required: true, value: ed ? old.kind : (preset || 'Top-up'), options: [
+                    { value: 'Opening balance', label: 'Opening balance' }, { value: 'Top-up', label: 'Top-up from the company' }, { value: 'Returned to company', label: 'Returned to the company' }, { value: 'Other expense', label: 'Other expense (cash)' }, { value: 'Cash count', label: 'Cash count (what is in the box)' }] },
                 { name: 'entry_date', label: 'Date', type: 'date', required: true, value: ed ? String(old.entry_date).slice(0, 10) : keyOf(new Date()) },
-                { name: 'amount', label: 'Amount ($)', type: 'number', required: true, maxLength: 12, value: ed ? String(old.amount) : '', validate: function (v) {
-                    var n = Number(String(v).replace(/,/g, ''));
-                    return (!(n > 0) || n > 10000000) ? 'Enter an amount greater than zero.' : '';
+                { name: 'amount', label: 'Amount ($)', type: 'number', required: true, maxLength: 12, value: ed ? String(old.amount) : '', validate: function (v, all) {
+                    var n = Number(String(v).replace(/,/g, '')), zero = all && all.kind === 'Cash count';
+                    return (isNaN(n) || (zero ? n < 0 : !(n > 0)) || n > 10000000) ? (zero ? 'Enter the counted amount (zero or more).' : 'Enter an amount greater than zero.') : '';
                 } },
                 { name: 'note', label: 'Note (optional)', type: 'text', maxLength: 200, value: ed ? (old.note || '') : '' }
             ]
@@ -242,6 +262,18 @@
             var q = ed ? sb().from('cash_box_entries').update(body).eq('id', old.id) : sb().from('cash_box_entries').insert([body]);
             return Promise.resolve(q).then(function (res) {
                 if (res.error) { WDialog.alert('The entry could not be saved. Please try again.', { title: 'Cash entry', type: 'error' }); return; }
+                return loadEntries().then(paint);
+            });
+        });
+    }
+    function recordDiff() {
+        var cp = build().count;
+        if (!cp || cp.diff >= 0 || window.currentUserRole !== 'Admin' || !window.WDialog) return;
+        var amt = r2(Math.abs(cp.diff));
+        WDialog.confirm('Record ' + money(amt) + ' as an Other expense on ' + nice(cp.date) + '? The balance will then match your count.', { title: 'Other expense', confirmText: 'Record' }).then(function (ok) {
+            if (!ok) return;
+            return Promise.resolve(sb().from('cash_box_entries').insert([{ kind: 'Other expense', entry_date: cp.date, amount: amt, note: 'Cash count difference' }])).then(function (res) {
+                if (res.error) { WDialog.alert('The entry could not be saved. Please try again.', { title: 'Other expense', type: 'error' }); return; }
                 return loadEntries().then(paint);
             });
         });
@@ -264,13 +296,13 @@
     function savePdf() {
         var b = build(), t = b.t, cells = ['pu', 'dest', 'helpers', 'drivers', 'diesel', 'hotel', 'rental', 'warehouse'];
         var me = window.currentLoggedInUser || {};
-        var head = ['Date', 'PU cash', 'Dest cash', 'Received', 'Helpers', 'Drivers', 'Diesel', 'Hotels', 'Rentals', 'Warehouse', 'Spent', 'Added', 'Returned', 'Balance'];
+        var head = ['Date', 'PU cash', 'Dest cash', 'Received', 'Helpers', 'Drivers', 'Diesel', 'Hotels', 'Rentals', 'Warehouse', 'Other', 'Spent', 'Added', 'Returned', 'Balance'];
         var body = b.rows.map(function (x) {
             var d = x.d;
-            return '<tr><td class="nw">' + esc(nice(x.key)) + '</td>' + [d.pu, d.dest, received(d), d.helpers, d.drivers, d.diesel, d.hotel, d.rental, d.warehouse, spent(d), d.added, d.returned].map(function (v) { return '<td class="r">' + (v ? money(v) : '-') + '</td>'; }).join('') +
+            return '<tr><td class="nw">' + esc(nice(x.key)) + '</td>' + [d.pu, d.dest, received(d), d.helpers, d.drivers, d.diesel, d.hotel, d.rental, d.warehouse, d.other, spent(d), d.added, d.returned].map(function (v) { return '<td class="r">' + (v ? money(v) : '-') + '</td>'; }).join('') +
                 '<td class="r b' + (x.balance < 0 ? ' neg' : '') + '">' + money(x.balance) + '</td></tr>';
         }).join('');
-        var foot = '<tr class="tot"><td>Total</td>' + [t.pu, t.dest, received(t), t.helpers, t.drivers, t.diesel, t.hotel, t.rental, t.warehouse, spent(t), t.added, t.returned].map(function (v) { return '<td class="r">' + money(v) + '</td>'; }).join('') + '<td class="r b">' + money(b.after) + '</td></tr>';
+        var foot = '<tr class="tot"><td>Total</td>' + [t.pu, t.dest, received(t), t.helpers, t.drivers, t.diesel, t.hotel, t.rental, t.warehouse, t.other, spent(t), t.added, t.returned].map(function (v) { return '<td class="r">' + money(v) + '</td>'; }).join('') + '<td class="r b">' + money(b.after) + '</td></tr>';
         var kpi = function (l, v, neg) { return '<div class="k"><div class="l">' + l + '</div><div class="v' + (neg ? ' neg' : '') + '">' + v + '</div></div>'; };
         var period = state.from || state.to ? (state.from ? nice(state.from) : 'Start') + ' to ' + (state.to ? nice(state.to) : 'today') : 'All dates';
         var entries = state.entries.filter(function (e) { var k = String(e.entry_date).slice(0, 10); return (!state.from || k >= state.from) && (!state.to || k <= state.to); });
@@ -287,9 +319,9 @@
             (t.unspec > 0 ? '<div class="note" style="border:0;margin:0 0 8px">Not counted as cash: ' + money(t.unspec) + ' of payments with no method (Unspecified).</div>' : '') +
             '<div class="sec">Day by day</div>' +
             (b.rows.length ? '<table><thead><tr>' + head.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + body + foot + '</tbody></table>' : '<div>No cash activity in this period.</div>') +
-            (entries.length ? '<div class="sec">Entries from the company</div><table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Note</th></tr></thead><tbody>' +
+            (entries.length ? '<div class="sec">Cash entries</div><table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Note</th></tr></thead><tbody>' +
                 entries.map(function (e) { return '<tr><td class="nw">' + esc(nice(String(e.entry_date).slice(0, 10))) + '</td><td>' + esc(e.kind) + '</td><td class="r">' + money(e.amount) + '</td><td>' + esc(e.note || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
-            '<div class="note">Cash received = payments written as Cash in PU and Destination payments. Cash spent = Helpers and Drivers plus Diesel, Hotels, Truck rentals and Warehouse amounts written as Cash. The Foreman is not included.</div>' +
+            '<div class="note">Cash received = payments written as Cash in PU and Destination payments. Cash spent = Helpers and Drivers plus Diesel, Hotels, Truck rentals and Warehouse amounts written as Cash, plus any Other expense entered here. The Foreman is not included.</div>' +
             '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></div></body></html>';
         var url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
         var w = window.open(url, '_blank');

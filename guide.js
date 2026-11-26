@@ -78,7 +78,7 @@
     HELP.cash = {
         title: 'Cash Box',
         text: 'The cash with you: cash received from customers, minus the cash spent, plus what you took from the company.',
-        admin: '\n\nReceived = payments written as Cash in PU and Destination. Spent = Helpers, Drivers and every Cash amount in Diesel, Hotels, Truck rentals and Warehouse. Use Add entry for the Opening balance, each Top-up from the company, and cash Returned. Payments with no method are not counted as cash.'
+        admin: '\n\nReceived = payments written as Cash in PU and Destination. Spent = Helpers, Drivers and every Cash amount in Diesel, Hotels, Truck rentals and Warehouse. Use Add entry for the Opening balance, each Top-up from the company, cash Returned, and any Other expense not recorded elsewhere. Press Count cash to enter what is really in the box: the page shows the difference and can record it as an Other expense. Payments with no method are not counted as cash.'
     };
     HELP.history = {
         title: 'History Log',
