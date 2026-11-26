@@ -961,13 +961,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Wathek - Financial & Operations Report</title>
+<title>Our System - Financial & Operations Report</title>
 <style>${PDF_CSS}</style>
 </head>
 <body>
     <div class="hero">
         <div>
-            <div class="brand">Wathek</div>
+            <div class="brand">Our System</div>
             <h1>Financial &amp; Operations Report</h1>
         </div>
         <div class="period">
@@ -997,7 +997,7 @@
     <div class="sec" style="margin-top:0">Detailed Records<small>${esc(periodText(data.start, data.end))}</small></div>
     ${detailSections(data, s).map(pdfDetailSection).join('')}
 
-    <div class="foot"><span>Wathek &middot; Enterprise Moving &amp; Logistics Management</span><span>${esc(periodText(data.start, data.end))}</span></div>
+    <div class="foot"><span>Our System &middot; Enterprise Moving &amp; Logistics Management</span><span>${esc(periodText(data.start, data.end))}</span></div>
     <script>
         window.onload = function () { setTimeout(function () { window.print(); }, 400); };
     <\/script>

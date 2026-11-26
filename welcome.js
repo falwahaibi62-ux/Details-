@@ -9,7 +9,7 @@
     'use strict';
 
     var SHOW_MS = 3000;
-    var DISPLAY_NAME = 'Wathek'; // name shown in the greeting (change here if needed)
+    var DISPLAY_NAME = 'Our System'; // name shown in the greeting (change here if needed)
     var KEY = 'wathekWelcomeShown';
 
     function seen() { try { return sessionStorage.getItem(KEY) === '1'; } catch (e) { return false; } }

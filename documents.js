@@ -558,7 +558,7 @@
         bulkRows.forEach(function (r, i) { if (!r.problem && !r.done && !r.ai) idx.push(i); });
         var fresh = idx.filter(function (i) { return !bulkRows[i].cached; }).length, free = idx.length - fresh;
         if (!idx.length) { bulkMsg('Nothing to read.'); return; }
-        if (fresh > 0 && !(await WDialog.confirm('Hello Wathek, the Checker will read the document.', { title: 'Read documents', confirmText: 'Start reading' }))) return;
+        if (fresh > 0 && !(await WDialog.confirm('Hello, the Checker will read the document.', { title: 'Read documents', confirmText: 'Start reading' }))) return;
         if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
         var n = 0;
         async function worker() { while (n < idx.length) { var k = idx[n++]; await readOneAI(k); } }
