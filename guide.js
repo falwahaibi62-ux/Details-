@@ -144,7 +144,7 @@
         if (!document.getElementById('help-style')) {
             var st = document.createElement('style');
             st.id = 'help-style';
-            st.textContent = '@media (min-width:768px){#helpBtn{bottom:92px!important;right:24px!important}main{padding-bottom:160px!important}}#helpBtn:hover,#helpBtn:focus-visible,#desktopRefreshBtn:hover{opacity:1!important}#desktopRefreshBtn{opacity:.45;transition:opacity .2s}';
+            st.textContent = '@media (min-width:768px){#helpBtn{bottom:92px!important;right:24px!important}main{padding-bottom:170px!important}}@media (max-width:767px){main{padding-bottom:100px!important}}#helpBtn:hover,#helpBtn:focus-visible,#desktopRefreshBtn:hover{opacity:1!important}#desktopRefreshBtn{opacity:.45;transition:opacity .2s}';
             document.head.appendChild(st);
         }
         document.body.appendChild(b);
