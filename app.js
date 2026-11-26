@@ -589,12 +589,14 @@ async function openAddUserModal() {
     const known = (window.systemUsers || []).map((u) => String(u.email || '').trim().toLowerCase());
     const values = await WDialog.form({
         title: 'Add New User',
-        intro: 'The role decides what the user can see and do.',
+        intro: 'An invitation email is sent to the user. The password you set here works for signing in right away. The role decides what the user can see and do.',
         submitText: 'Add User',
         fields: [
             { name: 'name', label: 'Full name', required: true, maxLength: 80 },
             { name: 'email', label: 'Email address', type: 'email', required: true, maxLength: 120,
               validate: (v) => known.indexOf(v.toLowerCase()) >= 0 ? 'This email is already in the users list.' : '' },
+            { name: 'password', label: 'Password', type: 'password', required: true, maxLength: 72,
+              validate: (v) => v.length < 8 ? 'Use at least 8 characters.' : '' },
             { name: 'role', label: 'Role', type: 'select', value: 'Member', options: [
                 { value: 'Admin', label: 'Admin - full access' },
                 { value: 'Member', label: 'Member - add and edit records' },
@@ -603,16 +605,32 @@ async function openAddUserModal() {
     });
     if (!values) return;
 
+    const btn = document.getElementById('addUserBtn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
     try {
-        const { error } = await supabaseClient
-            .from('user_role')
-            .insert([{ name: values.name, email: values.email.toLowerCase(), role: values.role, status: 'enable' }]);
-
-        if (error) WDialog.alert('Failed to add user: ' + error.message, { type: 'error' });
-        else fetchUsersFromSupabase();
+        const res = await supabaseClient.functions.invoke('create-user', {
+            body: { name: values.name, email: values.email, password: values.password, role: values.role }
+        });
+        let msg = null;
+        if (res.error) {
+            msg = 'Could not add the user. Please try again.';
+            try { const e = res.error.context && res.error.context.json ? await res.error.context.json() : null; if (e && e.error) msg = e.error; } catch (x) {}
+        } else if (!res.data || !res.data.ok) {
+            msg = (res.data && res.data.error) || 'Could not add the user. Please try again.';
+        }
+        if (msg) { WDialog.alert(msg, { type: 'error', title: 'User not added' }); }
+        else {
+            WDialog.alert(res.data.invited
+                ? 'The user was added and an invitation email was sent to ' + values.email.toLowerCase() + '.'
+                : 'The user was added. This email already had a login account, so its password was not changed and no email was sent.',
+                { type: 'success', title: 'User added' });
+            fetchUsersFromSupabase();
+        }
     } catch (err) {
         console.error("Error adding user:", err);
-        WDialog.alert('Failed to add user. Please try again.', { type: 'error' });
+        WDialog.alert('Could not add the user. Please try again.', { type: 'error', title: 'User not added' });
+    } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
     }
 }
 window.openAddUserModal = openAddUserModal;

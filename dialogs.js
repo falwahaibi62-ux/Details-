@@ -2,7 +2,7 @@
    WDialog.alert(message, { title, type })                      -> Promise<void>
    WDialog.confirm(message, { title, confirmText, cancelText, danger }) -> Promise<boolean>
    WDialog.form({ title, intro, submitText, fields: [...] })     -> Promise<object | null>
-     field = { name, label, type: 'text' | 'email' | 'select', required, placeholder, value, maxLength, options: [{value,label}], validate(value, values) -> error text }
+     field = { name, label, type: 'text' | 'email' | 'password' | 'select', required, placeholder, value, maxLength, options: [{value,label}], validate(value, values) -> error text }
    Dialogs are queued (never lost), keyboard friendly (Tab stays inside, Esc cancels, Enter submits) and give focus back when closed. */
 (function () {
     'use strict';
@@ -73,17 +73,24 @@
                     inp = el('select');
                     (f.options || []).forEach(function (o) { var op = el('option', null, o.label); op.value = o.value; if (String(o.value) === String(f.value)) op.selected = true; inp.appendChild(op); });
                 } else {
-                    inp = el('input'); inp.type = f.type === 'email' ? 'email' : 'text'; inp.value = f.value || '';
+                    inp = el('input'); inp.type = f.type === 'email' ? 'email' : (f.type === 'password' ? 'password' : 'text'); inp.value = f.value || '';
                     if (f.placeholder) inp.placeholder = f.placeholder;
                     if (f.maxLength) inp.maxLength = f.maxLength;
-                    inp.autocomplete = 'off'; inp.spellcheck = false;
+                    inp.autocomplete = f.type === 'password' ? 'new-password' : 'off'; inp.spellcheck = false;
                     if (f.type === 'email') inp.setAttribute('inputmode', 'email');
                 }
                 inp.id = fid; inp.name = f.name;
                 var err = el('div', 'wdlg-err'); err.id = fid + '-e'; err.setAttribute('role', 'alert');
                 inp.setAttribute('aria-describedby', err.id);
                 inp.addEventListener('input', function () { wrap.classList.remove('bad'); err.textContent = ''; inp.removeAttribute('aria-invalid'); });
-                wrap.appendChild(lab); wrap.appendChild(inp); wrap.appendChild(err); form.appendChild(wrap);
+                wrap.appendChild(lab); wrap.appendChild(inp);
+                if (f.type === 'password') {
+                    var show = el('label', null, ''); show.style.cssText = 'display:flex;align-items:center;gap:6px;margin:7px 0 0;font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;color:#9aa7bd;cursor:pointer';
+                    var cb = el('input'); cb.type = 'checkbox'; cb.style.cssText = 'width:auto;margin:0';
+                    cb.addEventListener('change', function () { inp.type = cb.checked ? 'text' : 'password'; });
+                    show.appendChild(cb); show.appendChild(document.createTextNode('Show password')); wrap.appendChild(show);
+                }
+                wrap.appendChild(err); form.appendChild(wrap);
                 inputs[f.name] = { field: f, input: inp, wrap: wrap, err: err };
             });
             box.appendChild(form);
@@ -108,7 +115,7 @@
             var values = {}, firstBad = null;
             job.fields.forEach(function (f) {
                 var h = inputs[f.name], v = h.input.value;
-                if (f.type !== 'select') v = v.trim();
+                if (f.type !== 'select' && f.type !== 'password') v = v.trim();
                 values[f.name] = v;
             });
             job.fields.forEach(function (f) {
