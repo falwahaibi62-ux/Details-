@@ -114,8 +114,8 @@
             '<div id="cbNotes"></div>' +
             '<div id="cbCards" class="grid grid-cols-2 lg:grid-cols-3 gap-3"></div>' +
             '<div id="cbSplit" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>' +
-            '<div class="glass-panel rounded-2xl bg-white shadow-xs border border-surface-200 overflow-hidden"><div class="p-4 border-b border-surface-100 font-bold text-xs text-surface-900 uppercase tracking-wide">Day by day</div><div id="cbDays"></div></div>' +
-            '<div class="glass-panel rounded-2xl bg-white shadow-xs border border-surface-200 overflow-hidden"><div class="p-4 border-b border-surface-100 font-bold text-xs text-surface-900 uppercase tracking-wide">Entries from the company</div><div id="cbEntries"></div></div>';
+            '<div class="glass-panel rounded-2xl bg-white shadow-xs border border-surface-200 overflow-hidden"><div class="p-4 border-b border-surface-100 font-bold text-xs text-surface-900 uppercase tracking-wide">Entries from the company</div><div id="cbEntries"></div></div>' +
+            '<div class="glass-panel rounded-2xl bg-white shadow-xs border border-surface-200 overflow-hidden"><div class="p-4 border-b border-surface-100 font-bold text-xs text-surface-900 uppercase tracking-wide">Day by day</div><div id="cbDays"></div></div>';
         host.addEventListener('click', function (e) {
             var ch = e.target.closest('.cb-chip');
             if (ch) { var v = ch.getAttribute('data-r'); var r = v === 'all' ? { from: '', to: '' } : monthRange(v === 'm1' ? -1 : 0); state.from = r.from; state.to = r.to; paint(); return; }
