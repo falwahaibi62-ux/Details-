@@ -161,6 +161,7 @@
         window.currentLoggedInUser = { email: email, name: row.name || email, role: role, authId: session.user.id };
         paintSidebar(window.currentLoggedInUser);
         signedIn = true;
+        try { sb.rpc('record_login').then(function () {}, function () {}); } catch (e) {} // saves the last login time (best effort)
         hideOverlay();
         resolveReady(window.currentLoggedInUser);
     }
