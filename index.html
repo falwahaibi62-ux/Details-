@@ -477,6 +477,40 @@
         
         <!-- TAB: DOCUMENT REVIEW (Admin only) -->
         <div id="tab-review" class="hidden space-y-6 w-full flex-col view-section">
+            <div class="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-6 items-start">
+                <aside class="glass-panel p-5 rounded-2xl bg-white shadow-xs border border-surface-200 lg:sticky lg:top-4 space-y-4 text-xs text-surface-600">
+                    <div>
+                        <h3 class="font-bold text-surface-900 text-base"><i class="fa-solid fa-circle-info mr-1.5 text-primary-600"></i>How to use this page</h3>
+                        <p class="mt-1">A checking page for the Admin. Nothing here changes a job.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">1. Orders declined</h4>
+                        <p class="mt-1">Order numbers you declined to create from a document (only the number is saved). The <b>Now</b> column shows if the order has since been created in the system. <b>Remove from list</b> deletes the entry.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">2. Jobs without a document</h4>
+                        <p class="mt-1">Real order numbers with an amount above 0 that have no PDF attached. Use <b>Attach PDFs</b> to add the missing files and <b>Search Job No</b> to find one job. When the list is empty, every job has a document.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">Double check</h4>
+                        <p class="mt-1">The AI reads only the PDFs that have no saved reading yet (PDF files up to 10 MB) and saves what it read for review. It asks you to confirm first. Jobs are not changed.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">Save PDF</h4>
+                        <p class="mt-1">Exports the list above it as a PDF, for example to send the missing documents to the auditor.</p>
+                    </div>
+                    <div class="pt-3 border-t border-surface-200">
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">Before closing a period</h4>
+                        <ol class="mt-1 list-decimal pl-4 space-y-1">
+                            <li>Press <b>Resync</b> to load the latest data.</li>
+                            <li>Attach the missing PDFs.</li>
+                            <li>Press <b>Double check</b>.</li>
+                            <li>Save the PDFs you need.</li>
+                            <li>Then issue the Official PDF Report.</li>
+                        </ol>
+                    </div>
+                </aside>
+                <div class="space-y-6 min-w-0">
             <div class="glass-panel p-5 rounded-2xl flex flex-wrap gap-3 justify-between items-center bg-white shadow-xs border border-surface-200">
                 <div>
                     <h3 class="font-bold text-surface-900 text-base">Document Review</h3>
@@ -525,6 +559,8 @@
                         </tr></thead>
                         <tbody id="noDocBody"></tbody>
                     </table>
+                </div>
+            </div>
                 </div>
             </div>
         </div>
