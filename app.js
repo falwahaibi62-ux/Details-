@@ -678,7 +678,7 @@ function checkPermissions() {
     const currentRole = window.currentUserRole || 'Viewer';
 
     // Users & Roles and Recycle Bin are for the Admin only
-    ['nav-users', 'nav-trash', 'nav-review', 'nav-history', 'nav-cash'].forEach(id => {
+    ['nav-users', 'nav-trash', 'nav-review', 'nav-history', 'nav-cash', 'nav-admin-label'].forEach(id => {
         const navBtn = document.getElementById(id);
         if (navBtn) navBtn.style.display = currentRole === 'Admin' ? '' : 'none';
     });
