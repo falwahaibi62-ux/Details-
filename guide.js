@@ -133,7 +133,7 @@
         b.setAttribute('aria-label', 'Help for this screen');
         b.textContent = '?';
         b.style.cssText = 'position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));z-index:40;' +
-            'width:44px;height:44px;border-radius:99px;border:1px solid #2F3B52;background:#4a6fd0;color:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.35)';
+            'width:48px;height:48px;border-radius:99px;border:1px solid #2F3B52;background:#4a6fd0;color:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.35)';
         b.addEventListener('click', function () {
             var h = HELP[currentTab()] || HELP.dashboard;
             var r = String(role() || '').toLowerCase();
@@ -144,7 +144,7 @@
         if (!document.getElementById('help-style')) {
             var st = document.createElement('style');
             st.id = 'help-style';
-            st.textContent = '@media (min-width:768px){#helpBtn{bottom:84px!important;right:24px!important}}';
+            st.textContent = '@media (min-width:768px){#helpBtn{bottom:92px!important;right:24px!important}main{padding-bottom:160px!important}}';
             document.head.appendChild(st);
         }
         document.body.appendChild(b);
