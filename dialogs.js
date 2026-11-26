@@ -3,7 +3,7 @@
    WDialog.confirm(message, { title, confirmText, cancelText, danger }) -> Promise<boolean>
    WDialog.share({ title, intro, text })                         -> Promise<void>  (message box with Copy and WhatsApp buttons)
    WDialog.form({ title, intro, submitText, fields: [...] })     -> Promise<object | null>
-     field = { name, label, type: 'text' | 'email' | 'password' | 'select', required, placeholder, value, maxLength, options: [{value,label}], validate(value, values) -> error text }
+     field = { name, label, type: 'text' | 'email' | 'password' | 'select' | 'date' | 'number', required, placeholder, value, maxLength, options: [{value,label}], validate(value, values) -> error text }
    Dialogs are queued (never lost), keyboard friendly (Tab stays inside, Esc cancels, Enter submits) and give focus back when closed. */
 (function () {
     'use strict';
@@ -80,11 +80,12 @@
                     inp = el('select');
                     (f.options || []).forEach(function (o) { var op = el('option', null, o.label); op.value = o.value; if (String(o.value) === String(f.value)) op.selected = true; inp.appendChild(op); });
                 } else {
-                    inp = el('input'); inp.type = f.type === 'email' ? 'email' : (f.type === 'password' ? 'password' : 'text'); inp.value = f.value || '';
+                    inp = el('input'); inp.type = f.type === 'email' ? 'email' : (f.type === 'password' ? 'password' : (f.type === 'date' ? 'date' : 'text')); inp.value = f.value || '';
                     if (f.placeholder) inp.placeholder = f.placeholder;
                     if (f.maxLength) inp.maxLength = f.maxLength;
                     inp.autocomplete = f.type === 'password' ? 'new-password' : 'off'; inp.spellcheck = false;
                     if (f.type === 'email') inp.setAttribute('inputmode', 'email');
+                    if (f.type === 'number') inp.setAttribute('inputmode', 'decimal');
                 }
                 inp.id = fid; inp.name = f.name;
                 var err = el('div', 'wdlg-err'); err.id = fid + '-e'; err.setAttribute('role', 'alert');

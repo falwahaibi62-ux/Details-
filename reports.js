@@ -1051,6 +1051,12 @@
         return { count: s.warehouse.count, sumCash: s.warehouse.cash, sumOthers: s.warehouse.other, grandTotal: s.warehouse.total, html: warehouseSummaryHTML(s) };
     };
 
+    // Used by the Cash Box screen so its numbers follow exactly the same rules as this report
+    window.WathekCalc = {
+        toDateKey: toDateKey, computeSummary: computeSummary, detectMethod: detectMethod, firstNumber: firstNumber,
+        parseMoney: parseMoney, rentalPayType: rentalPayType, warehousePayType: warehousePayType
+    };
+
     // Test hook (not used by the app)
     window.__reportsInternals = { toDateKey: toDateKey, getReportData: getReportData, computeSummary: computeSummary, buildPdfHTML: buildPdfHTML };
 })();

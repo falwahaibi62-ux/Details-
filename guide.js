@@ -75,6 +75,11 @@
             admin: '\n\nRestore brings a record back. Deleting from the Recycle Bin is permanent and cannot be undone.'
         }
     };
+    HELP.cash = {
+        title: 'Cash Box',
+        text: 'The cash with you: cash received from customers, minus the cash spent, plus what you took from the company.',
+        admin: '\n\nReceived = payments written as Cash in PU and Destination. Spent = Helpers, Drivers and every Cash amount in Diesel, Hotels, Truck rentals and Warehouse. Use Add entry for the Opening balance, each Top-up from the company, and cash Returned. Payments with no method are not counted as cash.'
+    };
     HELP['pdf-report'] = HELP.reports;
 
     function role() { return window.currentUserRole; }
