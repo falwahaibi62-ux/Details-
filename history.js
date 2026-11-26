@@ -269,8 +269,8 @@
             'table{width:100%;border-collapse:collapse}th{background:#eef2fb;text-align:left;font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;padding:5px 6px;border:1px solid #d8deea}' +
             'td{padding:4px 6px;border:1px solid #e1e6f0;vertical-align:top}thead{display:table-header-group}tr{page-break-inside:avoid}.n{color:#7a869f;width:24px}.nw{white-space:nowrap}.b{font-weight:700;word-break:break-all}' +
             '.note{margin-top:10px;font-size:8.5px;color:#5c6882;border-top:1px solid #d8deea;padding-top:6px}.warn{background:#fff6e5;border:1px solid #f0c36d;border-radius:6px;padding:5px 8px;margin-bottom:8px}' +
-            '@page{size:A4 landscape;margin:10mm}';
-        return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Our System - ' + esc(title) + '</title><style>' + css + '</style></head><body>' +
+            '@page{size:A4 landscape;margin:0}.sheet{padding:10mm;box-sizing:border-box;-webkit-box-decoration-break:clone;box-decoration-break:clone}';
+        return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Our System - ' + esc(title) + '</title><style>' + css + '</style></head><body><div class="sheet">' +
             '<div class="hero"><div><div class="brand">Our System</div><h1>' + title + '</h1></div>' +
             '<div class="gen">Generated ' + esc(when(new Date().toISOString())) + '<br>by ' + esc(me.name || me.email || 'Admin') + (me.email && me.name ? ' (' + esc(me.email) + ')' : '') + '</div></div>' +
             '<div class="grid">' + head + info('Period', periodName()) + info('Area', state.area || 'All areas') + info('Records', String(rows.length)) + '</div>' +
@@ -282,7 +282,7 @@
                 ? '<table><thead><tr><th>#</th><th>Date and time</th>' + (person ? '' : '<th>Person</th>') + '<th>Area</th><th>Record</th><th>Action</th><th>Details</th></tr></thead><tbody>' + body + '</tbody></table>'
                 : '<div class="muted">Nothing was recorded for this selection.</div>') +
             '<div class="note">This report comes from the automatic History Log of Our System. The records are written by the system itself and cannot be edited or deleted from the application.</div>' +
-            '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>';
+            '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></div></body></html>';
     }
 
     function exportPdf() {
