@@ -80,7 +80,7 @@
         var t = emptyDay(); delete t.notes;
         m.keys.forEach(function (k) {
             var d = m.days[k], net = received(d) - spent(d) + d.added - d.returned;
-            if (state.from && k < state.from) { run += net; before = run; return; }
+            if (state.from && k < state.from) { if (m.start) { run += net; before = run; } return; }
             if (state.to && k > state.to) return;
             run += net;
             COLS.forEach(function (c) { t[c] += d[c]; });
@@ -151,7 +151,7 @@
         }
         var notes = '';
         var warn = function (txt) { return '<div class="p-3 rounded-xl text-[11px] bg-warning-500/10 text-warning-700 border border-warning-500/30 mb-2">' + txt + '</div>'; };
-        if (!b.m.start) notes += warn('Add an <b>Opening balance</b> entry (the cash you had on the day you start) so the balance is correct. Until then, the balance is calculated from zero.');
+        if (!b.m.start) notes += warn('Add an <b>Opening balance</b> entry (the cash you had on the day you start) so the balance is correct. Until then, each period starts from zero and shows only its own days.');
         if (t.unspec > 0) notes += warn(money(t.unspec) + ' of payments in this period have no payment method (Unspecified). They are <b>not</b> counted as cash.');
         if (b.m.skipped) notes += warn(b.m.skipped + ' record(s) have a date that cannot be read and are not counted.');
         $('cbNotes').innerHTML = notes;
