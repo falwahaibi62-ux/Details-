@@ -380,7 +380,7 @@ async function savePrivateTruckRental(e) {
     if (e) e.preventDefault();
 
     if (!window.supabaseClient) {
-        alert("Supabase client is not initialized!");
+        WDialog.alert("Supabase client is not initialized!");
         return;
     }
 
@@ -418,7 +418,7 @@ async function savePrivateTruckRental(e) {
 
     if (response.error) {
         console.error('Error saving to Supabase:', response.error);
-        alert('Supabase Error: ' + response.error.message);
+        WDialog.alert('Supabase Error: ' + response.error.message);
     } else {
         closePrivateTruckModal();
         await refreshPrivateTruckData();
@@ -448,10 +448,10 @@ function editPrivateTruckRental(id) {
 window.editPrivateTruckRental = editPrivateTruckRental;
 
 async function deletePrivateTruckRental(id) {
-    if (!confirm('Are you sure you want to move this rental record to the Recycle Bin?')) return;
+    if (!(await WDialog.confirm('This rental record will be moved to the Recycle Bin. You can restore it from there.', { title: 'Move to Recycle Bin', confirmText: 'Move' }))) return;
 
     if (!window.supabaseClient) {
-        alert("Supabase client is not initialized!");
+        WDialog.alert("Supabase client is not initialized!");
         return;
     }
 
@@ -462,7 +462,7 @@ async function deletePrivateTruckRental(id) {
 
     if (error) {
         console.error('Error moving to Recycle Bin:', error);
-        alert('Supabase Error: ' + error.message);
+        WDialog.alert('Supabase Error: ' + error.message);
     } else {
         // 1. Reload truck rental data and refresh the UI immediately
         if (typeof refreshPrivateTruckData === 'function') {

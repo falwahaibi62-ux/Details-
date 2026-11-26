@@ -83,7 +83,7 @@
     }
 
     async function run(kind) {
-        if (!isAdmin()) { alert('Only the Admin can download backups.'); return; }
+        if (!isAdmin()) { WDialog.alert('Only the Admin can download backups.'); return; }
         var btns = document.querySelectorAll('.backup-btn');
         btns.forEach(function (b) { b.disabled = true; });
         try {

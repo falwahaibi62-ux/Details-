@@ -192,32 +192,32 @@
             var lr = await q.limit(3);
             if (!lr.error && lr.data && lr.data.length) {
                 var o = lr.data[0];
-                if (!window.confirm('Lot ' + lotNo + ' is already used by job "' + (o.job_no || '-') + '" (' + o.date + ').\n\nSave anyway?')) return { ok: false };
+                if (!(await WDialog.confirm('Lot ' + lotNo + ' is already used by job "' + (o.job_no || '-') + '" (' + o.date + ').\n\nSave anyway?', { title: 'Lot already used', confirmText: 'Save anyway' }))) return { ok: false };
             }
         }
 
         if (!file) return { ok: true };
 
-        if (file.size > MAX_BYTES) { setDocStatus('File is larger than 15 MB.', true); alert('The file is larger than 15 MB.'); return { ok: false }; }
+        if (file.size > MAX_BYTES) { setDocStatus('File is larger than 15 MB.', true); WDialog.alert('The file is larger than 15 MB.'); return { ok: false }; }
         
 
         if (editId && docsByJob[String(editId)] && role() !== 'Admin') {
-            alert('This job already has a document. Ask the Admin to remove it before attaching another one.');
+            WDialog.alert('This job already has a document. Ask the Admin to remove it before attaching another one.');
             return { ok: false };
         }
         if (editId && docsByJob[String(editId)] && role() === 'Admin') {
-            alert('This job already has a document. Open "Show Job" and use "Remove document" first, then attach the new file.');
+            WDialog.alert('This job already has a document. Open "Show Job" and use "Remove document" first, then attach the new file.');
             return { ok: false };
         }
 
         var hash = await sha256Hex(file);
         var dr = await sb().from('job_documents').select('job_id,job_no,file_name,created_at').eq('file_hash', hash).limit(1);
-        if (dr.error) { alert('Could not check for duplicates: ' + dr.error.message); return { ok: false }; }
+        if (dr.error) { WDialog.alert('Could not check for duplicates: ' + dr.error.message); return { ok: false }; }
         if (dr.data && dr.data.length) {
             var d = dr.data[0];
             var msg = 'This exact file is already attached to job "' + (d.job_no || ('#' + d.job_id)) + '". Duplicate files are not allowed.';
             setDocStatus(msg, true);
-            alert(msg);
+            WDialog.alert(msg);
             return { ok: false };
         }
         window.__wathekPendingHash = hash;
@@ -250,7 +250,7 @@
         var hash = window.__wathekPendingHash || await sha256Hex(file);
         window.__wathekPendingHash = null;
         var r = await uploadDoc(jobId, jobNo, file, hash);
-        if (!r.ok) { alert('Job saved, but the document was not attached: ' + r.message); return { ok: false }; }
+        if (!r.ok) { WDialog.alert('Job saved, but the document was not attached: ' + r.message); return { ok: false }; }
         await loadIndex();
         return { ok: true };
     }
@@ -277,7 +277,7 @@
     function closeBulk() { var m = document.getElementById('wd-bulk'); if (m) m.remove(); bulkRows = []; }
 
     function openBulk() {
-        if (role() !== 'Admin' && role() !== 'Member') { alert('You do not have permission to attach documents.'); return; }
+        if (role() !== 'Admin' && role() !== 'Member') { WDialog.alert('You do not have permission to attach documents.'); return; }
         closeBulk();
         var wrap = document.createElement('div');
         wrap.id = 'wd-bulk';
@@ -474,7 +474,7 @@
         var r = bulkRows[i]; if (!r || !r.ai || r.done) return;
         var np = newJobPayload(r); if (!np.payload) return;
         var p = np.payload;
-        if (!window.confirm('Create job ' + p.job_no + '?\n\nDate: ' + p.date + '\nRoute: ' + p.route + '\nAmount: ' + p.total_amount + (p.lot_no ? '\nLot: ' + p.lot_no : '') + '\n\nThe document will be attached to it.')) return;
+        if (!(await WDialog.confirm('Create job ' + p.job_no + '?\n\nDate: ' + p.date + '\nRoute: ' + p.route + '\nAmount: ' + p.total_amount + (p.lot_no ? '\nLot: ' + p.lot_no : '') + '\n\nThe document will be attached to it.', { title: 'Create job', confirmText: 'Create' }))) return;
         setRowNote(i, 'Creating job...');
         if (p.lot_no) { // a lot code already used by another job is not copied
             var lr = await sb().from('jobs_report').select('id').eq('lot_no', p.lot_no).or('is_deleted.is.null,is_deleted.eq.false').limit(1);
@@ -558,7 +558,7 @@
         bulkRows.forEach(function (r, i) { if (!r.problem && !r.done && !r.ai) idx.push(i); });
         var fresh = idx.filter(function (i) { return !bulkRows[i].cached; }).length, free = idx.length - fresh;
         if (!idx.length) { bulkMsg('Nothing to read.'); return; }
-        if (fresh > 0 && !window.confirm('Hello Wathek, the Checker will read the document.')) return;
+        if (fresh > 0 && !(await WDialog.confirm('Hello Wathek, the Checker will read the document.', { title: 'Read documents', confirmText: 'Start reading' }))) return;
         if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
         var n = 0;
         async function worker() { while (n < idx.length) { var k = idx[n++]; await readOneAI(k); } }
@@ -631,11 +631,11 @@
 
     async function show(jobId) {
         var d = docsByJob[String(jobId)];
-        if (!d) { alert('No document attached to this job.'); return; }
+        if (!d) { WDialog.alert('No document attached to this job.'); return; }
         closeViewer();
 
         var dl = await sb().storage.from(BUCKET).download(d.file_path);
-        if (dl.error || !dl.data) { alert('Could not open the document: ' + (dl.error ? dl.error.message : 'unknown error')); return; }
+        if (dl.error || !dl.data) { WDialog.alert('Could not open the document: ' + (dl.error ? dl.error.message : 'unknown error')); return; }
         var photo = isPhotoPath(d.file_path), pdf = isPdfPath(d.file_path);
         var ext = String(d.file_path).split('.').pop().toLowerCase();
         // Only PDFs and photos are rendered; every other format is offered as a download (never executed in the page).
@@ -671,11 +671,11 @@
     async function removeDoc(jobId) {
         var d = docsByJob[String(jobId)];
         if (!d || role() !== 'Admin') return;
-        if (!window.confirm('Remove this document permanently from the job?')) return;
+        if (!(await WDialog.confirm('This document will be removed from the job permanently.', { title: 'Remove document', confirmText: 'Remove', danger: true }))) return;
         var r1 = await sb().storage.from(BUCKET).remove([d.file_path]);
-        if (r1.error) { alert('Could not remove the file: ' + r1.error.message); return; }
+        if (r1.error) { WDialog.alert('Could not remove the file: ' + r1.error.message); return; }
         var r2 = await sb().from('job_documents').delete().eq('id', d.id);
-        if (r2.error) { alert('File removed, but the record could not be deleted: ' + r2.error.message); }
+        if (r2.error) { WDialog.alert('File removed, but the record could not be deleted: ' + r2.error.message); }
         closeViewer();
         await loadIndex();
     }
