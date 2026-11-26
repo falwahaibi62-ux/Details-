@@ -10,13 +10,14 @@
     var PAGE = 50;
     var state = { period: '7', area: '', who: '', q: '', rows: [], done: false, loading: false, token: 0 };
 
-    var AREAS = ['Jobs', 'Truck rental', 'Warehouse', 'Users', 'Documents'];
+    var AREAS = ['Jobs', 'Truck rental', 'Warehouse', 'Documents', 'Users', 'Reports', 'Backup'];
     var ACTIONS = {
         created:           { label: 'Created',        icon: 'fa-plus',              tone: 'primary' },
         updated:           { label: 'Changed',        icon: 'fa-pen',               tone: 'info' },
         trashed:           { label: 'Recycle Bin',    icon: 'fa-trash-can',         tone: 'warn' },
         restored:          { label: 'Restored',       icon: 'fa-rotate-left',       tone: 'primary' },
         deleted:           { label: 'Deleted',        icon: 'fa-xmark',             tone: 'danger' },
+        saved:             { label: 'Saved',          icon: 'fa-floppy-disk',       tone: 'info' },
         signed_in:         { label: 'Signed in',      icon: 'fa-right-to-bracket',  tone: 'muted' },
         reminder_accepted: { label: 'Reminder',       icon: 'fa-circle-check',      tone: 'muted' }
     };
@@ -193,6 +194,7 @@
     }
 
     function exportCsv() {
+        if (window.WathekLog) window.WathekLog('Reports', 'History Log', 'Saved as Excel file');
         var head = ['Date and time', 'Person', 'Role', 'Area', 'Record', 'Action', 'Summary', 'Changes'];
         var lines = [head].concat(state.rows.map(function (r) {
             var ch = (Array.isArray(r.changes) ? r.changes : []).map(function (c) { return field(c.f) + ': ' + (c.from || '-') + ' -> ' + (c.to || '-'); }).join(' | ');
@@ -205,6 +207,14 @@
         document.body.appendChild(a); a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
     }
+
+    // Other files call this when someone saves a report, a backup or an Excel file (best effort, never blocks the save)
+    window.WathekLog = function (area, label, summary) {
+        try {
+            var c = sb();
+            if (c) Promise.resolve(c.rpc('log_event', { p_area: area, p_action: 'saved', p_label: label, p_summary: summary })).then(function () {}, function () {});
+        } catch (e) {}
+    };
 
     window.WathekHistory = {
         render: function () {

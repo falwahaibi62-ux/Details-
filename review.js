@@ -74,6 +74,7 @@
     // Save any review table as a PDF (landscape A4). Uses the html2pdf library already loaded by index.html.
     function toPdf(title, table, file) {
         if (!window.html2pdf) { WDialog.alert('The PDF tool is not loaded. Check your internet connection and refresh the page.'); return; }
+        if (window.WathekLog) window.WathekLog('Reports', title, 'Saved as PDF');
         var wrap = document.createElement('div');
         wrap.style.cssText = 'padding:16px;font-family:Arial,sans-serif;color:#111;background:#fff;width:1050px';
         var h = '<h2 style="margin:0 0 4px;font-size:18px">' + esc(title) + '</h2><p style="margin:0 0 12px;font-size:11px;color:#555">Our System - ' +
@@ -126,6 +127,7 @@
 
     // Excel-friendly CSV (UTF-8 with BOM) - opens directly in Excel
     function toCsv(table, file) {
+        if (window.WathekLog) window.WathekLog('Reports', file, 'Saved as Excel file');
         var body = table.map(function (r) { return r.map(function (c) { return '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
         var blob = new Blob(['\ufeff' + body], { type: 'text/csv;charset=utf-8' });
         var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file;

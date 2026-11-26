@@ -109,6 +109,7 @@
                 }
             }
             try { localStorage.setItem(LS_KEY, String(Date.now())); } catch (e) {}
+            if (window.WathekLog) window.WathekLog('Backup', kind === 'json' ? 'Full backup (.json)' : 'Excel files (.csv)', 'Backup downloaded');
             setStatus('Done: ' + TABLES.map(function (t) { return t.replace('_', ' ') + ' ' + counts[t]; }).join(' | '));
             paintLast();
         } catch (e) {

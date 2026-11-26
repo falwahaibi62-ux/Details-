@@ -80,6 +80,9 @@ Deno.serve(async (req) => {
       return json({ error: "Could not save the user: " + insErr.message }, 500, origin);
     }
 
+    // 6) History Log: record that this Admin added the user (best effort, never blocks the answer)
+    try { await supa.rpc("log_event", { p_area: "Users", p_action: "created", p_label: email, p_summary: "Added user (" + userRole + ")" }); } catch (_e) { /* ignore */ }
+
     return json({ ok: true, created }, 200, origin);
   } catch (_e) {
     return json({ error: "Could not add the user. Please try again." }, 500, origin);
