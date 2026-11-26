@@ -589,7 +589,7 @@ async function openAddUserModal() {
     const known = (window.systemUsers || []).map((u) => String(u.email || '').trim().toLowerCase());
     const values = await WDialog.form({
         title: 'Add New User',
-        intro: 'An invitation email is sent to the user. The password you set here works for signing in right away. The role decides what the user can see and do.',
+        intro: 'The account is created straight away with this password. You will then get a welcome message to send to the user. The role decides what the user can see and do.',
         submitText: 'Add User',
         fields: [
             { name: 'name', label: 'Full name', required: true, maxLength: 80 },
@@ -620,11 +620,24 @@ async function openAddUserModal() {
         }
         if (msg) { WDialog.alert(msg, { type: 'error', title: 'User not added' }); }
         else {
-            WDialog.alert(res.data.invited
-                ? 'The user was added and an invitation email was sent to ' + values.email.toLowerCase() + '.'
-                : 'The user was added. This email already had a login account, so its password was not changed and no email was sent.',
-                { type: 'success', title: 'User added' });
             fetchUsersFromSupabase();
+            const site = window.location.href.split('#')[0].split('?')[0];
+            const text = 'Welcome, ' + values.name + '!\n\n'
+                + 'We are delighted to have you with us. An account has been created for you.\n\n'
+                + 'Sign in here: ' + site + '\n'
+                + 'Email: ' + values.email.toLowerCase() + '\n'
+                + 'Your password was given to you by the administrator.\n\n'
+                + 'A small reminder\n'
+                + 'Some of the information you will see here is private. Please keep it within your work and do not share it with others, as this protects you and the company alike.\n\n'
+                + 'Your password is yours alone, so please keep it to yourself and update it whenever you wish.\n\n'
+                + 'Warm regards,\nThe Administrator';
+            WDialog.share({
+                title: 'User added',
+                intro: res.data.created
+                    ? 'The account is ready. Send this welcome message to the user. It does not include the password, so give it to them separately.'
+                    : 'The user was added. This email already had a login account, so its password was not changed. You can still send this welcome message.',
+                text: text
+            });
         }
     } catch (err) {
         console.error("Error adding user:", err);

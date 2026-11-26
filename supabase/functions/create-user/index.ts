@@ -1,15 +1,13 @@
 // Wathek - create-user (Admin only)
-// Adds a user in one step: login account + system role + invitation e-mail.
+// Adds a user in one step: login account (with the password the Admin typed) + system role.
 // - The caller must be a signed-in Admin (checked with public.current_app_role()).
-// - The login account is created through the Supabase Auth invitation (the invitation e-mail text is the
-//   "Invite user" template in Supabase > Authentication > Email Templates), then the Admin's password is set.
+// - No e-mail is sent from here; the Admin shares the welcome message himself (the app builds it).
 // - The password is never logged and never returned. If the e-mail already has a login account, only the
-//   system role is added and nothing is sent.
+//   system role is added and its password is left unchanged.
 // - The service-role key is a Supabase secret; it never reaches the browser.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = ["https://falwahaibi62-ux.github.io"];
-const SITE_URL = "https://falwahaibi62-ux.github.io/Details-/";
 const ROLES = ["Admin", "Member", "Viewer"];
 
 function cors(origin: string | null) {
@@ -57,29 +55,21 @@ Deno.serve(async (req) => {
     if (exErr) return json({ error: "Could not check the users list." }, 500, origin);
     if (existing && existing.length) return json({ error: "This email is already in the users list." }, 409, origin);
 
-    // 4) Login account + invitation e-mail
-    let invited = false, createdId: string | null = null;
-    const inv = await admin.auth.admin.inviteUserByEmail(email, { data: { name }, redirectTo: SITE_URL });
-    if (inv.error) {
-      const msg = String(inv.error.message || "").toLowerCase();
+    // 4) Login account (confirmed, password chosen by the Admin)
+    let created = false, createdId: string | null = null;
+    const cr = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name } });
+    if (cr.error) {
+      const msg = String(cr.error.message || "").toLowerCase();
       if (/already|registered|exists/.test(msg)) {
         // the person already has a login account: keep its password, only give the system role
-      } else if (/rate|limit|too many/.test(msg)) {
-        return json({ error: "The email limit was reached. Wait a few minutes and try again." }, 429, origin);
+      } else if (/password/.test(msg)) {
+        return json({ error: "Could not set the password: " + cr.error.message }, 400, origin);
       } else {
-        return json({ error: "Could not send the invitation: " + inv.error.message }, 502, origin);
+        return json({ error: "Could not create the account: " + cr.error.message }, 502, origin);
       }
     } else {
-      invited = true;
-      createdId = inv.data?.user?.id ?? null;
-      if (createdId) {
-        // password chosen by the Admin; the account is confirmed so the password works at once
-        const up = await admin.auth.admin.updateUserById(createdId, { password, email_confirm: true });
-        if (up.error) {
-          await admin.auth.admin.deleteUser(createdId);
-          return json({ error: "Could not set the password: " + up.error.message }, 400, origin);
-        }
-      }
+      created = true;
+      createdId = cr.data?.user?.id ?? null;
     }
 
     // 5) System role (same table the Users & Roles page reads)
@@ -89,7 +79,7 @@ Deno.serve(async (req) => {
       return json({ error: "Could not save the user: " + insErr.message }, 500, origin);
     }
 
-    return json({ ok: true, invited }, 200, origin);
+    return json({ ok: true, created }, 200, origin);
   } catch (_e) {
     return json({ error: "Could not add the user. Please try again." }, 500, origin);
   }
