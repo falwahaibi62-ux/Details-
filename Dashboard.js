@@ -472,6 +472,32 @@
                 });
             }
         }
+
+        // Users: added but never signed in, and users who have not signed in for a long time (Admin only)
+        const users = Array.isArray(window.systemUsers) ? window.systemUsers : [];
+        const active = users.filter((u) => String(u.status || 'enable').trim().toLowerCase() === 'enable');
+        const names = (list) => list.slice(0, 4).map((u) => u.name || u.email).join(', ') + (list.length > 4 ? ' and ' + (list.length - 4) + ' more' : '');
+        const waiting = active.filter((u) => u.reminder_required && !u.reminder_accepted_at);
+        if (waiting.length) {
+            out.push({
+                level: 'info', icon: 'fa-user-clock', title: 'New user has not signed in yet',
+                text: names(waiting) + (waiting.length === 1 ? ' was' : ' were') + ' added but ' + (waiting.length === 1 ? 'has' : 'have') + ' not completed the first sign-in. Check that the welcome message reached ' + (waiting.length === 1 ? 'them.' : 'them.'),
+                action: { tab: 'users', label: 'Open Users & Roles' }
+            });
+        }
+        const IDLE_DAYS = 30;
+        const idle = active.filter((u) => {
+            if (!u.last_login) return false;
+            const t = new Date(u.last_login).getTime();
+            return t && (Date.now() - t) / 86400000 >= IDLE_DAYS;
+        });
+        if (idle.length) {
+            out.push({
+                level: 'info', icon: 'fa-user-slash', title: 'User has not signed in for ' + IDLE_DAYS + '+ days',
+                text: names(idle) + '. If ' + (idle.length === 1 ? 'this person no longer needs' : 'these people no longer need') + ' access, set the status to Disable in Users & Roles.',
+                action: { tab: 'users', label: 'Open Users & Roles' }
+            });
+        }
         return out;
     }
 
@@ -498,6 +524,10 @@
         const isAdmin = window.currentUserRole === 'Admin';
         if (panel) panel.classList.toggle('hidden', !isAdmin);
         if (!isAdmin) { box.innerHTML = ''; const le = $('smartAlertsLatest'); if (le) le.innerText = ''; return; }
+        if (!window.__alertUsersAsked && typeof window.fetchUsersFromSupabase === 'function') {
+            window.__alertUsersAsked = true;
+            Promise.resolve(window.fetchUsersFromSupabase()).then(function () { try { renderAlerts(jobs); } catch (e) {} });
+        }
         const result = buildAlerts(jobs);
         buildExtraAlerts(jobs).forEach((a) => result.alerts.push(a));
         const backupAlert = buildBackupAlert();
