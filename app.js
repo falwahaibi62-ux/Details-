@@ -592,8 +592,8 @@ async function openAddUserModal() {
         intro: 'The role decides what the user can see and do.',
         submitText: 'Add User',
         fields: [
-            { name: 'name', label: 'Full name', required: true, maxLength: 80, placeholder: 'e.g. Ahmed Al Balushi' },
-            { name: 'email', label: 'Email address', type: 'email', required: true, maxLength: 120, placeholder: 'name@example.com',
+            { name: 'name', label: 'Full name', required: true, maxLength: 80 },
+            { name: 'email', label: 'Email address', type: 'email', required: true, maxLength: 120,
               validate: (v) => known.indexOf(v.toLowerCase()) >= 0 ? 'This email is already in the users list.' : '' },
             { name: 'role', label: 'Role', type: 'select', value: 'Member', options: [
                 { value: 'Admin', label: 'Admin - full access' },
