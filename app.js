@@ -549,6 +549,7 @@ function renderUsers() {
                     <div class="hidden sm:block text-right mr-4 shrink-0">
                         <div class="text-[10px] font-bold text-surface-400 uppercase tracking-wider">Last login</div>
                         <div class="text-xs font-semibold ${u.last_login ? 'text-surface-700' : 'text-surface-400'}">${formatLastLogin(u.last_login)}</div>
+                        ${u.reminder_required ? `<div class="mt-1 text-[10px] font-semibold ${u.reminder_accepted_at ? 'text-success-600' : 'text-warning-600'}">${u.reminder_accepted_at ? 'Reminder accepted ' + formatLastLogin(u.reminder_accepted_at) : 'Reminder pending'}</div>` : ''}
                     </div>
 
                     <div class="flex items-center space-x-2">

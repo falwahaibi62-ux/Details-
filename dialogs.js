@@ -1,5 +1,5 @@
 /* Wathek - system dialogs (replaces the browser's alert / confirm / prompt boxes).
-   WDialog.alert(message, { title, type })                      -> Promise<void>
+   WDialog.alert(message, { title, type, okText, mandatory })                      -> Promise<void>
    WDialog.confirm(message, { title, confirmText, cancelText, danger }) -> Promise<boolean>
    WDialog.share({ title, intro, text })                         -> Promise<void>  (message box with Copy and WhatsApp buttons)
    WDialog.form({ title, intro, submitText, fields: [...] })     -> Promise<object | null>
@@ -151,7 +151,7 @@
         if (cancelBtn) cancelBtn.addEventListener('click', function () { close(cancelValue()); });
 
         function onKey(e) {
-            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(cancelValue()); return; }
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (!job.mandatory) close(cancelValue()); return; }
             if (e.key === 'Tab') {
                 var f = box.querySelectorAll('input,select,button:not([disabled])'); if (!f.length) return;
                 var first = f[0], last = f[f.length - 1];
@@ -178,7 +178,7 @@
         alert: function (message, opts) {
             opts = opts || {}; var msg = String(message == null ? '' : message);
             var type = opts.type || (looksLikeError(msg) ? 'error' : 'info');
-            return enqueue({ kind: 'alert', message: msg, type: type, title: opts.title || (type === 'error' ? 'Something went wrong' : 'Notice'), okText: opts.okText || 'OK' });
+            return enqueue({ kind: 'alert', message: msg, type: type, title: opts.title || (type === 'error' ? 'Something went wrong' : 'Notice'), okText: opts.okText || 'OK', mandatory: !!opts.mandatory });
         },
         confirm: function (message, opts) {
             opts = opts || {};
