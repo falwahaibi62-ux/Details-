@@ -849,7 +849,8 @@
     const TINT = window.PDF_TINTS;
     const PDF_CSS = `
         :root { --ink:#1B2538; --muted:#5F6E8A; --line:#D5DCE9; --accent:#2F5597; }
-        @page { size: A4 landscape; margin: 9mm; }
+        @page { size: A4 landscape; margin: 0; }
+        .sheet { padding: 9mm; box-sizing: border-box; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
         body { font-family: "Segoe UI", Inter, system-ui, -apple-system, Arial, sans-serif; color: var(--ink); font-size: 10px; line-height: 1.5; font-weight: 400; background: #fff;
@@ -965,6 +966,7 @@
 <style>${PDF_CSS}</style>
 </head>
 <body>
+<div class="sheet">
     <div class="hero">
         <div>
             <div class="brand">Our System</div>
@@ -1001,6 +1003,7 @@
     <script>
         window.onload = function () { setTimeout(function () { window.print(); }, 400); };
     <\/script>
+</div>
 </body>
 </html>`;
     }

@@ -80,6 +80,11 @@
         text: 'The cash with you: cash received from customers, minus the cash spent, plus what you took from the company.',
         admin: '\n\nReceived = payments written as Cash in PU and Destination. Spent = Helpers, Drivers and every Cash amount in Diesel, Hotels, Truck rentals and Warehouse. Use Add entry for the Opening balance, each Top-up from the company, and cash Returned. Payments with no method are not counted as cash.'
     };
+    HELP.history = {
+        title: 'History Log',
+        text: 'Who added, changed, deleted or saved something, and when.',
+        admin: '\n\nUse the period, area and person filters, or search a job number. Press Show changes to see the value before and after. The log is recorded automatically and cannot be edited.'
+    };
     HELP['pdf-report'] = HELP.reports;
 
     function role() { return window.currentUserRole; }
