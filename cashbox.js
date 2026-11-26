@@ -37,7 +37,7 @@
     }
 
     // ---------- the numbers ----------
-    var COLS = ['pu', 'dest', 'helpers', 'drivers', 'diesel', 'hotel', 'rental', 'warehouse', 'other', 'added', 'returned'];
+    var COLS = ['pu', 'dest', 'foreman', 'helpers', 'drivers', 'diesel', 'hotel', 'rental', 'warehouse', 'other', 'added', 'returned'];
     function emptyDay() { var o = { unspec: 0, notes: [] }; COLS.forEach(function (c) { o[c] = 0; }); return o; }
 
     function compute() {
@@ -48,7 +48,7 @@
             var k = c.toDateKey(j.date || j.job_date || '');
             if (!k) { skipped++; return; }
             var o = c.computeSummary({ jobs: [j], rentals: [], warehouse: [] }), f = o.official, d = day(k);
-            d.pu += f.cashPu; d.dest += f.cashDest; d.helpers += f.helpers; d.drivers += f.drivers; d.diesel += f.cashDiesel;
+            d.pu += f.cashPu; d.dest += f.cashDest; d.foreman += f.foreman; d.helpers += f.helpers; d.drivers += f.drivers; d.diesel += f.cashDiesel;
             String(j.hotel || j.hotel_expense || '').split('+').forEach(function (part) { if (c.detectMethod(part) === 'Cash') d.hotel += c.firstNumber(part); });
             d.unspec += o.payments.Unspecified;
         });
@@ -73,7 +73,7 @@
         return { days: days, keys: keys, start: start, skipped: skipped };
     }
     function received(d) { return d.pu + d.dest; }
-    function spent(d) { return d.helpers + d.drivers + d.diesel + d.hotel + d.rental + d.warehouse + d.other; }
+    function spent(d) { return d.foreman + d.helpers + d.drivers + d.diesel + d.hotel + d.rental + d.warehouse + d.other; }
 
     // Running balance for every day, then the figures of the chosen period
     function build() {
@@ -180,7 +180,7 @@
         $('cbSplit').innerHTML =
             '<div class="glass-panel p-4 rounded-2xl bg-white shadow-xs border border-surface-200"><div class="font-bold text-xs text-surface-900 uppercase tracking-wide mb-1">Received</div>' + line('PU payments (cash)', t.pu) + line('Destination payments (cash)', t.dest) + line('<b>Total</b>', rec) + '</div>' +
             '<div class="glass-panel p-4 rounded-2xl bg-white shadow-xs border border-surface-200"><div class="font-bold text-xs text-surface-900 uppercase tracking-wide mb-1">Spent</div>' +
-              line('Helpers', t.helpers) + line('Drivers', t.drivers) + line('Diesel (cash)', t.diesel) + line('Hotels (cash)', t.hotel) + line('Truck rentals (cash)', t.rental) + line('Warehouse (cash)', t.warehouse) + (t.other ? line('Other expenses', t.other) : '') + line('<b>Total</b>', sp) + '</div>';
+              line('Foreman (10%)', t.foreman) + line('Helpers', t.helpers) + line('Drivers', t.drivers) + line('Diesel (cash)', t.diesel) + line('Hotels (cash)', t.hotel) + line('Truck rentals (cash)', t.rental) + line('Warehouse (cash)', t.warehouse) + (t.other ? line('Other expenses', t.other) : '') + line('<b>Total</b>', sp) + '</div>';
 
         var cp = b.count;
         $('cbCount').innerHTML = cp ? '<div class="p-4 rounded-2xl border ' + (cp.diff === 0 ? 'bg-primary-50 border-primary-200' : 'bg-warning-500/10 border-warning-500/30') + ' flex flex-col sm:flex-row sm:items-center gap-3">' +
@@ -194,7 +194,7 @@
             var d = x.d, open = state.open[x.key], net = d.added - d.returned;
             var det = open
                 ? '<div class="px-4 pb-3 text-[11px] text-surface-600 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1">' +
-                  [['PU cash', d.pu], ['Dest cash', d.dest], ['Helpers', d.helpers], ['Drivers', d.drivers], ['Diesel', d.diesel], ['Hotels', d.hotel], ['Rentals', d.rental], ['Warehouse', d.warehouse], ['Other', d.other]]
+                  [['PU cash', d.pu], ['Dest cash', d.dest], ['Foreman 10%', d.foreman], ['Helpers', d.helpers], ['Drivers', d.drivers], ['Diesel', d.diesel], ['Hotels', d.hotel], ['Rentals', d.rental], ['Warehouse', d.warehouse], ['Other', d.other]]
                     .filter(function (p) { return p[1]; }).map(function (p) { return '<div>' + p[0] + ': <b>' + money(p[1]) + '</b></div>'; }).join('') +
                   d.notes.map(function (n) { return '<div class="col-span-2 sm:col-span-4 text-primary-600">' + esc(n) + '</div>'; }).join('') + '</div>'
                 : '';
@@ -296,13 +296,13 @@
     function savePdf() {
         var b = build(), t = b.t, cells = ['pu', 'dest', 'helpers', 'drivers', 'diesel', 'hotel', 'rental', 'warehouse'];
         var me = window.currentLoggedInUser || {};
-        var head = ['Date', 'PU cash', 'Dest cash', 'Received', 'Helpers', 'Drivers', 'Diesel', 'Hotels', 'Rentals', 'Warehouse', 'Other', 'Spent', 'Added', 'Returned', 'Balance'];
+        var head = ['Date', 'PU cash', 'Dest cash', 'Received', 'Foreman', 'Helpers', 'Drivers', 'Diesel', 'Hotels', 'Rentals', 'Warehouse', 'Other', 'Spent', 'Added', 'Returned', 'Balance'];
         var body = b.rows.map(function (x) {
             var d = x.d;
-            return '<tr><td class="nw">' + esc(nice(x.key)) + '</td>' + [d.pu, d.dest, received(d), d.helpers, d.drivers, d.diesel, d.hotel, d.rental, d.warehouse, d.other, spent(d), d.added, d.returned].map(function (v) { return '<td class="r">' + (v ? money(v) : '-') + '</td>'; }).join('') +
+            return '<tr><td class="nw">' + esc(nice(x.key)) + '</td>' + [d.pu, d.dest, received(d), d.foreman, d.helpers, d.drivers, d.diesel, d.hotel, d.rental, d.warehouse, d.other, spent(d), d.added, d.returned].map(function (v) { return '<td class="r">' + (v ? money(v) : '-') + '</td>'; }).join('') +
                 '<td class="r b' + (x.balance < 0 ? ' neg' : '') + '">' + money(x.balance) + '</td></tr>';
         }).join('');
-        var foot = '<tr class="tot"><td>Total</td>' + [t.pu, t.dest, received(t), t.helpers, t.drivers, t.diesel, t.hotel, t.rental, t.warehouse, t.other, spent(t), t.added, t.returned].map(function (v) { return '<td class="r">' + money(v) + '</td>'; }).join('') + '<td class="r b">' + money(b.after) + '</td></tr>';
+        var foot = '<tr class="tot"><td>Total</td>' + [t.pu, t.dest, received(t), t.foreman, t.helpers, t.drivers, t.diesel, t.hotel, t.rental, t.warehouse, t.other, spent(t), t.added, t.returned].map(function (v) { return '<td class="r">' + money(v) + '</td>'; }).join('') + '<td class="r b">' + money(b.after) + '</td></tr>';
         var kpi = function (l, v, neg) { return '<div class="k"><div class="l">' + l + '</div><div class="v' + (neg ? ' neg' : '') + '">' + v + '</div></div>'; };
         var period = state.from || state.to ? (state.from ? nice(state.from) : 'Start') + ' to ' + (state.to ? nice(state.to) : 'today') : 'All dates';
         var entries = state.entries.filter(function (e) { var k = String(e.entry_date).slice(0, 10); return (!state.from || k >= state.from) && (!state.to || k <= state.to); });
@@ -321,7 +321,7 @@
             (b.rows.length ? '<table><thead><tr>' + head.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + body + foot + '</tbody></table>' : '<div>No cash activity in this period.</div>') +
             (entries.length ? '<div class="sec">Cash entries</div><table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Note</th></tr></thead><tbody>' +
                 entries.map(function (e) { return '<tr><td class="nw">' + esc(nice(String(e.entry_date).slice(0, 10))) + '</td><td>' + esc(e.kind) + '</td><td class="r">' + money(e.amount) + '</td><td>' + esc(e.note || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
-            '<div class="note">Cash received = payments written as Cash in PU and Destination payments. Cash spent = Helpers and Drivers plus Diesel, Hotels, Truck rentals and Warehouse amounts written as Cash, plus any Other expense entered here. The Foreman is not included.</div>' +
+            '<div class="note">Cash received = payments written as Cash in PU and Destination payments. Cash spent = Foreman 10%, Helpers and Drivers plus Diesel, Hotels, Truck rentals and Warehouse amounts written as Cash, plus any Other expense entered here. </div>' +
             '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></div></body></html>';
         var url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
         var w = window.open(url, '_blank');
