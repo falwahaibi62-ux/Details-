@@ -71,7 +71,10 @@
               '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">' +
                 '<div><h3 class="font-bold text-surface-900 text-base">History Log</h3>' +
                 '<p class="text-xs text-surface-500">Who did what, and when. Recorded automatically; it cannot be edited.</p></div>' +
-                '<button type="button" id="hlExport" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer"><i class="fa-solid fa-file-excel mr-1"></i> Save Excel</button>' +
+                '<div class="flex gap-2">' +
+                  '<button type="button" id="hlPdf" class="px-3 py-2 text-xs bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition cursor-pointer"><i class="fa-solid fa-file-pdf mr-1"></i> Save PDF</button>' +
+                  '<button type="button" id="hlExport" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer"><i class="fa-solid fa-file-excel mr-1"></i> Save Excel</button>' +
+                '</div>' +
               '</div>' +
               '<div class="flex flex-wrap items-center gap-2">' +
                 chip('1', 'Today') + chip('7', '7 days') + chip('30', '30 days') + chip('all', 'All') +
@@ -92,6 +95,7 @@
             if (t) { var box = $('hlc' + t.getAttribute('data-toggle')); if (box) box.classList.toggle('hidden'); return; }
             if (e.target.closest('#hlMore button')) { load(); return; }
             if (e.target.closest('#hlExport')) exportCsv();
+            if (e.target.closest('#hlPdf')) exportPdf();
         });
         $('hlArea').addEventListener('change', function () { state.area = this.value; reload(); });
         $('hlWho').addEventListener('change', function () { state.who = this.value; reload(); });
@@ -162,7 +166,7 @@
         var s = sinceISO();
         if (s) q = q.gte('at', s);
         if (state.area) q = q.eq('area', state.area);
-        if (state.who) q = q.eq('actor_email', state.who);
+        if (state.who) q = q.ilike('actor_email', state.who.replace(/[\\%_]/g, function (m) { return '\\' + m; })); // not case sensitive
         if (state.q) {
             var t = state.q.replace(/[%,()*]/g, ' ').trim();
             if (t) q = q.or('label.ilike.%' + t + '%,summary.ilike.%' + t + '%,actor_email.ilike.%' + t + '%');
@@ -206,6 +210,101 @@
         a.download = 'history-log.csv';
         document.body.appendChild(a); a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    }
+
+
+    // ---------- Save PDF: the whole selection (not only the rows on screen), for emergencies and accountability ----------
+    var PDF_LIMIT = 5000;
+    function fetchAll() {
+        var rows = [];
+        function next() {
+            var q = query(rows.length, rows.length + 999);
+            if (!q) return Promise.resolve({ rows: rows, capped: false });
+            return Promise.resolve(q).then(function (res) {
+                if (res.error) throw res.error;
+                var d = res.data || [];
+                rows = rows.concat(d);
+                if (d.length < 1000) return { rows: rows, capped: false };
+                if (rows.length >= PDF_LIMIT) return { rows: rows.slice(0, PDF_LIMIT), capped: true };
+                return next();
+            });
+        }
+        return next();
+    }
+    function periodName() { return { '1': 'Today', '7': 'Last 7 days', '30': 'Last 30 days', 'all': 'All time' }[state.period] || ''; }
+
+    function buildPdfHtml(rows, capped) {
+        var person = null, e = String(state.who || '').toLowerCase();
+        if (e && e !== 'system') person = (window.systemUsers || []).filter(function (u) { return String(u.email || '').toLowerCase() === e; })[0] || { email: state.who };
+        var me = window.currentLoggedInUser || {};
+        var byAction = {}, byArea = {};
+        rows.forEach(function (r) { byAction[r.action] = (byAction[r.action] || 0) + 1; byArea[r.area] = (byArea[r.area] || 0) + 1; });
+        var chips = function (o, label) {
+            var keys = Object.keys(o);
+            return keys.length ? keys.map(function (k) { return '<span class="chip">' + esc(label(k)) + ' <b>' + o[k] + '</b></span>'; }).join('') : '<span class="muted">None</span>';
+        };
+        var title = person ? 'User Activity Report' : 'History Log Report';
+        var info = function (l, v) { return '<div class="i"><div class="l">' + l + '</div><div class="v">' + (v === '' || v == null ? '-' : esc(v)) + '</div></div>'; };
+        var who1 = person ? (person.name || person.email) : (state.who === 'system' ? 'System' : 'All users');
+        var head = person
+            ? info('Name', person.name || '') + info('Email', person.email || '') + info('Role', person.role || '') + info('Status', person.status || '') + info('Last login', person.last_login ? when(person.last_login) : '')
+            : info('Selection', who1);
+        var body = rows.map(function (r, i) {
+            var a = ACTIONS[r.action] || { label: r.action };
+            var ch = Array.isArray(r.changes) ? r.changes : [];
+            var det = ch.length
+                ? ch.map(function (c) { return '<div><b>' + esc(field(c.f)) + ':</b> ' + esc(c.from || '-') + ' &rarr; ' + esc(c.to || '-') + '</div>'; }).join('')
+                : esc(r.summary || '');
+            return '<tr><td class="n">' + (i + 1) + '</td><td class="nw">' + esc(when(r.at)) + '</td>' +
+                (person ? '' : '<td>' + esc(who(r.actor_email)) + (r.actor_role ? '<div class="muted">' + esc(r.actor_role) + '</div>' : '') + '</td>') +
+                '<td>' + esc(r.area) + '</td><td class="b">' + esc(r.label || '-') + '</td><td>' + esc(a.label) + '</td><td>' + det + '</td></tr>';
+        }).join('');
+        var css = 'body{font-family:Inter,Arial,sans-serif;color:#1b2540;margin:0;padding:22px;font-size:10px}' +
+            '.hero{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #4a6fd0;padding-bottom:10px;margin-bottom:12px}' +
+            '.brand{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#4a6fd0}h1{margin:2px 0 0;font-size:22px}' +
+            '.gen{text-align:right;font-size:9px;color:#5c6882}.grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}' +
+            '.i{flex:1 1 150px;border:1px solid #d8deea;border-radius:8px;padding:6px 9px}.l{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:#6b7791}.v{font-size:11px;font-weight:700;margin-top:1px;word-break:break-all}' +
+            '.sec{font-size:11px;font-weight:700;margin:12px 0 5px;text-transform:uppercase;letter-spacing:.06em;color:#33415f}' +
+            '.chip{display:inline-block;border:1px solid #d8deea;background:#f4f7fd;border-radius:99px;padding:2px 9px;margin:0 4px 4px 0}.muted{color:#7a869f;font-size:8.5px}' +
+            'table{width:100%;border-collapse:collapse}th{background:#eef2fb;text-align:left;font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;padding:5px 6px;border:1px solid #d8deea}' +
+            'td{padding:4px 6px;border:1px solid #e1e6f0;vertical-align:top}thead{display:table-header-group}tr{page-break-inside:avoid}.n{color:#7a869f;width:24px}.nw{white-space:nowrap}.b{font-weight:700;word-break:break-all}' +
+            '.note{margin-top:10px;font-size:8.5px;color:#5c6882;border-top:1px solid #d8deea;padding-top:6px}.warn{background:#fff6e5;border:1px solid #f0c36d;border-radius:6px;padding:5px 8px;margin-bottom:8px}' +
+            '@page{size:A4 landscape;margin:10mm}';
+        return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Our System - ' + esc(title) + '</title><style>' + css + '</style></head><body>' +
+            '<div class="hero"><div><div class="brand">Our System</div><h1>' + title + '</h1></div>' +
+            '<div class="gen">Generated ' + esc(when(new Date().toISOString())) + '<br>by ' + esc(me.name || me.email || 'Admin') + (me.email && me.name ? ' (' + esc(me.email) + ')' : '') + '</div></div>' +
+            '<div class="grid">' + head + info('Period', periodName()) + info('Area', state.area || 'All areas') + info('Records', String(rows.length)) + '</div>' +
+            (capped ? '<div class="warn">Only the most recent ' + PDF_LIMIT + ' records are shown. Narrow the period to see the rest.</div>' : '') +
+            '<div class="sec">Summary by action</div><div>' + chips(byAction, function (k) { return (ACTIONS[k] || {}).label || k; }) + '</div>' +
+            '<div class="sec">Summary by area</div><div>' + chips(byArea, function (k) { return k; }) + '</div>' +
+            '<div class="sec">Records (newest first)</div>' +
+            (rows.length
+                ? '<table><thead><tr><th>#</th><th>Date and time</th>' + (person ? '' : '<th>Person</th>') + '<th>Area</th><th>Record</th><th>Action</th><th>Details</th></tr></thead><tbody>' + body + '</tbody></table>'
+                : '<div class="muted">Nothing was recorded for this selection.</div>') +
+            '<div class="note">This report comes from the automatic History Log of Our System. The records are written by the system itself and cannot be edited or deleted from the application.</div>' +
+            '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>';
+    }
+
+    function exportPdf() {
+        var btn = $('hlPdf');
+        if (btn && btn.disabled) return;
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Preparing...'; }
+        var done = function () { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-file-pdf mr-1"></i> Save PDF'; } };
+        fetchAll().then(function (res) {
+            var url = URL.createObjectURL(new Blob([buildPdfHtml(res.rows, res.capped)], { type: 'text/html;charset=utf-8' }));
+            var w = window.open(url, '_blank');
+            if (!w) {
+                URL.revokeObjectURL(url);
+                if (window.WDialog) WDialog.alert('The PDF window was blocked by the browser. Please allow pop-ups for this site and try again.');
+            } else {
+                setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+                if (window.WathekLog) window.WathekLog('Reports', 'History Log - ' + (state.who ? who(state.who) : 'All users'), 'Saved as PDF - ' + periodName());
+            }
+            done();
+        }).catch(function () {
+            done();
+            if (window.WDialog) WDialog.alert('The report could not be prepared. Please try again.', { title: 'Save PDF', type: 'error' });
+        });
     }
 
     // Other files call this when someone saves a report, a backup or an Excel file (best effort, never blocks the save)
