@@ -221,6 +221,10 @@
             if (window.currentUserRole !== 'Admin') return;
             shell(); paintChips(); paintWho();
             reload();
+            // Make sure the names are known (otherwise the e-mail is shown); redraw when they arrive
+            if (!(window.systemUsers || []).length && typeof window.fetchUsersFromSupabase === 'function') {
+                Promise.resolve(window.fetchUsersFromSupabase()).then(function () { paintWho(); paint(); }).catch(function () {});
+            }
         }
     };
 })();
