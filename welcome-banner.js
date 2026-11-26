@@ -1,7 +1,7 @@
 /*
  * welcome-banner.js - friendly welcome banner at the top of the screen for Member and Viewer users
  * (the Admin keeps the full-screen welcome in welcome.js).
- * - Shown once per browser session, right after sign-in. The X button closes it.
+ * - Shown always pinned at the top (sticky) while the page scrolls, with no close button.
  * - The glowing orbs share ONE rhythm (same 8s cycle, staggered start) so they drift together like a wave;
  *   the figure's wave repeats 4 times per cycle, so everything stays in step.
  * - Respects "reduce motion".
@@ -9,9 +9,6 @@
 (function () {
     'use strict';
 
-    var KEY = 'wathekBannerShown';
-    function seen() { try { return sessionStorage.getItem(KEY) === '1'; } catch (e) { return false; } }
-    function mark() { try { sessionStorage.setItem(KEY, '1'); } catch (e) {} }
 
     function greeting() {
         var h = new Date().getHours();
@@ -27,8 +24,8 @@
     }
 
     var CSS =
-        '#wb{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:12px;' +
-        'min-height:132px;margin-bottom:16px;padding:20px 24px;border-radius:28px;border:1px solid #2F3B52;flex-shrink:0;' +
+        '#wb{position:sticky;top:0;z-index:30;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:12px;' +
+        'min-height:108px;margin-bottom:16px;padding:16px 24px;border-radius:28px;border:1px solid #2F3B52;flex-shrink:0;' +
         'font-family:Inter,system-ui,sans-serif;color:#F7F9FC;' +
         'background:radial-gradient(60% 120% at 88% 40%,rgba(124,123,240,.30) 0%,transparent 70%),' +
         'radial-gradient(50% 100% at 0% 0%,rgba(74,111,208,.28) 0%,transparent 70%),#182031;' +
@@ -43,10 +40,6 @@
         '#wb-role{display:inline-block;margin-top:12px;padding:3px 12px;border-radius:99px;font-size:11px;font-weight:600;color:#c9d6ff;background:rgba(111,155,255,.14);border:1px solid rgba(111,155,255,.3)}' +
         '#wb-art{position:relative;flex:0 0 auto;width:230px;height:110px}' +
         '#wb-art svg{width:100%;height:100%;display:block;overflow:visible}' +
-        '#wb-x{position:absolute;top:10px;right:12px;z-index:3;width:30px;height:30px;border-radius:99px;border:0;cursor:pointer;' +
-        'background:rgba(255,255,255,.08);color:#c4cee3;font-size:14px;line-height:1}' +
-        '#wb-x:hover{background:rgba(255,255,255,.18)}' +
-        '#wb-x:focus-visible{outline:2px solid #6f9bff;outline-offset:2px}' +
         /* one shared 8s rhythm: every orb drifts the same path, each starts a little later = a gentle wave */
         '@keyframes wb-drift{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(4px,-8px) scale(1.04)}50%{transform:translate(0,-14px) scale(1.08)}75%{transform:translate(-4px,-6px) scale(1.03)}}' +
         '@keyframes wb-glow{0%,100%{opacity:.75}50%{opacity:1}}' +
@@ -97,8 +90,7 @@
         b.innerHTML =
             '<div id="wb-text"><p id="wb-hi"></p><h2 id="wb-name">Welcome, <span></span></h2>' +
             '<p id="wb-sub"></p><span id="wb-role"></span></div>' +
-            '<div id="wb-art">' + ART + '</div>' +
-            '<button type="button" id="wb-x" aria-label="Close welcome message">✕</button>';
+            '<div id="wb-art">' + ART + '</div>';
         b.querySelector('#wb-hi').textContent = greeting();
         b.querySelector('#wb-name span').textContent = firstName(user) || 'there';
         b.querySelector('#wb-sub').textContent = user.role === 'Viewer'
@@ -106,18 +98,13 @@
             : 'Glad to have you on the team. Everything you need is in the menu.';
         b.querySelector('#wb-role').textContent = user.role;
         main.insertBefore(b, main.firstChild);
-        b.querySelector('#wb-x').addEventListener('click', function () {
-            b.classList.remove('wb-in'); b.classList.add('wb-out');
-            setTimeout(function () { if (b.parentNode) b.parentNode.removeChild(b); }, 500);
-        });
         requestAnimationFrame(function () { requestAnimationFrame(function () { b.classList.add('wb-in'); }); });
     }
 
     function init() {
-        if (!window.WathekAuth || seen()) return;
+        if (!window.WathekAuth) return;
         window.WathekAuth.require().then(function (user) {
-            if (!user || user.role === 'Admin' || seen()) return;
-            mark();
+            if (!user || user.role === 'Admin') return;
             show(user);
         }).catch(function () {});
     }
