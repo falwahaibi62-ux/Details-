@@ -122,6 +122,8 @@
             var row = e.target.closest('[data-day]');
             if (row) { var k = row.getAttribute('data-day'); state.open[k] = !state.open[k]; paint(); return; }
             var del = e.target.closest('[data-del]');
+            var edt = e.target.closest('[data-edit]');
+            if (edt) { var en = state.entries.filter(function (x) { return String(x.id) === edt.getAttribute('data-edit'); })[0]; if (en) addEntry(en); return; }
             if (del) { removeEntry(del.getAttribute('data-del')); return; }
             if (e.target.closest('#cbAdd')) addEntry();
             if (e.target.closest('#cbPdf')) savePdf();
@@ -189,6 +191,7 @@
             var minus = e.kind === 'Returned to company';
             return '<div class="flex items-center gap-3 px-4 py-3 border-b border-surface-100 last:border-0"><div class="min-w-0 flex-1"><div class="text-xs font-semibold text-surface-900">' + esc(e.kind) + ' &middot; <span class="' + (minus ? 'text-alert-600' : 'text-primary-600') + '">' + (minus ? '- ' : '+ ') + money(e.amount) + '</span></div>' +
                 '<div class="text-[11px] text-surface-500">' + esc(nice(String(e.entry_date).slice(0, 10))) + (e.note ? ' &middot; ' + esc(e.note) : '') + '</div></div>' +
+                '<button type="button" data-edit="' + e.id + '" aria-label="Edit entry" class="w-8 h-8 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-600 text-xs cursor-pointer mr-1.5"><i class="fa-solid fa-pen"></i></button>' +
                 '<button type="button" data-del="' + e.id + '" aria-label="Delete entry" class="w-8 h-8 rounded-lg bg-danger-50 hover:bg-danger-100 text-danger-600 text-xs cursor-pointer"><i class="fa-solid fa-trash-can"></i></button></div>';
         }).join('') : '<div class="p-6 text-center text-xs text-surface-500">No entries yet. Add the Opening balance first, then each top-up from the company.</div>';
     }
@@ -215,27 +218,29 @@
         Promise.all(jobs.map(function (p) { return Promise.resolve(p).catch(function () {}); })).then(paint);
     }
 
-    function addEntry() {
+    function addEntry(old) {
         if (window.currentUserRole !== 'Admin' || !window.WDialog) return;
+        var ed = !!old;
         WDialog.form({
-            title: 'Add cash entry',
+            title: ed ? 'Edit cash entry' : 'Add cash entry',
             intro: 'Opening balance is the cash you had on the day you start. Top-up is cash you took from the company. Returned is cash you gave back.',
-            submitText: 'Save entry',
+            submitText: ed ? 'Save changes' : 'Save entry',
             fields: [
-                { name: 'kind', label: 'Type', type: 'select', required: true, value: 'Top-up', options: [
+                { name: 'kind', label: 'Type', type: 'select', required: true, value: ed ? old.kind : 'Top-up', options: [
                     { value: 'Opening balance', label: 'Opening balance' }, { value: 'Top-up', label: 'Top-up from the company' }, { value: 'Returned to company', label: 'Returned to the company' }] },
-                { name: 'entry_date', label: 'Date', type: 'date', required: true, value: keyOf(new Date()) },
-                { name: 'amount', label: 'Amount ($)', type: 'number', required: true, maxLength: 12, validate: function (v) {
+                { name: 'entry_date', label: 'Date', type: 'date', required: true, value: ed ? String(old.entry_date).slice(0, 10) : keyOf(new Date()) },
+                { name: 'amount', label: 'Amount ($)', type: 'number', required: true, maxLength: 12, value: ed ? String(old.amount) : '', validate: function (v) {
                     var n = Number(String(v).replace(/,/g, ''));
                     return (!(n > 0) || n > 10000000) ? 'Enter an amount greater than zero.' : '';
                 } },
-                { name: 'note', label: 'Note (optional)', type: 'text', maxLength: 200 }
+                { name: 'note', label: 'Note (optional)', type: 'text', maxLength: 200, value: ed ? (old.note || '') : '' }
             ]
         }).then(function (v) {
             if (!v) return;
             if (!/^\d{4}-\d{2}-\d{2}$/.test(v.entry_date)) { WDialog.alert('Please choose a valid date.', { title: 'Cash entry', type: 'error' }); return; }
             var body = { kind: v.kind, entry_date: v.entry_date, amount: r2(Number(String(v.amount).replace(/,/g, ''))), note: v.note || null };
-            return Promise.resolve(sb().from('cash_box_entries').insert([body])).then(function (res) {
+            var q = ed ? sb().from('cash_box_entries').update(body).eq('id', old.id) : sb().from('cash_box_entries').insert([body]);
+            return Promise.resolve(q).then(function (res) {
                 if (res.error) { WDialog.alert('The entry could not be saved. Please try again.', { title: 'Cash entry', type: 'error' }); return; }
                 return loadEntries().then(paint);
             });
