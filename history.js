@@ -10,7 +10,7 @@
     var PAGE = 50;
     var state = { period: '7', area: '', who: '', q: '', rows: [], done: false, loading: false, token: 0 };
 
-    var AREAS = ['Jobs', 'Truck rental', 'Warehouse', 'Documents', 'Users', 'Reports', 'Backup'];
+    var AREAS = ['Jobs', 'Truck rental', 'Warehouse', 'Documents', 'Users', 'Reports', 'Backup', 'History'];
     var ACTIONS = {
         created:           { label: 'Created',        icon: 'fa-plus',              tone: 'primary' },
         updated:           { label: 'Changed',        icon: 'fa-pen',               tone: 'info' },
@@ -19,6 +19,7 @@
         deleted:           { label: 'Deleted',        icon: 'fa-xmark',             tone: 'danger' },
         saved:             { label: 'Saved',          icon: 'fa-floppy-disk',       tone: 'info' },
         signed_in:         { label: 'Signed in',      icon: 'fa-right-to-bracket',  tone: 'muted' },
+        cleared:           { label: 'Log cleared',    icon: 'fa-eraser',            tone: 'danger' },
         reminder_accepted: { label: 'Reminder',       icon: 'fa-circle-check',      tone: 'muted' }
     };
     var TONES = {
@@ -74,6 +75,7 @@
                 '<div class="flex gap-2">' +
                   '<button type="button" id="hlPdf" class="px-3 py-2 text-xs bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition cursor-pointer"><i class="fa-solid fa-file-pdf mr-1"></i> Save PDF</button>' +
                   '<button type="button" id="hlExport" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer"><i class="fa-solid fa-file-excel mr-1"></i> Save Excel</button>' +
+                  '<button type="button" id="hlClear" class="px-3 py-2 text-xs bg-danger-50 hover:bg-danger-100 text-danger-600 rounded-xl font-semibold transition cursor-pointer"><i class="fa-solid fa-eraser mr-1"></i> Clear log</button>' +
                 '</div>' +
               '</div>' +
               '<div class="flex flex-wrap items-center gap-2">' +
@@ -96,6 +98,7 @@
             if (e.target.closest('#hlMore button')) { load(); return; }
             if (e.target.closest('#hlExport')) exportCsv();
             if (e.target.closest('#hlPdf')) exportPdf();
+            if (e.target.closest('#hlClear')) clearLog();
         });
         $('hlArea').addEventListener('change', function () { state.area = this.value; reload(); });
         $('hlWho').addEventListener('change', function () { state.who = this.value; reload(); });
@@ -283,6 +286,31 @@
                 : '<div class="muted">Nothing was recorded for this selection.</div>') +
             '<div class="note">This report comes from the automatic History Log of Our System. The records are written by the system itself and cannot be edited or deleted from the application.</div>' +
             '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></div></body></html>';
+    }
+
+    function clearLog() {
+        if (window.currentUserRole !== 'Admin' || !window.WDialog || !sb()) return;
+        WDialog.form({
+            title: 'Clear log',
+            intro: 'Tip: press Save PDF first if you may need this history later. Deleted entries cannot be brought back.',
+            submitText: 'Continue',
+            fields: [{ name: 'scope', label: 'What to delete', type: 'select', required: true, value: '365', options: [
+                { value: '365', label: 'Older than 1 year' }, { value: '180', label: 'Older than 6 months' },
+                { value: '90', label: 'Older than 3 months' }, { value: 'all', label: 'Everything' }] }]
+        }).then(function (v) {
+            if (!v) return;
+            var days = v.scope === 'all' ? null : Number(v.scope);
+            var what = days === null ? 'the WHOLE History Log' : 'all entries older than ' + (days === 365 ? '1 year' : days + ' days');
+            return WDialog.confirm('Delete ' + what + '? This cannot be undone. One line will be kept saying you cleared the log.',
+                { title: 'Clear log', confirmText: 'Delete', danger: true }).then(function (ok) {
+                if (!ok) return;
+                return Promise.resolve(sb().rpc('clear_audit_log', { p_older_than_days: days })).then(function (res) {
+                    if (res.error) { WDialog.alert('The log could not be cleared. Please try again.', { title: 'Clear log', type: 'error' }); return; }
+                    WDialog.alert(res.data + ' entries deleted.', { title: 'Clear log', type: 'info' });
+                    reload();
+                });
+            });
+        });
     }
 
     function exportPdf() {
