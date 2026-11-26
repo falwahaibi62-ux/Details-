@@ -64,10 +64,6 @@
                     <i class="fa-solid fa-warehouse w-5 text-center text-warning-400"></i>
                     <span>Warehouse and others</span>
                 </button>
-                <button onclick="switchTab('cash')" id="nav-cash" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition cursor-pointer">
-                    <i class="fa-solid fa-coins w-5 text-center text-primary-400"></i>
-                    <span>Cash Box</span>
-                </button>
                 <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition cursor-pointer">
                     <i class="fa-solid fa-users-gear w-5 text-center text-primary-400"></i>
                     <span>Users & Roles</span>
@@ -87,6 +83,11 @@
                 <button onclick="switchTab('history')" id="nav-history" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition cursor-pointer">
                     <i class="fa-solid fa-clock-rotate-left w-5 text-center text-primary-400"></i>
                     <span>History Log</span>
+                </button>
+                <button onclick="switchTab('cash')" id="nav-cash" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl hover:bg-surface-800 text-surface-400 hover:text-white transition cursor-pointer">
+                    <i class="fa-solid fa-coins w-5 text-center text-primary-400"></i>
+                    <span>Cash Box</span>
+                    <span class="ml-auto text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-primary-500/20 text-primary-300">Admin only</span>
                 </button>
             </nav>
         </div>
