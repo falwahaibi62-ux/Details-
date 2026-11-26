@@ -589,12 +589,14 @@ async function openAddUserModal() {
     const known = (window.systemUsers || []).map((u) => String(u.email || '').trim().toLowerCase());
     const values = await WDialog.form({
         title: 'Add New User',
-        intro: 'The role decides what the user can see and do.',
+        intro: 'The account is created straight away with this password. You will then get a welcome message to send to the user. The role decides what the user can see and do.',
         submitText: 'Add User',
         fields: [
             { name: 'name', label: 'Full name', required: true, maxLength: 80 },
             { name: 'email', label: 'Email address', type: 'email', required: true, maxLength: 120,
               validate: (v) => known.indexOf(v.toLowerCase()) >= 0 ? 'This email is already in the users list.' : '' },
+            { name: 'password', label: 'Password', type: 'password', required: true, maxLength: 72,
+              validate: (v) => v.length < 8 ? 'Use at least 8 characters.' : '' },
             { name: 'role', label: 'Role', type: 'select', value: 'Member', options: [
                 { value: 'Admin', label: 'Admin - full access' },
                 { value: 'Member', label: 'Member - add and edit records' },
@@ -603,16 +605,45 @@ async function openAddUserModal() {
     });
     if (!values) return;
 
+    const btn = document.getElementById('addUserBtn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
     try {
-        const { error } = await supabaseClient
-            .from('user_role')
-            .insert([{ name: values.name, email: values.email.toLowerCase(), role: values.role, status: 'enable' }]);
-
-        if (error) WDialog.alert('Failed to add user: ' + error.message, { type: 'error' });
-        else fetchUsersFromSupabase();
+        const res = await supabaseClient.functions.invoke('create-user', {
+            body: { name: values.name, email: values.email, password: values.password, role: values.role }
+        });
+        let msg = null;
+        if (res.error) {
+            msg = 'Could not add the user. Please try again.';
+            try { const e = res.error.context && res.error.context.json ? await res.error.context.json() : null; if (e && e.error) msg = e.error; } catch (x) {}
+        } else if (!res.data || !res.data.ok) {
+            msg = (res.data && res.data.error) || 'Could not add the user. Please try again.';
+        }
+        if (msg) { WDialog.alert(msg, { type: 'error', title: 'User not added' }); }
+        else {
+            fetchUsersFromSupabase();
+            const site = window.location.href.split('#')[0].split('?')[0];
+            const text = 'Welcome, ' + values.name + '!\n\n'
+                + 'We are delighted to have you with us. An account has been created for you.\n\n'
+                + 'Sign in here: ' + site + '\n'
+                + 'Email: ' + values.email.toLowerCase() + '\n'
+                + 'Your password was given to you by the administrator.\n\n'
+                + 'A small reminder\n'
+                + 'Some of the information you will see here is private. Please keep it within your work and do not share it with others, as this protects you and the company alike.\n\n'
+                + 'Your password is yours alone, so please keep it to yourself and update it whenever you wish.\n\n'
+                + 'Warm regards,\nThe Administrator';
+            WDialog.share({
+                title: 'User added',
+                intro: res.data.created
+                    ? 'The account is ready. Send this welcome message to the user. It does not include the password, so give it to them separately.'
+                    : 'The user was added. This email already had a login account, so its password was not changed. You can still send this welcome message.',
+                text: text
+            });
+        }
     } catch (err) {
         console.error("Error adding user:", err);
-        WDialog.alert('Failed to add user. Please try again.', { type: 'error' });
+        WDialog.alert('Could not add the user. Please try again.', { type: 'error', title: 'User not added' });
+    } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
     }
 }
 window.openAddUserModal = openAddUserModal;

@@ -1,8 +1,9 @@
 /* Wathek - system dialogs (replaces the browser's alert / confirm / prompt boxes).
    WDialog.alert(message, { title, type })                      -> Promise<void>
    WDialog.confirm(message, { title, confirmText, cancelText, danger }) -> Promise<boolean>
+   WDialog.share({ title, intro, text })                         -> Promise<void>  (message box with Copy and WhatsApp buttons)
    WDialog.form({ title, intro, submitText, fields: [...] })     -> Promise<object | null>
-     field = { name, label, type: 'text' | 'email' | 'select', required, placeholder, value, maxLength, options: [{value,label}], validate(value, values) -> error text }
+     field = { name, label, type: 'text' | 'email' | 'password' | 'select', required, placeholder, value, maxLength, options: [{value,label}], validate(value, values) -> error text }
    Dialogs are queued (never lost), keyboard friendly (Tab stays inside, Esc cancels, Enter submits) and give focus back when closed. */
 (function () {
     'use strict';
@@ -28,6 +29,7 @@
             '.wdlg-field input:focus,.wdlg-field select:focus{border-color:#6f9bff;box-shadow:0 0 0 3px rgba(111,155,255,.22)}' +
             '.wdlg-field.bad input,.wdlg-field.bad select{border-color:#f87171}' +
             '.wdlg-err{margin-top:5px;font-size:11px;color:#f87171;min-height:0}' +
+            '.wdlg-share{padding:10px 22px 0}.wdlg-share textarea{width:100%;box-sizing:border-box;min-height:230px;resize:vertical;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#EEF2F9;font-size:12.5px;line-height:1.6;font-family:inherit;outline:none}' +
             '.wdlg-foot{display:flex;justify-content:flex-end;gap:10px;padding:18px 22px 20px}' +
             '.wdlg-btn{min-width:84px;padding:10px 18px;border-radius:12px;border:1px solid transparent;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:filter .15s,background .15s}' +
             '.wdlg-btn:focus-visible{outline:2px solid #8fb0ff;outline-offset:2px}' +
@@ -59,6 +61,11 @@
         var body = null, form = null, inputs = {};
         if (job.message) { body = el('div', 'wdlg-body', job.message); body.id = 'wdlg-b' + id; box.appendChild(body); box.setAttribute('aria-describedby', body.id); }
 
+        var shareBox = null;
+        if (job.kind === 'share') {
+            shareBox = el('div', 'wdlg-share'); var ta = el('textarea'); ta.readOnly = true; ta.value = job.text; ta.setAttribute('aria-label', 'Message'); shareBox.appendChild(ta); box.appendChild(shareBox);
+        }
+
         var foot = el('div', 'wdlg-foot');
         var cancelBtn = null, okBtn = el('button', 'wdlg-btn ' + (job.danger ? 'danger' : 'primary'), job.okText); okBtn.type = 'button';
 
@@ -73,24 +80,41 @@
                     inp = el('select');
                     (f.options || []).forEach(function (o) { var op = el('option', null, o.label); op.value = o.value; if (String(o.value) === String(f.value)) op.selected = true; inp.appendChild(op); });
                 } else {
-                    inp = el('input'); inp.type = f.type === 'email' ? 'email' : 'text'; inp.value = f.value || '';
+                    inp = el('input'); inp.type = f.type === 'email' ? 'email' : (f.type === 'password' ? 'password' : 'text'); inp.value = f.value || '';
                     if (f.placeholder) inp.placeholder = f.placeholder;
                     if (f.maxLength) inp.maxLength = f.maxLength;
-                    inp.autocomplete = 'off'; inp.spellcheck = false;
+                    inp.autocomplete = f.type === 'password' ? 'new-password' : 'off'; inp.spellcheck = false;
                     if (f.type === 'email') inp.setAttribute('inputmode', 'email');
                 }
                 inp.id = fid; inp.name = f.name;
                 var err = el('div', 'wdlg-err'); err.id = fid + '-e'; err.setAttribute('role', 'alert');
                 inp.setAttribute('aria-describedby', err.id);
                 inp.addEventListener('input', function () { wrap.classList.remove('bad'); err.textContent = ''; inp.removeAttribute('aria-invalid'); });
-                wrap.appendChild(lab); wrap.appendChild(inp); wrap.appendChild(err); form.appendChild(wrap);
+                wrap.appendChild(lab); wrap.appendChild(inp);
+                if (f.type === 'password') {
+                    var show = el('label', null, ''); show.style.cssText = 'display:flex;align-items:center;gap:6px;margin:7px 0 0;font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;color:#9aa7bd;cursor:pointer';
+                    var cb = el('input'); cb.type = 'checkbox'; cb.style.cssText = 'width:auto;margin:0';
+                    cb.addEventListener('change', function () { inp.type = cb.checked ? 'text' : 'password'; });
+                    show.appendChild(cb); show.appendChild(document.createTextNode('Show password')); wrap.appendChild(show);
+                }
+                wrap.appendChild(err); form.appendChild(wrap);
                 inputs[f.name] = { field: f, input: inp, wrap: wrap, err: err };
             });
             box.appendChild(form);
             okBtn.type = 'submit';
         }
 
-        if (job.kind !== 'alert') { cancelBtn = el('button', 'wdlg-btn ghost', job.cancelText); cancelBtn.type = 'button'; foot.appendChild(cancelBtn); }
+        if (job.kind === 'share') {
+            cancelBtn = el('button', 'wdlg-btn ghost', 'Close'); cancelBtn.type = 'button'; foot.appendChild(cancelBtn);
+            var wa = el('button', 'wdlg-btn ghost', 'WhatsApp'); wa.type = 'button'; foot.appendChild(wa);
+            wa.addEventListener('click', function () { window.open('https://wa.me/?text=' + encodeURIComponent(job.text), '_blank', 'noopener'); });
+            okBtn.textContent = 'Copy message';
+            okBtn.addEventListener('click', function () {
+                var area = shareBox.querySelector('textarea'), done = function () { okBtn.textContent = 'Copied \u2713'; };
+                var fallback = function () { area.focus(); area.select(); try { document.execCommand('copy'); done(); } catch (e) {} };
+                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(job.text).then(done, fallback); else fallback();
+            });
+        } else if (job.kind !== 'alert') { cancelBtn = el('button', 'wdlg-btn ghost', job.cancelText); cancelBtn.type = 'button'; foot.appendChild(cancelBtn); }
         foot.appendChild(okBtn);
         if (form) { foot.style.padding = '4px 0 20px'; form.appendChild(foot); } else box.appendChild(foot);
         overlay.appendChild(box); document.body.appendChild(overlay);
@@ -108,7 +132,7 @@
             var values = {}, firstBad = null;
             job.fields.forEach(function (f) {
                 var h = inputs[f.name], v = h.input.value;
-                if (f.type !== 'select') v = v.trim();
+                if (f.type !== 'select' && f.type !== 'password') v = v.trim();
                 values[f.name] = v;
             });
             job.fields.forEach(function (f) {
@@ -123,7 +147,7 @@
         }
 
         if (form) form.addEventListener('submit', function (e) { e.preventDefault(); var v = collect(); if (v) close(v); });
-        else okBtn.addEventListener('click', function () { close(job.kind === 'confirm' ? true : undefined); });
+        else if (job.kind !== 'share') okBtn.addEventListener('click', function () { close(job.kind === 'confirm' ? true : undefined); });
         if (cancelBtn) cancelBtn.addEventListener('click', function () { close(cancelValue()); });
 
         function onKey(e) {
@@ -159,6 +183,10 @@
         confirm: function (message, opts) {
             opts = opts || {};
             return enqueue({ kind: 'confirm', message: String(message == null ? '' : message), title: opts.title || 'Please confirm', okText: opts.confirmText || 'Confirm', cancelText: opts.cancelText || 'Cancel', danger: !!opts.danger });
+        },
+        share: function (cfg) {
+            cfg = cfg || {};
+            return enqueue({ kind: 'share', title: cfg.title || 'Message', message: cfg.intro || '', text: String(cfg.text || ''), type: cfg.type || 'success', okText: 'Copy message', cancelText: 'Close' });
         },
         form: function (cfg) {
             cfg = cfg || {};
