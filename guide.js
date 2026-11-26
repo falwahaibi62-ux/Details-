@@ -75,6 +75,11 @@
             admin: '\n\nRestore brings a record back. Deleting from the Recycle Bin is permanent and cannot be undone.'
         }
     };
+    HELP.history = {
+        title: 'History Log',
+        text: 'Who added, changed, deleted or saved something, and when.',
+        admin: '\n\nUse the period, area and person filters, or search a job number. Press Show changes to see the value before and after. The log is recorded automatically and cannot be edited.'
+    };
     HELP['pdf-report'] = HELP.reports;
 
     function role() { return window.currentUserRole; }
