@@ -477,6 +477,44 @@
         
         <!-- TAB: DOCUMENT REVIEW (Admin only) -->
         <div id="tab-review" class="hidden space-y-6 w-full flex-col view-section">
+            <div class="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-6 items-start">
+                <aside class="glass-panel p-5 rounded-2xl bg-white shadow-xs border border-surface-200 lg:sticky lg:top-4 space-y-4 text-xs text-surface-600">
+                    <div>
+                        <h3 class="font-bold text-surface-900 text-base"><i class="fa-solid fa-circle-info mr-1.5 text-primary-600"></i>How to use this page</h3>
+                        <p class="mt-1">A checking page for the Admin. Nothing here changes a job.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">1. Orders declined</h4>
+                        <p class="mt-1">Order numbers you declined to create from a document (only the number is saved). The <b>Now</b> column shows if the order has since been created in the system. <b>Remove from list</b> deletes the entry.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">2. Jobs without a document</h4>
+                        <p class="mt-1">Real order numbers with an amount above 0 that have no PDF attached. Use <b>Attach PDFs</b> to add the missing files and <b>Search Job No</b> to find one job. When the list is empty, every job has a document.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">3. Documents read</h4>
+                        <p class="mt-1">Each attached PDF is read for its order number, lot and amount, and compared with the job in the system. A row marked <b>Check</b> has a difference, with the reason under it. Open the document with <b>View</b>, then tick <b>Reviewed</b> once you have confirmed it. By default only rows that need checking are shown.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">Double check</h4>
+                        <p class="mt-1">Reads only the PDFs that have no saved reading yet (PDF files up to 10 MB) and saves what it read for review. It asks you to confirm first. Jobs are not changed. Use <b>Read again</b> on a row to replace its reading.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">Save PDF / Save Excel</h4>
+                        <p class="mt-1">Export the list above the button, as a PDF or as an Excel-ready file, for example to send the missing documents to the auditor.</p>
+                    </div>
+                    <div class="pt-3 border-t border-surface-200">
+                        <h4 class="font-bold text-surface-800 text-xs uppercase tracking-wide">Before closing a period</h4>
+                        <ol class="mt-1 list-decimal pl-4 space-y-1">
+                            <li>Press <b>Resync</b> to load the latest data.</li>
+                            <li>Attach the missing PDFs.</li>
+                            <li>Press <b>Double check</b>, then clear every <b>Check</b> row.</li>
+                            <li>Save the PDFs you need.</li>
+                            <li>Then issue the Official PDF Report.</li>
+                        </ol>
+                    </div>
+                </aside>
+                <div class="space-y-6 min-w-0">
             <div class="glass-panel p-5 rounded-2xl flex flex-wrap gap-3 justify-between items-center bg-white shadow-xs border border-surface-200">
                 <div>
                     <h3 class="font-bold text-surface-900 text-base">Document Review</h3>
@@ -516,6 +554,7 @@
                         <input id="noDocSearch" oninput="WathekReview.searchNoDoc(this.value)" placeholder="Search Job No..." class="px-3 py-2 text-xs border border-surface-200 rounded-xl bg-white w-40">
                         <button onclick="WathekDocs.openBulk()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Attach PDFs</button>
                         <button onclick="WathekReview.exportNoDoc()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Save PDF</button>
+                        <button onclick="WathekReview.exportNoDocCsv()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Save Excel</button>
                     </div>
                 </div>
                 <div class="overflow-x-auto" style="max-height:480px;overflow-y:auto">
@@ -525,6 +564,30 @@
                         </tr></thead>
                         <tbody id="noDocBody"></tbody>
                     </table>
+                </div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl bg-white shadow-xs border border-surface-200">
+                <div class="flex flex-wrap gap-3 justify-between items-center mb-3">
+                    <div>
+                        <h3 class="font-bold text-surface-900 text-sm">3. Documents read</h3>
+                        <p class="text-xs text-surface-500">What was read from each PDF, next to the job in the system. Rows marked Check have a difference.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <label class="flex items-center gap-1.5 text-xs text-surface-600 cursor-pointer"><input type="checkbox" onchange="WathekReview.toggleShowAll(this.checked)"> Show all documents</label>
+                        <label class="flex items-center gap-1.5 text-xs text-surface-600 cursor-pointer"><input type="checkbox" onchange="WathekReview.toggleOnlyUnread(this.checked)"> Not read yet only</label>
+                        <button onclick="WathekReview.exportCsv()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Save PDF</button>
+                        <button onclick="WathekReview.exportReviewCsv()" class="px-3 py-2 text-xs bg-surface-100 hover:bg-surface-200 text-surface-800 rounded-xl font-semibold transition cursor-pointer">Save Excel</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto" style="max-height:520px;overflow-y:auto">
+                    <table class="w-full text-left">
+                        <thead><tr class="text-[11px] text-surface-500 uppercase border-b border-surface-200">
+                            <th class="p-3">Date</th><th class="p-3">Job No</th><th class="p-3">Document</th><th class="p-3">Order read</th><th class="p-3">Lot</th><th class="p-3">Amount</th><th class="p-3">Status</th><th class="p-3 text-center">Reviewed</th><th class="p-3">Read</th>
+                        </tr></thead>
+                        <tbody id="reviewBody"></tbody>
+                    </table>
+                </div>
+            </div>
                 </div>
             </div>
         </div>

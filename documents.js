@@ -289,7 +289,7 @@
             '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center"><input id="wd-bulk-files" type="file" accept="application/pdf,.pdf" multiple>' +
             '<button id="wd-bulk-ai" type="button" disabled style="background:#1e293b;color:#fff;border:0;border-radius:10px;padding:7px 14px;font-weight:700;font-size:12px;cursor:pointer;opacity:.5">Read docs</button>' +
             '<label style="font-size:12px;color:#475569;display:flex;align-items:center;gap:5px;cursor:pointer"><input id="wd-bulk-unread" type="checkbox"> Show only unread</label></div>' +
-            '<div style="margin-top:4px;font-size:11px;color:#94a3b8">AI reading sends each selected PDF to the Claude service to read only the order number, lot and tape color. It costs about 3 cents per file. Files that were already read are reused for free. Check every match before pressing Attach.</div></div>' +
+            '<div style="margin-top:4px;font-size:11px;color:#94a3b8">Automatic reading sends each selected PDF to the Claude service to read only the order number, lot and tape color. It costs about 3 cents per file. Files that were already read are reused for free. Check every match before pressing Attach.</div></div>' +
             '<div id="wd-bulk-list" style="padding:8px 16px;overflow:auto;flex:1;font-size:12px"></div>' +
             '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid #e2e8f0"><span id="wd-bulk-msg" style="font-size:12px;color:#64748b"></span>' +
             '<button id="wd-bulk-go" type="button" disabled style="background:#0f766e;color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer;opacity:.5">Attach</button></div></div>';
@@ -413,7 +413,7 @@
     }
 
 
-    // ---------- AI reading of order number / lot / color (optional, per click) ----------
+    // ---------- Automatic reading of order number / lot / color (optional, per click) ----------
     function money(s) { var n = parseFloat(String(s == null ? '' : s).replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : null; }
     function normNo(s) { return String(s || '').replace(/\s+/g, '').toUpperCase(); }
     function fileToBase64(file) {
@@ -514,7 +514,7 @@
     async function readOneAI(i) {
         var r = bulkRows[i], st = document.getElementById('wd-st-' + i);
         if (!r || r.problem || r.done) return;
-        if (r.file.size > 10 * 1024 * 1024) { r.aiNote = '<span style="color:#b45309">Too large for AI reading - choose manually</span>'; refreshBulkState(); return; }
+        if (r.file.size > 10 * 1024 * 1024) { r.aiNote = '<span style="color:#b45309">Too large to read automatically - choose manually</span>'; refreshBulkState(); return; }
         if (st) st.textContent = 'Reading...';
         try {
             var res = null;

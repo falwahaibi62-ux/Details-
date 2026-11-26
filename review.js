@@ -1,5 +1,5 @@
 /* Wathek - Document Review (Admin only). Display only: it never changes job records.
-   Shows what the AI read from each attached PDF next to what is in the system, and lets the Admin tick "Reviewed". */
+   Shows what was read from each attached PDF next to what is in the system, and lets the Admin tick "Reviewed". */
 (function () {
     'use strict';
     function sb() { return window.supabaseClient; }
@@ -15,7 +15,7 @@
 
     function flagsFor(job, rv) {
         var f = [];
-        if (!rv) return (job && window.WathekDocs && !window.WathekDocs.isPdf(job.id)) ? [] : ['Not read by AI']; // only PDFs are read by AI
+        if (!rv) return (job && window.WathekDocs && !window.WathekDocs.isPdf(job.id)) ? [] : ['Not read yet']; // only PDFs are read
         if (rv.order_read && norm(rv.order_read) !== norm(job.jobNo || job.job_no)) f.push('Order number differs from Job No');
         if (!rv.order_read) f.push('Order number not read');
         if (rv.order_conf === 'low') f.push('Low confidence on order number');
@@ -123,8 +123,44 @@
         toPdf('Jobs without a document', tbl, 'jobs-without-document-' + today() + '.pdf');
     }
 
+
+    // Excel-friendly CSV (UTF-8 with BOM) - opens directly in Excel
+    function toCsv(table, file) {
+        var body = table.map(function (r) { return r.map(function (c) { return '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+        var blob = new Blob(['\ufeff' + body], { type: 'text/csv;charset=utf-8' });
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file;
+        document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    }
+    function noDocTable() {
+        return [['Date', 'Job No', 'Route', 'Amount', 'Lot']].concat(noDocList().map(function (j) { return [String(j.date || '').split(' ')[0], j.jobNo || j.job_no || '', j.route || '', j.total_amount || j.total || '', j.lot_no || '']; }));
+    }
+    function exportNoDocCsv() { toCsv(noDocTable(), 'jobs-without-document-' + today() + '.csv'); }
+    function shownRows() { return rows.filter(function (r) { if (onlyUnread && r.rv) return false; return !onlyCheck || (r.flags.length && !(r.rv && r.rv.reviewed)); }); }
+    function reviewTable() {
+        var head = ['Date', 'Job No', 'Route', 'Order read', 'Lot (system)', 'Lot (read)', 'Amount (system)', 'Total (doc)', 'Deposit (doc)', 'Status', 'Notes', 'Reviewed'];
+        return [head].concat(shownRows().map(function (r) {
+            var j = r.job, rv = r.rv || {};
+            return [String(j.date || '').split(' ')[0], j.jobNo || j.job_no || '', j.route || '', rv.order_read || '', j.lot_no || '', rv.lot_read || '', money(j.total_amount || j.total) == null ? '' : money(j.total_amount || j.total),
+                rv.total_read == null ? '' : rv.total_read, rv.deposit_read == null ? '' : rv.deposit_read, r.flags.length ? 'Check' : 'OK', r.flags.join(' | '), rv.reviewed ? 'Yes' : 'No'];
+        }));
+    }
+    function exportReviewCsv() { toCsv(reviewTable(), 'document-review-' + today() + '.csv'); }
+
+    // Number of jobs without a document, shown next to "Document Review" in the menu
+    function updateBadge() {
+        var btn = document.getElementById('nav-review'); if (!btn) return;
+        var b = document.getElementById('nav-review-badge');
+        if (window.currentUserRole !== 'Admin' || !window.WathekDocs || !window.masterJobs || !window.masterJobs.length) { if (b) b.remove(); return; }
+        var n = noDocList().length;
+        if (!n) { if (b) b.remove(); return; }
+        if (!b) { b = document.createElement('span'); b.id = 'nav-review-badge'; b.className = 'ml-auto min-w-[20px] px-1.5 py-0.5 rounded-full bg-warning-500 text-white text-[10px] font-bold text-center'; b.title = 'Jobs without a document'; btn.appendChild(b); }
+        b.textContent = n > 99 ? '99+' : String(n);
+    }
+
     function draw() {
         drawNoDoc();
+        updateBadge();
         drawDeclined();
         var box = document.getElementById('reviewBody'); if (!box) return;
         var list = rows.filter(function (r) { if (onlyUnread && r.rv) return false; return !onlyCheck || (r.flags.length && !(r.rv && r.rv.reviewed)); });
@@ -146,7 +182,7 @@
                 '<td class="p-3 text-xs">' + fmt(money(j.total_amount || j.total)) + '<div class="text-surface-500">doc: ' + fmt(exp) + '</div></td>' +
                 '<td class="p-3 text-xs">' + (ok ? '<span class="text-success-600 font-semibold">OK</span>' : '<span class="text-warning-600 font-semibold">Check</span>' + r.flags.map(function (x) { return '<div class="text-surface-600">' + esc(x) + '</div>'; }).join('')) + '</td>' +
                 '<td class="p-3 text-xs text-center">' + (rv ? '<input type="checkbox" data-rev="' + esc(j.id) + '" ' + (rv.reviewed ? 'checked' : '') + '>' : '') + '</td>' +
-                '<td class="p-3 text-xs whitespace-nowrap">' + esc(rv && rv.read_at ? String(rv.read_at).slice(0, 10) : '') + (r.has ? '<div><a href="#" data-read="' + esc(j.id) + '" class="text-primary-600 font-semibold">' + (rv ? 'Read again' : 'Read with AI') + '</a></div>' : '') + '</td></tr>';
+                '<td class="p-3 text-xs whitespace-nowrap">' + esc(rv && rv.read_at ? String(rv.read_at).slice(0, 10) : '') + (r.has ? '<div><a href="#" data-read="' + esc(j.id) + '" class="text-primary-600 font-semibold">' + (rv ? 'Read again' : 'Read now') + '</a></div>' : '') + '</td></tr>';
         }).join('');
         box.querySelectorAll('[data-view]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); window.WathekDocs.show(a.getAttribute('data-view')); }); });
         box.querySelectorAll('[data-read]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); readRow(a.getAttribute('data-read')); }); });
@@ -163,26 +199,19 @@
     }
 
     function exportCsv() {
-        var head = ['Date', 'Job No', 'Route', 'Order read', 'Lot (system)', 'Lot (read)', 'Amount (system)', 'Total (doc)', 'Deposit (doc)', 'Status', 'Notes', 'Reviewed'];
-        var shown = rows.filter(function (r) { if (onlyUnread && r.rv) return false; return !onlyCheck || (r.flags.length && !(r.rv && r.rv.reviewed)); }); // same rows as on screen
-        var out = [head].concat(shown.map(function (r) {
-            var j = r.job, rv = r.rv || {};
-            return [String(j.date || '').split(' ')[0], j.jobNo || j.job_no || '', j.route || '', rv.order_read || '', j.lot_no || '', rv.lot_read || '', money(j.total_amount || j.total) == null ? '' : money(j.total_amount || j.total),
-                rv.total_read == null ? '' : rv.total_read, rv.deposit_read == null ? '' : rv.deposit_read, r.flags.length ? 'Check' : 'OK', r.flags.join(' | '), rv.reviewed ? 'Yes' : 'No'];
-        }));
-        toPdf('Document Review - Jobs with notes', out, 'document-review-' + today() + '.pdf');
+        toPdf('Document Review - Jobs with notes', reviewTable(), 'document-review-' + today() + '.pdf');
     }
 
-    // ---------- Read stored documents with AI (Admin) ----------
+    // ---------- Read stored documents (Admin) ----------
     function toB64(blob) {
         return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(String(fr.result).split(',')[1] || ''); }; fr.onerror = rej; fr.readAsDataURL(blob); });
     }
     async function readOne(jobId, force) {
         var j = (window.masterJobs || []).find(function (x) { return String(x.id) === String(jobId); }) || {};
-        if (!window.WathekDocs.isPdf(jobId)) return 'AI reads PDF files only';
+        if (!window.WathekDocs.isPdf(jobId)) return 'Only PDF files can be read';
         var blob = await window.WathekDocs.getBlob(jobId);
         if (!blob) return 'Could not open the document';
-        if (blob.size > 10 * 1024 * 1024) return 'Too large for AI reading (over 10 MB)';
+        if (blob.size > 10 * 1024 * 1024) return 'Too large to read (over 10 MB)';
         var res = await sb().functions.invoke('extract-job', { body: { pdf_base64: await toB64(blob), force: force === true } });
         if (res.error || !res.data || !res.data.fields) {
             var msg = 'Could not read';
@@ -209,7 +238,7 @@
         async function worker() {
             while (n < ids.length) {
                 var id = ids[n++];
-                if (c) c.textContent = 'Reading with AI... ' + n + ' of ' + ids.length;
+                if (c) c.textContent = 'Reading... ' + n + ' of ' + ids.length;
                 var err = await readOne(id, force);
                 if (err) fails.push((rows.find(function (x) { return String(x.job.id) === String(id); }) || { job: {} }).job.jobNo + ': ' + err);
             }
@@ -230,9 +259,11 @@
         readIds(ids);
     }
 
+    setTimeout(updateBadge, 5000); setInterval(updateBadge, 60000);
+
     window.WathekReview = {
         exportDeclined: exportDeclined,
-        exportNoDoc: exportNoDoc,
+        exportNoDoc: exportNoDoc, exportNoDocCsv: exportNoDocCsv, exportReviewCsv: exportReviewCsv, updateBadge: updateBadge,
         searchNoDoc: function (v) { noDocQuery = v || ''; drawNoDoc(); },
         readRow: readRow, readAllUnread: readAllUnread,
         render: function () { if (window.currentUserRole !== 'Admin') return; load(); },

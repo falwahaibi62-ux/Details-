@@ -91,6 +91,7 @@
             if (typeof window.generateSummaryReportData === 'function') window.generateSummaryReportData();
             if (typeof window.renderSummaryPageWithDetailedTables === 'function') window.renderSummaryPageWithDetailedTables();
             if (window.WathekReview && window.currentUserRole === 'Admin' && current === 'review') window.WathekReview.render();
+            if (window.WathekReview && window.WathekReview.updateBadge) { try { window.WathekReview.updateBadge(); } catch (e) {} }
             hint('Synced', 1200);
         } catch (e) {
             hint('Could not resync', 2500);
